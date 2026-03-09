@@ -214,6 +214,7 @@ router.delete('/:mesaId', async (req, res) => {
 router.post('/abrir', async (req, res) => {
     const { mesa_id, cliente_id, notas } = req.body || {};
     if (!mesa_id) return res.status(400).json({ error: 'mesa_id requerido' });
+    const meseroNombre = String(req.session?.user?.nombre || req.session?.user?.usuario || '').trim() || null;
     try {
         const connection = await db.getConnection();
         try {
@@ -225,6 +226,14 @@ router.post('/abrir', async (req, res) => {
                 [mesa_id]
             );
             if (existentes.length > 0) {
+                // Si el pedido abierto aún no tiene mesero asignado, lo completamos con el usuario en sesión.
+                if (!String(existentes[0]?.mesero_nombre || '').trim() && meseroNombre) {
+                    await connection.query(
+                        `UPDATE pedidos SET mesero_nombre = ? WHERE id = ?`,
+                        [meseroNombre, existentes[0].id]
+                    );
+                    existentes[0].mesero_nombre = meseroNombre;
+                }
                 await syncMesaEstadoByItems(connection, mesa_id);
                 await connection.commit();
                 connection.release();
@@ -232,8 +241,8 @@ router.post('/abrir', async (req, res) => {
             }
 
             const [insert] = await connection.query(
-                `INSERT INTO pedidos (mesa_id, cliente_id, estado, total, notas) VALUES (?, ?, 'abierto', 0, ?)` ,
-                [mesa_id, cliente_id || null, notas || null]
+                `INSERT INTO pedidos (mesa_id, cliente_id, mesero_nombre, estado, total, notas) VALUES (?, ?, ?, 'abierto', 0, ?)` ,
+                [mesa_id, cliente_id || null, meseroNombre, notas || null]
             );
 
             // Importante: abrir pedido no fuerza "ocupada" si aún no hay items.
@@ -242,7 +251,17 @@ router.post('/abrir', async (req, res) => {
 
             await connection.commit();
             connection.release();
-            res.status(201).json({ pedido: { id: insert.insertId, mesa_id, cliente_id: cliente_id || null, estado: 'abierto', total: 0, notas: notas || null } });
+            res.status(201).json({
+                pedido: {
+                    id: insert.insertId,
+                    mesa_id,
+                    cliente_id: cliente_id || null,
+                    mesero_nombre: meseroNombre,
+                    estado: 'abierto',
+                    total: 0,
+                    notas: notas || null
+                }
+            });
         } catch (error) {
             await connection.rollback();
             connection.release();
@@ -439,14 +458,56 @@ router.delete('/items/:itemId', async (req, res) => {
 router.put('/items/:itemId/enviar', async (req, res) => {
     try {
         const itemId = req.params.itemId;
-        const [result] = await db.query(
-            `UPDATE pedido_items
-             SET estado = 'enviado', enviado_at = NOW()
-             WHERE id = ? AND estado = 'pendiente'`,
-            [itemId]
-        );
-        if (result.affectedRows === 0) return res.status(400).json({ error: 'Solo se pueden enviar items pendientes' });
-        res.json({ message: 'Item enviado a cocina' });
+        const meseroNombre = String(req.session?.user?.nombre || req.session?.user?.usuario || '').trim() || null;
+        const connection = await db.getConnection();
+        try {
+            await connection.beginTransaction();
+
+            const [itemRows] = await connection.query(
+                `SELECT i.id, i.pedido_id, i.estado
+                 FROM pedido_items i
+                 WHERE i.id = ?
+                 LIMIT 1
+                 FOR UPDATE`,
+                [itemId]
+            );
+            if (!itemRows.length) {
+                await connection.rollback();
+                connection.release();
+                return res.status(404).json({ error: 'Item no encontrado' });
+            }
+            if (String(itemRows[0].estado || '').toLowerCase() !== 'pendiente') {
+                await connection.rollback();
+                connection.release();
+                return res.status(400).json({ error: 'Solo se pueden enviar items pendientes' });
+            }
+
+            const pedidoId = Number(itemRows[0].pedido_id);
+            await connection.query(
+                `UPDATE pedido_items
+                 SET estado = 'enviado', enviado_at = NOW()
+                 WHERE id = ?`,
+                [itemId]
+            );
+
+            // Si el pedido no tenía responsable, lo tomamos del usuario actual que envía.
+            if (meseroNombre) {
+                await connection.query(
+                    `UPDATE pedidos
+                     SET mesero_nombre = COALESCE(NULLIF(mesero_nombre, ''), ?)
+                     WHERE id = ?`,
+                    [meseroNombre, pedidoId]
+                );
+            }
+
+            await connection.commit();
+            connection.release();
+            res.json({ message: 'Item enviado a cocina' });
+        } catch (err) {
+            await connection.rollback();
+            connection.release();
+            throw err;
+        }
     } catch (error) {
         console.error('Error al enviar item:', error);
         res.status(500).json({ error: 'Error al enviar item' });

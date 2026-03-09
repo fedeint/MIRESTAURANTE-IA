@@ -11,7 +11,7 @@ const { requireRole } = require('../middleware/auth');
 router.get('/', requireRole(['cocinero', 'mesero', 'administrador']), async (req, res) => {
     try {
         const [items] = await db.query(`
-            SELECT i.*, p.mesa_id, m.numero AS mesa_numero, pr.nombre AS producto_nombre
+            SELECT i.*, p.mesa_id, p.mesero_nombre, m.numero AS mesa_numero, pr.nombre AS producto_nombre
             FROM pedido_items i
             JOIN pedidos p ON p.id = i.pedido_id
             JOIN mesas m ON m.id = p.mesa_id
@@ -31,7 +31,7 @@ router.get('/', requireRole(['cocinero', 'mesero', 'administrador']), async (req
 router.get('/cola', requireRole(['cocinero', 'mesero', 'administrador']), async (req, res) => {
     try {
         const [items] = await db.query(`
-            SELECT i.*, p.mesa_id, m.numero AS mesa_numero, pr.nombre AS producto_nombre
+            SELECT i.*, p.mesa_id, p.mesero_nombre, m.numero AS mesa_numero, pr.nombre AS producto_nombre
             FROM pedido_items i
             JOIN pedidos p ON p.id = i.pedido_id
             JOIN mesas m ON m.id = p.mesa_id
@@ -76,7 +76,7 @@ router.get('/entregados', requireRole(['cocinero', 'mesero', 'administrador']), 
         }
 
         const [items] = await db.query(`
-            SELECT i.*, p.mesa_id, m.numero AS mesa_numero, pr.nombre AS producto_nombre
+            SELECT i.*, p.mesa_id, p.mesero_nombre, m.numero AS mesa_numero, pr.nombre AS producto_nombre
             FROM pedido_items i
             JOIN pedidos p ON p.id = i.pedido_id
             JOIN mesas m ON m.id = p.mesa_id
@@ -125,7 +125,7 @@ router.get('/rechazados', requireRole(['cocinero', 'mesero', 'administrador']), 
         }
 
         const [items] = await db.query(`
-            SELECT i.*, p.mesa_id, m.numero AS mesa_numero, pr.nombre AS producto_nombre
+            SELECT i.*, p.mesa_id, p.mesero_nombre, m.numero AS mesa_numero, pr.nombre AS producto_nombre
             FROM pedido_items i
             JOIN pedidos p ON p.id = i.pedido_id
             JOIN mesas m ON m.id = p.mesa_id
@@ -160,6 +160,38 @@ router.put('/item/:id/estado', requireRole(['cocinero', 'administrador']), async
     } catch (error) {
         console.error('Error al actualizar estado en cocina:', error);
         res.status(500).json({ error: 'Error al actualizar estado' });
+    }
+});
+
+// PUT /cocina/mesa/:mesaId/preparar - API: enviar a "preparando" todos los items "enviado" de una mesa
+// Relacionado con:
+// - public/js/cocina.js (botón "Preparar mesa" en pestaña Enviados)
+// - views/cocina.ejs (render de tarjetas de Enviados)
+router.put('/mesa/:mesaId/preparar', requireRole(['cocinero', 'administrador']), async (req, res) => {
+    try {
+        const mesaId = Number(req.params.mesaId);
+        if (!Number.isInteger(mesaId) || mesaId <= 0) {
+            return res.status(400).json({ error: 'Mesa inválida' });
+        }
+
+        // Actualiza todos los items "enviado" asociados a pedidos de la mesa.
+        // Usamos JOIN para evitar tener que traer ids al backend en dos pasos.
+        const [result] = await db.query(
+            `UPDATE pedido_items i
+             JOIN pedidos p ON p.id = i.pedido_id
+             SET i.estado = 'preparando', i.preparado_at = NOW()
+             WHERE p.mesa_id = ? AND i.estado = 'enviado'`,
+            [mesaId]
+        );
+
+        if ((result?.affectedRows || 0) === 0) {
+            return res.status(404).json({ error: 'No hay items enviados para preparar en esta mesa' });
+        }
+
+        res.json({ message: 'Mesa enviada a preparación', actualizados: result.affectedRows });
+    } catch (error) {
+        console.error('Error al preparar mesa en cocina:', error);
+        res.status(500).json({ error: 'Error al preparar mesa' });
     }
 });
 

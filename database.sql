@@ -140,6 +140,9 @@ CREATE TABLE IF NOT EXISTS pedidos (
     id INT AUTO_INCREMENT PRIMARY KEY,
     mesa_id INT NOT NULL,
     cliente_id INT,
+    -- Nombre del usuario (mesero/admin) que abrió la comanda.
+    -- Se guarda en snapshot para trazabilidad histórica aunque el usuario cambie luego.
+    mesero_nombre VARCHAR(100) NULL,
     -- Estado del pedido (flujo general). "rechazado" se usa cuando el pedido se cancela/rechaza.
     -- Relacionado con:
     -- - routes/mesas.js (liberar mesa -> marca pedido rechazado)
@@ -202,6 +205,11 @@ CREATE TABLE IF NOT EXISTS factura_pagos (
 -- Relacionado con:
 -- - routes/mesas.js (liberar mesa -> rechazar pedido)
 -- - routes/cocina.js / public/js/cocina.js (pestaña Rechazados)
+
+-- 4) Agregar columna mesero_nombre a pedidos
+ALTER TABLE pedidos
+    ADD COLUMN IF NOT EXISTS mesero_nombre VARCHAR(100) NULL AFTER cliente_id;
+
 ALTER TABLE pedidos
     MODIFY estado ENUM('abierto', 'en_cocina', 'preparando', 'listo', 'servido', 'cerrado', 'cancelado', 'rechazado') DEFAULT 'abierto';
 

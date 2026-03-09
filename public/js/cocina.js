@@ -28,6 +28,17 @@ $(function(){
     return isNaN(d.getTime()) ? null : d;
   }
 
+  function meseroLabel(it){
+    const raw = String(it?.mesero_nombre || '').trim();
+    return raw ? escapeHtml(raw) : 'Sin asignar';
+  }
+
+  function meseroLabelFromItems(list, fallback){
+    const arr = Array.isArray(list) ? list : [];
+    const found = arr.find(x => String(x?.mesero_nombre || '').trim());
+    return meseroLabel(found || fallback || {});
+  }
+
   function timeAgo(date){
     if(!date) return '';
     const diffMs = Date.now() - date.getTime();
@@ -136,6 +147,7 @@ $(function(){
     const hora = ref ? ref.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
     const mesa = escapeHtml(it.mesa_numero);
     const producto = escapeHtml(it.producto_nombre);
+    const mesero = meseroLabel(it);
     const nota = (it.nota || '').trim();
     const qty = Number(it.cantidad || 0);
 
@@ -164,6 +176,7 @@ $(function(){
                 <span class="badge text-bg-${ui.badge}"><i class="bi ${ui.icon} me-1"></i>${ui.label}</span>
                 <span class="meta">${hora ? `${hora} · ${timeAgo(ref)}` : timeAgo(ref)}</span>
               </div>
+              <div class="meta mb-1"><i class="bi bi-person-badge me-1"></i>Mesero: ${mesero}</div>
               <div class="product-name">${producto}</div>
               ${nota ? `<div class="cocina-note mt-2"><i class="bi bi-exclamation-triangle me-1"></i>${escapeHtml(nota)}</div>` : ''}
             </div>
@@ -174,6 +187,126 @@ $(function(){
             </div>
           </div>
           ${actions}
+        </div>
+      </div>`;
+  }
+
+  function cardMesaEnviados(mesaItems){
+    if(!Array.isArray(mesaItems) || mesaItems.length === 0) return '';
+    const first = mesaItems[0] || {};
+    const mesa = escapeHtml(first.mesa_numero);
+    const mesaId = Number(first.mesa_id || 0);
+    const ref = parseDate(first.enviado_at) || parseDate(first.created_at);
+    const hora = ref ? ref.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+    const canKitchenActions = (userRole !== 'mesero');
+    const mesero = meseroLabelFromItems(mesaItems, first);
+    const totalLineas = mesaItems.length;
+    const totalUnidades = mesaItems.reduce((acc, it) => acc + Math.max(0, Number(it.cantidad || 0)), 0);
+
+    const detalles = mesaItems.map(it => {
+      const producto = escapeHtml(it.producto_nombre);
+      const nota = String(it.nota || '').trim();
+      const qty = Math.max(0, Number(it.cantidad || 0));
+      return `
+        <div class="d-flex justify-content-between align-items-start gap-2 py-1 border-bottom border-light-subtle">
+          <div class="flex-grow-1">
+            <div class="fw-semibold">${producto}</div>
+            ${nota ? `<div class="cocina-note mt-1"><i class="bi bi-exclamation-triangle me-1"></i>${escapeHtml(nota)}</div>` : ''}
+          </div>
+          <span class="badge text-bg-secondary">x${qty}</span>
+        </div>`;
+    }).join('');
+
+    const acciones = (canKitchenActions && mesaId > 0) ? `
+      <div class="d-flex justify-content-end mt-2">
+        <button class="btn btn-sm btn-primary" data-action="prep-mesa" data-mesa-id="${mesaId}">
+          <i class="bi bi-play me-1"></i>Preparar mesa
+        </button>
+      </div>` : '';
+
+    return `
+      <div class="card cocina-card border-start border-4 border-primary">
+        <div class="card-body">
+          <div class="d-flex justify-content-between gap-2 mb-2">
+            <div>
+              <div class="d-flex align-items-center gap-2 flex-wrap">
+                <span class="badge text-bg-dark"><i class="bi bi-grid-3x3-gap me-1"></i>Mesa ${mesa}</span>
+                <span class="badge text-bg-primary"><i class="bi bi-send me-1"></i>Enviado</span>
+              </div>
+              <div class="meta mt-1">${hora ? `${hora} · ${timeAgo(ref)}` : timeAgo(ref)}</div>
+              <div class="meta mt-1"><i class="bi bi-person-badge me-1"></i>Mesero: ${mesero}</div>
+            </div>
+            <div class="text-end">
+              <div class="badge text-bg-light border">Líneas: ${totalLineas}</div>
+              <div class="badge text-bg-light border ms-1">Unidades: ${totalUnidades}</div>
+            </div>
+          </div>
+          <div class="vstack gap-1">${detalles}</div>
+          ${acciones}
+        </div>
+      </div>`;
+  }
+
+  function cardMesaPreparando(mesaItems){
+    if(!Array.isArray(mesaItems) || mesaItems.length === 0) return '';
+    const first = mesaItems[0] || {};
+    const mesa = escapeHtml(first.mesa_numero);
+    const ref = parseDate(first.preparado_at) || parseDate(first.enviado_at) || parseDate(first.created_at);
+    const hora = ref ? ref.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+    const canKitchenActions = (userRole !== 'mesero');
+    const mesero = meseroLabelFromItems(mesaItems, first);
+    const totalLineas = mesaItems.length;
+    const totalUnidades = mesaItems.reduce((acc, it) => acc + Math.max(0, Number(it.cantidad || 0)), 0);
+
+    const detalles = mesaItems.map(it => {
+      const producto = escapeHtml(it.producto_nombre);
+      const nota = String(it.nota || '').trim();
+      const qty = Math.max(0, Number(it.cantidad || 0));
+      const estado = String(it.estado || '').toLowerCase();
+      const badgeEstado = estado === 'listo'
+        ? `<span class="badge text-bg-success ms-2">Listo</span>`
+        : `<span class="badge text-bg-warning ms-2">Preparando</span>`;
+      const acciones = canKitchenActions
+        ? (estado === 'preparando'
+          ? `<button class="btn btn-sm btn-success" data-action="listo" data-id="${it.id}"><i class="bi bi-check2 me-1"></i>Marcar listo</button>
+             <button class="btn btn-sm btn-outline-danger" data-action="cancelar" data-id="${it.id}"><i class="bi bi-x-octagon me-1"></i>Cancelar</button>`
+          : '')
+        : '';
+
+      return `
+        <div class="d-flex justify-content-between align-items-start gap-2 py-2 border-bottom border-light-subtle">
+          <div class="flex-grow-1">
+            <div class="d-flex align-items-center flex-wrap">
+              <span class="fw-semibold">${producto}</span>
+              ${badgeEstado}
+            </div>
+            ${nota ? `<div class="cocina-note mt-1"><i class="bi bi-exclamation-triangle me-1"></i>${escapeHtml(nota)}</div>` : ''}
+          </div>
+          <div class="text-end">
+            <span class="badge text-bg-secondary">x${qty}</span>
+            ${acciones ? `<div class="d-flex gap-1 justify-content-end mt-2">${acciones}</div>` : ''}
+          </div>
+        </div>`;
+    }).join('');
+
+    return `
+      <div class="card cocina-card border-start border-4 border-warning">
+        <div class="card-body">
+          <div class="d-flex justify-content-between gap-2 mb-2">
+            <div>
+              <div class="d-flex align-items-center gap-2 flex-wrap">
+                <span class="badge text-bg-dark"><i class="bi bi-grid-3x3-gap me-1"></i>Mesa ${mesa}</span>
+                <span class="badge text-bg-warning"><i class="bi bi-fire me-1"></i>Preparando</span>
+              </div>
+              <div class="meta mt-1">${hora ? `${hora} · ${timeAgo(ref)}` : timeAgo(ref)}</div>
+              <div class="meta mt-1"><i class="bi bi-person-badge me-1"></i>Mesero: ${mesero}</div>
+            </div>
+            <div class="text-end">
+              <div class="badge text-bg-light border">Líneas: ${totalLineas}</div>
+              <div class="badge text-bg-light border ms-1">Unidades: ${totalUnidades}</div>
+            </div>
+          </div>
+          <div class="vstack gap-1">${detalles}</div>
         </div>
       </div>`;
   }
@@ -190,7 +323,8 @@ $(function(){
       const mesa = String(it.mesa_numero || '').toLowerCase();
       const prod = String(it.producto_nombre || '').toLowerCase();
       const nota = String(it.nota || '').toLowerCase();
-      return mesa.includes(q) || prod.includes(q) || nota.includes(q);
+      const mesero = String(it.mesero_nombre || '').toLowerCase();
+      return mesa.includes(q) || prod.includes(q) || nota.includes(q) || mesero.includes(q);
     });
   }
 
@@ -209,8 +343,6 @@ $(function(){
 
     const items = filtrar(allItems);
     const enviados = items.filter(it => it.estado === 'enviado');
-    const preparando = items.filter(it => it.estado === 'preparando');
-    const listos = items.filter(it => it.estado === 'listo');
 
     const entregadosFiltrados = filtrar(entregadosItems || []);
     const rechazadosFiltrados = filtrar(rechazadosItems || []);
@@ -228,29 +360,65 @@ $(function(){
     setText('pillEntregados', (entregadosItems || []).length);
     setText('pillRechazados', (rechazadosItems || []).length);
 
-    enviados.forEach(it => enviadosEl.append(cardItem(it)));
-    preparando.forEach(it => preparandoEl.append(cardItem(it)));
+    // Enviados: agrupar por mesa para preparar todo el pedido con un solo botón.
+    const enviadosPorMesa = new Map();
+    enviados.forEach(it => {
+      const k = String(it.mesa_numero ?? '');
+      if(!enviadosPorMesa.has(k)) enviadosPorMesa.set(k, []);
+      enviadosPorMesa.get(k).push(it);
+    });
+    [...enviadosPorMesa.entries()].forEach(([, arr]) => {
+      enviadosEl.append(cardMesaEnviados(arr));
+    });
 
-    // Listos: agrupar por mesa (más intuitivo para entrega)
+    // Agrupado global por mesa para controlar transición "Preparando -> Listos".
+    // Regla:
+    // - Si una mesa tiene al menos un item en "preparando", toda la mesa se muestra en Preparando.
+    // - Recién cuando no quedan items "preparando" (y tampoco "enviado"), sus items "listo" pasan a Listos.
     const porMesa = new Map();
-    listos.forEach(it => {
+    items.forEach(it => {
       const k = String(it.mesa_numero ?? '');
       if(!porMesa.has(k)) porMesa.set(k, []);
       porMesa.get(k).push(it);
     });
-    [...porMesa.entries()].sort((a,b)=> String(a[0]).localeCompare(String(b[0]))).forEach(([mesa, arr]) => {
+
+    const entriesMesa = [...porMesa.entries()].sort((a,b)=> String(a[0]).localeCompare(String(b[0])));
+
+    entriesMesa.forEach(([, arr]) => {
+      const hasPreparando = arr.some(it => it.estado === 'preparando');
+      if(!hasPreparando) return;
+      const arrPreparandoMesa = arr.filter(it => it.estado === 'preparando' || it.estado === 'listo');
+      preparandoEl.append(cardMesaPreparando(arrPreparandoMesa));
+    });
+
+    entriesMesa.forEach(([mesa, arr]) => {
+      const hasEnviado = arr.some(it => it.estado === 'enviado');
+      const hasPreparando = arr.some(it => it.estado === 'preparando');
+      if(hasEnviado || hasPreparando) return;
+      const arrListos = arr.filter(it => it.estado === 'listo');
+      if(arrListos.length === 0) return;
+      const mesaId = Number(arrListos?.[0]?.mesa_id || 0);
+      const mesero = meseroLabelFromItems(arrListos, arrListos?.[0] || {});
+      const canEntregarMesa = ['mesero', 'administrador'].includes(userRole) && mesaId > 0;
+
       const header = `
         <div class="d-flex align-items-center justify-content-between mt-2">
-          <div class="fw-semibold"><i class="bi bi-grid-3x3-gap me-1"></i>Mesa ${escapeHtml(mesa)}</div>
-          <span class="badge text-bg-success">Listos: ${arr.length}</span>
+          <div class="fw-semibold">
+            <i class="bi bi-grid-3x3-gap me-1"></i>Mesa ${escapeHtml(mesa)}
+            <span class="meta ms-2"><i class="bi bi-person-badge me-1"></i>${mesero}</span>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <span class="badge text-bg-success">Listos: ${arrListos.length}</span>
+            ${canEntregarMesa ? `<button class="btn btn-sm btn-outline-dark" data-action="servido-mesa" data-mesa-id="${mesaId}"><i class="bi bi-box-seam me-1"></i>Entregar mesa</button>` : ''}
+          </div>
         </div>`;
       listosEl.append(header);
-      arr.forEach(it => listosEl.append(cardItem(it)));
+      arrListos.forEach(it => listosEl.append(cardItem(it)));
     });
 
     setEmpty('emptyEnviados', enviados.length === 0);
-    setEmpty('emptyPreparando', preparando.length === 0);
-    setEmpty('emptyListos', listos.length === 0);
+    setEmpty('emptyPreparando', $.trim(preparandoEl.html()).length === 0);
+    setEmpty('emptyListos', $.trim(listosEl.html()).length === 0);
 
     // Entregados: render simple (ya viene ordenado por fecha desc desde el backend)
     entregadosFiltrados.forEach(it => entregadosEl.append(cardItem(it)));
@@ -268,6 +436,24 @@ $(function(){
     await fetch(`/api/cocina/item/${id}/estado`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ estado:'preparando' }) });
     await cargarCola();
   });
+  $(document).on('click','[data-action="prep-mesa"]', async function(){
+    const mesaId = String(this.dataset.mesaId || '').trim();
+    if(!mesaId) return;
+    const resp = await fetch(`/api/cocina/mesa/${encodeURIComponent(mesaId)}/preparar`, {
+      method:'PUT',
+      headers:{'Content-Type':'application/json'}
+    });
+    const data = await resp.json().catch(() => ({}));
+    if(!resp.ok){
+      if (window.Swal && typeof window.Swal.fire === 'function') {
+        await window.Swal.fire({ icon:'error', title:'No se pudo preparar la mesa', text: String(data?.error || 'Error') });
+      } else {
+        alert(String(data?.error || 'No se pudo preparar la mesa'));
+      }
+      return;
+    }
+    await cargarCola();
+  });
   $(document).on('click','[data-action="listo"]', async function(){
     const id = this.dataset.id;
     await fetch(`/api/cocina/item/${id}/estado`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ estado:'listo' }) });
@@ -278,6 +464,26 @@ $(function(){
     const id = this.dataset.id;
     await fetch(`/api/mesas/items/${id}/estado`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ estado:'servido' }) });
     await cargarCola();
+    await aplicarFiltrosHistorico();
+  });
+  $(document).on('click','[data-action="servido-mesa"]', async function(){
+    const mesaId = String(this.dataset.mesaId || '').trim();
+    if(!mesaId) return;
+    const resp = await fetch(`/api/mesas/${encodeURIComponent(mesaId)}/entregar`, {
+      method:'PUT',
+      headers:{'Content-Type':'application/json'}
+    });
+    const data = await resp.json().catch(() => ({}));
+    if(!resp.ok){
+      if (window.Swal && typeof window.Swal.fire === 'function') {
+        await window.Swal.fire({ icon:'error', title:'No se pudo entregar la mesa', text: String(data?.error || 'Error') });
+      } else {
+        alert(String(data?.error || 'No se pudo entregar la mesa'));
+      }
+      return;
+    }
+    await cargarCola();
+    await aplicarFiltrosHistorico();
   });
 
   $(document).on('click','[data-action="cancelar"]', async function(){
