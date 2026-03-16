@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Competencia - dignita.tech</title>
+    <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/theme.css">
+</head>
+<body>
+    <%- include('partials/sidebar') %>
+    <div class="dg-main">
+    <main class="flex-grow-1">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h4 class="fw-bold mb-1"><i class="bi bi-binoculars-fill me-2" style="color:var(--dg-primary);"></i>Competencia</h4>
+                <p class="text-muted small mb-0">Analiza y haz seguimiento a tus competidores</p>
+            </div>
+        </div>
+
+        <!-- Add Competitor Form -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="fw-bold mb-0"><i class="bi bi-plus-circle me-2"></i>Agregar competidor</h6>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label small fw-semibold">Nombre del negocio</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-shop"></i></span>
+                            <input type="text" class="form-control" id="compNombre" placeholder="Ej: Restaurante XYZ">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold">Sitio web o Google Maps</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-link-45deg"></i></span>
+                            <input type="url" class="form-control" id="compUrl" placeholder="https://...">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label small fw-semibold">Notas</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-pencil"></i></span>
+                            <input type="text" class="form-control" id="compNotas" placeholder="Observaciones...">
+                        </div>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button class="btn btn-primary w-100" id="btnAgregarComp"><i class="bi bi-plus-lg me-1"></i>Agregar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Competitors Table -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold mb-0"><i class="bi bi-list-ul me-2"></i>Lista de competidores</h6>
+                <span class="badge" style="background:var(--dg-primary);color:#fff;" id="compCount">0</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th style="width:5%;">#</th>
+                                <th style="width:25%;">Nombre</th>
+                                <th style="width:30%;">Sitio web / Maps</th>
+                                <th style="width:25%;">Notas</th>
+                                <th style="width:15%;" class="text-end">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="compTableBody">
+                            <tr id="compEmptyRow">
+                                <td colspan="5" class="text-center text-muted py-4">
+                                    <i class="bi bi-inbox" style="font-size:2rem;"></i>
+                                    <p class="mb-0 mt-2">No hay competidores registrados</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    </main>
+    <%- include('partials/footer') %>
+    </div>
+
+    <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="/vendor/sweetalert2/sweetalert2.all.min.js"></script>
+    <script>
+    (function(){
+        var KEY = 'dg-competitors';
+        var competitors = [];
+        try { competitors = JSON.parse(localStorage.getItem(KEY)) || []; } catch(e){}
+
+        function save() {
+            localStorage.setItem(KEY, JSON.stringify(competitors));
+        }
+
+        function render() {
+            var tbody = document.getElementById('compTableBody');
+            var countBadge = document.getElementById('compCount');
+            countBadge.textContent = competitors.length;
+
+            if (competitors.length === 0) {
+                tbody.innerHTML = '<tr id="compEmptyRow"><td colspan="5" class="text-center text-muted py-4"><i class="bi bi-inbox" style="font-size:2rem;"></i><p class="mb-0 mt-2">No hay competidores registrados</p></td></tr>';
+                return;
+            }
+
+            var html = '';
+            competitors.forEach(function(c, i) {
+                var urlDisplay = c.url ? '<a href="' + c.url + '" target="_blank" class="text-decoration-none"><i class="bi bi-box-arrow-up-right me-1"></i>' + (c.url.length > 40 ? c.url.substring(0, 40) + '...' : c.url) + '</a>' : '<span class="text-muted">-</span>';
+                html += '<tr>';
+                html += '<td><span class="badge" style="background:var(--dg-primary);color:#fff;">' + (i + 1) + '</span></td>';
+                html += '<td class="fw-semibold">' + escapeHtml(c.nombre) + '</td>';
+                html += '<td>' + urlDisplay + '</td>';
+                html += '<td><small class="text-muted">' + escapeHtml(c.notas || '-') + '</small></td>';
+                html += '<td class="text-end">';
+                if (c.url) html += '<a href="' + c.url + '" target="_blank" class="btn btn-sm btn-outline-primary me-1" title="Visitar"><i class="bi bi-globe"></i></a>';
+                html += '<button class="btn btn-sm btn-outline-danger btn-remove-comp" data-index="' + i + '" title="Eliminar"><i class="bi bi-trash"></i></button>';
+                html += '</td>';
+                html += '</tr>';
+            });
+            tbody.innerHTML = html;
+
+            // Bind remove buttons
+            document.querySelectorAll('.btn-remove-comp').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var idx = parseInt(this.getAttribute('data-index'));
+                    Swal.fire({
+                        title: 'Eliminar competidor',
+                        text: 'Deseas eliminar a "' + competitors[idx].nombre + '"?',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Si, eliminar',
+                        cancelButtonText: 'Cancelar'
+                    }).then(function(result) {
+                        if (result.isConfirmed) {
+                            competitors.splice(idx, 1);
+                            save();
+                            render();
+                            Swal.fire({icon:'success',title:'Eliminado',timer:1500,showConfirmButton:false});
+                        }
+                    });
+                });
+            });
+        }
+
+        function escapeHtml(str) {
+            var div = document.createElement('div');
+            div.appendChild(document.createTextNode(str));
+            return div.innerHTML;
+        }
+
+        document.getElementById('btnAgregarComp').addEventListener('click', function() {
+            var nombre = document.getElementById('compNombre').value.trim();
+            var url = document.getElementById('compUrl').value.trim();
+            var notas = document.getElementById('compNotas').value.trim();
+
+            if (!nombre) {
+                Swal.fire({icon:'warning',title:'Nombre requerido',text:'Ingresa el nombre del competidor',timer:2000,showConfirmButton:false});
+                return;
+            }
+
+            competitors.push({ nombre: nombre, url: url, notas: notas, fecha: new Date().toISOString() });
+            save();
+            render();
+
+            document.getElementById('compNombre').value = '';
+            document.getElementById('compUrl').value = '';
+            document.getElementById('compNotas').value = '';
+
+            Swal.fire({icon:'success',title:'Agregado',text:'Competidor registrado correctamente',timer:1500,showConfirmButton:false});
+        });
+
+        render();
+    })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Redes Sociales - dignita.tech</title>
+    <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/theme.css">
+</head>
+<body>
+    <%- include('partials/sidebar') %>
+    <div class="dg-main">
+    <main class="flex-grow-1">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h4 class="fw-bold mb-1"><i class="bi bi-share-fill me-2" style="color:var(--dg-primary);"></i>Redes Sociales</h4>
+                <p class="text-muted small mb-0">Conecta y gestiona las redes sociales de tu restaurante</p>
+            </div>
+        </div>
+
+        <div class="row g-4" id="socialCards">
+            <!-- Facebook -->
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <div style="width:48px;height:48px;background:linear-gradient(135deg,#1877f2,#0d65d9);border-radius:.875rem;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.3rem;"><i class="bi bi-facebook"></i></div>
+                            <div>
+                                <h6 class="fw-bold mb-0">Facebook</h6>
+                                <small class="text-muted">Pagina del restaurante</small>
+                            </div>
+                            <span class="badge ms-auto" id="badge-facebook" style="background:rgba(100,116,139,0.1);color:#64748b;">Sin conectar</span>
+                        </div>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-link-45deg"></i></span>
+                            <input type="url" class="form-control social-input" data-network="facebook" placeholder="https://facebook.com/tu-pagina">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Instagram -->
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <div style="width:48px;height:48px;background:linear-gradient(135deg,#e1306c,#c13584,#833ab4);border-radius:.875rem;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.3rem;"><i class="bi bi-instagram"></i></div>
+                            <div>
+                                <h6 class="fw-bold mb-0">Instagram</h6>
+                                <small class="text-muted">Perfil del restaurante</small>
+                            </div>
+                            <span class="badge ms-auto" id="badge-instagram" style="background:rgba(100,116,139,0.1);color:#64748b;">Sin conectar</span>
+                        </div>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-link-45deg"></i></span>
+                            <input type="url" class="form-control social-input" data-network="instagram" placeholder="https://instagram.com/tu-perfil">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- TikTok -->
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <div style="width:48px;height:48px;background:linear-gradient(135deg,#010101,#25f4ee);border-radius:.875rem;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.3rem;"><i class="bi bi-tiktok"></i></div>
+                            <div>
+                                <h6 class="fw-bold mb-0">TikTok</h6>
+                                <small class="text-muted">Videos y reels</small>
+                            </div>
+                            <span class="badge ms-auto" id="badge-tiktok" style="background:rgba(100,116,139,0.1);color:#64748b;">Sin conectar</span>
+                        </div>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-link-45deg"></i></span>
+                            <input type="url" class="form-control social-input" data-network="tiktok" placeholder="https://tiktok.com/@tu-perfil">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- WhatsApp -->
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <div style="width:48px;height:48px;background:linear-gradient(135deg,#25d366,#128c7e);border-radius:.875rem;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.3rem;"><i class="bi bi-whatsapp"></i></div>
+                            <div>
+                                <h6 class="fw-bold mb-0">WhatsApp</h6>
+                                <small class="text-muted">Numero de contacto</small>
+                            </div>
+                            <span class="badge ms-auto" id="badge-whatsapp" style="background:rgba(100,116,139,0.1);color:#64748b;">Sin conectar</span>
+                        </div>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-link-45deg"></i></span>
+                            <input type="text" class="form-control social-input" data-network="whatsapp" placeholder="51 999 999 999">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- YouTube -->
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <div style="width:48px;height:48px;background:linear-gradient(135deg,#ff0000,#cc0000);border-radius:.875rem;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.3rem;"><i class="bi bi-youtube"></i></div>
+                            <div>
+                                <h6 class="fw-bold mb-0">YouTube</h6>
+                                <small class="text-muted">Canal del restaurante</small>
+                            </div>
+                            <span class="badge ms-auto" id="badge-youtube" style="background:rgba(100,116,139,0.1);color:#64748b;">Sin conectar</span>
+                        </div>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-link-45deg"></i></span>
+                            <input type="url" class="form-control social-input" data-network="youtube" placeholder="https://youtube.com/@tu-canal">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Google Maps -->
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <div style="width:48px;height:48px;background:linear-gradient(135deg,#4285f4,#34a853);border-radius:.875rem;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.3rem;"><i class="bi bi-geo-alt-fill"></i></div>
+                            <div>
+                                <h6 class="fw-bold mb-0">Google Maps</h6>
+                                <small class="text-muted">Ubicacion del local</small>
+                            </div>
+                            <span class="badge ms-auto" id="badge-googlemaps" style="background:rgba(100,116,139,0.1);color:#64748b;">Sin conectar</span>
+                        </div>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-link-45deg"></i></span>
+                            <input type="url" class="form-control social-input" data-network="googlemaps" placeholder="https://maps.google.com/...">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-4 d-flex gap-2">
+            <button class="btn btn-primary" id="btnGuardarSocial"><i class="bi bi-save me-1"></i>Guardar todo</button>
+        </div>
+
+        <!-- Preview Section -->
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="fw-bold mb-0"><i class="bi bi-eye me-2"></i>Vista previa de enlaces</h6>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small mb-3">Asi se veran tus redes sociales para los clientes</p>
+                <div class="d-flex flex-wrap gap-3" id="previewLinks">
+                    <span class="text-muted small">Guarda tus redes sociales para ver la vista previa</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    </main>
+    <%- include('partials/footer') %>
+    </div>
+
+    <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="/vendor/sweetalert2/sweetalert2.all.min.js"></script>
+    <script>
+    (function(){
+        var KEY = 'dg-social-links';
+        var saved = {};
+        try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e){}
+
+        var networkMeta = {
+            facebook:   { icon: 'bi-facebook',     color: '#1877f2', label: 'Facebook' },
+            instagram:  { icon: 'bi-instagram',    color: '#e1306c', label: 'Instagram' },
+            tiktok:     { icon: 'bi-tiktok',       color: '#010101', label: 'TikTok' },
+            whatsapp:   { icon: 'bi-whatsapp',     color: '#25d366', label: 'WhatsApp' },
+            youtube:    { icon: 'bi-youtube',      color: '#ff0000', label: 'YouTube' },
+            googlemaps: { icon: 'bi-geo-alt-fill', color: '#4285f4', label: 'Google Maps' }
+        };
+
+        function updatePreview(data) {
+            var container = document.getElementById('previewLinks');
+            var keys = Object.keys(data);
+            if (keys.length === 0) {
+                container.innerHTML = '<span class="text-muted small">Guarda tus redes sociales para ver la vista previa</span>';
+                return;
+            }
+            var html = '';
+            keys.forEach(function(net) {
+                var meta = networkMeta[net];
+                if (!meta) return;
+                var url = data[net];
+                if (net === 'whatsapp') url = 'https://wa.me/' + url.replace(/\D/g, '');
+                html += '<a href="' + url + '" target="_blank" class="btn btn-sm" style="background:' + meta.color + ';color:#fff;border:none;border-radius:.75rem;padding:.5rem 1rem;">';
+                html += '<i class="bi ' + meta.icon + ' me-1"></i>' + meta.label + '</a>';
+            });
+            container.innerHTML = html;
+        }
+
+        // Load saved values
+        document.querySelectorAll('.social-input').forEach(function(input){
+            var net = input.getAttribute('data-network');
+            if (saved[net]) {
+                input.value = saved[net];
+                var badge = document.getElementById('badge-' + net);
+                if (badge) { badge.textContent = 'Conectado'; badge.style.background = 'rgba(16,185,129,0.1)'; badge.style.color = '#059669'; }
+            }
+        });
+        updatePreview(saved);
+
+        document.getElementById('btnGuardarSocial').addEventListener('click', function(){
+            var data = {};
+            document.querySelectorAll('.social-input').forEach(function(input){
+                var net = input.getAttribute('data-network');
+                var val = input.value.trim();
+                if (val) data[net] = val;
+                var badge = document.getElementById('badge-' + net);
+                if (badge) {
+                    if (val) { badge.textContent = 'Conectado'; badge.style.background = 'rgba(16,185,129,0.1)'; badge.style.color = '#059669'; }
+                    else { badge.textContent = 'Sin conectar'; badge.style.background = 'rgba(100,116,139,0.1)'; badge.style.color = '#64748b'; }
+                }
+            });
+            localStorage.setItem(KEY, JSON.stringify(data));
+            updatePreview(data);
+            Swal.fire({icon:'success',title:'Guardado',text:'Redes sociales actualizadas',timer:2000,showConfirmButton:false});
+        });
+    })();
+    </script>
+</body>
+</html>

@@ -153,6 +153,30 @@ app.use('/api/cocina', requireRole(['cocinero', 'mesero', 'administrador']), coc
 app.use('/chat', requireRole('administrador'), chatRoutes);
 app.use('/api/chat', requireRole('administrador'), chatRoutes);
 
+// Redes sociales (admin)
+app.get('/redes-sociales', requireRole('administrador'), (req, res) => res.render('redes-sociales'));
+
+// Competencia (admin)
+app.get('/competencia', requireRole('administrador'), (req, res) => res.render('competencia'));
+
+// Ranking (admin) - with real data
+app.get('/ranking', requireRole('administrador'), async (req, res) => {
+    const stats = { ventasMes: 0, productoEstrella: 'N/A', clientesActivos: 0, ticketPromedio: 0, ventasHoy: 0, topProductos: [] };
+    try {
+        const [[vm]] = await db.query("SELECT COUNT(*) as t, COALESCE(SUM(total),0) as m FROM facturas WHERE fecha >= DATE_SUB(NOW(), INTERVAL 30 DAY)");
+        stats.ventasMes = Number(vm.m).toFixed(2);
+        const [[vh]] = await db.query("SELECT COUNT(*) as t, COALESCE(SUM(total),0) as m FROM facturas WHERE DATE(fecha)=CURDATE()");
+        stats.ventasHoy = Number(vh.m).toFixed(2);
+        stats.ticketPromedio = vm.t > 0 ? (Number(vm.m) / vm.t).toFixed(2) : '0.00';
+        const [[cl]] = await db.query("SELECT COUNT(*) as t FROM clientes");
+        stats.clientesActivos = cl.t;
+        const [tp] = await db.query("SELECT p.nombre, SUM(df.cantidad) as qty, SUM(df.subtotal) as monto FROM detalle_facturas df JOIN productos p ON p.id=df.producto_id WHERE df.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) GROUP BY df.producto_id ORDER BY qty DESC LIMIT 10");
+        stats.topProductos = tp || [];
+        if (tp.length > 0) stats.productoEstrella = tp[0].nombre;
+    } catch (e) { console.error('Ranking stats error:', e.message); }
+    res.render('ranking', { stats });
+});
+
 // Configuración y ventas (admin)
 app.use('/configuracion', requireRole('administrador'), configuracionRoutes);
 app.use('/ventas', requireRole('administrador'), ventasRoutes);
