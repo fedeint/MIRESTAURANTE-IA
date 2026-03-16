@@ -34,10 +34,10 @@ function buildMessages(historial, mensaje) {
     return messages;
 }
 
-// ---- KIMI (Moonshot) provider ----
+// ---- KIMI via OpenRouter (FREE) ----
 async function chatWithKimi(apiKey, systemPrompt, messages) {
     const body = {
-        model: 'kimi-k2',
+        model: 'moonshotai/kimi-k2',
         max_tokens: 1024,
         messages: [
             { role: 'system', content: systemPrompt },
@@ -45,18 +45,20 @@ async function chatWithKimi(apiKey, systemPrompt, messages) {
         ]
     };
 
-    const resp = await fetch('https://api.moonshot.ai/v1/chat/completions', {
+    const resp = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`
+            'Authorization': `Bearer ${apiKey}`,
+            'HTTP-Referer': 'https://restaurante.dignita.tech',
+            'X-Title': 'dignita.tech Restaurant'
         },
         body: JSON.stringify(body)
     });
 
     const data = await resp.json();
     if (!resp.ok) {
-        throw new Error(data?.error?.message || data?.message || `Kimi API error ${resp.status}`);
+        throw new Error(data?.error?.message || data?.message || `OpenRouter API error ${resp.status}`);
     }
 
     return data.choices?.[0]?.message?.content || '';

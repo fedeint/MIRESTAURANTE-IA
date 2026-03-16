@@ -16,74 +16,15 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
                 <h4 class="fw-bold mb-1"><i class="bi bi-binoculars-fill me-2" style="color:var(--dg-primary);"></i>Competencia</h4>
-                <p class="text-muted small mb-0">Analiza y haz seguimiento a tus competidores</p>
+                <p class="text-muted small mb-0">Monitorea a tus competidores: seguidores, likes, publicaciones e historias</p>
             </div>
+            <button class="btn btn-primary" id="btnAgregar"><i class="bi bi-plus-lg me-1"></i>Agregar competidor</button>
         </div>
 
-        <!-- Add Competitor Form -->
-        <div class="card mb-4">
-            <div class="card-header">
-                <h6 class="fw-bold mb-0"><i class="bi bi-plus-circle me-2"></i>Agregar competidor</h6>
-            </div>
-            <div class="card-body">
-                <div class="row g-3">
-                    <div class="col-md-3">
-                        <label class="form-label small fw-semibold">Nombre del negocio</label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="bi bi-shop"></i></span>
-                            <input type="text" class="form-control" id="compNombre" placeholder="Ej: Restaurante XYZ">
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label small fw-semibold">Sitio web o Google Maps</label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="bi bi-link-45deg"></i></span>
-                            <input type="url" class="form-control" id="compUrl" placeholder="https://...">
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <label class="form-label small fw-semibold">Notas</label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="bi bi-pencil"></i></span>
-                            <input type="text" class="form-control" id="compNotas" placeholder="Observaciones...">
-                        </div>
-                    </div>
-                    <div class="col-md-2 d-flex align-items-end">
-                        <button class="btn btn-primary w-100" id="btnAgregarComp"><i class="bi bi-plus-lg me-1"></i>Agregar</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Competitors Table -->
-        <div class="card">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h6 class="fw-bold mb-0"><i class="bi bi-list-ul me-2"></i>Lista de competidores</h6>
-                <span class="badge" style="background:var(--dg-primary);color:#fff;" id="compCount">0</span>
-            </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-hover mb-0">
-                        <thead>
-                            <tr>
-                                <th style="width:5%;">#</th>
-                                <th style="width:25%;">Nombre</th>
-                                <th style="width:30%;">Sitio web / Maps</th>
-                                <th style="width:25%;">Notas</th>
-                                <th style="width:15%;" class="text-end">Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="compTableBody">
-                            <tr id="compEmptyRow">
-                                <td colspan="5" class="text-center text-muted py-4">
-                                    <i class="bi bi-inbox" style="font-size:2rem;"></i>
-                                    <p class="mb-0 mt-2">No hay competidores registrados</p>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+        <div id="competidoresList"></div>
+        <div id="emptyState" class="text-center py-5" style="display:none;">
+            <div style="width:70px;height:70px;background:rgba(99,102,241,0.08);border-radius:1rem;display:inline-flex;align-items:center;justify-content:center;font-size:1.8rem;color:#94a3b8;margin-bottom:1rem;"><i class="bi bi-binoculars"></i></div>
+            <p class="text-muted">No tienes competidores registrados.<br>Agrega uno para empezar a monitorear.</p>
         </div>
     </div>
     </main>
@@ -94,88 +35,119 @@
     <script src="/vendor/sweetalert2/sweetalert2.all.min.js"></script>
     <script>
     (function(){
-        var KEY = 'dg-competitors';
-        var competitors = [];
-        try { competitors = JSON.parse(localStorage.getItem(KEY)) || []; } catch(e){}
+        var KEY = 'dg-competidores';
+        var data = [];
+        try { data = JSON.parse(localStorage.getItem(KEY)) || []; } catch(e){}
 
-        function save() {
-            localStorage.setItem(KEY, JSON.stringify(competitors));
-        }
+        function save(){ localStorage.setItem(KEY, JSON.stringify(data)); }
 
-        function render() {
-            var tbody = document.getElementById('compTableBody');
-            var countBadge = document.getElementById('compCount');
-            countBadge.textContent = competitors.length;
+        function render(){
+            var list = document.getElementById('competidoresList');
+            var empty = document.getElementById('emptyState');
+            list.innerHTML = '';
+            empty.style.display = data.length === 0 ? 'block' : 'none';
 
-            if (competitors.length === 0) {
-                tbody.innerHTML = '<tr id="compEmptyRow"><td colspan="5" class="text-center text-muted py-4"><i class="bi bi-inbox" style="font-size:2rem;"></i><p class="mb-0 mt-2">No hay competidores registrados</p></td></tr>';
-                return;
-            }
+            data.forEach(function(comp, idx){
+                var card = document.createElement('div');
+                card.className = 'card mb-3';
+                card.innerHTML = `
+                    <div class="card-body">
+                        <div class="d-flex align-items-center gap-3 mb-3">
+                            <div style="width:48px;height:48px;background:linear-gradient(135deg,#f43f5e,#e11d48);border-radius:.875rem;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2rem;flex-shrink:0;"><i class="bi bi-shop"></i></div>
+                            <div class="flex-grow-1">
+                                <h6 class="fw-bold mb-0">${comp.nombre||'Competidor '+(idx+1)}</h6>
+                                <small class="text-muted">${comp.instagram||'Sin Instagram'}</small>
+                            </div>
+                            <button class="btn btn-outline-danger btn-sm" data-del="${idx}" title="Eliminar"><i class="bi bi-trash"></i></button>
+                        </div>
 
-            var html = '';
-            competitors.forEach(function(c, i) {
-                var urlDisplay = c.url ? '<a href="' + c.url + '" target="_blank" class="text-decoration-none"><i class="bi bi-box-arrow-up-right me-1"></i>' + (c.url.length > 40 ? c.url.substring(0, 40) + '...' : c.url) + '</a>' : '<span class="text-muted">-</span>';
-                html += '<tr>';
-                html += '<td><span class="badge" style="background:var(--dg-primary);color:#fff;">' + (i + 1) + '</span></td>';
-                html += '<td class="fw-semibold">' + escapeHtml(c.nombre) + '</td>';
-                html += '<td>' + urlDisplay + '</td>';
-                html += '<td><small class="text-muted">' + escapeHtml(c.notas || '-') + '</small></td>';
-                html += '<td class="text-end">';
-                if (c.url) html += '<a href="' + c.url + '" target="_blank" class="btn btn-sm btn-outline-primary me-1" title="Visitar"><i class="bi bi-globe"></i></a>';
-                html += '<button class="btn btn-sm btn-outline-danger btn-remove-comp" data-index="' + i + '" title="Eliminar"><i class="bi bi-trash"></i></button>';
-                html += '</td>';
-                html += '</tr>';
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold">Nombre del restaurante</label>
+                                <input type="text" class="form-control comp-field" data-idx="${idx}" data-key="nombre" value="${comp.nombre||''}" placeholder="Nombre">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold"><i class="bi bi-instagram me-1"></i>Instagram</label>
+                                <input type="text" class="form-control comp-field" data-idx="${idx}" data-key="instagram" value="${comp.instagram||''}" placeholder="@competidor">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small fw-bold"><i class="bi bi-facebook me-1"></i>Facebook</label>
+                                <input type="text" class="form-control comp-field" data-idx="${idx}" data-key="facebook" value="${comp.facebook||''}" placeholder="facebook.com/...">
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-6 col-md-3">
+                                <label class="form-label small fw-bold"><i class="bi bi-people-fill me-1"></i>Seguidores</label>
+                                <input type="text" class="form-control comp-field" data-idx="${idx}" data-key="seguidores" value="${comp.seguidores||''}" placeholder="Ej: 5,200">
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <label class="form-label small fw-bold"><i class="bi bi-heart-fill me-1"></i>Likes promedio</label>
+                                <input type="text" class="form-control comp-field" data-idx="${idx}" data-key="likes" value="${comp.likes||''}" placeholder="Ej: 120">
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <label class="form-label small fw-bold"><i class="bi bi-camera-reels me-1"></i>Historias/dia</label>
+                                <input type="text" class="form-control comp-field" data-idx="${idx}" data-key="historias" value="${comp.historias||''}" placeholder="Ej: 3">
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <label class="form-label small fw-bold"><i class="bi bi-tiktok me-1"></i>TikTok</label>
+                                <input type="text" class="form-control comp-field" data-idx="${idx}" data-key="tiktok" value="${comp.tiktok||''}" placeholder="@tiktok">
+                            </div>
+                        </div>
+
+                        <div class="row g-2">
+                            <div class="col-12">
+                                <label class="form-label small fw-bold"><i class="bi bi-clock-history me-1"></i>Ultimas 3 publicaciones</label>
+                            </div>
+                            <div class="col-md-4">
+                                <input type="text" class="form-control form-control-sm comp-field" data-idx="${idx}" data-key="post0" value="${(comp.posts&&comp.posts[0])||''}" placeholder="1ra publicacion">
+                            </div>
+                            <div class="col-md-4">
+                                <input type="text" class="form-control form-control-sm comp-field" data-idx="${idx}" data-key="post1" value="${(comp.posts&&comp.posts[1])||''}" placeholder="2da publicacion">
+                            </div>
+                            <div class="col-md-4">
+                                <input type="text" class="form-control form-control-sm comp-field" data-idx="${idx}" data-key="post2" value="${(comp.posts&&comp.posts[2])||''}" placeholder="3ra publicacion">
+                            </div>
+                        </div>
+                    </div>
+                `;
+                list.appendChild(card);
             });
-            tbody.innerHTML = html;
 
-            // Bind remove buttons
-            document.querySelectorAll('.btn-remove-comp').forEach(function(btn) {
-                btn.addEventListener('click', function() {
-                    var idx = parseInt(this.getAttribute('data-index'));
-                    Swal.fire({
-                        title: 'Eliminar competidor',
-                        text: 'Deseas eliminar a "' + competitors[idx].nombre + '"?',
-                        icon: 'warning',
-                        showCancelButton: true,
-                        confirmButtonText: 'Si, eliminar',
-                        cancelButtonText: 'Cancelar'
-                    }).then(function(result) {
-                        if (result.isConfirmed) {
-                            competitors.splice(idx, 1);
-                            save();
-                            render();
-                            Swal.fire({icon:'success',title:'Eliminado',timer:1500,showConfirmButton:false});
-                        }
+            // Auto-save on input change
+            document.querySelectorAll('.comp-field').forEach(function(input){
+                input.addEventListener('change', function(){
+                    var idx = parseInt(this.getAttribute('data-idx'));
+                    var key = this.getAttribute('data-key');
+                    if (key.startsWith('post')) {
+                        var pi = parseInt(key.replace('post',''));
+                        if (!data[idx].posts) data[idx].posts = ['','',''];
+                        data[idx].posts[pi] = this.value.trim();
+                    } else {
+                        data[idx][key] = this.value.trim();
+                    }
+                    save();
+                });
+            });
+
+            // Delete buttons
+            document.querySelectorAll('[data-del]').forEach(function(btn){
+                btn.addEventListener('click', function(){
+                    var idx = parseInt(this.getAttribute('data-del'));
+                    Swal.fire({title:'Eliminar competidor?',text:data[idx].nombre||'Este competidor',icon:'warning',showCancelButton:true,confirmButtonText:'Eliminar',cancelButtonText:'Cancelar'}).then(function(r){
+                        if(r.isConfirmed){ data.splice(idx,1); save(); render(); }
                     });
                 });
             });
         }
 
-        function escapeHtml(str) {
-            var div = document.createElement('div');
-            div.appendChild(document.createTextNode(str));
-            return div.innerHTML;
-        }
-
-        document.getElementById('btnAgregarComp').addEventListener('click', function() {
-            var nombre = document.getElementById('compNombre').value.trim();
-            var url = document.getElementById('compUrl').value.trim();
-            var notas = document.getElementById('compNotas').value.trim();
-
-            if (!nombre) {
-                Swal.fire({icon:'warning',title:'Nombre requerido',text:'Ingresa el nombre del competidor',timer:2000,showConfirmButton:false});
-                return;
-            }
-
-            competitors.push({ nombre: nombre, url: url, notas: notas, fecha: new Date().toISOString() });
-            save();
-            render();
-
-            document.getElementById('compNombre').value = '';
-            document.getElementById('compUrl').value = '';
-            document.getElementById('compNotas').value = '';
-
-            Swal.fire({icon:'success',title:'Agregado',text:'Competidor registrado correctamente',timer:1500,showConfirmButton:false});
+        document.getElementById('btnAgregar').addEventListener('click', function(){
+            Swal.fire({title:'Nombre del competidor',input:'text',inputPlaceholder:'Ej: Restaurante La Esquina',showCancelButton:true,confirmButtonText:'Agregar'}).then(function(r){
+                if(r.isConfirmed && r.value){
+                    data.push({nombre:r.value.trim(),instagram:'',facebook:'',tiktok:'',seguidores:'',likes:'',historias:'',posts:['','','']});
+                    save(); render();
+                }
+            });
         });
 
         render();

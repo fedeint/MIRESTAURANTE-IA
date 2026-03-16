@@ -15,8 +15,8 @@
     <div class="container">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-                <h4 class="fw-bold mb-1"><i class="bi bi-trophy-fill me-2" style="color:var(--dg-primary);"></i>Ranking</h4>
-                <p class="text-muted small mb-0">Metricas y rendimiento de tu restaurante</p>
+                <h4 class="fw-bold mb-1"><i class="bi bi-trophy-fill me-2" style="color:var(--dg-primary);"></i>Ranking por Producto</h4>
+                <p class="text-muted small mb-0">Rendimiento de cada producto: ventas, cantidades y posicion (ultimos 30 dias)</p>
             </div>
         </div>
 
@@ -159,8 +159,8 @@
             html += '<tr>';
             html += '<td>' + rankBadge + '</td>';
             html += '<td class="fw-semibold">' + (p.nombre || p.name || '-') + '</td>';
-            html += '<td class="text-center"><span class="badge" style="background:rgba(99,102,241,0.1);color:#6366f1;font-size:.85rem;">' + (p.cantidad || p.qty || 0) + '</span></td>';
-            html += '<td class="text-end fw-semibold">S/ ' + (p.total || 0).toFixed(2) + '</td>';
+            html += '<td class="text-center"><span class="badge" style="background:rgba(99,102,241,0.1);color:#6366f1;font-size:.85rem;">' + (p.qty || p.cantidad || 0) + '</span></td>';
+            html += '<td class="text-end fw-semibold">S/ ' + Number(p.monto || p.total || 0).toFixed(2) + '</td>';
             html += '</tr>';
         });
         tbody.innerHTML = html;
