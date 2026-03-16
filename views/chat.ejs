@@ -278,7 +278,7 @@
                         </button>
                     </div>
                     <div class="text-center mt-2">
-                        <span class="text-muted" style="font-size:0.72rem;">Powered by Claude AI &middot; Los datos se consultan en tiempo real de tu base de datos</span>
+                        <span class="text-muted" id="chatProvider" style="font-size:0.72rem;">Powered by Kimi AI (Moonshot) &middot; Los datos se consultan en tiempo real de tu base de datos</span>
                     </div>
                 </div>
             </div>
@@ -378,6 +378,13 @@
 
                 addMessage('assistant', data.respuesta);
                 historial.push({ role: 'assistant', content: data.respuesta });
+
+                // Update provider badge
+                var prov = document.getElementById('chatProvider');
+                if (prov && data.provider) {
+                    var name = data.provider === 'kimi' ? 'Kimi AI (Moonshot)' : 'Claude AI (Anthropic)';
+                    prov.textContent = 'Powered by ' + name + ' \u00B7 Datos en tiempo real de tu BD';
+                }
             } catch (err) {
                 hideTyping();
                 addMessage('error', err.message || 'Error al comunicarse con la IA', true);

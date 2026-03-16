@@ -1,18 +1,93 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
-const Anthropic = require('@anthropic-ai/sdk');
 
 // GET /chat - Render chat view
 router.get('/', (req, res) => {
     res.render('chat');
 });
 
+// System prompt builder
+function buildSystemPrompt(contexto) {
+    return `Eres el asistente de IA del restaurante "dignita.tech". Ayudas al administrador con preguntas sobre el negocio, productos, ventas, clientes y operaciones.
+
+Responde en español, de forma concisa y util. Usa los datos reales del negocio que se te proporcionan.
+
+DATOS ACTUALES DEL NEGOCIO:
+${contexto}
+
+Si no tienes datos suficientes para responder algo especifico, dilo claramente. Puedes dar sugerencias y recomendaciones basadas en los datos disponibles.`;
+}
+
+// Build conversation messages from history
+function buildMessages(historial, mensaje) {
+    const messages = [];
+    if (Array.isArray(historial)) {
+        historial.slice(-20).forEach(m => {
+            messages.push({
+                role: m.role === 'assistant' ? 'assistant' : 'user',
+                content: String(m.content || '')
+            });
+        });
+    }
+    messages.push({ role: 'user', content: String(mensaje).trim() });
+    return messages;
+}
+
+// ---- KIMI (Moonshot) provider ----
+async function chatWithKimi(apiKey, systemPrompt, messages) {
+    const body = {
+        model: 'kimi-k2',
+        max_tokens: 1024,
+        messages: [
+            { role: 'system', content: systemPrompt },
+            ...messages
+        ]
+    };
+
+    const resp = await fetch('https://api.moonshot.ai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify(body)
+    });
+
+    const data = await resp.json();
+    if (!resp.ok) {
+        throw new Error(data?.error?.message || data?.message || `Kimi API error ${resp.status}`);
+    }
+
+    return data.choices?.[0]?.message?.content || '';
+}
+
+// ---- Anthropic (Claude) provider ----
+async function chatWithClaude(apiKey, systemPrompt, messages) {
+    const Anthropic = require('@anthropic-ai/sdk');
+    const client = new Anthropic({ apiKey });
+
+    const response = await client.messages.create({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1024,
+        system: systemPrompt,
+        messages
+    });
+
+    return response.content
+        .filter(b => b.type === 'text')
+        .map(b => b.text)
+        .join('\n');
+}
+
 // POST /api/chat - Send message to AI
+// Priority: KIMI_API_KEY > ANTHROPIC_API_KEY
 router.post('/', async (req, res) => {
-    const apiKey = process.env.ANTHROPIC_API_KEY;
-    if (!apiKey) {
-        return res.status(500).json({ error: 'ANTHROPIC_API_KEY no configurada en .env' });
+    const kimiKey = process.env.KIMI_API_KEY;
+    const anthropicKey = process.env.ANTHROPIC_API_KEY;
+
+    if (!kimiKey && !anthropicKey) {
+        return res.status(500).json({ error: 'Configura KIMI_API_KEY o ANTHROPIC_API_KEY en .env' });
     }
 
     const { mensaje, historial } = req.body;
@@ -21,43 +96,18 @@ router.post('/', async (req, res) => {
     }
 
     try {
-        // Gather business context from database
         const contexto = await obtenerContextoNegocio();
+        const systemPrompt = buildSystemPrompt(contexto);
+        const messages = buildMessages(historial, mensaje);
 
-        const client = new Anthropic({ apiKey });
-
-        // Build messages from history
-        const messages = [];
-        if (Array.isArray(historial)) {
-            historial.slice(-20).forEach(m => {
-                messages.push({
-                    role: m.role === 'assistant' ? 'assistant' : 'user',
-                    content: String(m.content || '')
-                });
-            });
+        let respuesta;
+        if (kimiKey) {
+            respuesta = await chatWithKimi(kimiKey, systemPrompt, messages);
+        } else {
+            respuesta = await chatWithClaude(anthropicKey, systemPrompt, messages);
         }
-        messages.push({ role: 'user', content: String(mensaje).trim() });
 
-        const response = await client.messages.create({
-            model: 'claude-sonnet-4-20250514',
-            max_tokens: 1024,
-            system: `Eres el asistente de IA del restaurante "dignita.tech". Ayudas al administrador con preguntas sobre el negocio, productos, ventas, clientes y operaciones.
-
-Responde en español, de forma concisa y util. Usa los datos reales del negocio que se te proporcionan.
-
-DATOS ACTUALES DEL NEGOCIO:
-${contexto}
-
-Si no tienes datos suficientes para responder algo especifico, dilo claramente. Puedes dar sugerencias y recomendaciones basadas en los datos disponibles.`,
-            messages
-        });
-
-        const respuesta = response.content
-            .filter(b => b.type === 'text')
-            .map(b => b.text)
-            .join('\n');
-
-        res.json({ respuesta });
+        res.json({ respuesta, provider: kimiKey ? 'kimi' : 'claude' });
     } catch (error) {
         console.error('Error en chat IA:', error);
         const msg = error?.message || 'Error al comunicarse con la IA';
