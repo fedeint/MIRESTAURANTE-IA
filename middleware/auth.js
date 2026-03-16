@@ -25,6 +25,8 @@ function attachUserToLocals(req, res, next) {
 function requireAuth(req, res, next) {
   if (req.session && req.session.user) return next();
   if (wantsJson(req)) return res.status(401).json({ error: 'No autenticado' });
+  // Redirect to landing for root path, login for everything else
+  if (req.path === '/') return res.redirect('/landing');
   return res.redirect('/login');
 }
 

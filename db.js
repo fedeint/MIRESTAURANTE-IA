@@ -55,6 +55,12 @@ async function ensureSchema() {
                  MODIFY forma_pago ENUM('efectivo','transferencia','tarjeta','mixto') NOT NULL DEFAULT 'efectivo'`
             );
         }
+        // Agregar columna imagen a productos (base64)
+        try {
+            await pool.query(`ALTER TABLE productos ADD COLUMN imagen LONGTEXT NULL`);
+        } catch (_ignore) {
+            // La columna ya existe, ignorar
+        }
     } catch (err) {
         // No bloqueamos el arranque si falla el "auto-migrate", pero lo dejamos en consola.
         console.error('ensureSchema() falló:', err);

@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>restaurante.dignita.tech - Sistema de Gestion de Restaurantes</title>
+  <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{font-family:'Inter',sans-serif;color:#1e293b;overflow-x:hidden;background:#fff;}
+
+    /* HERO */
+    .hero{min-height:100vh;display:flex;align-items:center;position:relative;overflow:hidden;background:linear-gradient(135deg,#0f0a2e 0%,#1e1b4b 40%,#312e81 70%,#1e3a5f 100%);}
+    .hero::before{content:'';position:absolute;top:-20%;right:-10%;width:700px;height:700px;background:radial-gradient(circle,rgba(99,102,241,0.25),transparent 70%);border-radius:50%;animation:heroFloat 15s ease-in-out infinite;}
+    .hero::after{content:'';position:absolute;bottom:-15%;left:-5%;width:500px;height:500px;background:radial-gradient(circle,rgba(6,182,212,0.2),transparent 70%);border-radius:50%;animation:heroFloat 20s ease-in-out infinite reverse;}
+    @keyframes heroFloat{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(30px,-30px) scale(1.05)}}
+
+    .hero-content{position:relative;z-index:2;}
+    .hero-badge{display:inline-flex;align-items:center;gap:.5rem;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:2rem;padding:.4rem 1rem;font-size:.85rem;color:rgba(255,255,255,0.8);backdrop-filter:blur(8px);margin-bottom:1.5rem;}
+    .hero-badge i{color:#22d3ee;}
+    .hero h1{font-size:clamp(2.5rem,5vw,4rem);font-weight:900;color:#fff;letter-spacing:-0.04em;line-height:1.1;margin-bottom:1rem;}
+    .hero h1 span{background:linear-gradient(135deg,#818cf8,#22d3ee);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+    .hero p{font-size:1.15rem;color:rgba(255,255,255,0.65);max-width:500px;line-height:1.7;margin-bottom:2rem;}
+    .hero-btns{display:flex;gap:1rem;flex-wrap:wrap;}
+    .hero-btns .btn-hero{padding:.85rem 2rem;border-radius:.75rem;font-weight:700;font-size:1rem;transition:all .3s ease;text-decoration:none;}
+    .btn-hero-primary{background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;border:none;box-shadow:0 8px 24px rgba(99,102,241,0.4);}
+    .btn-hero-primary:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(99,102,241,0.5);color:#fff;}
+    .btn-hero-outline{background:transparent;color:#fff;border:1.5px solid rgba(255,255,255,0.2);backdrop-filter:blur(8px);}
+    .btn-hero-outline:hover{background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.35);color:#fff;transform:translateY(-2px);}
+
+    /* HERO VISUAL */
+    .hero-visual{position:relative;z-index:2;}
+    .hero-mockup{background:rgba(255,255,255,0.06);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.1);border-radius:1.25rem;padding:1.5rem;box-shadow:0 24px 80px rgba(0,0,0,0.3);}
+    .mockup-bar{display:flex;gap:.4rem;margin-bottom:1rem;}
+    .mockup-dot{width:10px;height:10px;border-radius:50%;}
+    .mockup-dot.r{background:#ef4444}.mockup-dot.y{background:#f59e0b}.mockup-dot.g{background:#10b981}
+    .mockup-content{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;}
+    .mockup-card{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:.75rem;padding:1rem;color:rgba(255,255,255,0.7);font-size:.8rem;}
+    .mockup-card .mc-icon{font-size:1.5rem;margin-bottom:.5rem;}
+    .mockup-card .mc-title{font-weight:700;color:#fff;font-size:.9rem;margin-bottom:.25rem;}
+    .mockup-card .mc-val{font-size:1.25rem;font-weight:800;color:#22d3ee;}
+
+    /* FEATURES */
+    .features{padding:5rem 0;background:#f8fafc;}
+    .section-label{display:inline-flex;align-items:center;gap:.5rem;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.15);border-radius:2rem;padding:.35rem 1rem;font-size:.8rem;font-weight:600;color:#6366f1;margin-bottom:1rem;}
+    .section-title{font-size:2.25rem;font-weight:800;letter-spacing:-0.03em;color:#1e293b;margin-bottom:.75rem;}
+    .section-subtitle{color:#64748b;font-size:1.05rem;max-width:550px;}
+    .feature-card{background:#fff;border:1px solid rgba(0,0,0,0.04);border-radius:1.25rem;padding:2rem;transition:all .3s ease;height:100%;}
+    .feature-card:hover{transform:translateY(-4px);box-shadow:0 12px 40px rgba(0,0,0,0.08);}
+    .feature-icon{width:52px;height:52px;border-radius:.875rem;display:flex;align-items:center;justify-content:center;font-size:1.35rem;margin-bottom:1.25rem;color:#fff;}
+    .fi-purple{background:linear-gradient(135deg,#6366f1,#4f46e5);}
+    .fi-cyan{background:linear-gradient(135deg,#06b6d4,#0891b2);}
+    .fi-green{background:linear-gradient(135deg,#10b981,#059669);}
+    .fi-orange{background:linear-gradient(135deg,#f59e0b,#d97706);}
+    .fi-rose{background:linear-gradient(135deg,#f43f5e,#e11d48);}
+    .fi-blue{background:linear-gradient(135deg,#3b82f6,#2563eb);}
+    .feature-card h5{font-weight:700;font-size:1.1rem;margin-bottom:.5rem;color:#1e293b;}
+    .feature-card p{color:#64748b;font-size:.9rem;line-height:1.6;margin:0;}
+
+    /* DISHES */
+    .dishes{padding:5rem 0;background:#fff;}
+    .dish-card{position:relative;border-radius:1.25rem;overflow:hidden;aspect-ratio:4/3;cursor:pointer;}
+    .dish-card img{width:100%;height:100%;object-fit:cover;transition:transform .5s ease;}
+    .dish-card:hover img{transform:scale(1.08);}
+    .dish-overlay{position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,0.55) 0%,transparent 60%);display:flex;align-items:flex-end;padding:1rem;opacity:0;transition:opacity .3s ease;}
+    .dish-card:hover .dish-overlay{opacity:1;}
+    .dish-tag{background:rgba(255,255,255,0.15);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.2);color:#fff;font-size:.8rem;font-weight:600;padding:.3rem .85rem;border-radius:2rem;}
+
+    /* STATS */
+    .stats{padding:4rem 0;background:#fff;}
+    .stat-item{text-align:center;padding:1.5rem;}
+    .stat-num{font-size:2.5rem;font-weight:900;letter-spacing:-0.04em;background:linear-gradient(135deg,#6366f1,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+    .stat-label{color:#64748b;font-size:.9rem;font-weight:500;margin-top:.25rem;}
+
+    /* CTA */
+    .cta{padding:5rem 0;background:linear-gradient(135deg,#0f0a2e,#1e1b4b,#312e81);position:relative;overflow:hidden;}
+    .cta::before{content:'';position:absolute;top:-50%;right:-20%;width:600px;height:600px;background:radial-gradient(circle,rgba(99,102,241,0.15),transparent 70%);border-radius:50%;}
+    .cta h2{font-size:2rem;font-weight:800;color:#fff;letter-spacing:-0.03em;margin-bottom:.75rem;}
+    .cta p{color:rgba(255,255,255,0.6);font-size:1.05rem;margin-bottom:1.5rem;}
+
+    /* FOOTER */
+    .landing-footer{padding:2rem 0;background:#0f0a2e;border-top:1px solid rgba(255,255,255,0.06);}
+    .landing-footer span{color:rgba(255,255,255,0.4);font-size:.85rem;}
+    .landing-footer .brand{color:rgba(255,255,255,0.8);font-weight:700;}
+    .landing-footer .accent{color:#22d3ee;}
+
+    /* Responsive */
+    @media(max-width:768px){
+      .hero{padding:3rem 0;}
+      .hero-visual{margin-top:2.5rem;}
+      .mockup-content{grid-template-columns:1fr;}
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="container">
+      <div class="row align-items-center">
+        <div class="col-lg-6 hero-content">
+          <div class="hero-badge">
+            <i class="bi bi-lightning-charge-fill"></i> Sistema profesional para restaurantes
+          </div>
+          <h1>Gestiona tu restaurante con <span>tecnologia</span></h1>
+          <p>Mesas, cocina, facturacion y mas. Todo desde una interfaz moderna, rapida y facil de usar. Hecho para restaurantes en Peru.</p>
+          <div class="hero-btns">
+            <a href="/login" class="btn-hero btn-hero-primary"><i class="bi bi-box-arrow-in-right me-2"></i>Ingresar al sistema</a>
+            <a href="#features" class="btn-hero btn-hero-outline"><i class="bi bi-arrow-down-short me-1"></i>Ver mas</a>
+          </div>
+        </div>
+        <div class="col-lg-6 hero-visual">
+          <div class="hero-mockup">
+            <div class="mockup-bar">
+              <div class="mockup-dot r"></div>
+              <div class="mockup-dot y"></div>
+              <div class="mockup-dot g"></div>
+            </div>
+            <div class="mockup-content">
+              <div class="mockup-card">
+                <div class="mc-icon"><i class="bi bi-grid-3x3-gap-fill"></i></div>
+                <div class="mc-title">Mesas activas</div>
+                <div class="mc-val">12</div>
+              </div>
+              <div class="mockup-card">
+                <div class="mc-icon"><i class="bi bi-fire"></i></div>
+                <div class="mc-title">En cocina</div>
+                <div class="mc-val">8</div>
+              </div>
+              <div class="mockup-card">
+                <div class="mc-icon"><i class="bi bi-receipt"></i></div>
+                <div class="mc-title">Ventas hoy</div>
+                <div class="mc-val">S/ 2,450</div>
+              </div>
+              <div class="mockup-card">
+                <div class="mc-icon"><i class="bi bi-people-fill"></i></div>
+                <div class="mc-title">Clientes</div>
+                <div class="mc-val">156</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="features" id="features">
+    <div class="container">
+      <div class="text-center mb-5">
+        <div class="section-label"><i class="bi bi-stars"></i> Funcionalidades</div>
+        <h2 class="section-title">Todo lo que necesitas</h2>
+        <p class="section-subtitle mx-auto">Herramientas completas para gestionar cada aspecto de tu restaurante</p>
+      </div>
+      <div class="row g-4">
+        <div class="col-md-6 col-lg-4">
+          <div class="feature-card">
+            <div class="feature-icon fi-purple"><i class="bi bi-grid-3x3-gap-fill"></i></div>
+            <h5>Gestion de Mesas</h5>
+            <p>Crea, edita y controla el estado de cada mesa. Abre pedidos, mueve entre mesas y gestiona en tiempo real.</p>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+          <div class="feature-card">
+            <div class="feature-icon fi-orange"><i class="bi bi-fire"></i></div>
+            <h5>Panel de Cocina</h5>
+            <p>Los cocineros ven los pedidos en tiempo real. Estados: enviado, preparando, listo, entregado. Con auto-refresh.</p>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+          <div class="feature-card">
+            <div class="feature-icon fi-green"><i class="bi bi-receipt"></i></div>
+            <h5>Facturacion</h5>
+            <p>Genera facturas con impresion termica. Pago en efectivo, tarjeta, transferencia o mixto.</p>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+          <div class="feature-card">
+            <div class="feature-icon fi-cyan"><i class="bi bi-box-seam-fill"></i></div>
+            <h5>Productos y Combos</h5>
+            <p>Gestiona productos con precios por unidad, kilo o libra. Crea combos con variantes para cocina.</p>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+          <div class="feature-card">
+            <div class="feature-icon fi-rose"><i class="bi bi-people-fill"></i></div>
+            <h5>Roles y Usuarios</h5>
+            <p>Administrador, mesero y cocinero. Cada rol ve solo lo que necesita. Control total de acceso.</p>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+          <div class="feature-card">
+            <div class="feature-icon fi-blue"><i class="bi bi-graph-up-arrow"></i></div>
+            <h5>Historial de Ventas</h5>
+            <p>Filtra por fecha, exporta a Excel, revisa totales por metodo de pago. Control financiero completo.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PLATOS / GALLERY -->
+  <section class="dishes">
+    <div class="container">
+      <div class="text-center mb-5">
+        <div class="section-label"><i class="bi bi-egg-fried"></i> Galeria</div>
+        <h2 class="section-title">Tus platos, bien gestionados</h2>
+        <p class="section-subtitle mx-auto">Desde la cocina hasta la mesa, cada plato pasa por un flujo organizado y eficiente</p>
+      </div>
+      <div class="row g-4">
+        <div class="col-6 col-lg-3">
+          <div class="dish-card">
+            <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400&h=300&fit=crop" alt="Plato gourmet" loading="lazy">
+            <div class="dish-overlay">
+              <span class="dish-tag">Entradas</span>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-lg-3">
+          <div class="dish-card">
+            <img src="https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400&h=300&fit=crop" alt="Pizza artesanal" loading="lazy">
+            <div class="dish-overlay">
+              <span class="dish-tag">Platos fuertes</span>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-lg-3">
+          <div class="dish-card">
+            <img src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=300&fit=crop" alt="Ensalada fresca" loading="lazy">
+            <div class="dish-overlay">
+              <span class="dish-tag">Ensaladas</span>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-lg-3">
+          <div class="dish-card">
+            <img src="https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=400&h=300&fit=crop" alt="Postre" loading="lazy">
+            <div class="dish-overlay">
+              <span class="dish-tag">Postres</span>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-lg-3">
+          <div class="dish-card">
+            <img src="https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=400&h=300&fit=crop" alt="Parrilla" loading="lazy">
+            <div class="dish-overlay">
+              <span class="dish-tag">Parrilla</span>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-lg-3">
+          <div class="dish-card">
+            <img src="https://images.unsplash.com/photo-1476224203421-9ac39bcb3327?w=400&h=300&fit=crop" alt="Ceviche" loading="lazy">
+            <div class="dish-overlay">
+              <span class="dish-tag">Mariscos</span>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-lg-3">
+          <div class="dish-card">
+            <img src="https://images.unsplash.com/photo-1551218808-94e220e084d2?w=400&h=300&fit=crop" alt="Bebidas" loading="lazy">
+            <div class="dish-overlay">
+              <span class="dish-tag">Bebidas</span>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-lg-3">
+          <div class="dish-card">
+            <img src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400&h=300&fit=crop" alt="Ambiente restaurante" loading="lazy">
+            <div class="dish-overlay">
+              <span class="dish-tag">Ambiente</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STATS -->
+  <section class="stats">
+    <div class="container">
+      <div class="row">
+        <div class="col-6 col-md-3">
+          <div class="stat-item">
+            <div class="stat-num">100%</div>
+            <div class="stat-label">Offline compatible</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="stat-item">
+            <div class="stat-num">3</div>
+            <div class="stat-label">Roles de usuario</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="stat-item">
+            <div class="stat-num">LAN</div>
+            <div class="stat-label">Multi-dispositivo</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="stat-item">
+            <div class="stat-num">Peru</div>
+            <div class="stat-label">Hecho para ti</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta">
+    <div class="container text-center position-relative" style="z-index:2;">
+      <h2>Listo para modernizar tu restaurante?</h2>
+      <p>Ingresa ahora y empieza a gestionar mesas, cocina y facturacion.</p>
+      <a href="/login" class="btn-hero btn-hero-primary"><i class="bi bi-rocket-takeoff me-2"></i>Comenzar ahora</a>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="landing-footer">
+    <div class="container text-center">
+      <span>&copy; <%= new Date().getFullYear() %> <span class="brand"><i class="bi bi-fire me-1 accent"></i>restaurante<span class="accent">.dignita.tech</span></span> &middot; Sistema de Gestion de Restaurantes</span>
+    </div>
+  </footer>
+
+</body>
+</html>

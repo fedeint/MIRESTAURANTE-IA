@@ -503,7 +503,8 @@ document.addEventListener('DOMContentLoaded', function() {
             nombre: document.getElementById('nombre').value,
             precio_kg: parseFloat(document.getElementById('precioKg').value) || 0,
             precio_unidad: parseFloat(document.getElementById('precioUnidad').value) || 0,
-            precio_libra: parseFloat(document.getElementById('precioLibra').value) || 0
+            precio_libra: parseFloat(document.getElementById('precioLibra').value) || 0,
+            imagen: document.getElementById('imagenBase64').value || null
         };
 
         const productoId = document.getElementById('productoId').value;
@@ -530,6 +531,21 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // Image upload handler
+    document.getElementById('imagenInput')?.addEventListener('change', function() {
+        const file = this.files[0];
+        if (!file) return;
+        if (file.size > 512000) { alert('La imagen debe ser menor a 500KB'); this.value = ''; return; }
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('imagenBase64').value = e.target.result;
+            document.getElementById('imagenPreview').src = e.target.result;
+            document.getElementById('imagenPreview').style.display = 'block';
+            document.getElementById('imagenPlaceholder').style.display = 'none';
+        };
+        reader.readAsDataURL(file);
+    });
+
     // Limpiar formulario al abrir modal para nuevo producto
     document.getElementById('nuevoProductoModal').addEventListener('show.bs.modal', function(event) {
         if (!event.relatedTarget) return; // Si se abre para editar, no limpiar
@@ -537,6 +553,10 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('productoId').value = '';
         document.getElementById('formProducto').reset();
         document.getElementById('modalTitle').textContent = 'Nuevo Producto';
+        document.getElementById('imagenBase64').value = '';
+        document.getElementById('imagenPreview').src = '';
+        document.getElementById('imagenPreview').style.display = 'none';
+        document.getElementById('imagenPlaceholder').style.display = '';
         
         // Enfocar el campo de código después de que el modal se muestre completamente
         setTimeout(() => {
@@ -575,7 +595,14 @@ function editarProducto(id) {
             document.getElementById('precioKg').value = producto.precio_kg;
             document.getElementById('precioUnidad').value = producto.precio_unidad;
             document.getElementById('precioLibra').value = producto.precio_libra;
-            
+            // Load image
+            var imgB64 = document.getElementById('imagenBase64');
+            var imgPrev = document.getElementById('imagenPreview');
+            var imgPh = document.getElementById('imagenPlaceholder');
+            if (imgB64) imgB64.value = producto.imagen || '';
+            if (imgPrev) { imgPrev.src = producto.imagen || ''; imgPrev.style.display = producto.imagen ? 'block' : 'none'; }
+            if (imgPh) imgPh.style.display = producto.imagen ? 'none' : '';
+
             document.getElementById('modalTitle').textContent = 'Editar Producto';
             const modal = new bootstrap.Modal(document.getElementById('nuevoProductoModal'));
             modal.show();

@@ -3,17 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Configuración de Impresión</title>
+    <title>Configuracion - dignita.tech</title>
     <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
-    <style>
-        html, body { height: 100%; }
-        body { min-height: 100vh; display: flex; flex-direction: column; }
-        body{background-color:#f8f9fa}
-    </style>
+    <link rel="stylesheet" href="/css/theme.css">
 </head>
 <body>
-    <%- include('partials/navbar') %>
+    <%- include('partials/sidebar') %>
+    <div class="dg-main">
     <main class="flex-grow-1">
     <div class="container mt-4">
         <h2 class="mb-4">Configuración de Factura</h2>
@@ -273,6 +270,7 @@
     </main>
 
     <%- include('partials/footer') %>
+    </div><!-- dg-main -->
 
     <script src="/vendor/jquery/jquery.min.js"></script>
     <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>

@@ -57,6 +57,12 @@ app.use(session({
 // Hacer disponible el usuario en EJS como "user"
 app.use(attachUserToLocals);
 
+// Make reqPath available in all views
+app.use((req, res, next) => {
+    res.locals.reqPath = req.path;
+    next();
+});
+
 // Configuración de archivos estáticos
 app.use('/static', express.static(path.join(__dirname, 'public')));
 app.use(express.static(path.join(__dirname, 'public')));
@@ -99,6 +105,11 @@ const usuariosRoutes = require('./routes/usuarios');
 
 // Auth routes (públicas): /login /logout /setup
 app.use(authRoutes);
+
+// Landing page (always public)
+app.get('/landing', (req, res) => {
+    res.render('landing');
+});
 
 // Ruta principal (requiere login)
 app.get('/', requireAuth, (req, res) => {

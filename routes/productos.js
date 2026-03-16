@@ -220,16 +220,16 @@ router.get('/:id(\\d+)', async (req, res) => {
 // POST /productos - Crear nuevo producto
 router.post('/', async (req, res) => {
     try {
-        const { codigo, nombre, precio_kg, precio_unidad, precio_libra } = req.body;
-        
+        const { codigo, nombre, precio_kg, precio_unidad, precio_libra, imagen } = req.body;
+
         // Validar datos
         if (!codigo || !nombre) {
             return res.status(400).json({ error: 'El código y nombre son requeridos' });
         }
 
         const result = await db.query(
-            'INSERT INTO productos (codigo, nombre, precio_kg, precio_unidad, precio_libra) VALUES (?, ?, ?, ?, ?)',
-            [codigo, nombre, precio_kg || 0, precio_unidad || 0, precio_libra || 0]
+            'INSERT INTO productos (codigo, nombre, precio_kg, precio_unidad, precio_libra, imagen) VALUES (?, ?, ?, ?, ?, ?)',
+            [codigo, nombre, precio_kg || 0, precio_unidad || 0, precio_libra || 0, imagen || null]
         );
 
         res.status(201).json({ 
@@ -248,16 +248,16 @@ router.post('/', async (req, res) => {
 // PUT /productos/:id - Actualizar producto
 router.put('/:id', async (req, res) => {
     try {
-        const { codigo, nombre, precio_kg, precio_unidad, precio_libra } = req.body;
-        
+        const { codigo, nombre, precio_kg, precio_unidad, precio_libra, imagen } = req.body;
+
         // Validar datos
         if (!codigo || !nombre) {
             return res.status(400).json({ error: 'El código y nombre son requeridos' });
         }
 
         const result = await db.query(
-            'UPDATE productos SET codigo = ?, nombre = ?, precio_kg = ?, precio_unidad = ?, precio_libra = ? WHERE id = ?',
-            [codigo, nombre, precio_kg || 0, precio_unidad || 0, precio_libra || 0, req.params.id]
+            'UPDATE productos SET codigo = ?, nombre = ?, precio_kg = ?, precio_unidad = ?, precio_libra = ?, imagen = ? WHERE id = ?',
+            [codigo, nombre, precio_kg || 0, precio_unidad || 0, precio_libra || 0, imagen || null, req.params.id]
         );
 
         if (result.affectedRows === 0) {

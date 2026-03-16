@@ -3,47 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestión de Clientes</title>
+    <title>Clientes - dignita.tech</title>
     <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
-    <style>
-        html, body { height: 100%; }
-        body { min-height: 100vh; display: flex; flex-direction: column; }
-        body {
-            background-color: #f8f9fa;
-        }
-        .navbar {
-            background-color: #2c3e50;
-            box-shadow: 0 2px 4px rgba(0,0,0,.1);
-        }
-        .navbar-brand {
-            color: white !important;
-            font-weight: bold;
-        }
-        .card {
-            border: none;
-            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.05);
-            margin-bottom: 1.5rem;
-        }
-        .card-header {
-            background-color: #fff;
-            border-bottom: 2px solid #f8f9fa;
-            font-weight: 600;
-        }
-        .search-box {
-            max-width: 300px;
-        }
-        .table th {
-            border-top: none;
-        }
-        .action-buttons .btn {
-            padding: 0.25rem 0.5rem;
-        }
-    </style>
+    <link rel="stylesheet" href="/css/theme.css">
 </head>
 <body>
-    <%- include('partials/navbar') %>
-
+    <%- include('partials/sidebar') %>
+    <div class="dg-main">
     <main class="flex-grow-1">
     <div class="container">
         <div class="card">
@@ -151,6 +118,7 @@
     </div>
 
     <%- include('partials/footer') %>
+    </div><!-- dg-main -->
 
     <script src="/vendor/jquery/jquery.min.js"></script>
     <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
