@@ -245,27 +245,32 @@
                     </div>
                 </div>
 
-                <!-- Messages -->
-                <div class="chat-messages" id="chatMessages">
-                    <!-- Welcome message -->
-                    <div class="chat-msg chat-msg-ai">
-                        <strong>Hola!</strong> Soy tu asistente de IA para <strong>dignita.tech</strong>. Puedo ayudarte con:<br><br>
-                        <ul>
-                            <li>Resumen de ventas y rendimiento</li>
-                            <li>Informacion sobre productos y precios</li>
-                            <li>Datos de clientes y mesas</li>
-                            <li>Sugerencias para mejorar tu negocio</li>
-                            <li>Cualquier pregunta sobre tu restaurante</li>
-                        </ul>
-                        Preguntame lo que necesites!
+                <!-- Role selector (shown first) -->
+                <div id="roleSelector" class="text-center py-4">
+                    <div class="chat-msg chat-msg-ai d-inline-block text-start mb-3" style="max-width:100%;">
+                        <strong>Hola! Soy DIGNITA AI</strong>, tu asistente inteligente.<br>
+                        Creado por <strong>Leonidas Yauri</strong>, CEO de <strong>dignita.tech</strong><br><br>
+                        Antes de empezar, selecciona tu puesto:
                     </div>
+                    <div class="d-flex flex-wrap justify-content-center gap-2 mt-3">
+                        <button class="btn btn-outline-primary role-btn" data-role="administrador"><i class="bi bi-shield-fill me-1"></i>Administrador</button>
+                        <button class="btn btn-outline-primary role-btn" data-role="mesero"><i class="bi bi-person-badge me-1"></i>Mesero</button>
+                        <button class="btn btn-outline-primary role-btn" data-role="cocinero"><i class="bi bi-fire me-1"></i>Cocinero</button>
+                        <button class="btn btn-outline-primary role-btn" data-role="cajero"><i class="bi bi-cash-stack me-1"></i>Cajero</button>
+                    </div>
+                </div>
 
-                    <!-- Suggestions -->
+                <!-- Messages (hidden until role selected) -->
+                <div class="chat-messages" id="chatMessages" style="display:none;">
+                </div>
+
+                <!-- Suggestions (hidden until role selected) -->
+                <div id="suggestionsWrap" style="display:none;">
                     <div class="chat-suggestions" id="chatSuggestions">
                         <a class="chat-suggestion" data-q="Como van las ventas de hoy?"><i class="bi bi-graph-up me-1"></i>Ventas de hoy</a>
                         <a class="chat-suggestion" data-q="Cuales son los productos mas vendidos?"><i class="bi bi-trophy me-1"></i>Mas vendidos</a>
-                        <a class="chat-suggestion" data-q="Dame un resumen general del negocio"><i class="bi bi-clipboard-data me-1"></i>Resumen general</a>
-                        <a class="chat-suggestion" data-q="Que sugerencias tienes para mejorar las ventas?"><i class="bi bi-lightbulb me-1"></i>Sugerencias</a>
+                        <a class="chat-suggestion" data-q="Ensenname a usar el sistema paso a paso"><i class="bi bi-book me-1"></i>Tutorial</a>
+                        <a class="chat-suggestion" data-q="Que puedo hacer desde mi puesto?"><i class="bi bi-question-circle me-1"></i>Mis funciones</a>
                     </div>
                 </div>
 
@@ -294,8 +299,33 @@
         const inputEl = document.getElementById('chatInput');
         const sendBtn = document.getElementById('chatSend');
         const suggestionsEl = document.getElementById('chatSuggestions');
+        const roleSelectorEl = document.getElementById('roleSelector');
+        const suggestionsWrap = document.getElementById('suggestionsWrap');
         let historial = [];
         let sending = false;
+        let userRol = localStorage.getItem('dg-chat-rol') || '';
+
+        // Role selection
+        document.querySelectorAll('.role-btn').forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                userRol = this.getAttribute('data-role');
+                localStorage.setItem('dg-chat-rol', userRol);
+                activateChat();
+            });
+        });
+
+        function activateChat() {
+            roleSelectorEl.style.display = 'none';
+            messagesEl.style.display = 'flex';
+            suggestionsWrap.style.display = 'block';
+            // Welcome message based on role
+            var roleName = userRol.charAt(0).toUpperCase() + userRol.slice(1);
+            addMessage('assistant', '**Bienvenido, ' + roleName + '!** Soy DIGNITA AI, creado por **Leonidas Yauri**, CEO de dignita.tech.\n\nEstoy aqui para ayudarte a usar el sistema y gestionar el restaurante. Preguntame lo que necesites sobre tu puesto o el negocio.\n\n¿En que puedo ayudarte?');
+            inputEl.focus();
+        }
+
+        // Auto-activate if role was previously selected
+        if (userRol) { activateChat(); }
 
         function scrollBottom() {
             messagesEl.scrollTop = messagesEl.scrollHeight;
@@ -367,7 +397,8 @@
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         mensaje: text,
-                        historial: historial.slice(-20)
+                        historial: historial.slice(-20),
+                        rol: userRol
                     })
                 });
 
