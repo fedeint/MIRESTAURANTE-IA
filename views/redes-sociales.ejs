@@ -16,84 +16,136 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
                 <h4 class="fw-bold mb-1"><i class="bi bi-share-fill me-2" style="color:var(--dg-primary);"></i>Mis Redes Sociales</h4>
-                <p class="text-muted small mb-0">Monitorea tus metricas: seguidores, likes y ultimas publicaciones</p>
+                <p class="text-muted small mb-0">Conecta tus redes via API y ve seguidores, likes y publicaciones reales</p>
             </div>
-            <button class="btn btn-primary" id="btnGuardar"><i class="bi bi-save me-1"></i>Guardar todo</button>
         </div>
 
-        <div id="networkList"></div>
+        <div class="alert alert-info small mb-4">
+            <i class="bi bi-info-circle-fill me-2"></i>
+            <strong>Configuracion necesaria en <code>.env</code>:</strong>
+            <ul class="mb-0 mt-1">
+                <li><strong>Facebook:</strong> <code>META_APP_ID</code> + <code>META_APP_SECRET</code> &rarr; <a href="https://developers.facebook.com/apps/" target="_blank">developers.facebook.com</a></li>
+                <li><strong>Instagram:</strong> Ademas <code>META_USER_TOKEN</code> (cuenta Business vinculada)</li>
+                <li><strong>TikTok:</strong> <code>TIKTOK_ACCESS_TOKEN</code> &rarr; <a href="https://developers.tiktok.com/" target="_blank">developers.tiktok.com</a></li>
+            </ul>
+        </div>
+
+        <!-- Facebook -->
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div style="width:52px;height:52px;background:linear-gradient(135deg,#1877f2,#0d65d9);border-radius:1rem;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.5rem;flex-shrink:0;"><i class="bi bi-facebook"></i></div>
+                    <div class="flex-grow-1">
+                        <h5 class="fw-bold mb-0">Facebook</h5>
+                        <small class="text-muted">ID o nombre de tu pagina</small>
+                    </div>
+                    <span class="badge" id="fb-status" style="background:rgba(100,116,139,0.1);color:#64748b;">Sin conectar</span>
+                </div>
+                <div class="row g-2 align-items-end">
+                    <div class="col"><div class="input-group"><span class="input-group-text"><i class="bi bi-facebook"></i></span><input type="text" class="form-control" id="fbPageId" placeholder="Ej: cocaboricua o 123456789"></div></div>
+                    <div class="col-auto"><button class="btn btn-primary" id="fbConnect"><i class="bi bi-plug-fill me-1"></i>Conectar</button></div>
+                </div>
+                <div id="fbResult" class="mt-3" style="display:none;"></div>
+            </div>
+        </div>
+
+        <!-- Instagram -->
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div style="width:52px;height:52px;background:linear-gradient(135deg,#e1306c,#c13584,#833ab4);border-radius:1rem;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.5rem;flex-shrink:0;"><i class="bi bi-instagram"></i></div>
+                    <div class="flex-grow-1">
+                        <h5 class="fw-bold mb-0">Instagram</h5>
+                        <small class="text-muted">Username de cuenta Business</small>
+                    </div>
+                    <span class="badge" id="ig-status" style="background:rgba(100,116,139,0.1);color:#64748b;">Sin conectar</span>
+                </div>
+                <div class="row g-2 align-items-end">
+                    <div class="col"><div class="input-group"><span class="input-group-text">@</span><input type="text" class="form-control" id="igUsername" placeholder="tu_restaurante"></div></div>
+                    <div class="col-auto"><button class="btn btn-primary" id="igConnect"><i class="bi bi-plug-fill me-1"></i>Conectar</button></div>
+                </div>
+                <div id="igResult" class="mt-3" style="display:none;"></div>
+            </div>
+        </div>
+
+        <!-- TikTok -->
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <div style="width:52px;height:52px;background:linear-gradient(135deg,#010101,#25f4ee);border-radius:1rem;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.5rem;flex-shrink:0;"><i class="bi bi-tiktok"></i></div>
+                    <div class="flex-grow-1">
+                        <h5 class="fw-bold mb-0">TikTok</h5>
+                        <small class="text-muted">Username de tu cuenta</small>
+                    </div>
+                    <span class="badge" id="tt-status" style="background:rgba(100,116,139,0.1);color:#64748b;">Sin conectar</span>
+                </div>
+                <div class="row g-2 align-items-end">
+                    <div class="col"><div class="input-group"><span class="input-group-text">@</span><input type="text" class="form-control" id="ttUsername" placeholder="tu_restaurante"></div></div>
+                    <div class="col-auto"><button class="btn btn-primary" id="ttConnect"><i class="bi bi-plug-fill me-1"></i>Conectar</button></div>
+                </div>
+                <div id="ttResult" class="mt-3" style="display:none;"></div>
+            </div>
+        </div>
     </div>
     </main>
     <%- include('partials/footer') %>
     </div>
 
     <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-    <script src="/vendor/sweetalert2/sweetalert2.all.min.js"></script>
     <script>
     (function(){
-        var KEY = 'dg-mis-redes';
-        var networks = [
-            { id:'instagram', name:'Instagram', icon:'bi-instagram', gradient:'linear-gradient(135deg,#e1306c,#833ab4)', placeholder:'@tu_restaurante' },
-            { id:'facebook', name:'Facebook', icon:'bi-facebook', gradient:'linear-gradient(135deg,#1877f2,#0d65d9)', placeholder:'facebook.com/tu-pagina' },
-            { id:'tiktok', name:'TikTok', icon:'bi-tiktok', gradient:'linear-gradient(135deg,#010101,#25f4ee)', placeholder:'@tu_tiktok' },
-            { id:'youtube', name:'YouTube', icon:'bi-youtube', gradient:'linear-gradient(135deg,#ff0000,#cc0000)', placeholder:'youtube.com/@tu-canal' },
-            { id:'whatsapp', name:'WhatsApp', icon:'bi-whatsapp', gradient:'linear-gradient(135deg,#25d366,#128c7e)', placeholder:'+51 999 999 999' },
-            { id:'googlemaps', name:'Google Maps', icon:'bi-geo-alt-fill', gradient:'linear-gradient(135deg,#4285f4,#34a853)', placeholder:'Link de Google Maps' }
-        ];
+        function fmt(n){ n=Number(n)||0; if(n>=1e6) return (n/1e6).toFixed(1)+'M'; if(n>=1e3) return (n/1e3).toFixed(1)+'K'; return n.toLocaleString(); }
 
-        var saved = {};
-        try { saved = JSON.parse(localStorage.getItem(KEY)) || {}; } catch(e){}
+        function setStatus(id,ok,t){ var e=document.getElementById(id); if(!e)return; e.textContent=t||(ok?'Conectado':'Error'); e.style.background=ok?'rgba(16,185,129,0.1)':'rgba(239,68,68,0.1)'; e.style.color=ok?'#059669':'#dc2626'; }
 
-        var container = document.getElementById('networkList');
+        function renderData(cid, d){
+            var el=document.getElementById(cid); el.style.display='block';
+            var h='<div class="d-flex align-items-center gap-3 mb-3">';
+            if(d.foto) h+='<img src="'+d.foto+'" style="width:56px;height:56px;border-radius:1rem;object-fit:cover;">';
+            h+='<div><h6 class="fw-bold mb-0">'+(d.nombre||'')+'</h6>';
+            if(d.bio||d.descripcion) h+='<small class="text-muted">'+(d.bio||d.descripcion||'').substring(0,120)+'</small>';
+            h+='</div></div>';
+            h+='<div class="row g-3 text-center">';
+            h+='<div class="col"><div style="font-size:1.8rem;font-weight:900;color:#6366f1;">'+fmt(d.seguidores)+'</div><small class="text-muted fw-bold">Seguidores</small></div>';
+            if(d.likes!==undefined) h+='<div class="col"><div style="font-size:1.8rem;font-weight:900;color:#ef4444;">'+fmt(d.likes)+'</div><small class="text-muted fw-bold">Likes</small></div>';
+            if(d.publicaciones!==undefined) h+='<div class="col"><div style="font-size:1.8rem;font-weight:900;color:#10b981;">'+fmt(d.publicaciones)+'</div><small class="text-muted fw-bold">Posts</small></div>';
+            if(d.videos!==undefined) h+='<div class="col"><div style="font-size:1.8rem;font-weight:900;color:#10b981;">'+fmt(d.videos)+'</div><small class="text-muted fw-bold">Videos</small></div>';
+            if(d.siguiendo!==undefined) h+='<div class="col"><div style="font-size:1.8rem;font-weight:900;color:#06b6d4;">'+fmt(d.siguiendo)+'</div><small class="text-muted fw-bold">Siguiendo</small></div>';
+            h+='</div>';
+            if(d.ultimos_posts&&d.ultimos_posts.length){
+                h+='<hr style="border-color:rgba(0,0,0,0.04);"><h6 class="fw-bold small"><i class="bi bi-clock-history me-1"></i>Ultimas 3 publicaciones</h6>';
+                d.ultimos_posts.forEach(function(p){
+                    h+='<div class="d-flex align-items-center gap-2 py-2 border-bottom" style="border-color:rgba(0,0,0,0.04)!important;">';
+                    if(p.imagen) h+='<img src="'+p.imagen+'" style="width:44px;height:44px;border-radius:.5rem;object-fit:cover;">';
+                    h+='<div class="flex-grow-1 small">'+(p.caption||'Sin descripcion')+'</div>';
+                    h+='<span class="small" style="color:#ef4444;"><i class="bi bi-heart-fill"></i> '+fmt(p.likes)+'</span>';
+                    h+='<span class="small text-muted"><i class="bi bi-chat-fill"></i> '+fmt(p.comments)+'</span>';
+                    h+='</div>';
+                });
+            }
+            el.innerHTML=h;
+        }
 
-        networks.forEach(function(net){
-            var data = saved[net.id] || { url:'', seguidores:'', likes:'', posts:['','',''] };
-            var card = document.createElement('div');
-            card.className = 'card mb-3';
-            card.innerHTML = `
-                <div class="card-body">
-                    <div class="d-flex align-items-center gap-3 mb-3">
-                        <div style="width:48px;height:48px;background:${net.gradient};border-radius:.875rem;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.3rem;flex-shrink:0;"><i class="bi ${net.icon}"></i></div>
-                        <div class="flex-grow-1">
-                            <h6 class="fw-bold mb-0">${net.name}</h6>
-                            <input type="text" class="form-control form-control-sm mt-1" data-net="${net.id}" data-field="url" value="${data.url||''}" placeholder="${net.placeholder}">
-                        </div>
-                    </div>
-                    <div class="row g-3 mb-3">
-                        <div class="col-6 col-md-3">
-                            <label class="form-label small fw-bold"><i class="bi bi-people-fill me-1"></i>Seguidores</label>
-                            <input type="text" class="form-control" data-net="${net.id}" data-field="seguidores" value="${data.seguidores||''}" placeholder="Ej: 1,250">
-                        </div>
-                        <div class="col-6 col-md-3">
-                            <label class="form-label small fw-bold"><i class="bi bi-heart-fill me-1"></i>Likes promedio</label>
-                            <input type="text" class="form-control" data-net="${net.id}" data-field="likes" value="${data.likes||''}" placeholder="Ej: 85">
-                        </div>
-                        <div class="col-12 col-md-6">
-                            <label class="form-label small fw-bold"><i class="bi bi-clock-history me-1"></i>Ultimas 3 publicaciones</label>
-                            <input type="text" class="form-control mb-1" data-net="${net.id}" data-field="post0" value="${(data.posts&&data.posts[0])||''}" placeholder="1ra publicacion (descripcion breve)">
-                            <input type="text" class="form-control mb-1" data-net="${net.id}" data-field="post1" value="${(data.posts&&data.posts[1])||''}" placeholder="2da publicacion">
-                            <input type="text" class="form-control" data-net="${net.id}" data-field="post2" value="${(data.posts&&data.posts[2])||''}" placeholder="3ra publicacion">
-                        </div>
-                    </div>
-                </div>
-            `;
-            container.appendChild(card);
-        });
+        function renderErr(cid,msg){ var el=document.getElementById(cid); el.style.display='block'; el.innerHTML='<div class="alert alert-danger small mb-0"><i class="bi bi-exclamation-triangle me-1"></i>'+msg+'</div>'; }
 
-        document.getElementById('btnGuardar').addEventListener('click', function(){
-            var data = {};
-            networks.forEach(function(net){
-                var url = (document.querySelector('[data-net="'+net.id+'"][data-field="url"]')||{}).value||'';
-                var seguidores = (document.querySelector('[data-net="'+net.id+'"][data-field="seguidores"]')||{}).value||'';
-                var likes = (document.querySelector('[data-net="'+net.id+'"][data-field="likes"]')||{}).value||'';
-                var p0 = (document.querySelector('[data-net="'+net.id+'"][data-field="post0"]')||{}).value||'';
-                var p1 = (document.querySelector('[data-net="'+net.id+'"][data-field="post1"]')||{}).value||'';
-                var p2 = (document.querySelector('[data-net="'+net.id+'"][data-field="post2"]')||{}).value||'';
-                data[net.id] = { url:url.trim(), seguidores:seguidores.trim(), likes:likes.trim(), posts:[p0.trim(),p1.trim(),p2.trim()] };
-            });
-            localStorage.setItem(KEY, JSON.stringify(data));
-            Swal.fire({icon:'success',title:'Guardado',text:'Metricas de redes actualizadas',timer:2000,showConfirmButton:false});
-        });
+        async function connect(btn,endpoint,resultId,statusId,storageKey){
+            btn.disabled=true; var old=btn.innerHTML; btn.innerHTML='<span class="spinner-border spinner-border-sm me-1"></span>Conectando...';
+            try{
+                var r=await fetch(endpoint); var d=await r.json();
+                if(!r.ok) throw new Error(d.error||d.help||'Error');
+                setStatus(statusId,true); renderData(resultId,d);
+            }catch(e){ setStatus(statusId,false); renderErr(resultId,e.message); }
+            btn.disabled=false; btn.innerHTML=old;
+        }
+
+        document.getElementById('fbConnect').addEventListener('click',function(){ var v=document.getElementById('fbPageId').value.trim(); if(v){ localStorage.setItem('dg-fb-page',v); connect(this,'/api/social/facebook/'+encodeURIComponent(v),'fbResult','fb-status','dg-fb-page'); }});
+        document.getElementById('igConnect').addEventListener('click',function(){ var v=document.getElementById('igUsername').value.trim().replace('@',''); if(v){ localStorage.setItem('dg-ig-user',v); connect(this,'/api/social/instagram/'+encodeURIComponent(v),'igResult','ig-status','dg-ig-user'); }});
+        document.getElementById('ttConnect').addEventListener('click',function(){ var v=document.getElementById('ttUsername').value.trim().replace('@',''); if(v){ localStorage.setItem('dg-tt-user',v); connect(this,'/api/social/tiktok/'+encodeURIComponent(v),'ttResult','tt-status','dg-tt-user'); }});
+
+        // Restore
+        var s; if(s=localStorage.getItem('dg-fb-page')) document.getElementById('fbPageId').value=s;
+        if(s=localStorage.getItem('dg-ig-user')) document.getElementById('igUsername').value=s;
+        if(s=localStorage.getItem('dg-tt-user')) document.getElementById('ttUsername').value=s;
     })();
     </script>
 </body>

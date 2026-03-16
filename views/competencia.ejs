@@ -16,15 +16,16 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
                 <h4 class="fw-bold mb-1"><i class="bi bi-binoculars-fill me-2" style="color:var(--dg-primary);"></i>Competencia</h4>
-                <p class="text-muted small mb-0">Monitorea a tus competidores: seguidores, likes, publicaciones e historias</p>
+                <p class="text-muted small mb-0">Monitorea las redes de tu competencia con datos reales via API de Meta, TikTok</p>
             </div>
             <button class="btn btn-primary" id="btnAgregar"><i class="bi bi-plus-lg me-1"></i>Agregar competidor</button>
         </div>
 
-        <div id="competidoresList"></div>
+        <div id="compList"></div>
+
         <div id="emptyState" class="text-center py-5" style="display:none;">
             <div style="width:70px;height:70px;background:rgba(99,102,241,0.08);border-radius:1rem;display:inline-flex;align-items:center;justify-content:center;font-size:1.8rem;color:#94a3b8;margin-bottom:1rem;"><i class="bi bi-binoculars"></i></div>
-            <p class="text-muted">No tienes competidores registrados.<br>Agrega uno para empezar a monitorear.</p>
+            <p class="text-muted">No tienes competidores registrados.<br>Agrega uno para monitorear sus redes sociales.</p>
         </div>
     </div>
     </main>
@@ -35,118 +36,138 @@
     <script src="/vendor/sweetalert2/sweetalert2.all.min.js"></script>
     <script>
     (function(){
-        var KEY = 'dg-competidores';
-        var data = [];
-        try { data = JSON.parse(localStorage.getItem(KEY)) || []; } catch(e){}
-
-        function save(){ localStorage.setItem(KEY, JSON.stringify(data)); }
+        var KEY='dg-competidores-v2';
+        var data=[]; try{data=JSON.parse(localStorage.getItem(KEY))||[];}catch(e){}
+        function save(){localStorage.setItem(KEY,JSON.stringify(data));}
+        function fmt(n){n=Number(n)||0;if(n>=1e6)return(n/1e6).toFixed(1)+'M';if(n>=1e3)return(n/1e3).toFixed(1)+'K';return n.toLocaleString();}
 
         function render(){
-            var list = document.getElementById('competidoresList');
-            var empty = document.getElementById('emptyState');
-            list.innerHTML = '';
-            empty.style.display = data.length === 0 ? 'block' : 'none';
+            var list=document.getElementById('compList');
+            var empty=document.getElementById('emptyState');
+            list.innerHTML='';
+            empty.style.display=data.length===0?'block':'none';
 
-            data.forEach(function(comp, idx){
-                var card = document.createElement('div');
-                card.className = 'card mb-3';
-                card.innerHTML = `
+            data.forEach(function(comp,idx){
+                var card=document.createElement('div');
+                card.className='card mb-4';
+                card.innerHTML=`
+                    <div class="card-header d-flex align-items-center gap-2">
+                        <div style="width:36px;height:36px;background:linear-gradient(135deg,#f43f5e,#e11d48);border-radius:.625rem;display:flex;align-items:center;justify-content:center;color:#fff;"><i class="bi bi-shop"></i></div>
+                        <h6 class="fw-bold mb-0 flex-grow-1">${comp.nombre||'Competidor '+(idx+1)}</h6>
+                        <button class="btn btn-outline-danger btn-sm btn-del" data-idx="${idx}"><i class="bi bi-trash"></i></button>
+                    </div>
                     <div class="card-body">
-                        <div class="d-flex align-items-center gap-3 mb-3">
-                            <div style="width:48px;height:48px;background:linear-gradient(135deg,#f43f5e,#e11d48);border-radius:.875rem;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2rem;flex-shrink:0;"><i class="bi bi-shop"></i></div>
-                            <div class="flex-grow-1">
-                                <h6 class="fw-bold mb-0">${comp.nombre||'Competidor '+(idx+1)}</h6>
-                                <small class="text-muted">${comp.instagram||'Sin Instagram'}</small>
-                            </div>
-                            <button class="btn btn-outline-danger btn-sm" data-del="${idx}" title="Eliminar"><i class="bi bi-trash"></i></button>
-                        </div>
+                        <p class="small text-muted mb-3">Ingresa las paginas/usernames del competidor y haz click en <strong>Consultar</strong> para obtener datos reales.</p>
 
-                        <div class="row g-3 mb-3">
-                            <div class="col-md-4">
-                                <label class="form-label small fw-bold">Nombre del restaurante</label>
-                                <input type="text" class="form-control comp-field" data-idx="${idx}" data-key="nombre" value="${comp.nombre||''}" placeholder="Nombre">
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label small fw-bold"><i class="bi bi-instagram me-1"></i>Instagram</label>
-                                <input type="text" class="form-control comp-field" data-idx="${idx}" data-key="instagram" value="${comp.instagram||''}" placeholder="@competidor">
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label small fw-bold"><i class="bi bi-facebook me-1"></i>Facebook</label>
-                                <input type="text" class="form-control comp-field" data-idx="${idx}" data-key="facebook" value="${comp.facebook||''}" placeholder="facebook.com/...">
-                            </div>
+                        <!-- Facebook -->
+                        <div class="row g-2 align-items-end mb-2">
+                            <div class="col-auto" style="width:40px;text-align:center;"><i class="bi bi-facebook" style="color:#1877f2;font-size:1.2rem;"></i></div>
+                            <div class="col"><input type="text" class="form-control form-control-sm comp-fb" data-idx="${idx}" value="${comp.facebook||''}" placeholder="ID pagina Facebook"></div>
+                            <div class="col-auto"><button class="btn btn-sm btn-outline-primary btn-query-fb" data-idx="${idx}"><i class="bi bi-search"></i> Consultar</button></div>
                         </div>
+                        <div class="comp-fb-result mb-3" id="comp-fb-${idx}" style="display:none;"></div>
 
-                        <div class="row g-3 mb-3">
-                            <div class="col-6 col-md-3">
-                                <label class="form-label small fw-bold"><i class="bi bi-people-fill me-1"></i>Seguidores</label>
-                                <input type="text" class="form-control comp-field" data-idx="${idx}" data-key="seguidores" value="${comp.seguidores||''}" placeholder="Ej: 5,200">
-                            </div>
-                            <div class="col-6 col-md-3">
-                                <label class="form-label small fw-bold"><i class="bi bi-heart-fill me-1"></i>Likes promedio</label>
-                                <input type="text" class="form-control comp-field" data-idx="${idx}" data-key="likes" value="${comp.likes||''}" placeholder="Ej: 120">
-                            </div>
-                            <div class="col-6 col-md-3">
-                                <label class="form-label small fw-bold"><i class="bi bi-camera-reels me-1"></i>Historias/dia</label>
-                                <input type="text" class="form-control comp-field" data-idx="${idx}" data-key="historias" value="${comp.historias||''}" placeholder="Ej: 3">
-                            </div>
-                            <div class="col-6 col-md-3">
-                                <label class="form-label small fw-bold"><i class="bi bi-tiktok me-1"></i>TikTok</label>
-                                <input type="text" class="form-control comp-field" data-idx="${idx}" data-key="tiktok" value="${comp.tiktok||''}" placeholder="@tiktok">
-                            </div>
+                        <!-- Instagram -->
+                        <div class="row g-2 align-items-end mb-2">
+                            <div class="col-auto" style="width:40px;text-align:center;"><i class="bi bi-instagram" style="color:#e1306c;font-size:1.2rem;"></i></div>
+                            <div class="col"><input type="text" class="form-control form-control-sm comp-ig" data-idx="${idx}" value="${comp.instagram||''}" placeholder="@username Instagram"></div>
+                            <div class="col-auto"><button class="btn btn-sm btn-outline-primary btn-query-ig" data-idx="${idx}"><i class="bi bi-search"></i> Consultar</button></div>
                         </div>
+                        <div class="comp-ig-result mb-3" id="comp-ig-${idx}" style="display:none;"></div>
 
-                        <div class="row g-2">
-                            <div class="col-12">
-                                <label class="form-label small fw-bold"><i class="bi bi-clock-history me-1"></i>Ultimas 3 publicaciones</label>
-                            </div>
-                            <div class="col-md-4">
-                                <input type="text" class="form-control form-control-sm comp-field" data-idx="${idx}" data-key="post0" value="${(comp.posts&&comp.posts[0])||''}" placeholder="1ra publicacion">
-                            </div>
-                            <div class="col-md-4">
-                                <input type="text" class="form-control form-control-sm comp-field" data-idx="${idx}" data-key="post1" value="${(comp.posts&&comp.posts[1])||''}" placeholder="2da publicacion">
-                            </div>
-                            <div class="col-md-4">
-                                <input type="text" class="form-control form-control-sm comp-field" data-idx="${idx}" data-key="post2" value="${(comp.posts&&comp.posts[2])||''}" placeholder="3ra publicacion">
-                            </div>
+                        <!-- TikTok -->
+                        <div class="row g-2 align-items-end mb-2">
+                            <div class="col-auto" style="width:40px;text-align:center;"><i class="bi bi-tiktok" style="font-size:1.2rem;"></i></div>
+                            <div class="col"><input type="text" class="form-control form-control-sm comp-tt" data-idx="${idx}" value="${comp.tiktok||''}" placeholder="@username TikTok"></div>
+                            <div class="col-auto"><button class="btn btn-sm btn-outline-primary btn-query-tt" data-idx="${idx}"><i class="bi bi-search"></i> Consultar</button></div>
                         </div>
+                        <div class="comp-tt-result mb-3" id="comp-tt-${idx}" style="display:none;"></div>
                     </div>
                 `;
                 list.appendChild(card);
             });
 
-            // Auto-save on input change
-            document.querySelectorAll('.comp-field').forEach(function(input){
-                input.addEventListener('change', function(){
-                    var idx = parseInt(this.getAttribute('data-idx'));
-                    var key = this.getAttribute('data-key');
-                    if (key.startsWith('post')) {
-                        var pi = parseInt(key.replace('post',''));
-                        if (!data[idx].posts) data[idx].posts = ['','',''];
-                        data[idx].posts[pi] = this.value.trim();
-                    } else {
-                        data[idx][key] = this.value.trim();
-                    }
+            // Save inputs on change
+            list.querySelectorAll('.comp-fb,.comp-ig,.comp-tt').forEach(function(inp){
+                inp.addEventListener('change',function(){
+                    var i=parseInt(this.getAttribute('data-idx'));
+                    if(this.classList.contains('comp-fb')) data[i].facebook=this.value.trim();
+                    if(this.classList.contains('comp-ig')) data[i].instagram=this.value.trim();
+                    if(this.classList.contains('comp-tt')) data[i].tiktok=this.value.trim();
                     save();
                 });
             });
 
-            // Delete buttons
-            document.querySelectorAll('[data-del]').forEach(function(btn){
-                btn.addEventListener('click', function(){
-                    var idx = parseInt(this.getAttribute('data-del'));
-                    Swal.fire({title:'Eliminar competidor?',text:data[idx].nombre||'Este competidor',icon:'warning',showCancelButton:true,confirmButtonText:'Eliminar',cancelButtonText:'Cancelar'}).then(function(r){
-                        if(r.isConfirmed){ data.splice(idx,1); save(); render(); }
-                    });
+            // Delete
+            list.querySelectorAll('.btn-del').forEach(function(b){
+                b.addEventListener('click',function(){
+                    var i=parseInt(this.getAttribute('data-idx'));
+                    Swal.fire({title:'Eliminar?',text:data[i].nombre,icon:'warning',showCancelButton:true,confirmButtonText:'Si'}).then(function(r){if(r.isConfirmed){data.splice(i,1);save();render();}});
+                });
+            });
+
+            // Query buttons
+            list.querySelectorAll('.btn-query-fb').forEach(function(b){
+                b.addEventListener('click',function(){
+                    var i=parseInt(this.getAttribute('data-idx'));
+                    var v=list.querySelector('.comp-fb[data-idx="'+i+'"]').value.trim();
+                    if(v){data[i].facebook=v;save();queryAPI(this,'/api/social/facebook/'+encodeURIComponent(v),'comp-fb-'+i);}
+                });
+            });
+            list.querySelectorAll('.btn-query-ig').forEach(function(b){
+                b.addEventListener('click',function(){
+                    var i=parseInt(this.getAttribute('data-idx'));
+                    var v=list.querySelector('.comp-ig[data-idx="'+i+'"]').value.trim().replace('@','');
+                    if(v){data[i].instagram=v;save();queryAPI(this,'/api/social/instagram/'+encodeURIComponent(v),'comp-ig-'+i);}
+                });
+            });
+            list.querySelectorAll('.btn-query-tt').forEach(function(b){
+                b.addEventListener('click',function(){
+                    var i=parseInt(this.getAttribute('data-idx'));
+                    var v=list.querySelector('.comp-tt[data-idx="'+i+'"]').value.trim().replace('@','');
+                    if(v){data[i].tiktok=v;save();queryAPI(this,'/api/social/tiktok/'+encodeURIComponent(v),'comp-tt-'+i);}
                 });
             });
         }
 
-        document.getElementById('btnAgregar').addEventListener('click', function(){
-            Swal.fire({title:'Nombre del competidor',input:'text',inputPlaceholder:'Ej: Restaurante La Esquina',showCancelButton:true,confirmButtonText:'Agregar'}).then(function(r){
-                if(r.isConfirmed && r.value){
-                    data.push({nombre:r.value.trim(),instagram:'',facebook:'',tiktok:'',seguidores:'',likes:'',historias:'',posts:['','','']});
-                    save(); render();
+        async function queryAPI(btn,endpoint,resultId){
+            var old=btn.innerHTML;btn.disabled=true;btn.innerHTML='<span class="spinner-border spinner-border-sm"></span>';
+            var el=document.getElementById(resultId);
+            try{
+                var r=await fetch(endpoint);var d=await r.json();
+                if(!r.ok)throw new Error(d.error||d.help||'Error');
+                el.style.display='block';
+                var h='<div class="d-flex align-items-center gap-3 p-2 rounded" style="background:rgba(99,102,241,0.04);">';
+                if(d.foto) h+='<img src="'+d.foto+'" style="width:40px;height:40px;border-radius:.5rem;object-fit:cover;">';
+                h+='<div class="small"><strong>'+(d.nombre||d.username||'')+'</strong></div>';
+                h+='<div class="ms-auto d-flex gap-3 text-center small">';
+                h+='<div><div style="font-weight:800;color:#6366f1;">'+fmt(d.seguidores)+'</div><div class="text-muted" style="font-size:.7rem;">Seguidores</div></div>';
+                if(d.likes!==undefined) h+='<div><div style="font-weight:800;color:#ef4444;">'+fmt(d.likes)+'</div><div class="text-muted" style="font-size:.7rem;">Likes</div></div>';
+                if(d.publicaciones!==undefined) h+='<div><div style="font-weight:800;color:#10b981;">'+fmt(d.publicaciones)+'</div><div class="text-muted" style="font-size:.7rem;">Posts</div></div>';
+                if(d.videos!==undefined) h+='<div><div style="font-weight:800;color:#10b981;">'+fmt(d.videos)+'</div><div class="text-muted" style="font-size:.7rem;">Videos</div></div>';
+                h+='</div></div>';
+                if(d.ultimos_posts&&d.ultimos_posts.length){
+                    h+='<div class="mt-2 small"><strong>Ultimas publicaciones:</strong>';
+                    d.ultimos_posts.forEach(function(p,pi){
+                        h+='<div class="d-flex gap-2 py-1 border-bottom" style="border-color:rgba(0,0,0,0.04)!important;">';
+                        if(p.imagen) h+='<img src="'+p.imagen+'" style="width:32px;height:32px;border-radius:.375rem;object-fit:cover;">';
+                        h+='<span class="flex-grow-1">'+(p.caption||'Post '+(pi+1))+'</span>';
+                        h+='<span style="color:#ef4444;"><i class="bi bi-heart-fill"></i> '+fmt(p.likes)+'</span>';
+                        h+='</div>';
+                    });
+                    h+='</div>';
                 }
+                el.innerHTML=h;
+            }catch(e){
+                el.style.display='block';
+                el.innerHTML='<div class="alert alert-danger small mb-0 py-1"><i class="bi bi-exclamation-triangle me-1"></i>'+e.message+'</div>';
+            }
+            btn.disabled=false;btn.innerHTML=old;
+        }
+
+        document.getElementById('btnAgregar').addEventListener('click',function(){
+            Swal.fire({title:'Nombre del competidor',input:'text',inputPlaceholder:'Ej: Restaurante La Esquina',showCancelButton:true,confirmButtonText:'Agregar'}).then(function(r){
+                if(r.isConfirmed&&r.value){data.push({nombre:r.value.trim(),facebook:'',instagram:'',tiktok:''});save();render();}
             });
         });
 

@@ -103,6 +103,7 @@ const ventasRoutes = require('./routes/ventas');
 const authRoutes = require('./routes/auth');
 const usuariosRoutes = require('./routes/usuarios');
 const chatRoutes = require('./routes/chat');
+const socialApiRoutes = require('./routes/social-api');
 
 // Auth routes (públicas): /login /logout /setup
 app.use(authRoutes);
@@ -152,6 +153,9 @@ app.use('/api/cocina', requireRole(['cocinero', 'mesero', 'administrador']), coc
 // Chat IA (admin)
 app.use('/chat', requireRole('administrador'), chatRoutes);
 app.use('/api/chat', requireRole('administrador'), chatRoutes);
+
+// Social media API (admin)
+app.use('/api/social', requireRole('administrador'), socialApiRoutes);
 
 // Redes sociales (admin)
 app.get('/redes-sociales', requireRole('administrador'), (req, res) => res.render('redes-sociales'));
