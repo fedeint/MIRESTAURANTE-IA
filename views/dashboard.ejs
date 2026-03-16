@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - dignita.tech</title>
+    <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/theme.css">
+</head>
+<body>
+    <%- include('partials/sidebar') %>
+    <div class="dg-main">
+    <main class="flex-grow-1">
+    <div class="container">
+
+        <!-- Welcome -->
+        <div class="card mb-4" style="background:linear-gradient(135deg,rgba(99,102,241,0.08),rgba(6,182,212,0.05))!important;border:1px solid rgba(99,102,241,0.12)!important;">
+            <div class="card-body py-4">
+                <div class="d-flex align-items-center gap-3">
+                    <div style="width:56px;height:56px;background:linear-gradient(135deg,#6366f1,#06b6d4);border-radius:1rem;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.5rem;box-shadow:0 8px 24px rgba(99,102,241,0.3);"><i class="bi bi-fire"></i></div>
+                    <div>
+                        <h4 class="fw-bold mb-0">Hola, <%= dashboard.userName %>!</h4>
+                        <p class="text-muted mb-0">Bienvenido a <strong>dignita.tech</strong> - Aqui tienes el resumen de tu restaurante hoy</p>
+                    </div>
+                    <div class="ms-auto d-none d-md-block text-end">
+                        <div class="small text-muted"><%= new Date().toLocaleDateString('es-PE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) %></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- KPI Cards Row 1 -->
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-lg-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center gap-3">
+                            <div style="width:46px;height:46px;background:linear-gradient(135deg,#10b981,#059669);border-radius:.875rem;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2rem;"><i class="bi bi-cash-stack"></i></div>
+                            <div>
+                                <div class="text-muted small fw-bold">Ventas hoy</div>
+                                <div style="font-size:1.4rem;font-weight:800;color:#10b981;">S/ <%= dashboard.ventasHoy %></div>
+                                <div class="text-muted" style="font-size:.7rem;"><%= dashboard.facturasHoy %> facturas</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center gap-3">
+                            <div style="width:46px;height:46px;background:linear-gradient(135deg,#6366f1,#4f46e5);border-radius:.875rem;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2rem;"><i class="bi bi-graph-up-arrow"></i></div>
+                            <div>
+                                <div class="text-muted small fw-bold">Ventas del mes</div>
+                                <div style="font-size:1.4rem;font-weight:800;color:#6366f1;">S/ <%= dashboard.ventasMes %></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center gap-3">
+                            <div style="width:46px;height:46px;background:linear-gradient(135deg,#f59e0b,#d97706);border-radius:.875rem;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2rem;"><i class="bi bi-grid-3x3-gap-fill"></i></div>
+                            <div>
+                                <div class="text-muted small fw-bold">Mesas</div>
+                                <div style="font-size:1.4rem;font-weight:800;color:#f59e0b;"><%= dashboard.mesasOcupadas %>/<%= dashboard.mesasTotal %></div>
+                                <div class="text-muted" style="font-size:.7rem;"><%= dashboard.mesasTotal - dashboard.mesasOcupadas %> libres</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-lg-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center gap-3">
+                            <div style="width:46px;height:46px;background:linear-gradient(135deg,#ec4899,#f43f5e);border-radius:.875rem;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2rem;"><i class="bi bi-box-seam-fill"></i></div>
+                            <div>
+                                <div class="text-muted small fw-bold">Productos vendidos</div>
+                                <div style="font-size:1.4rem;font-weight:800;color:#ec4899;"><%= dashboard.productosVendidosHoy %></div>
+                                <div class="text-muted" style="font-size:.7rem;">hoy</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 2: Quick actions + Top products -->
+        <div class="row g-3 mb-4">
+            <!-- Top products today -->
+            <div class="col-lg-6">
+                <div class="card h-100">
+                    <div class="card-header d-flex align-items-center gap-2">
+                        <i class="bi bi-trophy-fill" style="color:#f59e0b;"></i>
+                        <span class="fw-bold">Productos mas vendidos hoy</span>
+                    </div>
+                    <div class="card-body p-0">
+                        <% if (dashboard.topProductos.length === 0) { %>
+                            <div class="text-center text-muted py-4">
+                                <i class="bi bi-inbox" style="font-size:2rem;"></i>
+                                <p class="small mb-0 mt-1">Aun no hay ventas hoy</p>
+                            </div>
+                        <% } else { %>
+                            <div class="list-group list-group-flush">
+                                <% dashboard.topProductos.forEach(function(p, i) { %>
+                                    <div class="list-group-item d-flex align-items-center gap-2 py-2">
+                                        <% if (i === 0) { %>
+                                            <span style="width:28px;height:28px;background:#f59e0b;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-weight:bold;font-size:.8rem;">1</span>
+                                        <% } else if (i === 1) { %>
+                                            <span style="width:28px;height:28px;background:#9ca3af;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-weight:bold;font-size:.8rem;">2</span>
+                                        <% } else if (i === 2) { %>
+                                            <span style="width:28px;height:28px;background:#cd7f32;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-weight:bold;font-size:.8rem;">3</span>
+                                        <% } else { %>
+                                            <span class="badge" style="background:rgba(100,116,139,0.1);color:#64748b;width:28px;"><%= i+1 %></span>
+                                        <% } %>
+                                        <span class="fw-semibold flex-grow-1"><%= p.nombre %></span>
+                                        <span class="badge" style="background:rgba(99,102,241,0.1);color:#6366f1;"><%= p.qty %> uds</span>
+                                    </div>
+                                <% }); %>
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick actions -->
+            <div class="col-lg-6">
+                <div class="card h-100">
+                    <div class="card-header d-flex align-items-center gap-2">
+                        <i class="bi bi-lightning-charge-fill" style="color:#6366f1;"></i>
+                        <span class="fw-bold">Acceso rapido</span>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <a href="/mesas" class="d-flex align-items-center gap-2 p-3 rounded text-decoration-none" style="background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.12);border-radius:.75rem!important;">
+                                    <div style="width:38px;height:38px;background:linear-gradient(135deg,#f59e0b,#d97706);border-radius:.625rem;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1rem;"><i class="bi bi-grid-3x3-gap-fill"></i></div>
+                                    <div><div class="fw-bold small" style="color:#92400e;">Mesas</div><div style="font-size:.7rem;color:#b45309;"><%= dashboard.mesasTotal %> mesas</div></div>
+                                </a>
+                            </div>
+                            <div class="col-6">
+                                <a href="/cocina" class="d-flex align-items-center gap-2 p-3 rounded text-decoration-none" style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.12);border-radius:.75rem!important;">
+                                    <div style="width:38px;height:38px;background:linear-gradient(135deg,#ef4444,#dc2626);border-radius:.625rem;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1rem;"><i class="bi bi-fire"></i></div>
+                                    <div><div class="fw-bold small" style="color:#991b1b;">Cocina</div><div style="font-size:.7rem;color:#b91c1c;">Ver pedidos</div></div>
+                                </a>
+                            </div>
+                            <div class="col-6">
+                                <a href="/ventas" class="d-flex align-items-center gap-2 p-3 rounded text-decoration-none" style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.12);border-radius:.75rem!important;">
+                                    <div style="width:38px;height:38px;background:linear-gradient(135deg,#10b981,#059669);border-radius:.625rem;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1rem;"><i class="bi bi-receipt"></i></div>
+                                    <div><div class="fw-bold small" style="color:#065f46;">Ventas</div><div style="font-size:.7rem;color:#047857;">Historial</div></div>
+                                </a>
+                            </div>
+                            <div class="col-6">
+                                <a href="/productos" class="d-flex align-items-center gap-2 p-3 rounded text-decoration-none" style="background:rgba(99,102,241,0.06);border:1px solid rgba(99,102,241,0.12);border-radius:.75rem!important;">
+                                    <div style="width:38px;height:38px;background:linear-gradient(135deg,#6366f1,#4f46e5);border-radius:.625rem;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1rem;"><i class="bi bi-box-seam-fill"></i></div>
+                                    <div><div class="fw-bold small" style="color:#3730a3;">Productos</div><div style="font-size:.7rem;color:#4338ca;">Gestionar</div></div>
+                                </a>
+                            </div>
+                            <div class="col-6">
+                                <a href="/clientes" class="d-flex align-items-center gap-2 p-3 rounded text-decoration-none" style="background:rgba(6,182,212,0.06);border:1px solid rgba(6,182,212,0.12);border-radius:.75rem!important;">
+                                    <div style="width:38px;height:38px;background:linear-gradient(135deg,#06b6d4,#0891b2);border-radius:.625rem;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1rem;"><i class="bi bi-people-fill"></i></div>
+                                    <div><div class="fw-bold small" style="color:#155e75;">Clientes</div><div style="font-size:.7rem;color:#0e7490;"><%= dashboard.clientesTotal %> registrados</div></div>
+                                </a>
+                            </div>
+                            <div class="col-6">
+                                <a href="/chat" class="d-flex align-items-center gap-2 p-3 rounded text-decoration-none" style="background:linear-gradient(135deg,rgba(99,102,241,0.06),rgba(6,182,212,0.06));border:1px solid rgba(99,102,241,0.12);border-radius:.75rem!important;">
+                                    <div style="width:38px;height:38px;background:linear-gradient(135deg,#6366f1,#06b6d4);border-radius:.625rem;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1rem;"><i class="bi bi-robot"></i></div>
+                                    <div><div class="fw-bold small" style="color:#3730a3;">Asistente IA</div><div style="font-size:.7rem;color:#4338ca;">Preguntame</div></div>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer info -->
+        <div class="text-center mb-3">
+            <span class="text-muted small">Creado por <strong>Leonidas Yauri</strong>, CEO de <strong style="color:#6366f1;">dignita.tech</strong></span>
+        </div>
+
+    </div>
+    </main>
+    <%- include('partials/footer') %>
+    </div>
+
+    <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -30,22 +30,18 @@
             </ul>
         </div>
 
-        <!-- Facebook -->
+        <!-- Mis Paginas de Facebook (automatico) -->
         <div class="card mb-3">
             <div class="card-body">
                 <div class="d-flex align-items-center gap-3 mb-3">
                     <div style="width:52px;height:52px;background:linear-gradient(135deg,#1877f2,#0d65d9);border-radius:1rem;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.5rem;flex-shrink:0;"><i class="bi bi-facebook"></i></div>
                     <div class="flex-grow-1">
-                        <h5 class="fw-bold mb-0">Facebook</h5>
-                        <small class="text-muted">ID o nombre de tu pagina</small>
+                        <h5 class="fw-bold mb-0">Mis Paginas de Facebook</h5>
+                        <small class="text-muted">Tus paginas conectadas automaticamente via API</small>
                     </div>
-                    <span class="badge" id="fb-status" style="background:rgba(100,116,139,0.1);color:#64748b;">Sin conectar</span>
+                    <button class="btn btn-sm btn-primary" id="fbLoadPages"><i class="bi bi-arrow-clockwise me-1"></i>Cargar mis paginas</button>
                 </div>
-                <div class="row g-2 align-items-end">
-                    <div class="col"><div class="input-group"><span class="input-group-text"><i class="bi bi-facebook"></i></span><input type="text" class="form-control" id="fbPageId" placeholder="Ej: cocaboricua o 123456789"></div></div>
-                    <div class="col-auto"><button class="btn btn-primary" id="fbConnect"><i class="bi bi-plug-fill me-1"></i>Conectar</button></div>
-                </div>
-                <div id="fbResult" class="mt-3" style="display:none;"></div>
+                <div id="fbPagesResult"></div>
             </div>
         </div>
 
@@ -138,7 +134,27 @@
             btn.disabled=false; btn.innerHTML=old;
         }
 
-        document.getElementById('fbConnect').addEventListener('click',function(){ var v=document.getElementById('fbPageId').value.trim(); if(v){ localStorage.setItem('dg-fb-page',v); connect(this,'/api/social/facebook/'+encodeURIComponent(v),'fbResult','fb-status','dg-fb-page'); }});
+        // Load my Facebook pages
+        document.getElementById('fbLoadPages').addEventListener('click', async function(){
+            var btn=this;var old=btn.innerHTML;btn.disabled=true;btn.innerHTML='<span class="spinner-border spinner-border-sm me-1"></span>Cargando...';
+            try{
+                var r=await fetch('/api/social/mis-paginas');var d=await r.json();
+                if(!r.ok)throw new Error(d.error||'Error');
+                var el=document.getElementById('fbPagesResult');
+                if(!d.paginas||d.paginas.length===0){el.innerHTML='<div class="alert alert-info small mb-0">No tienes paginas de Facebook</div>';return;}
+                var h='<div class="row g-3">';
+                d.paginas.forEach(function(p){
+                    h+='<div class="col-md-6 col-lg-4"><div class="d-flex align-items-center gap-2 p-2 rounded" style="background:rgba(24,119,242,0.04);border:1px solid rgba(24,119,242,0.1);border-radius:.75rem!important;">';
+                    if(p.foto) h+='<img src="'+p.foto+'" style="width:40px;height:40px;border-radius:.5rem;object-fit:cover;">';
+                    h+='<div class="flex-grow-1 small"><strong>'+p.nombre+'</strong><br><span class="text-muted">'+p.categoria+'</span></div>';
+                    h+='<div class="text-end"><div style="font-weight:800;color:#1877f2;">'+fmt(p.seguidores)+'</div><div class="text-muted" style="font-size:.65rem;">seguidores</div></div>';
+                    h+='</div></div>';
+                });
+                h+='</div>';
+                el.innerHTML=h;
+            }catch(e){document.getElementById('fbPagesResult').innerHTML='<div class="alert alert-danger small mb-0">'+e.message+'</div>';}
+            btn.disabled=false;btn.innerHTML=old;
+        });
         document.getElementById('igConnect').addEventListener('click',function(){ var v=document.getElementById('igUsername').value.trim().replace('@',''); if(v){ localStorage.setItem('dg-ig-user',v); connect(this,'/api/social/instagram/'+encodeURIComponent(v),'igResult','ig-status','dg-ig-user'); }});
         document.getElementById('ttConnect').addEventListener('click',function(){ var v=document.getElementById('ttUsername').value.trim().replace('@',''); if(v){ localStorage.setItem('dg-tt-user',v); connect(this,'/api/social/tiktok/'+encodeURIComponent(v),'ttResult','tt-status','dg-tt-user'); }});
 

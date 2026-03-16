@@ -28,14 +28,39 @@ async function graphGet(path, token, params = {}) {
 }
 
 // =============================================
-// FACEBOOK PAGE - Public data with App Token
+// MIS PAGINAS - Lista las paginas que administra el usuario
+// =============================================
+router.get('/mis-paginas', async (req, res) => {
+    const token = process.env.META_USER_TOKEN;
+    if (!token) return res.status(400).json({ error: 'Configura META_USER_TOKEN en .env' });
+    try {
+        const data = await graphGet('me/accounts', token, {
+            fields: 'name,id,fan_count,followers_count,category,picture.width(200),link'
+        });
+        const paginas = (data.data || []).map(p => ({
+            id: p.id,
+            nombre: p.name,
+            seguidores: p.followers_count || p.fan_count || 0,
+            likes: p.fan_count || 0,
+            categoria: p.category || '',
+            foto: p.picture?.data?.url || '',
+            link: p.link || `https://facebook.com/${p.id}`
+        }));
+        res.json({ paginas });
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+// =============================================
+// FACEBOOK PAGE - Con User Token o App Token
 // =============================================
 router.get('/facebook/:pageId', async (req, res) => {
-    const token = getAppToken();
+    const token = process.env.META_USER_TOKEN || getAppToken();
     if (!token) {
         return res.status(400).json({
-            error: 'Configura META_APP_ID y META_APP_SECRET en .env',
-            help: 'Crea una app en https://developers.facebook.com/apps/ → Configuracion → Basica'
+            error: 'Configura META_USER_TOKEN o META_APP_ID+META_APP_SECRET en .env',
+            help: 'Genera un User Token en Graph API Explorer con permisos pages_read_engagement, pages_show_list'
         });
     }
 

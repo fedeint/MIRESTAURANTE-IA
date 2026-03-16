@@ -113,13 +113,38 @@ app.get('/landing', (req, res) => {
     res.render('landing');
 });
 
-// Ruta principal (requiere login)
-app.get('/', requireAuth, (req, res) => {
+// Ruta principal - Dashboard (requiere login)
+app.get('/', requireAuth, async (req, res) => {
     const rol = String(req.session?.user?.rol || '').toLowerCase();
     if (rol === 'cocinero') return res.redirect('/cocina');
     if (rol === 'mesero') return res.redirect('/mesas');
-    // admin
-    res.render('index');
+
+    // Admin dashboard data
+    const dashboard = { ventasHoy: 0, ventasMes: 0, mesasTotal: 0, mesasOcupadas: 0, productosVendidosHoy: 0, clientesTotal: 0, topProductos: [], userName: req.session?.user?.nombre || req.session?.user?.usuario || 'Admin' };
+    try {
+        const [[vh]] = await db.query("SELECT COUNT(*) as c, COALESCE(SUM(total),0) as m FROM facturas WHERE DATE(fecha)=CURDATE()");
+        dashboard.ventasHoy = Number(vh.m).toFixed(2);
+        dashboard.facturasHoy = vh.c;
+
+        const [[vm]] = await db.query("SELECT COALESCE(SUM(total),0) as m FROM facturas WHERE fecha >= DATE_SUB(NOW(), INTERVAL 30 DAY)");
+        dashboard.ventasMes = Number(vm.m).toFixed(2);
+
+        const [[mt]] = await db.query("SELECT COUNT(*) as t FROM mesas");
+        dashboard.mesasTotal = mt.t;
+        const [[mo]] = await db.query("SELECT COUNT(*) as t FROM mesas WHERE estado='ocupada'");
+        dashboard.mesasOcupadas = mo.t;
+
+        const [[ph]] = await db.query("SELECT COALESCE(SUM(df.cantidad),0) as t FROM detalle_facturas df JOIN facturas f ON f.id=df.factura_id WHERE DATE(f.fecha)=CURDATE()");
+        dashboard.productosVendidosHoy = Number(ph.t);
+
+        const [[cl]] = await db.query("SELECT COUNT(*) as t FROM clientes");
+        dashboard.clientesTotal = cl.t;
+
+        const [tp] = await db.query("SELECT p.nombre, SUM(df.cantidad) as qty FROM detalle_facturas df JOIN productos p ON p.id=df.producto_id JOIN facturas f ON f.id=df.factura_id WHERE DATE(f.fecha)=CURDATE() GROUP BY df.producto_id ORDER BY qty DESC LIMIT 5");
+        dashboard.topProductos = tp || [];
+    } catch (e) { console.error('Dashboard error:', e.message); }
+
+    res.render('dashboard', { dashboard });
 });
 
 // Usar las rutas
