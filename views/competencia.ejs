@@ -27,6 +27,33 @@
             <div style="width:70px;height:70px;background:rgba(99,102,241,0.08);border-radius:1rem;display:inline-flex;align-items:center;justify-content:center;font-size:1.8rem;color:#94a3b8;margin-bottom:1rem;"><i class="bi bi-binoculars"></i></div>
             <p class="text-muted">No tienes competidores registrados.<br>Agrega uno para monitorear sus redes sociales.</p>
         </div>
+
+        <!-- RANKING COMPARATIVO -->
+        <div class="card mt-4" id="rankingCard" style="display:none;">
+            <div class="card-header d-flex align-items-center gap-2">
+                <i class="bi bi-trophy-fill" style="color:#f59e0b;font-size:1.2rem;"></i>
+                <h6 class="fw-bold mb-0 flex-grow-1">Ranking: Quien tiene mas seguidores?</h6>
+                <button class="btn btn-sm btn-primary" id="btnRefreshRanking"><i class="bi bi-arrow-clockwise me-1"></i>Actualizar ranking</button>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th style="width:8%;">#</th>
+                                <th>Cuenta</th>
+                                <th class="text-center">Seguidores</th>
+                                <th class="text-center">Engagement</th>
+                                <th class="text-center">Posts</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rankingBody">
+                            <tr><td colspan="5" class="text-center text-muted py-3">Click "Actualizar ranking" para comparar</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
     </div>
     </main>
     <%- include('partials/footer') %>
@@ -82,6 +109,12 @@
                             <div class="col-auto"><button class="btn btn-sm btn-outline-primary btn-query-tt" data-idx="${idx}"><i class="bi bi-search"></i> Consultar</button></div>
                         </div>
                         <div class="comp-tt-result mb-3" id="comp-tt-${idx}" style="display:none;"></div>
+
+                        <!-- Anuncios -->
+                        <div class="mt-2 pt-2 border-top" style="border-color:rgba(0,0,0,0.04)!important;">
+                            <button class="btn btn-sm btn-outline-warning btn-query-ads" data-idx="${idx}"><i class="bi bi-megaphone-fill me-1"></i>Ver anuncios activos (Ad Library)</button>
+                            <div class="comp-ads-result mt-2" id="comp-ads-${idx}" style="display:none;"></div>
+                        </div>
                     </div>
                 `;
                 list.appendChild(card);
@@ -128,6 +161,19 @@
                     if(v){data[i].tiktok=v;save();queryAPI(this,'/api/social/tiktok/'+encodeURIComponent(v),'comp-tt-'+i);}
                 });
             });
+
+            // Ads buttons
+            list.querySelectorAll('.btn-query-ads').forEach(function(b){
+                b.addEventListener('click',function(){
+                    var i=parseInt(this.getAttribute('data-idx'));
+                    var fbId=data[i].facebook;
+                    if(!fbId){Swal.fire({icon:'info',title:'Facebook ID requerido',text:'Primero ingresa el ID de la pagina de Facebook del competidor'});return;}
+                    queryAds(this,fbId,'comp-ads-'+i);
+                });
+            });
+
+            // Show ranking card if there are competitors
+            document.getElementById('rankingCard').style.display = data.length > 0 ? 'block' : 'none';
         }
 
         async function queryAPI(btn,endpoint,resultId){
@@ -164,6 +210,69 @@
             }
             btn.disabled=false;btn.innerHTML=old;
         }
+
+        // Query Ads
+        async function queryAds(btn,fbPageId,resultId){
+            var old=btn.innerHTML;btn.disabled=true;btn.innerHTML='<span class="spinner-border spinner-border-sm me-1"></span>Buscando...';
+            var el=document.getElementById(resultId);
+            try{
+                var r=await fetch('/api/social/ads/'+encodeURIComponent(fbPageId));var d=await r.json();
+                if(!r.ok)throw new Error(d.error||'Error');
+                el.style.display='block';
+                if(!d.anuncios||d.anuncios.length===0){el.innerHTML='<div class="alert alert-info small mb-0 py-1"><i class="bi bi-info-circle me-1"></i>No se encontraron anuncios activos para esta pagina en Peru.</div>';return;}
+                var h='<div class="small"><strong><i class="bi bi-megaphone-fill me-1"></i>'+d.total+' anuncios encontrados:</strong></div>';
+                d.anuncios.forEach(function(ad){
+                    h+='<div class="p-2 my-1 rounded" style="background:rgba(245,158,11,0.04);border:1px solid rgba(245,158,11,0.1);border-radius:.5rem;">';
+                    h+='<div class="small fw-bold">'+(ad.titulo||'Sin titulo')+'</div>';
+                    h+='<div class="small text-muted">'+(ad.texto||'Sin texto')+'</div>';
+                    h+='<div class="small text-muted mt-1"><i class="bi bi-calendar me-1"></i>'+ad.inicio+' → '+(ad.fin||'Activo');
+                    if(ad.snapshot_url) h+=' · <a href="'+ad.snapshot_url+'" target="_blank">Ver anuncio</a>';
+                    h+='</div></div>';
+                });
+                el.innerHTML=h;
+            }catch(e){el.style.display='block';el.innerHTML='<div class="alert alert-danger small mb-0 py-1">'+e.message+'</div>';}
+            btn.disabled=false;btn.innerHTML=old;
+        }
+
+        // Ranking comparativo
+        document.getElementById('btnRefreshRanking')?.addEventListener('click', async function(){
+            var btn=this;var old=btn.innerHTML;btn.disabled=true;btn.innerHTML='<span class="spinner-border spinner-border-sm me-1"></span>Consultando...';
+            // Build accounts list from all competitors' IG usernames
+            var accounts=[];
+            // Add my own IG if saved
+            var myIg=localStorage.getItem('dg-ig-user');
+            if(myIg) accounts.push('ig:'+myIg);
+            data.forEach(function(c){
+                if(c.instagram) accounts.push('ig:'+c.instagram.replace('@',''));
+                if(c.facebook) accounts.push('fb:'+c.facebook);
+            });
+            if(accounts.length===0){btn.disabled=false;btn.innerHTML=old;Swal.fire({icon:'info',text:'Agrega Instagram o Facebook a tus competidores primero'});return;}
+
+            try{
+                var r=await fetch('/api/social/ranking?accounts='+encodeURIComponent(accounts.join(',')));
+                var d=await r.json();
+                if(!r.ok)throw new Error(d.error||'Error');
+                var tbody=document.getElementById('rankingBody');
+                var medals=['#f59e0b','#9ca3af','#cd7f32'];
+                var html='';
+                (d.ranking||[]).forEach(function(item){
+                    var badge=item.rank<=3?'<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:'+medals[item.rank-1]+';color:#fff;font-weight:bold;font-size:.8rem;">'+item.rank+'</span>':'<span class="badge" style="background:rgba(100,116,139,0.1);color:#64748b;">'+item.rank+'</span>';
+                    var isMe=(myIg&&item.id===myIg);
+                    html+='<tr'+(isMe?' style="background:rgba(99,102,241,0.06);"':'')+'>';
+                    html+='<td>'+badge+'</td>';
+                    html+='<td><div class="d-flex align-items-center gap-2">';
+                    if(item.foto) html+='<img src="'+item.foto+'" style="width:28px;height:28px;border-radius:.375rem;object-fit:cover;">';
+                    html+='<div><strong>'+item.nombre+'</strong>'+(isMe?' <span class="badge" style="background:#6366f1;color:#fff;font-size:.65rem;">TU</span>':'')+'<br><small class="text-muted">'+item.platform+' · @'+item.id+'</small></div>';
+                    html+='</div></td>';
+                    html+='<td class="text-center"><span style="font-weight:800;color:#6366f1;">'+fmt(item.seguidores)+'</span></td>';
+                    html+='<td class="text-center">'+(item.engagement_promedio?'<span style="font-weight:700;color:#10b981;">'+fmt(item.engagement_promedio)+'</span>':'-')+'</td>';
+                    html+='<td class="text-center">'+(item.publicaciones?fmt(item.publicaciones):'-')+'</td>';
+                    html+='</tr>';
+                });
+                tbody.innerHTML=html||'<tr><td colspan="5" class="text-center text-muted">Sin resultados</td></tr>';
+            }catch(e){document.getElementById('rankingBody').innerHTML='<tr><td colspan="5" class="text-center text-danger">'+e.message+'</td></tr>';}
+            btn.disabled=false;btn.innerHTML=old;
+        });
 
         document.getElementById('btnAgregar').addEventListener('click',function(){
             Swal.fire({title:'Nombre del competidor',input:'text',inputPlaceholder:'Ej: Restaurante La Esquina',showCancelButton:true,confirmButtonText:'Agregar'}).then(function(r){
