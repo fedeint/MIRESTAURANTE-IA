@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Salidas Almacen - dignita.tech</title>
+    <title>Salida de productos (insumos) - dignita.tech</title>
     <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
     <link rel="stylesheet" href="/css/theme.css">
@@ -16,37 +16,96 @@
         <div class="d-flex align-items-center justify-content-between mb-4 mt-3">
             <div>
                 <h4 class="fw-bold mb-0"><i class="bi bi-box-arrow-up me-2 text-danger"></i>Salida de productos (insumos)</h4>
-                <p class="text-muted small mb-0">Insumos descontados por platos vendidos + merma y consumo interno</p>
+                <p class="text-muted small mb-0">Insumos descontados automaticamente al enviar platos a cocina</p>
             </div>
             <span class="badge bg-danger"><%= new Date().toLocaleDateString('es-PE') %></span>
         </div>
 
-        <!-- Salidas automaticas por ventas -->
+        <!-- RANKING TOP 10 -->
         <div class="card mb-4">
             <div class="card-header fw-bold d-flex align-items-center gap-2">
-                <i class="bi bi-fire text-danger"></i>
-                Insumos descontados automaticamente (al enviar a cocina)
-                <span class="badge bg-success ms-auto"><%= salidasVenta.length %> movimientos</span>
+                <i class="bi bi-trophy-fill text-warning"></i>
+                Top 10 productos que mas salen hoy
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
                     <table class="table table-sm table-hover mb-0">
-                        <thead><tr><th>Hora</th><th>Ingrediente</th><th>Cantidad</th><th>Costo</th><th>Pedido</th></tr></thead>
+                        <thead><tr><th>#</th><th>Producto</th><th class="text-center">Veces</th><th class="text-end">Costo insumos</th></tr></thead>
                         <tbody>
-                            <% if (salidasVenta.length === 0) { %>
-                                <tr><td colspan="5" class="text-center text-muted py-3">Sin pedidos enviados a cocina hoy. Los insumos se descuentan automaticamente al enviar a cocina.</td></tr>
-                            <% } else { salidasVenta.forEach(function(m) { %>
+                            <% if (!ranking || ranking.length === 0) { %>
+                                <tr><td colspan="4" class="text-center text-muted py-3">Sin datos hoy</td></tr>
+                            <% } else { ranking.forEach(function(r, idx) { %>
                                 <tr>
-                                    <td><%= new Date(m.created_at).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'}) %></td>
-                                    <td><%= m.ingrediente_nombre %></td>
-                                    <td class="text-danger fw-bold">-<%= Number(m.cantidad).toFixed(2) %></td>
-                                    <td>S/ <%= Number(m.costo_total||0).toFixed(2) %></td>
-                                    <td><% if(m.referencia_id){ %><span class="badge bg-primary">#<%= m.referencia_id %></span><% }else{ %>-<% } %></td>
+                                    <td>
+                                        <% if (idx === 0) { %><span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:#f59e0b;color:#fff;font-weight:bold;font-size:.75rem;">1</span>
+                                        <% } else if (idx === 1) { %><span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:#9ca3af;color:#fff;font-weight:bold;font-size:.75rem;">2</span>
+                                        <% } else if (idx === 2) { %><span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:#cd7f32;color:#fff;font-weight:bold;font-size:.75rem;">3</span>
+                                        <% } else { %><span class="badge bg-light text-dark"><%= idx+1 %></span><% } %>
+                                    </td>
+                                    <td class="fw-semibold"><%= r.nombre %></td>
+                                    <td class="text-center"><span class="badge" style="background:rgba(99,102,241,0.1);color:#6366f1;"><%= r.veces %></span></td>
+                                    <td class="text-end">S/ <%= Number(r.costo_total || 0).toFixed(2) %></td>
                                 </tr>
                             <% }); } %>
                         </tbody>
                     </table>
                 </div>
+            </div>
+        </div>
+
+        <!-- PLATOS ENVIADOS A COCINA HOY (con ingredientes desplegables) -->
+        <div class="card mb-4">
+            <div class="card-header fw-bold d-flex align-items-center gap-2">
+                <i class="bi bi-fire text-danger"></i>
+                Platos enviados a cocina hoy - insumos descontados
+                <span class="badge bg-success ms-auto"><%= platos ? platos.length : 0 %> platos</span>
+            </div>
+            <div class="card-body">
+                <% if (!platos || platos.length === 0) { %>
+                    <div class="text-center text-muted py-4">
+                        <i class="bi bi-inbox" style="font-size:2rem;"></i>
+                        <p class="mt-2">Sin platos enviados a cocina hoy.<br>Los insumos se descuentan automaticamente cuando el mesero envia el pedido.</p>
+                    </div>
+                <% } else { platos.forEach(function(plato, idx) { %>
+                    <div class="border rounded mb-2" style="border-color:rgba(0,0,0,0.06)!important;">
+                        <div class="d-flex align-items-center justify-content-between p-3" style="cursor:pointer;" data-bs-toggle="collapse" data-bs-target="#plato<%= idx %>">
+                            <div class="d-flex align-items-center gap-3">
+                                <div style="width:40px;height:40px;background:linear-gradient(135deg,#ef4444,#dc2626);border-radius:.625rem;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1rem;">
+                                    <i class="bi bi-egg-fried"></i>
+                                </div>
+                                <div>
+                                    <strong><%= plato.producto_nombre %></strong> <span class="text-muted">x<%= Number(plato.cantidad || 1) %></span>
+                                    <br>
+                                    <small class="text-muted">
+                                        <i class="bi bi-grid-3x3-gap me-1"></i>Mesa <%= plato.mesa_numero || '-' %>
+                                        &middot;
+                                        <i class="bi bi-clock me-1"></i><%= new Date(plato.hora).toLocaleTimeString('es-PE', {hour:'2-digit',minute:'2-digit'}) %>
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-danger"><%= plato.items.length %> insumos</span>
+                                <i class="bi bi-chevron-down ms-2 text-muted"></i>
+                            </div>
+                        </div>
+                        <div class="collapse" id="plato<%= idx %>">
+                            <div class="px-3 pb-3">
+                                <table class="table table-sm mb-0">
+                                    <thead><tr><th>Ingrediente</th><th class="text-end">Cantidad</th><th class="text-end">Costo</th></tr></thead>
+                                    <tbody>
+                                        <% plato.items.forEach(function(item) { %>
+                                            <tr>
+                                                <td><%= item.ingrediente_nombre %></td>
+                                                <td class="text-end text-danger">-<%= Number(item.cantidad).toFixed(2) %></td>
+                                                <td class="text-end">S/ <%= Number(item.costo_total || 0).toFixed(2) %></td>
+                                            </tr>
+                                        <% }); %>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                <% }); } %>
             </div>
         </div>
 

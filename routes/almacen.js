@@ -254,17 +254,65 @@ router.get('/entradas', async (req, res) => {
 router.get('/salidas', async (req, res) => {
     const tid = req.tenantId || 1;
     const [ingredientes] = await db.query('SELECT id, codigo, nombre, unidad_medida, stock_actual FROM almacen_ingredientes WHERE tenant_id=? AND activo=1 ORDER BY nombre', [tid]);
-    // Salidas automaticas de hoy (platos vendidos)
     const hoy = new Date().toISOString().split('T')[0];
+
+    // Salidas agrupadas por pedido_item (plato) con mesa
     const [salidasVenta] = await db.query(`
-        SELECT m.*, i.nombre as ingrediente_nombre, u.usuario as usuario_nombre
+        SELECT m.*, i.nombre as ingrediente_nombre, u.usuario as usuario_nombre,
+               m.referencia_id as pedido_item_id
         FROM almacen_movimientos m
         LEFT JOIN almacen_ingredientes i ON i.id=m.ingrediente_id
         LEFT JOIN usuarios u ON u.id=m.usuario_id
         WHERE m.tenant_id=? AND m.motivo='venta_platillo' AND DATE(m.created_at)=?
         ORDER BY m.created_at DESC
     `, [tid, hoy]);
-    res.render('almacen/salidas', { ingredientes, salidasVenta });
+
+    // Agrupar por pedido_item para mostrar por plato
+    const platosMap = {};
+    for (const s of salidasVenta) {
+        const key = s.pedido_item_id || s.id;
+        if (!platosMap[key]) platosMap[key] = { items: [], hora: s.created_at, pedido_item_id: key };
+        platosMap[key].items.push(s);
+    }
+
+    // Obtener nombre del plato y mesa para cada pedido_item
+    const platos = [];
+    for (const [key, val] of Object.entries(platosMap)) {
+        try {
+            const [[pi]] = await db.query(`
+                SELECT pi.producto_id, pi.cantidad, p.nombre as producto_nombre,
+                       pe.mesa_id, m.numero as mesa_numero
+                FROM pedido_items pi
+                JOIN productos p ON p.id=pi.producto_id
+                LEFT JOIN pedidos pe ON pe.id=pi.pedido_id
+                LEFT JOIN mesas m ON m.id=pe.mesa_id
+                WHERE pi.id=?
+            `, [key]);
+            platos.push({
+                ...val,
+                producto_nombre: pi ? pi.producto_nombre : 'Producto',
+                cantidad: pi ? pi.cantidad : 1,
+                mesa_numero: pi ? pi.mesa_numero : '-'
+            });
+        } catch(e) {
+            platos.push({ ...val, producto_nombre: 'Producto', cantidad: 1, mesa_numero: '-' });
+        }
+    }
+
+    // Ranking top 10 productos mas vendidos hoy
+    const [ranking] = await db.query(`
+        SELECT p.nombre, COUNT(DISTINCT m.referencia_id) as veces, SUM(m.cantidad) as total_insumos,
+               SUM(m.costo_total) as costo_total
+        FROM almacen_movimientos m
+        JOIN pedido_items pi ON pi.id=m.referencia_id
+        JOIN productos p ON p.id=pi.producto_id
+        WHERE m.tenant_id=? AND m.motivo='venta_platillo' AND DATE(m.created_at)=?
+        GROUP BY p.id
+        ORDER BY veces DESC
+        LIMIT 10
+    `, [tid, hoy]);
+
+    res.render('almacen/salidas', { ingredientes, salidasVenta, platos, ranking });
 });
 router.get('/historial', (req, res) => res.render('almacen/historial'));
 router.get('/alertas', (req, res) => res.render('almacen/alertas'));
