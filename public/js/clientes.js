@@ -44,7 +44,10 @@ $(document).ready(function() {
         const cliente = {
             nombre: $('#nombre').val(),
             direccion: $('#direccion').val(),
-            telefono: $('#telefono').val()
+            telefono: $('#telefono').val(),
+            tipo_documento: $('#tipo_documento').val() || 'DNI',
+            numero_documento: $('#numero_documento').val() || '',
+            email: $('#email').val() || ''
         };
 
         if (!cliente.nombre) {
@@ -78,6 +81,9 @@ function editarCliente(id) {
         $('#nombre').val(cliente.nombre);
         $('#direccion').val(cliente.direccion || '');
         $('#telefono').val(cliente.telefono || '');
+        $('#tipo_documento').val(cliente.tipo_documento || 'DNI');
+        $('#numero_documento').val(cliente.numero_documento || '');
+        $('#email').val(cliente.email || '');
         $('#modalTitle').text('Editar Cliente');
         clienteModal.show();
     });

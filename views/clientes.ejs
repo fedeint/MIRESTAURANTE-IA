@@ -40,18 +40,22 @@
                     <table class="table table-hover">
                         <thead class="table-light">
                             <tr>
+                                <th>Doc.</th>
                                 <th>Nombre</th>
-                                <th>Dirección</th>
-                                <th>Teléfono</th>
+                                <th>Direccion</th>
+                                <th>Telefono</th>
+                                <th>Email</th>
                                 <th class="text-center">Acciones</th>
                             </tr>
                         </thead>
                         <tbody id="clientesTabla">
                             <% clientes.forEach(function(cliente) { %>
                                 <tr>
-                                    <td><%= cliente.nombre %></td>
-                                    <td><%= cliente.direccion || 'No especificada' %></td>
-                                    <td><%= cliente.telefono || 'No especificado' %></td>
+                                    <td><% if (cliente.numero_documento) { %><span class="badge bg-secondary"><%= cliente.tipo_documento || 'DNI' %></span><br><small><%= cliente.numero_documento %></small><% } else { %>-<% } %></td>
+                                    <td><strong><%= cliente.nombre %></strong></td>
+                                    <td><%= cliente.direccion || '-' %></td>
+                                    <td><%= cliente.telefono || '-' %></td>
+                                    <td><%= cliente.email || '-' %></td>
                                     <td class="text-center">
                                         <div class="action-buttons">
                                             <button class="btn btn-sm btn-outline-primary me-1" 
@@ -92,17 +96,36 @@
                 <div class="modal-body">
                     <form id="formCliente">
                         <input type="hidden" id="clienteId">
-                        <div class="mb-3">
-                            <label class="form-label">Nombre</label>
-                            <input type="text" class="form-control" id="nombre" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Dirección</label>
-                            <input type="text" class="form-control" id="direccion">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Teléfono</label>
-                            <input type="text" class="form-control" id="telefono">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Tipo Doc.</label>
+                                <select class="form-select" id="tipo_documento">
+                                    <option value="DNI">DNI</option>
+                                    <option value="RUC">RUC</option>
+                                    <option value="CE">CE</option>
+                                    <option value="PASAPORTE">Pasaporte</option>
+                                </select>
+                            </div>
+                            <div class="col-md-8">
+                                <label class="form-label fw-bold">N° Documento</label>
+                                <input type="text" class="form-control" id="numero_documento" placeholder="DNI: 8 digitos / RUC: 11 digitos">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-bold">Nombre / Razon Social</label>
+                                <input type="text" class="form-control" id="nombre" required placeholder="Persona o empresa">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Direccion</label>
+                                <input type="text" class="form-control" id="direccion">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Telefono</label>
+                                <input type="text" class="form-control" id="telefono">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Email</label>
+                                <input type="email" class="form-control" id="email" placeholder="Para envio de comprobantes">
+                            </div>
                         </div>
                     </form>
                 </div>

@@ -56,15 +56,15 @@ router.get('/:id', async (req, res) => {
 router.post('/', async (req, res) => {
     try {
         console.log('Datos recibidos:', req.body);
-        const { nombre, direccion, telefono } = req.body;
-        
+        const { nombre, direccion, telefono, tipo_documento, numero_documento, email } = req.body;
+
         if (!nombre) {
             return res.status(400).json({ error: 'El nombre es requerido' });
         }
 
         const [result] = await db.query(
-            'INSERT INTO clientes (nombre, direccion, telefono) VALUES (?, ?, ?)',
-            [nombre, direccion || null, telefono || null]
+            'INSERT INTO clientes (nombre, direccion, telefono, tipo_documento, numero_documento, email) VALUES (?, ?, ?, ?, ?, ?)',
+            [nombre, direccion || null, telefono || null, tipo_documento || 'DNI', numero_documento || null, email || null]
         );
 
         console.log('Cliente creado:', result);
@@ -82,15 +82,15 @@ router.post('/', async (req, res) => {
 // PUT /clientes/:id - Actualizar cliente
 router.put('/:id', async (req, res) => {
     try {
-        const { nombre, direccion, telefono } = req.body;
-        
+        const { nombre, direccion, telefono, tipo_documento, numero_documento, email } = req.body;
+
         if (!nombre) {
             return res.status(400).json({ error: 'El nombre es requerido' });
         }
 
         const result = await db.query(
-            'UPDATE clientes SET nombre = ?, direccion = ?, telefono = ? WHERE id = ?',
-            [nombre, direccion || null, telefono || null, req.params.id]
+            'UPDATE clientes SET nombre = ?, direccion = ?, telefono = ?, tipo_documento = ?, numero_documento = ?, email = ? WHERE id = ?',
+            [nombre, direccion || null, telefono || null, tipo_documento || 'DNI', numero_documento || null, email || null, req.params.id]
         );
 
         if (result.affectedRows === 0) {

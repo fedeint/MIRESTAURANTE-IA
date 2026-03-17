@@ -276,22 +276,6 @@ app.use('/api/administracion', requireRole('administrador'), administracionRoute
 app.use('/configuracion', requireRole('administrador'), configuracionRoutes);
 app.use('/ventas', requireRole('administrador'), ventasRoutes);
 
-// Ruta para la página de productos
-app.get('/productos', async (req, res) => {
-    try {
-        const [productos] = await db.query('SELECT * FROM productos ORDER BY nombre');
-        res.render('productos', { productos: productos || [] });
-    } catch (error) {
-        console.error('Error al obtener productos:', error);
-        res.status(500).render('error', { 
-            error: {
-                message: 'Error al obtener productos',
-                stack: process.env.NODE_ENV === 'development' ? error.stack : ''
-            }
-        });
-    }
-});
-
 // Manejo de errores 404
 app.use((req, res, next) => {
     console.log('404 - Ruta no encontrada:', req.url);
