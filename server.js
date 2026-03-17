@@ -44,7 +44,7 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 // se puede cambiar a un store en BD (no incluido aquí para mantener simple).
 app.use(session({
     name: 'sr.sid',
-    secret: process.env.SESSION_SECRET || 'cambia_este_secret_en_.env',
+    secret: process.env.SESSION_SECRET || (() => { console.warn('ADVERTENCIA: SESSION_SECRET no configurado en .env, usando valor por defecto inseguro'); return 'dev-only-insecure-default'; })(),
     resave: false,
     saveUninitialized: false,
     cookie: {
