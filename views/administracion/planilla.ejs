@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planilla - dignita.tech</title>
+    <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/theme.css">
+</head>
+<body>
+    <%- include('../partials/sidebar') %>
+    <div class="dg-main">
+    <main class="flex-grow-1">
+    <div class="container">
+
+        <!-- Header -->
+        <div class="d-flex align-items-center justify-content-between mb-4 mt-3 flex-wrap gap-2">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-people fs-2 me-2"></i>
+                <h2 class="mb-0">Planilla de Personal</h2>
+            </div>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalAgregarPersonal">
+                <i class="bi bi-plus-lg me-1"></i> Agregar personal
+            </button>
+        </div>
+
+        <!-- Table -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>DNI</th>
+                                <th>Cargo</th>
+                                <th>Tipo Pago</th>
+                                <th class="text-end">Monto (S/)</th>
+                                <th>Reg. Pension</th>
+                                <th class="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% if (personal && personal.length > 0) { %>
+                                <% personal.forEach(function(p) { %>
+                                    <tr>
+                                        <td class="fw-semibold"><%= p.nombre %></td>
+                                        <td><%= p.dni %></td>
+                                        <td><span class="badge bg-info"><%= p.cargo %></span></td>
+                                        <td><%= p.tipo_pago %></td>
+                                        <td class="text-end">S/ <%= Number(p.monto).toLocaleString('es-PE', {minimumFractionDigits:2, maximumFractionDigits:2}) %></td>
+                                        <td><%= p.regimen_pension %></td>
+                                        <td class="text-center">
+                                            <button class="btn btn-sm btn-success me-1" onclick="pagarDia('<%= p._id || p.id %>', '<%= p.nombre %>')" title="Pagar dia">
+                                                <i class="bi bi-cash-coin"></i> Pagar dia
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-primary me-1" onclick="editarPersonal('<%= p._id || p.id %>')" title="Editar">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger" onclick="eliminarPersonal('<%= p._id || p.id %>', '<%= p.nombre %>')" title="Eliminar">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </td>
+                                    </tr>
+                                <% }); %>
+                            <% } else { %>
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted py-4">
+                                        <i class="bi bi-person-x fs-1 d-block mb-2"></i>
+                                        No hay personal registrado
+                                    </td>
+                                </tr>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    </main>
+    <%- include('../partials/footer') %>
+    </div>
+
+    <!-- Modal Agregar Personal -->
+    <div class="modal fade" id="modalAgregarPersonal" tabindex="-1" aria-labelledby="modalAgregarPersonalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalAgregarPersonalLabel">
+                        <i class="bi bi-person-plus me-2"></i>Agregar Personal
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <form id="formAgregarPersonal">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="nombre" class="form-label">Nombre completo</label>
+                            <input type="text" class="form-control" id="nombre" name="nombre" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="dni" class="form-label">DNI</label>
+                            <input type="text" class="form-control" id="dni" name="dni" maxlength="8" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="cargo" class="form-label">Cargo</label>
+                            <select class="form-select" id="cargo" name="cargo" required>
+                                <option value="">Seleccionar...</option>
+                                <option value="Chef">Chef</option>
+                                <option value="Cocinero">Cocinero</option>
+                                <option value="Mozo">Mozo</option>
+                                <option value="Cajero">Cajero</option>
+                                <option value="Bartender">Bartender</option>
+                                <option value="Administrador">Administrador</option>
+                                <option value="Limpieza">Limpieza</option>
+                                <option value="Otro">Otro</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="tipo_pago" class="form-label">Tipo de pago</label>
+                            <select class="form-select" id="tipo_pago" name="tipo_pago" required>
+                                <option value="">Seleccionar...</option>
+                                <option value="mensual">Mensual</option>
+                                <option value="quincenal">Quincenal</option>
+                                <option value="semanal">Semanal</option>
+                                <option value="diario">Diario</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="monto" class="form-label">Monto (S/)</label>
+                            <input type="number" class="form-control" id="monto" name="monto" step="0.01" min="0" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="regimen_pension" class="form-label">Regimen de pension</label>
+                            <select class="form-select" id="regimen_pension" name="regimen_pension" required>
+                                <option value="">Seleccionar...</option>
+                                <option value="ONP">ONP (13%)</option>
+                                <option value="AFP Integra">AFP Integra</option>
+                                <option value="AFP Prima">AFP Prima</option>
+                                <option value="AFP Profuturo">AFP Profuturo</option>
+                                <option value="AFP Habitat">AFP Habitat</option>
+                                <option value="Sin regimen">Sin regimen</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save me-1"></i> Guardar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="/vendor/sweetalert2/sweetalert2.all.min.js"></script>
+    <script>
+        // Pagar dia
+        async function pagarDia(id, nombre) {
+            const confirm = await Swal.fire({
+                title: 'Pagar dia',
+                text: `Registrar pago del dia para ${nombre}?`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Si, pagar',
+                cancelButtonText: 'Cancelar'
+            });
+
+            if (!confirm.isConfirmed) return;
+
+            try {
+                const res = await fetch('/api/administracion/planilla/pagar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ personal_id: id })
+                });
+                const data = await res.json();
+
+                if (res.ok && data.ok) {
+                    await Swal.fire({
+                        title: 'Pago registrado',
+                        icon: 'success',
+                        html: `
+                            <div class="text-start">
+                                <table class="table table-sm mb-0">
+                                    <tr><td><strong>Bruto:</strong></td><td class="text-end">S/ ${Number(data.bruto).toFixed(2)}</td></tr>
+                                    <tr><td><strong>${data.tipo_descuento || 'ONP/AFP'}:</strong></td><td class="text-end text-danger">- S/ ${Number(data.descuento || 0).toFixed(2)}</td></tr>
+                                    <tr><td><strong>Neto:</strong></td><td class="text-end text-success">S/ ${Number(data.neto).toFixed(2)}</td></tr>
+                                    <tr><td><strong>EsSalud:</strong></td><td class="text-end">S/ ${Number(data.essalud || 0).toFixed(2)}</td></tr>
+                                </table>
+                            </div>
+                        `
+                    });
+                } else {
+                    Swal.fire('Error', data.error || 'No se pudo registrar el pago', 'error');
+                }
+            } catch (err) {
+                Swal.fire('Error', 'Error de conexion', 'error');
+            }
+        }
+
+        // Agregar personal
+        document.getElementById('formAgregarPersonal').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = Object.fromEntries(new FormData(this));
+
+            try {
+                const res = await fetch('/api/administracion/planilla', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+                const data = await res.json();
+
+                if (res.ok && data.ok) {
+                    await Swal.fire('Guardado', 'Personal agregado correctamente', 'success');
+                    location.reload();
+                } else {
+                    Swal.fire('Error', data.error || 'No se pudo guardar', 'error');
+                }
+            } catch (err) {
+                Swal.fire('Error', 'Error de conexion', 'error');
+            }
+        });
+
+        // Editar personal
+        function editarPersonal(id) {
+            window.location.href = `/administracion/planilla/editar/${id}`;
+        }
+
+        // Eliminar personal
+        async function eliminarPersonal(id, nombre) {
+            const confirm = await Swal.fire({
+                title: 'Eliminar personal',
+                text: `Seguro que desea eliminar a ${nombre}?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                confirmButtonText: 'Si, eliminar',
+                cancelButtonText: 'Cancelar'
+            });
+
+            if (!confirm.isConfirmed) return;
+
+            try {
+                const res = await fetch(`/api/administracion/planilla/${id}`, { method: 'DELETE' });
+                const data = await res.json();
+
+                if (res.ok && data.ok) {
+                    await Swal.fire('Eliminado', 'Personal eliminado correctamente', 'success');
+                    location.reload();
+                } else {
+                    Swal.fire('Error', data.error || 'No se pudo eliminar', 'error');
+                }
+            } catch (err) {
+                Swal.fire('Error', 'Error de conexion', 'error');
+            }
+        }
+    </script>
+</body>
+</html>

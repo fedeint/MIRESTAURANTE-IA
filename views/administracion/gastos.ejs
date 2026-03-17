@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gastos - dignita.tech</title>
+    <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/theme.css">
+</head>
+<body>
+    <%- include('../partials/sidebar') %>
+    <div class="dg-main">
+    <main class="flex-grow-1">
+    <div class="container">
+
+        <!-- Header -->
+        <div class="d-flex align-items-center justify-content-between mb-4 mt-3 flex-wrap gap-2">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-wallet2 fs-2 me-2"></i>
+                <h2 class="mb-0">Gastos</h2>
+            </div>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalNuevoGasto">
+                <i class="bi bi-plus-lg me-1"></i> Nuevo gasto
+            </button>
+        </div>
+
+        <!-- Table -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Categoria</th>
+                                <th>Concepto</th>
+                                <th class="text-end">Monto</th>
+                                <th>Comprobante</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% if (gastos && gastos.length > 0) { %>
+                                <% gastos.forEach(function(g) { %>
+                                    <tr>
+                                        <td><%= new Date(g.fecha).toLocaleDateString('es-PE') %></td>
+                                        <td>
+                                            <span class="badge" style="background-color: <%= g.grupo_color || '#6c757d' %>;">
+                                                <%= g.categoria || g.categoria_nombre || '-' %>
+                                            </span>
+                                        </td>
+                                        <td><%= g.concepto %></td>
+                                        <td class="text-end fw-semibold">S/ <%= Number(g.monto).toLocaleString('es-PE', {minimumFractionDigits:2, maximumFractionDigits:2}) %></td>
+                                        <td>
+                                            <% if (g.comprobante) { %>
+                                                <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i><%= g.comprobante %></span>
+                                            <% } else { %>
+                                                <span class="text-muted">-</span>
+                                            <% } %>
+                                        </td>
+                                    </tr>
+                                <% }); %>
+                            <% } else { %>
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted py-4">
+                                        <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                        No hay gastos registrados
+                                    </td>
+                                </tr>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    </main>
+    <%- include('../partials/footer') %>
+    </div>
+
+    <!-- Modal Nuevo Gasto -->
+    <div class="modal fade" id="modalNuevoGasto" tabindex="-1" aria-labelledby="modalNuevoGastoLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalNuevoGastoLabel">
+                        <i class="bi bi-plus-circle me-2"></i>Nuevo Gasto
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <form id="formNuevoGasto">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="categoria_id" class="form-label">Categoria</label>
+                            <select class="form-select" id="categoria_id" name="categoria_id" required>
+                                <option value="">Seleccionar categoria...</option>
+                                <% if (categorias && categorias.length > 0) { %>
+                                    <% categorias.forEach(function(c) { %>
+                                        <option value="<%= c._id || c.id %>"><%= c.nombre %> (<%= c.grupo %>)</option>
+                                    <% }); %>
+                                <% } %>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="concepto" class="form-label">Concepto</label>
+                            <input type="text" class="form-control" id="concepto" name="concepto" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="gasto_monto" class="form-label">Monto (S/)</label>
+                            <input type="number" class="form-control" id="gasto_monto" name="monto" step="0.01" min="0" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="fecha" class="form-label">Fecha</label>
+                            <input type="date" class="form-control" id="fecha" name="fecha" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="comprobante" class="form-label">Comprobante</label>
+                            <input type="text" class="form-control" id="comprobante" name="comprobante" placeholder="Ej: Factura, Boleta, Recibo...">
+                        </div>
+                        <div class="mb-3">
+                            <label for="notas" class="form-label">Notas</label>
+                            <textarea class="form-control" id="notas" name="notas" rows="2"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save me-1"></i> Guardar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="/vendor/sweetalert2/sweetalert2.all.min.js"></script>
+    <script>
+        // Set default date to today
+        document.getElementById('fecha').valueAsDate = new Date();
+
+        // Submit new gasto
+        document.getElementById('formNuevoGasto').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = Object.fromEntries(new FormData(this));
+
+            try {
+                const res = await fetch('/api/administracion/gastos', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(formData)
+                });
+                const data = await res.json();
+
+                if (res.ok && data.ok) {
+                    await Swal.fire('Guardado', 'Gasto registrado correctamente', 'success');
+                    location.reload();
+                } else {
+                    Swal.fire('Error', data.error || 'No se pudo registrar el gasto', 'error');
+                }
+            } catch (err) {
+                Swal.fire('Error', 'Error de conexion', 'error');
+            }
+        });
+    </script>
+</body>
+</html>

@@ -129,6 +129,7 @@ const almacenRoutes = require('./routes/almacen');
 const recetasRoutes = require('./routes/recetas');
 const cajaRoutes = require('./routes/caja');
 const sunatRoutes = require('./routes/sunat');
+const administracionRoutes = require('./routes/administracion');
 
 // Auth routes (públicas): /login /logout /setup
 app.use(authRoutes);
@@ -249,6 +250,10 @@ app.get('/ranking', requireRole('administrador'), async (req, res) => {
     } catch (e) { console.error('Ranking stats error:', e.message); }
     res.render('ranking', { stats });
 });
+
+// Administracion P&L (admin)
+app.use('/administracion', requireRole('administrador'), administracionRoutes);
+app.use('/api/administracion', requireRole('administrador'), administracionRoutes);
 
 // Configuración y ventas (admin)
 app.use('/configuracion', requireRole('administrador'), configuracionRoutes);

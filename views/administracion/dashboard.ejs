@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>P&L - dignita.tech</title>
+    <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/theme.css">
+    <style>
+        .pl-row { border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .pl-row:hover { background: rgba(255,255,255,0.03); }
+        .pl-label { font-weight: 500; }
+        .pl-amount { text-align: right; font-family: 'Courier New', monospace; font-weight: 600; }
+        .pl-positive { color: #22c55e; }
+        .pl-negative { color: #ef4444; }
+        .pl-subtotal { background: rgba(255,255,255,0.04); font-weight: 700; }
+        .pl-prefix { color: #6b7280; font-weight: 400; width: 30px; display: inline-block; }
+        .pl-indent { padding-left: 2.5rem !important; }
+    </style>
+</head>
+<body>
+    <%- include('../partials/sidebar') %>
+    <div class="dg-main">
+    <main class="flex-grow-1">
+    <div class="container">
+
+        <!-- Header -->
+        <div class="d-flex align-items-center justify-content-between mb-4 mt-3 flex-wrap gap-2">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-bar-chart-line fs-2 me-2"></i>
+                <h2 class="mb-0">P&L / Estado de Resultados</h2>
+            </div>
+            <form method="GET" class="d-flex align-items-center gap-2">
+                <select name="mes" class="form-select form-select-sm" style="width:auto;">
+                    <% const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']; %>
+                    <% for (let i = 1; i <= 12; i++) { %>
+                        <option value="<%= i %>" <%= (typeof mes !== 'undefined' && mes == i) ? 'selected' : '' %>><%= meses[i-1] %></option>
+                    <% } %>
+                </select>
+                <select name="anio" class="form-select form-select-sm" style="width:auto;">
+                    <% const anioActual = new Date().getFullYear(); %>
+                    <% for (let a = anioActual - 2; a <= anioActual + 1; a++) { %>
+                        <option value="<%= a %>" <%= (typeof anio !== 'undefined' && anio == a) ? 'selected' : '' %>><%= a %></option>
+                    <% } %>
+                </select>
+                <button type="submit" class="btn btn-sm btn-primary">
+                    <i class="bi bi-funnel"></i> Filtrar
+                </button>
+            </form>
+        </div>
+
+        <!-- P&L Card -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0"><i class="bi bi-receipt-cutoff me-2"></i>Estado de Resultados</h5>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-borderless mb-0">
+                    <tbody>
+                        <tr class="pl-row">
+                            <td class="pl-label">
+                                <span class="pl-prefix">(+)</span> Ventas brutas
+                            </td>
+                            <td class="pl-amount <%= pl.ventas_brutas >= 0 ? 'pl-positive' : 'pl-negative' %>">
+                                S/ <%= Number(pl.ventas_brutas).toLocaleString('es-PE', {minimumFractionDigits:2, maximumFractionDigits:2}) %>
+                            </td>
+                        </tr>
+                        <tr class="pl-row">
+                            <td class="pl-label">
+                                <span class="pl-prefix">(-)</span> IGV ventas
+                            </td>
+                            <td class="pl-amount pl-negative">
+                                S/ <%= Number(pl.igv_ventas).toLocaleString('es-PE', {minimumFractionDigits:2, maximumFractionDigits:2}) %>
+                            </td>
+                        </tr>
+                        <tr class="pl-row pl-subtotal">
+                            <td class="pl-label">
+                                <span class="pl-prefix">(=)</span> Ventas netas
+                            </td>
+                            <td class="pl-amount <%= pl.ventas_netas >= 0 ? 'pl-positive' : 'pl-negative' %>">
+                                S/ <%= Number(pl.ventas_netas).toLocaleString('es-PE', {minimumFractionDigits:2, maximumFractionDigits:2}) %>
+                            </td>
+                        </tr>
+                        <tr class="pl-row">
+                            <td class="pl-label">
+                                <span class="pl-prefix">(-)</span> COGS teorico
+                            </td>
+                            <td class="pl-amount pl-negative">
+                                S/ <%= Number(pl.cogs_teorico).toLocaleString('es-PE', {minimumFractionDigits:2, maximumFractionDigits:2}) %>
+                            </td>
+                        </tr>
+                        <tr class="pl-row pl-subtotal">
+                            <td class="pl-label">
+                                <span class="pl-prefix">(=)</span> Margen bruto
+                            </td>
+                            <td class="pl-amount <%= pl.margen_bruto >= 0 ? 'pl-positive' : 'pl-negative' %>">
+                                S/ <%= Number(pl.margen_bruto).toLocaleString('es-PE', {minimumFractionDigits:2, maximumFractionDigits:2}) %>
+                                <small>(<%= pl.margen_bruto_pct %>%)</small>
+                            </td>
+                        </tr>
+                        <tr class="pl-row">
+                            <td class="pl-label pl-indent">
+                                Varianza COGS
+                            </td>
+                            <td class="pl-amount <%= pl.varianza >= 0 ? 'pl-negative' : 'pl-positive' %>">
+                                S/ <%= Number(pl.varianza).toLocaleString('es-PE', {minimumFractionDigits:2, maximumFractionDigits:2}) %>
+                                <small>(teorico vs real)</small>
+                            </td>
+                        </tr>
+                        <tr class="pl-row">
+                            <td class="pl-label">
+                                <span class="pl-prefix">(-)</span> Planilla
+                            </td>
+                            <td class="pl-amount pl-negative">
+                                S/ <%= Number(pl.planilla_total).toLocaleString('es-PE', {minimumFractionDigits:2, maximumFractionDigits:2}) %>
+                            </td>
+                        </tr>
+                        <tr class="pl-row">
+                            <td class="pl-label pl-indent" colspan="2">
+                                <small class="text-muted">
+                                    (Bruta: S/ <%= Number(pl.planilla_bruta).toLocaleString('es-PE', {minimumFractionDigits:2, maximumFractionDigits:2}) %>,
+                                     Aportes: S/ <%= Number(pl.planilla_aportes).toLocaleString('es-PE', {minimumFractionDigits:2, maximumFractionDigits:2}) %>)
+                                </small>
+                            </td>
+                        </tr>
+                        <tr class="pl-row">
+                            <td class="pl-label">
+                                <span class="pl-prefix">(-)</span> Gastos fijos
+                            </td>
+                            <td class="pl-amount pl-negative">
+                                S/ <%= Number(pl.gastos_fijos).toLocaleString('es-PE', {minimumFractionDigits:2, maximumFractionDigits:2}) %>
+                            </td>
+                        </tr>
+                        <tr class="pl-row">
+                            <td class="pl-label">
+                                <span class="pl-prefix">(-)</span> Gastos variables
+                            </td>
+                            <td class="pl-amount pl-negative">
+                                S/ <%= Number(pl.gastos_variables).toLocaleString('es-PE', {minimumFractionDigits:2, maximumFractionDigits:2}) %>
+                            </td>
+                        </tr>
+                        <tr class="pl-subtotal" style="border-top: 2px solid rgba(255,255,255,0.15);">
+                            <td class="pl-label">
+                                <span class="pl-prefix">(=)</span> <strong>EBITDA</strong>
+                            </td>
+                            <td class="pl-amount <%= pl.ebitda >= 0 ? 'pl-positive' : 'pl-negative' %>">
+                                <strong>S/ <%= Number(pl.ebitda).toLocaleString('es-PE', {minimumFractionDigits:2, maximumFractionDigits:2}) %></strong>
+                                <small>(<%= pl.ebitda_pct %>%)</small>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- Gastos por Grupo -->
+            <div class="col-lg-6">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0"><i class="bi bi-pie-chart me-2"></i>Gastos por Grupo</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Grupo</th>
+                                        <th>Nombre</th>
+                                        <th class="text-end">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% if (gastosPorGrupo && gastosPorGrupo.length > 0) { %>
+                                        <% gastosPorGrupo.forEach(function(g) { %>
+                                            <tr>
+                                                <td><span class="badge bg-secondary"><%= g.grupo %></span></td>
+                                                <td><%= g.nombre %></td>
+                                                <td class="text-end fw-semibold">S/ <%= Number(g.total).toLocaleString('es-PE', {minimumFractionDigits:2, maximumFractionDigits:2}) %></td>
+                                            </tr>
+                                        <% }); %>
+                                    <% } else { %>
+                                        <tr>
+                                            <td colspan="3" class="text-center text-muted py-3">Sin gastos registrados</td>
+                                        </tr>
+                                    <% } %>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Presupuesto vs Real -->
+            <div class="col-lg-6">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0"><i class="bi bi-clipboard-data me-2"></i>Presupuesto vs Real</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th class="text-end">Presupuestado</th>
+                                        <th class="text-end">Real</th>
+                                        <th class="text-end">Diferencia</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% if (presupuesto && presupuesto.length > 0) { %>
+                                        <% presupuesto.forEach(function(p) { %>
+                                            <tr>
+                                                <td><%= p.nombre %></td>
+                                                <td class="text-end">S/ <%= Number(p.presupuestado).toLocaleString('es-PE', {minimumFractionDigits:2, maximumFractionDigits:2}) %></td>
+                                                <td class="text-end">S/ <%= Number(p.real).toLocaleString('es-PE', {minimumFractionDigits:2, maximumFractionDigits:2}) %></td>
+                                                <td class="text-end fw-semibold <%= p.diferencia >= 0 ? 'text-success' : 'text-danger' %>">
+                                                    S/ <%= Number(p.diferencia).toLocaleString('es-PE', {minimumFractionDigits:2, maximumFractionDigits:2}) %>
+                                                </td>
+                                            </tr>
+                                        <% }); %>
+                                    <% } else { %>
+                                        <tr>
+                                            <td colspan="4" class="text-center text-muted py-3">Sin datos de presupuesto</td>
+                                        </tr>
+                                    <% } %>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    </main>
+    <%- include('../partials/footer') %>
+    </div>
+    <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="/vendor/sweetalert2/sweetalert2.all.min.js"></script>
+</body>
+</html>
