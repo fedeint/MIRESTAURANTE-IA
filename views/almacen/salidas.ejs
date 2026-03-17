@@ -24,17 +24,17 @@
         <!-- Salidas automaticas por ventas -->
         <div class="card mb-4">
             <div class="card-header fw-bold d-flex align-items-center gap-2">
-                <i class="bi bi-receipt text-success"></i>
-                Descuento automatico por platos vendidos hoy
+                <i class="bi bi-fire text-danger"></i>
+                Insumos descontados automaticamente (al enviar a cocina)
                 <span class="badge bg-success ms-auto"><%= salidasVenta.length %> movimientos</span>
             </div>
             <div class="card-body p-0">
                 <div class="table-responsive">
                     <table class="table table-sm table-hover mb-0">
-                        <thead><tr><th>Hora</th><th>Ingrediente</th><th>Cantidad</th><th>Costo</th><th>Factura</th></tr></thead>
+                        <thead><tr><th>Hora</th><th>Ingrediente</th><th>Cantidad</th><th>Costo</th><th>Pedido</th></tr></thead>
                         <tbody>
                             <% if (salidasVenta.length === 0) { %>
-                                <tr><td colspan="5" class="text-center text-muted py-3">Sin ventas hoy. Los ingredientes se descuentan al facturar.</td></tr>
+                                <tr><td colspan="5" class="text-center text-muted py-3">Sin pedidos enviados a cocina hoy. Los insumos se descuentan automaticamente al enviar a cocina.</td></tr>
                             <% } else { salidasVenta.forEach(function(m) { %>
                                 <tr>
                                     <td><%= new Date(m.created_at).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'}) %></td>
@@ -52,7 +52,7 @@
 
         <!-- Salida manual -->
         <div class="card">
-            <div class="card-header fw-bold"><i class="bi bi-exclamation-triangle text-warning me-1"></i>Registrar salida manual</div>
+            <div class="card-header fw-bold"><i class="bi bi-exclamation-triangle text-warning me-1"></i>Salida manual (merma, vencimiento, consumo interno - NO platos)</div>
             <div class="card-body">
                 <div class="row g-3">
                     <div class="col-md-4">
