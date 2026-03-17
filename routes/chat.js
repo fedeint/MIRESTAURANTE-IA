@@ -321,7 +321,7 @@ async function obtenerContextoNegocio() {
         // Top selling products
         const [topVentas] = await db.query(`
             SELECT p.nombre, SUM(df.cantidad) as total_vendido, SUM(df.subtotal) as total_monto
-            FROM detalle_facturas df
+            FROM detalle_factura df
             JOIN productos p ON p.id = df.producto_id
             WHERE df.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
             GROUP BY df.producto_id

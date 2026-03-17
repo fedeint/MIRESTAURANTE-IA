@@ -163,13 +163,13 @@ app.get('/', requireAuth, async (req, res) => {
         const [[mo]] = await db.query("SELECT COUNT(*) as t FROM mesas WHERE estado='ocupada'");
         dashboard.mesasOcupadas = mo.t;
 
-        const [[ph]] = await db.query("SELECT COALESCE(SUM(df.cantidad),0) as t FROM detalle_facturas df JOIN facturas f ON f.id=df.factura_id WHERE DATE(f.fecha)=CURDATE()");
+        const [[ph]] = await db.query("SELECT COALESCE(SUM(df.cantidad),0) as t FROM detalle_factura df JOIN facturas f ON f.id=df.factura_id WHERE DATE(f.fecha)=CURDATE()");
         dashboard.productosVendidosHoy = Number(ph.t);
 
         const [[cl]] = await db.query("SELECT COUNT(*) as t FROM clientes");
         dashboard.clientesTotal = cl.t;
 
-        const [tp] = await db.query("SELECT p.nombre, SUM(df.cantidad) as qty FROM detalle_facturas df JOIN productos p ON p.id=df.producto_id JOIN facturas f ON f.id=df.factura_id WHERE DATE(f.fecha)=CURDATE() GROUP BY df.producto_id ORDER BY qty DESC LIMIT 5");
+        const [tp] = await db.query("SELECT p.nombre, SUM(df.cantidad) as qty FROM detalle_factura df JOIN productos p ON p.id=df.producto_id JOIN facturas f ON f.id=df.factura_id WHERE DATE(f.fecha)=CURDATE() GROUP BY df.producto_id ORDER BY qty DESC LIMIT 5");
         dashboard.topProductos = tp || [];
     } catch (e) { console.error('Dashboard error:', e.message); }
 
@@ -247,7 +247,7 @@ app.get('/ranking', requireRole('administrador'), async (req, res) => {
         stats.ticketPromedio = vm.t > 0 ? (Number(vm.m) / vm.t).toFixed(2) : '0.00';
         const [[cl]] = await db.query("SELECT COUNT(*) as t FROM clientes");
         stats.clientesActivos = cl.t;
-        const [tp] = await db.query("SELECT p.nombre, SUM(df.cantidad) as qty, SUM(df.subtotal) as monto FROM detalle_facturas df JOIN productos p ON p.id=df.producto_id WHERE df.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) GROUP BY df.producto_id ORDER BY qty DESC LIMIT 10");
+        const [tp] = await db.query("SELECT p.nombre, SUM(df.cantidad) as qty, SUM(df.subtotal) as monto FROM detalle_factura df JOIN productos p ON p.id=df.producto_id WHERE df.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) GROUP BY df.producto_id ORDER BY qty DESC LIMIT 10");
         stats.topProductos = tp || [];
         if (tp.length > 0) stats.productoEstrella = tp[0].nombre;
     } catch (e) { console.error('Ranking stats error:', e.message); }

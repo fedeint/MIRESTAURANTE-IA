@@ -12,7 +12,7 @@ router.get('/reservas', async (req, res) => {
         LEFT JOIN mesas m ON m.id=r.mesa_id
         WHERE r.tenant_id=? AND r.fecha=? ORDER BY r.hora
     `, [tid, fecha]);
-    const [mesas] = await db.query('SELECT id, numero, estado FROM mesas WHERE tenant_id=?', [tid]);
+    const [mesas] = await db.query('SELECT id, numero, estado FROM mesas');
     res.render('features/reservas', { reservas, mesas, fecha });
 });
 

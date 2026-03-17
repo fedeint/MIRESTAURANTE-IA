@@ -31,8 +31,8 @@ router.get('/diario', async (req, res) => {
                    COALESCE(SUM(CASE WHEN forma_pago='efectivo' THEN total ELSE 0 END),0) as efectivo,
                    COALESCE(SUM(CASE WHEN forma_pago='tarjeta' THEN total ELSE 0 END),0) as tarjeta,
                    COALESCE(SUM(CASE WHEN forma_pago='transferencia' THEN total ELSE 0 END),0) as transferencia
-            FROM facturas WHERE tenant_id=? AND DATE(fecha)=?
-        `, [tid, fecha]);
+            FROM facturas WHERE DATE(fecha)=?
+        `, [fecha]);
 
         // 3. Top productos
         const [topProds] = await db.query(`
@@ -41,9 +41,9 @@ router.get('/diario', async (req, res) => {
             FROM detalle_factura df
             JOIN facturas f ON f.id=df.factura_id
             JOIN productos p ON p.id=df.producto_id
-            WHERE f.tenant_id=? AND DATE(f.fecha)=?
+            WHERE DATE(f.fecha)=?
             GROUP BY df.producto_id ORDER BY qty DESC LIMIT 10
-        `, [tid, fecha]);
+        `, [fecha]);
 
         // 4. Planilla del dia
         const [planillaHoy] = await db.query(`

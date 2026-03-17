@@ -14,16 +14,16 @@ router.get('/', async (req, res) => {
             SELECT COUNT(*) as cantidad, COALESCE(SUM(total),0) as total_bruto,
                    COALESCE(SUM(COALESCE(subtotal_sin_igv, total/1.18)),0) as ventas_netas,
                    COALESCE(SUM(COALESCE(igv, total - total/1.18)),0) as igv_ventas
-            FROM facturas WHERE tenant_id=? AND MONTH(fecha)=? AND YEAR(fecha)=?
-        `, [tid, mes, anio]);
+            FROM facturas WHERE MONTH(fecha)=? AND YEAR(fecha)=?
+        `, [mes, anio]);
 
         // COGS teorico (recetas x vendidos)
         const [[cogs]] = await db.query(`
             SELECT COALESCE(SUM(df.costo_receta * df.cantidad), 0) as cogs_teorico
             FROM detalle_factura df
             JOIN facturas f ON f.id = df.factura_id
-            WHERE f.tenant_id=? AND MONTH(f.fecha)=? AND YEAR(f.fecha)=? AND df.costo_receta IS NOT NULL
-        `, [tid, mes, anio]);
+            WHERE MONTH(f.fecha)=? AND YEAR(f.fecha)=? AND df.costo_receta IS NOT NULL
+        `, [mes, anio]);
 
         // Compras del mes (COGS real)
         const [[compras]] = await db.query(`
