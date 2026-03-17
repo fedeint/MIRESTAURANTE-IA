@@ -207,7 +207,7 @@ app.use('/api/mesas', requireRole(['mesero', 'administrador']), mesasRoutes);
 // - Cocinero/Admin: puede preparar/marcar listo
 // - Mesero: solo visualiza y marca "Entregado" en la pestaña de listos (la acción se hace vía /api/mesas/items/:id/estado con validación)
 // Relacionado con: routes/cocina.js (middlewares por ruta) y routes/mesas.js (restricción servido)
-app.use('/cocina', requireRole(['cocinero', 'mesero', 'administrador']), cocinaRoutes);
+app.use('/cocina', requireRole(['cocinero', 'mesero', 'administrador']), requireCajaAbierta, cocinaRoutes);
 app.use('/api/cocina', requireRole(['cocinero', 'mesero', 'administrador']), cocinaRoutes);
 
 // Almacen (admin)
