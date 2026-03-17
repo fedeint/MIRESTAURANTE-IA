@@ -8,6 +8,7 @@ const db = require('./db');
 const session = require('express-session');
 const { attachUserToLocals, requireAuth, requireRole } = require('./middleware/auth');
 const { attachTenant } = require('./middleware/tenant');
+const { requireCajaAbierta } = require('./middleware/requireCaja');
 
 // Crear directorios necesarios
 const createRequiredDirectories = () => {
@@ -199,7 +200,7 @@ app.use('/facturas', requireRole('administrador'), facturasRoutes);
 app.use('/api/facturas', requireRole(['mesero', 'administrador']), facturasRoutes);
 
 // Mesas (mesero/admin)
-app.use('/mesas', requireRole(['mesero', 'administrador']), mesasRoutes);
+app.use('/mesas', requireRole(['mesero', 'administrador']), requireCajaAbierta, mesasRoutes);
 app.use('/api/mesas', requireRole(['mesero', 'administrador']), mesasRoutes);
 
 // Cocina
