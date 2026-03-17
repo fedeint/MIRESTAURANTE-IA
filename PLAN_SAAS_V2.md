@@ -192,18 +192,88 @@ Si el ceviche se vende a S/35.00 → **Margen bruto: S/28.35 (81%)**
 
 ### 2.4 ADMINISTRACION GENERAL (reemplaza Marketing)
 
-**Concepto**: P&L, Cashflow, gastos fijos, reportes financieros. Basado en tu Excel `_P&L - Cashflow.xlsx`.
+**Concepto**: Gestionar TODO el flujo financiero del restaurante: P&L, Cashflow, planilla, servicios, gastos. Basado en tu Excel `_P&L - Cashflow.xlsx`.
 
-**Estructura del Excel actual (2 hojas)**:
-- **Cashflows**: Entradas (capital, ventas, otros ingresos) vs Salidas (compras, servicios, marketing, sueldos, inmovilizado, legal, otros) por mes
-- **PyG**: P&L anual (Ventas - COGS = Margen Bruto - Gastos Admin - Sueldos = EBITDA - Amort - Provisiones = EBIT...)
+#### Estructura completa basada en el Excel P&L:
 
-**Tablas nuevas**:
+**HOJA 1 - CASHFLOW (mensual)**:
+
+ENTRADAS DE CAJA:
+- Capital inicial
+- Dinero en mano inicio de mes
+- Ventas (automatico desde facturas)
+- Ingresos financieros
+- Otros ingresos
+
+SALIDAS DE CAJA:
+- **Compras existencias** (productos terminados, semiterminados, packaging) → enlaza con Almacen
+- **Servicios** (ecommerce, correos, cloud)
+- **Marketing** (Facebook Ads, Instagram Ads, Google Ads, YouTube Ads, email marketing)
+- **Sueldos y salarios** (cada empleado con su jornal diario) → enlaza con Usuarios/Planilla
+- **Inmovilizado** (alquiler local, seguro, alarma, fianzas, suministros: LUZ, AGUA, INTERNET, GAS)
+- **Legal y financiero** (gestoria/contador, abogados, comisiones bancarias, otros gastos financieros)
+- **Otros gastos** (transportes, viajes, otros)
+
+RESULTADO: Flujo de caja mes = Total entradas - Total salidas → Balance final
+
+**HOJA 2 - P&L (anual, 2018-2030)**:
+- (+) Ventas
+- (-) COGS (costo de lo vendido) → calculado automaticamente desde recetas
+- (=) Margen Bruto
+- (-) Gastos Administrativos
+- (-) Sueldos y salarios
+- (=) EBITDA
+- (-) Amortizaciones
+- (-) Provisiones
+- (=) EBIT
+- (+) Ingresos extraordinarios
+- (-) Gastos extraordinarios
+- (=) Resultado ordinario
+- (+) Ingresos financieros
+- (-) Gastos financieros
+- (=) EBT (Beneficio antes de impuestos)
+- (-) Impuesto de Sociedades (IR Peru)
+- (=) **Beneficio neto**
+
+**Ratios automaticos**: Crecimiento ventas, Margen/Ventas, ROS, ROE, ROA
+
+#### Planilla de personal (sueldos diarios):
+
+```sql
+CREATE TABLE personal (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    usuario_id INT NULL,                        -- FK a usuarios (si tiene acceso al sistema)
+    nombre VARCHAR(150) NOT NULL,
+    cargo VARCHAR(100) NOT NULL,                -- 'Cocinero', 'Mesero', 'Cajero', 'Ayudante', 'Limpieza'
+    tipo_pago ENUM('diario','semanal','quincenal','mensual') DEFAULT 'diario',
+    monto_pago DECIMAL(10,2) NOT NULL,          -- Jornal diario o sueldo
+    fecha_ingreso DATE NULL,
+    activo TINYINT(1) DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE planilla_pagos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    personal_id INT NOT NULL,
+    fecha DATE NOT NULL,
+    monto DECIMAL(10,2) NOT NULL,
+    horas_trabajadas DECIMAL(5,2) NULL,
+    notas VARCHAR(200) NULL,
+    pagado TINYINT(1) DEFAULT 0,
+    caja_id INT NULL,                           -- Si se pago desde la caja
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (personal_id) REFERENCES personal(id)
+);
+```
+
+#### Servicios fijos (luz, agua, internet, gas, alquiler):
+
 ```sql
 CREATE TABLE gastos_categorias (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    nombre VARCHAR(100) NOT NULL,    -- 'Compras existencias', 'Sueldos', 'Alquiler', 'Marketing', etc.
+    nombre VARCHAR(100) NOT NULL,
     tipo ENUM('fijo','variable') DEFAULT 'variable',
+    grupo ENUM('compras','servicios','marketing','sueldos','inmovilizado','legal','otros') DEFAULT 'otros',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
@@ -213,9 +283,11 @@ CREATE TABLE gastos (
     concepto VARCHAR(200) NOT NULL,
     monto DECIMAL(10,2) NOT NULL,
     fecha DATE NOT NULL,
-    periodo_mes INT NULL,            -- 1-12
-    periodo_anio INT NULL,           -- 2026
+    periodo_mes INT NULL,
+    periodo_anio INT NULL,
     recurrente TINYINT(1) DEFAULT 0,
+    frecuencia ENUM('diario','semanal','mensual','anual') NULL,
+    comprobante VARCHAR(200) NULL,              -- Numero de recibo/factura del servicio
     notas TEXT NULL,
     usuario_id INT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -223,28 +295,185 @@ CREATE TABLE gastos (
 );
 ```
 
+**Categorias pre-cargadas**:
+| Grupo | Categoria | Tipo | Ejemplo |
+|-------|-----------|------|---------|
+| inmovilizado | Alquiler local | fijo | S/3,000/mes |
+| inmovilizado | Luz | fijo | S/800/mes |
+| inmovilizado | Agua | fijo | S/200/mes |
+| inmovilizado | Internet | fijo | S/150/mes |
+| inmovilizado | Gas | variable | S/600/mes |
+| inmovilizado | Seguro | fijo | S/200/mes |
+| inmovilizado | Alarma | fijo | S/80/mes |
+| sueldos | Salario cocinero jefe | fijo | S/80/dia |
+| sueldos | Salario mesero | fijo | S/45/dia |
+| sueldos | Salario ayudante | fijo | S/35/dia |
+| sueldos | Salario limpieza | fijo | S/35/dia |
+| marketing | Facebook Ads | variable | S/300/mes |
+| marketing | Instagram Ads | variable | S/200/mes |
+| legal | Contador | fijo | S/300/mes |
+| legal | Comisiones bancarias | variable | ~S/50/mes |
+| compras | Compras existencias | variable | Diario |
+| otros | Transporte | variable | Segun necesidad |
+
 **Vistas**:
-- `/administracion` → Dashboard financiero: ingresos vs egresos, P&L mensual, cashflow
-- `/administracion/gastos` → CRUD de gastos fijos/variables
-- `/administracion/reportes` → Generar PDF con reporte diario/mensual
+- `/administracion` → Dashboard financiero completo: P&L mensual, cashflow, graficos
+- `/administracion/planilla` → Personal + pagos diarios
+- `/administracion/servicios` → Gastos fijos (luz, agua, internet, alquiler)
+- `/administracion/gastos` → Todos los gastos por categoria
+- `/administracion/reportes` → Generar PDF diario/mensual
 
 ---
 
-### 2.5 REPORTE PDF DIARIO
+### 2.5 CANALES INTERNOS DE COMUNICACION
 
-**Concepto**: Al final del dia, generar un PDF descargable con:
+**Concepto**: Sistema de notificaciones/canales internos para que el equipo se comunique sin WhatsApp.
 
-1. **Resumen de caja**: Apertura, cierre, diferencia
-2. **Ventas del dia**: Total facturas, por metodo de pago
-3. **Costo de ingredientes usados**: Basado en recetas x cantidades vendidas
-4. **Margen bruto por plato**: Precio venta - costo ingredientes
-5. **Descuento de inventario**: Que se gasto del almacen
-6. **Lista de faltantes**: Ingredientes que bajaron del stock minimo
-7. **Proyeccion de compras**: Basado en flujo de 250 clientes/dia, cuanto necesitas comprar manana
+**Canales predefinidos**:
+| Canal | Quien ve | Para que |
+|-------|----------|---------|
+| #inventario | Admin, Cocinero jefe | Alertas automaticas de stock bajo, lista de compras |
+| #meseros | Admin, Meseros | Avisos del dia, cambios de menu, mesas reservadas |
+| #cocina | Admin, Cocineros | Platos del dia, items sin stock, notas |
+| #administracion | Solo Admin | Alertas financieras, cierre de caja, reportes |
+| #soporte | Todos | Problemas tecnicos, sugerencias, avisos generales |
+
+**Tabla**:
+```sql
+CREATE TABLE canales (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(50) NOT NULL,                -- '#inventario', '#meseros', etc.
+    descripcion VARCHAR(200) NULL,
+    roles_permitidos JSON NULL,                 -- ['administrador','cocinero'] o null=todos
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE canal_mensajes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    canal_id INT NOT NULL,
+    usuario_id INT NULL,                        -- NULL = sistema (automatico)
+    tipo ENUM('texto','alerta','sistema') DEFAULT 'texto',
+    mensaje TEXT NOT NULL,
+    prioridad ENUM('normal','alta','urgente') DEFAULT 'normal',
+    leido_por JSON NULL,                        -- [user_id, user_id, ...]
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (canal_id) REFERENCES canales(id)
+);
+```
+
+**Mensajes automaticos del sistema**:
+- `#inventario`: "⚠️ Pescado bonito bajo minimo: 2,100g (minimo: 10,000g). Comprar ~8kg"
+- `#inventario`: "📋 Lista de compras para mañana generada: 12 items"
+- `#administracion`: "💰 Caja cerrada: S/8,750 ingresos, diferencia S/0.00"
+- `#administracion`: "📊 Reporte diario disponible para descargar"
+- `#cocina`: "🚫 Aji limo agotado - no ofrecer platos con aji limo"
+- `#meseros`: "📢 Hoy no hay Jalea Mixta (sin langostinos)"
+
+**Vista**: `/canales` → Chat por canal, notificaciones en el sidebar (badge rojo con conteo)
+
+---
+
+### 2.6 REPORTE PDF DIARIO (Completo)
+
+**Concepto**: Al final del dia, descargar un PDF con TODO el detalle financiero y operativo.
+
+**Contenido del PDF**:
+
+```
+╔══════════════════════════════════════════════════╗
+║         REPORTE DIARIO - 17/03/2026              ║
+║         Restaurante dignita.tech                  ║
+╠══════════════════════════════════════════════════╣
+║                                                  ║
+║  1. CAJA                                         ║
+║  ────────────────────────────────                ║
+║  Apertura:        S/200.00                       ║
+║  Ingresos ventas: S/8,750.00                     ║
+║  Retiros:         S/150.00                       ║
+║  Cierre sistema:  S/8,800.00                     ║
+║  Cierre real:     S/8,795.00                     ║
+║  Diferencia:      -S/5.00 (faltante)             ║
+║                                                  ║
+║  2. VENTAS (250 clientes, 187 facturas)          ║
+║  ────────────────────────────────                ║
+║  Efectivo:        S/5,200.00  (59.4%)            ║
+║  Tarjeta:         S/2,350.00  (26.9%)            ║
+║  Transferencia:   S/1,200.00  (13.7%)            ║
+║  TOTAL VENTAS:    S/8,750.00                     ║
+║                                                  ║
+║  3. COSTO POR PLATO (top 10)                     ║
+║  ────────────────────────────────                ║
+║  Plato          │ Qty │ Ingreso  │ Costo │Margen ║
+║  Ceviche Pers.  │  45 │ 1,575.00│ 339.75│ 78.4% ║
+║  Arroz c/Marisc │  38 │ 1,140.00│ 456.00│ 60.0% ║
+║  Jalea Mixta    │  25 │ 1,000.00│ 325.00│ 67.5% ║
+║  Chicharron Pes │  22 │   660.00│ 198.00│ 70.0% ║
+║  ...                                             ║
+║  TOTAL COGS:     S/2,890.00                      ║
+║                                                  ║
+║  4. INVENTARIO DESCONTADO                        ║
+║  ────────────────────────────────                ║
+║  Pescado bonito:     -6,750g                     ║
+║  Cebolla roja:      -11,250g                     ║
+║  Limon:               -225 und                   ║
+║  Arroz:              -9,500g                     ║
+║  Aceite:             -2,800ml                    ║
+║  ... (todos los ingredientes usados)             ║
+║                                                  ║
+║  5. ⚠ FALTANTES (bajo minimo)                   ║
+║  ────────────────────────────────                ║
+║  Pescado bonito:  2,100g (min: 10,000g)          ║
+║    → Comprar: ~8kg para mañana                   ║
+║  Limon:  45 und (min: 200 und)                   ║
+║    → Comprar: ~200 und                           ║
+║  Aji limo: 5 und (min: 50 und)                   ║
+║    → Comprar: ~50 und                            ║
+║                                                  ║
+║  6. PLANILLA DEL DIA                             ║
+║  ────────────────────────────────                ║
+║  Juan (Cocinero jefe):    S/80.00                ║
+║  Maria (Cocinera):        S/60.00                ║
+║  Pedro (Mesero):          S/45.00                ║
+║  Ana (Mesera):            S/45.00                ║
+║  Luis (Ayudante cocina):  S/35.00                ║
+║  Rosa (Limpieza):         S/35.00                ║
+║  Carlos (Cajero):         S/50.00                ║
+║  TOTAL PLANILLA:          S/350.00               ║
+║                                                  ║
+║  7. GASTOS FIJOS (prorrateo diario)              ║
+║  ────────────────────────────────                ║
+║  Alquiler:    S/100.00  (S/3,000/30)             ║
+║  Luz:          S/26.67  (S/800/30)               ║
+║  Agua:          S/6.67  (S/200/30)               ║
+║  Internet:      S/5.00  (S/150/30)               ║
+║  Gas:          S/20.00  (S/600/30)               ║
+║  Seguro:        S/6.67  (S/200/30)               ║
+║  Contador:     S/10.00  (S/300/30)               ║
+║  TOTAL FIJOS:  S/175.01                          ║
+║                                                  ║
+║  8. P&L DEL DIA                                  ║
+║  ════════════════════════════════                ║
+║  (+) Ventas:              S/8,750.00             ║
+║  (-) COGS (ingredientes): S/2,890.00             ║
+║  (=) Margen Bruto:        S/5,860.00  (67.0%)   ║
+║  (-) Planilla:            S/350.00               ║
+║  (-) Gastos fijos:        S/175.01               ║
+║  (-) Otros gastos:        S/0.00                 ║
+║  (=) GANANCIA NETA DIA:   S/5,334.99            ║
+║                                                  ║
+║  9. PROYECCION MAÑANA                            ║
+║  ────────────────────────────────                ║
+║  Clientes estimados: 250                         ║
+║  Compras necesarias: S/~2,400 (12 items)         ║
+║  Items criticos: 3 (ver lista faltantes)         ║
+║                                                  ║
+╚══════════════════════════════════════════════════╝
+```
 
 **Libreria**: `pdfkit` o `puppeteer` para generar PDF desde HTML
 
-**Ruta**: `GET /api/reportes/diario?fecha=2026-03-16` → descarga PDF
+**Ruta**: `GET /api/reportes/diario?fecha=2026-03-17` → descarga PDF
+**Ruta**: `GET /api/reportes/mensual?mes=3&anio=2026` → PDF mensual con P&L completo
 
 ---
 
@@ -287,18 +516,27 @@ Menu principal
   - Cocina
 
 Operaciones
-  - Caja          ← NUEVO
-  - Almacen       ← NUEVO
+  - Caja              ← NUEVO
+  - Almacen            ← NUEVO
 
 Gestion
   - Productos (+ Recetas)
   - Clientes
   - Ranking
 
-Administracion    ← REEMPLAZA Marketing
+Administracion         ← REEMPLAZA Marketing
   - P&L / Cashflow
+  - Planilla (personal + pagos)
+  - Servicios (luz, agua, internet, alquiler)
   - Gastos
-  - Reportes (PDF)
+  - Reportes (PDF diario/mensual)
+
+Canales                ← NUEVO
+  - #inventario        (alertas de stock)
+  - #meseros           (avisos del dia)
+  - #cocina            (notas, sin stock)
+  - #administracion    (financiero, cierres)
+  - #soporte           (problemas, sugerencias)
 
 Inteligencia
   - Asistente IA (+ Voz)
@@ -348,40 +586,56 @@ usuarios ──── cajas (apertura/cierre)
 
 ### Fase 1: Almacen + Recetas (1-2 semanas)
 1. Crear tablas de almacen (categorias, ingredientes, movimientos)
-2. CRUD de ingredientes (`/almacen`)
-3. Importar 200+ ingredientes iniciales
-4. Agregar recetas a productos (`/productos` → tab receta)
-5. Descuento automatico al facturar
+2. CRUD de ingredientes (`/almacen`) con importacion masiva
+3. Cargar 200+ ingredientes iniciales por categoria
+4. Agregar recetas a productos (`/productos` → tab receta con hasta 30 ingredientes)
+5. Calcular costo automatico por plato
+6. Descuento automatico de inventario al facturar
 
 ### Fase 2: Caja Registradora (1 semana)
-1. Crear tablas de caja
-2. Vista `/caja` con apertura/cierre
-3. Integrar con facturacion (movimientos automaticos)
-4. Reporte de cierre de caja
+1. Crear tablas de caja + movimientos
+2. Vista `/caja` con apertura (monto inicial) / cierre (conteo real)
+3. Integrar con facturacion (movimiento ingreso automatico)
+4. Registrar retiros, gastos manuales, pagos de planilla desde caja
+5. Reporte de cierre con diferencia sobrante/faltante
 
-### Fase 3: Administracion / P&L (1 semana)
-1. Crear tablas de gastos
-2. Vista `/administracion` con P&L
-3. CRUD de gastos fijos/variables
-4. Cashflow mensual basado en Excel
+### Fase 3: Administracion completa (1-2 semanas)
+1. Crear tablas de personal, planilla_pagos, gastos_categorias, gastos
+2. Pre-cargar categorias: compras, servicios, marketing, sueldos, inmovilizado, legal, otros
+3. `/administracion/planilla` → Personal + pago diario (jornales)
+4. `/administracion/servicios` → Gastos fijos: luz, agua, internet, gas, alquiler, seguro
+5. `/administracion/gastos` → Todos los gastos por categoria y periodo
+6. `/administracion` → Dashboard P&L: Ventas - COGS - Sueldos - Fijos = Ganancia neta
+7. Cashflow mensual con estructura identica al Excel
 
-### Fase 4: Reporte PDF diario (3-5 dias)
+### Fase 4: Canales internos (3-5 dias)
+1. Crear tablas canales + mensajes
+2. Pre-cargar canales: #inventario, #meseros, #cocina, #administracion, #soporte
+3. Vista `/canales` con chat por canal, permisos por rol
+4. Mensajes automaticos del sistema (alertas stock, cierre caja, reportes)
+5. Badge de notificaciones en el sidebar
+
+### Fase 5: Reporte PDF diario/mensual (3-5 dias)
 1. Instalar pdfkit o puppeteer
-2. Endpoint de generacion de PDF
-3. Integrar todos los datos (caja + almacen + ventas + costos)
-4. Lista de faltantes con proyeccion
+2. PDF diario: caja + ventas + costo por plato + inventario descontado + faltantes + planilla + fijos + P&L del dia + proyeccion
+3. PDF mensual: P&L completo con ratios (ROS, ROE, ROA)
+4. Boton "Descargar reporte" en Dashboard y Administracion
 
-### Fase 5: Voz en IA (2-3 dias)
+### Fase 6: Voz en IA (2-3 dias)
 1. Agregar Web Speech API al chat
-2. Boton de microfono
-3. Lectura de respuestas en voz alta
+2. Boton de microfono (speech-to-text)
+3. Lectura de respuestas en voz alta (text-to-speech)
 4. Toggle de voz
 
-### Fase 6: SaaS Multi-tenant (futuro)
-1. Tabla `tenants` (cada restaurante es un tenant)
-2. Subdominio por restaurante (restaurante1.dignita.tech)
-3. Aislamiento de datos por tenant_id
-4. Sistema de planes y facturacion
+### Fase 7: SaaS Multi-tenant (2-3 semanas)
+1. Tabla `tenants` (cada restaurante = 1 tenant)
+2. `tenant_id` en TODAS las tablas existentes + nuevas
+3. Middleware que inyecta tenant_id en cada request (basado en subdominio)
+4. Subdominio por restaurante (cevimar.dignita.tech, polnorte.dignita.tech)
+5. Aislamiento de datos: cada query lleva WHERE tenant_id = ?
+6. Sistema de planes (Free/Pro/Enterprise) con limites por feature
+7. Facturacion de suscripciones (Stripe / MercadoPago)
+8. Panel super-admin para gestionar tenants
 
 ---
 
