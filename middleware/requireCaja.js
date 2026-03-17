@@ -11,8 +11,10 @@ async function requireCajaAbierta(req, res, next) {
             return next();
         }
     } catch (e) {
-        // Si la tabla no existe, dejar pasar (compatibilidad)
-        return next();
+        console.error('requireCajaAbierta error:', e.message);
+        // Si la tabla no existe, dejar pasar (compatibilidad con BD antigua)
+        if (e.code === 'ER_NO_SUCH_TABLE') return next();
+        // Cualquier otro error: redirigir a caja
     }
 
     // No hay caja abierta
