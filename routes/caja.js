@@ -87,6 +87,15 @@ router.post('/cerrar', async (req, res) => {
         const [[caja]] = await db.query('SELECT * FROM cajas WHERE tenant_id=? AND estado="abierta" ORDER BY fecha_apertura DESC LIMIT 1', [tid]);
         if (!caja) return res.status(400).json({ error: 'No hay caja abierta' });
 
+        // Verificar que no haya mesas ocupadas
+        const [mesasOcupadas] = await db.query("SELECT id, numero, descripcion FROM mesas WHERE estado = 'ocupada'");
+        if (mesasOcupadas && mesasOcupadas.length > 0) {
+            return res.status(400).json({
+                error: 'No se puede cerrar caja con mesas ocupadas',
+                mesas_ocupadas: mesasOcupadas.map(m => ({ id: m.id, numero: m.numero, descripcion: m.descripcion || '' }))
+            });
+        }
+
         const { monto_cierre_real, denominacion_cierre, notas } = req.body;
 
         // Calcular total sistema
