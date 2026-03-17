@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SUNAT - dignita.tech</title>
+    <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/theme.css">
+</head>
+<body>
+    <%- include('partials/sidebar') %>
+    <div class="dg-main">
+    <main class="flex-grow-1">
+    <div class="container mt-4">
+
+        <!-- Header -->
+        <h2 class="mb-4"><i class="bi bi-file-earmark-check me-2"></i>Facturacion Electronica SUNAT</h2>
+
+        <!-- Configuracion SUNAT -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="bi bi-gear me-1"></i>Configuracion SUNAT
+            </div>
+            <div class="card-body">
+                <form id="formSunatConfig">
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">RUC Emisor</label>
+                            <input type="text" class="form-control" name="ruc_emisor" value="<%= config.ruc_emisor || '' %>" maxlength="11" minlength="11" pattern="\d{11}" placeholder="Ej: 20123456789" required>
+                            <div class="form-text">11 digitos</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Razon Social Emisor</label>
+                            <input type="text" class="form-control" name="razon_social_emisor" value="<%= config.razon_social_emisor || '' %>" placeholder="Nombre de la empresa" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Direccion Emisor</label>
+                            <input type="text" class="form-control" name="direccion_emisor" value="<%= config.direccion_emisor || '' %>" placeholder="Direccion fiscal">
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Proveedor OSE</label>
+                            <select class="form-select" name="proveedor_ose">
+                                <option value="nubefact" <%= (config.proveedor_ose === 'nubefact') ? 'selected' : '' %>>Nubefact</option>
+                                <option value="sunat_directo" <%= (config.proveedor_ose === 'sunat_directo') ? 'selected' : '' %>>SUNAT Directo</option>
+                                <option value="efact" <%= (config.proveedor_ose === 'efact') ? 'selected' : '' %>>eFact</option>
+                                <option value="bizlinks" <%= (config.proveedor_ose === 'bizlinks') ? 'selected' : '' %>>Bizlinks</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Token OSE</label>
+                            <input type="text" class="form-control" name="token_ose" value="<%= config.token_ose || '' %>" placeholder="Token de autenticacion">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">URL OSE</label>
+                            <input type="text" class="form-control" name="url_ose" value="<%= config.url_ose || '' %>" placeholder="https://...">
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-2">
+                            <label class="form-label">IGV %</label>
+                            <input type="number" class="form-control" name="igv_porcentaje" value="<%= config.igv_porcentaje || 18 %>" min="0" max="100" step="0.01">
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <div class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" role="switch" name="produccion" id="switchProduccion" <%= config.produccion ? 'checked' : '' %>>
+                                <label class="form-check-label" for="switchProduccion">Produccion</label>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Serie Boleta</label>
+                            <input type="text" class="form-control" name="serie_boleta" value="<%= config.serie_boleta || 'B001' %>" maxlength="4">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Serie Factura</label>
+                            <input type="text" class="form-control" name="serie_factura" value="<%= config.serie_factura || 'F001' %>" maxlength="4">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Serie Nota Credito</label>
+                            <input type="text" class="form-control" name="serie_nota_credito" value="<%= config.serie_nota_credito || 'BC01' %>" maxlength="4">
+                        </div>
+                    </div>
+
+                    <div class="text-end">
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-save me-1"></i>Guardar configuracion</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Comprobantes Electronicos -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="bi bi-receipt me-1"></i>Comprobantes Electronicos
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>Tipo</th>
+                                <th>Serie-Correlativo</th>
+                                <th>Fecha</th>
+                                <th>Cliente</th>
+                                <th class="text-end">Subtotal</th>
+                                <th class="text-end">IGV</th>
+                                <th class="text-end">Total</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% comprobantes.forEach(function(c) { %>
+                            <tr>
+                                <td>
+                                    <% if (c.tipo === 'boleta') { %>
+                                        <span class="badge bg-info">Boleta</span>
+                                    <% } else if (c.tipo === 'factura') { %>
+                                        <span class="badge bg-primary">Factura</span>
+                                    <% } else if (c.tipo === 'nota_credito') { %>
+                                        <span class="badge bg-warning text-dark">Nota Credito</span>
+                                    <% } else { %>
+                                        <span class="badge bg-secondary"><%= c.tipo %></span>
+                                    <% } %>
+                                </td>
+                                <td><%= c.serie %>-<%= c.correlativo %></td>
+                                <td><%= c.fecha %></td>
+                                <td><%= c.cliente %></td>
+                                <td class="text-end">S/ <%= parseFloat(c.subtotal || 0).toFixed(2) %></td>
+                                <td class="text-end">S/ <%= parseFloat(c.igv || 0).toFixed(2) %></td>
+                                <td class="text-end fw-bold">S/ <%= parseFloat(c.total || 0).toFixed(2) %></td>
+                                <td>
+                                    <% if (c.estado === 'aceptado') { %>
+                                        <span class="badge bg-success">Aceptado</span>
+                                    <% } else if (c.estado === 'rechazado') { %>
+                                        <span class="badge bg-danger">Rechazado</span>
+                                    <% } else if (c.estado === 'pendiente') { %>
+                                        <span class="badge bg-warning text-dark">Pendiente</span>
+                                    <% } else if (c.estado === 'anulado') { %>
+                                        <span class="badge bg-dark">Anulado</span>
+                                    <% } else { %>
+                                        <span class="badge bg-secondary"><%= c.estado %></span>
+                                    <% } %>
+                                </td>
+                            </tr>
+                            <% }); %>
+                            <% if (comprobantes.length === 0) { %>
+                            <tr>
+                                <td colspan="8" class="text-center text-muted py-4">No hay comprobantes electronicos registrados</td>
+                            </tr>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    </main>
+    <%- include('partials/footer') %>
+    </div>
+
+    <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="/vendor/sweetalert2/sweetalert2.all.min.js"></script>
+    <script>
+        document.getElementById('formSunatConfig').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData.entries());
+            data.produccion = document.getElementById('switchProduccion').checked;
+            data.igv_porcentaje = parseFloat(data.igv_porcentaje);
+
+            try {
+                const res = await fetch('/api/sunat/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await res.json();
+                if (res.ok) {
+                    Swal.fire('Guardado', 'Configuracion SUNAT actualizada correctamente', 'success');
+                } else {
+                    Swal.fire('Error', result.error || 'No se pudo guardar la configuracion', 'error');
+                }
+            } catch (err) {
+                Swal.fire('Error', 'Error de conexion al guardar configuracion', 'error');
+            }
+        });
+    </script>
+</body>
+</html>
