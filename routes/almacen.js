@@ -300,17 +300,20 @@ router.get('/salidas', async (req, res) => {
     }
 
     // Ranking top 10 productos mas vendidos hoy
-    const [ranking] = await db.query(`
-        SELECT p.nombre, COUNT(DISTINCT m.referencia_id) as veces, SUM(m.cantidad) as total_insumos,
-               SUM(m.costo_total) as costo_total
-        FROM almacen_movimientos m
-        JOIN pedido_items pi ON pi.id=m.referencia_id
-        JOIN productos p ON p.id=pi.producto_id
-        WHERE m.tenant_id=? AND m.motivo='venta_platillo' AND DATE(m.created_at)=?
-        GROUP BY p.id
-        ORDER BY veces DESC
-        LIMIT 10
-    `, [tid, hoy]);
+    let ranking = [];
+    try {
+        const [rankRows] = await db.query(`
+            SELECT p.nombre, COUNT(DISTINCT m.referencia_id) as veces, SUM(m.costo_total) as costo_total
+            FROM almacen_movimientos m
+            JOIN pedido_items pi ON pi.id=m.referencia_id
+            JOIN productos p ON p.id=pi.producto_id
+            WHERE m.tenant_id=? AND m.motivo='venta_platillo' AND DATE(m.created_at)=?
+            GROUP BY p.id
+            ORDER BY veces DESC
+            LIMIT 10
+        `, [tid, hoy]);
+        ranking = rankRows || [];
+    } catch(e) { console.error('Ranking salidas error:', e.message); }
 
     res.render('almacen/salidas', { ingredientes, salidasVenta, platos, ranking });
 });
