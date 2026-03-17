@@ -407,5 +407,452 @@ usuarios ──── cajas (apertura/cierre)
 
 ---
 
+---
+
+## 7. FLUJOGRAMA SaaS COMPLETO
+
+### 7.1 Flujo de Onboarding (Nuevo Restaurante)
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    LANDING PAGE                              │
+│                restaurante.dignita.tech                       │
+│         "Gestiona tu restaurante con tecnologia"             │
+│                                                              │
+│    [Crear cuenta gratis]     [Iniciar sesion]                │
+└──────────┬──────────────────────────┬────────────────────────┘
+           │                          │
+           ▼                          ▼
+┌─────────────────────┐    ┌─────────────────────┐
+│   REGISTRO TENANT   │    │      LOGIN           │
+│                     │    │                       │
+│ - Nombre restaurante│    │ - Usuario             │
+│ - Email             │    │ - Contrasena          │
+│ - Telefono          │    │ - Tenant (subdominio) │
+│ - Plan (free/pro)   │    │                       │
+│ - Crear admin       │    │                       │
+└────────┬────────────┘    └──────────┬────────────┘
+         │                            │
+         ▼                            ▼
+┌─────────────────────────────────────────────────────────────┐
+│                     SETUP INICIAL                            │
+│                                                              │
+│  1. Datos del negocio (nombre, RUC, direccion, logo)         │
+│  2. Crear mesas (cantidad, zonas)                            │
+│  3. Importar productos/platillos                             │
+│  4. Cargar ingredientes al almacen                           │
+│  5. Crear usuarios (meseros, cocineros, cajeros)             │
+│  6. Configurar impresion (termica, formato)                  │
+└────────────────────────┬────────────────────────────────────┘
+                         │
+                         ▼
+                   ┌───────────┐
+                   │ DASHBOARD │
+                   └─────┬─────┘
+                         │
+            ┌────────────┼────────────┐
+            ▼            ▼            ▼
+      ┌──────────┐ ┌──────────┐ ┌──────────┐
+      │  ADMIN   │ │  MESERO  │ │ COCINERO │
+      │(ve todo) │ │(mesas +  │ │(solo     │
+      │          │ │ cocina)  │ │ cocina)  │
+      └──────────┘ └──────────┘ └──────────┘
+```
+
+### 7.2 Flujo Operativo Diario (Ciclo Completo)
+
+```
+                    ┌──────────────────┐
+                    │   INICIO DEL DIA │
+                    └────────┬─────────┘
+                             │
+                             ▼
+              ┌──────────────────────────────┐
+              │      1. ABRIR CAJA           │
+              │                              │
+              │  Admin/Cajero ingresa:        │
+              │  - Monto inicial (S/200)     │
+              │  - Fecha/hora automatica      │
+              │                              │
+              │  Estado: CAJA ABIERTA        │
+              └──────────────┬───────────────┘
+                             │
+                             ▼
+              ┌──────────────────────────────┐
+              │   2. VERIFICAR ALMACEN       │
+              │                              │
+              │  - Revisar stock de hoy      │
+              │  - Alertas de ingredientes    │
+              │    bajo minimo (rojo)         │
+              │  - Registrar compras del dia  │
+              │    (entrada de stock)         │
+              └──────────────┬───────────────┘
+                             │
+         ┌───────────────────┼───────────────────┐
+         │                   │                   │
+         ▼                   ▼                   ▼
+┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐
+│  FLUJO MESAS    │ │FLUJO FACTURACION│ │  FLUJO COCINA   │
+│  (Mesero)       │ │  (Cajero)       │ │  (Cocinero)     │
+│                 │ │                 │ │                 │
+│ Abrir mesa      │ │ Facturacion     │ │ Ver pedidos     │
+│      │          │ │ rapida desde    │ │ enviados        │
+│      ▼          │ │ mostrador       │ │      │          │
+│ Agregar items   │ │      │          │ │      ▼          │
+│      │          │ │      ▼          │ │ Preparando      │
+│      ▼          │ │ Buscar cliente  │ │      │          │
+│ Enviar a cocina─┼─┼──────┐         │ │      ▼          │
+│      │          │ │      │         │ │ Marcar listo     │
+│      ▼          │ │      ▼         │ │      │          │
+│ Esperar listo   │ │ Agregar items  │ │      ▼          │
+│      │          │ │      │         │ │ Entregado       │
+│      ▼          │ │      ▼         │ │                 │
+│ Facturar mesa ──┼─┤► GENERAR       │ │                 │
+│                 │ │  FACTURA       │ │                 │
+└─────────────────┘ │      │         │ └─────────────────┘
+                    │      ▼         │
+                    │ ┌────────────┐ │
+                    │ │ AL FACTURAR│ │
+                    │ │ SE DISPARA:│ │
+                    │ └──┬───┬───┬─┘ │
+                    └────┼───┼───┼───┘
+                         │   │   │
+            ┌────────────┘   │   └────────────┐
+            ▼                ▼                ▼
+┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐
+│ MOVIMIENTO CAJA │ │ DESCUENTO       │ │ DETALLE FACTURA │
+│                 │ │ ALMACEN         │ │                 │
+│ tipo: ingreso   │ │                 │ │ productos,      │
+│ monto: total    │ │ Por cada item   │ │ cantidades,     │
+│ metodo: efect/  │ │ vendido:        │ │ precios,        │
+│ tarjeta/transf  │ │                 │ │ subtotales      │
+│                 │ │ Buscar receta   │ │                 │
+│ caja_movimientos│ │      │          │ │ detalle_facturas│
+│                 │ │      ▼          │ │                 │
+│                 │ │ Por ingrediente:│ │                 │
+│                 │ │ stock -= cant   │ │                 │
+│                 │ │ x qty vendida   │ │                 │
+│                 │ │                 │ │                 │
+│                 │ │ almacen_movim.  │ │                 │
+│                 │ │ tipo: salida    │ │                 │
+│                 │ │ motivo: venta   │ │                 │
+└─────────────────┘ └─────────────────┘ └─────────────────┘
+         │                   │
+         │      ┌────────────┘
+         │      │
+         ▼      ▼
+┌──────────────────────────────────────┐
+│          FIN DEL DIA                 │
+│                                      │
+│       3. CERRAR CAJA                 │
+│                                      │
+│  Sistema calcula:                    │
+│  - Total ingresos (facturas)         │
+│  - Total egresos (retiros, gastos)   │
+│  - Saldo esperado                    │
+│                                      │
+│  Cajero ingresa:                     │
+│  - Conteo real de efectivo           │
+│                                      │
+│  Resultado:                          │
+│  - Diferencia (sobrante/faltante)    │
+│  - Estado: CAJA CERRADA             │
+└──────────────────┬───────────────────┘
+                   │
+                   ▼
+┌──────────────────────────────────────┐
+│     4. GENERAR REPORTE PDF           │
+│                                      │
+│  ┌────────────────────────────────┐  │
+│  │ REPORTE DIARIO - 16/03/2026   │  │
+│  │                                │  │
+│  │ CAJA                           │  │
+│  │ Apertura: S/200.00             │  │
+│  │ Ingresos: S/8,750.00          │  │
+│  │ Egresos:  S/150.00            │  │
+│  │ Cierre:   S/8,800.00          │  │
+│  │ Diferencia: S/0.00            │  │
+│  │                                │  │
+│  │ VENTAS (250 clientes)          │  │
+│  │ Facturas: 187                  │  │
+│  │ Efectivo:      S/5,200.00     │  │
+│  │ Tarjeta:       S/2,350.00     │  │
+│  │ Transferencia: S/1,200.00     │  │
+│  │                                │  │
+│  │ COSTO POR PLATO               │  │
+│  │ Ceviche Personal:             │  │
+│  │   Vendidos: 45                 │  │
+│  │   Ingreso:  S/1,575.00       │  │
+│  │   Costo:    S/299.03          │  │
+│  │   Margen:   81%               │  │
+│  │                                │  │
+│  │ Arroz con Mariscos:           │  │
+│  │   Vendidos: 38                 │  │
+│  │   Ingreso:  S/1,140.00       │  │
+│  │   Costo:    S/380.00          │  │
+│  │   Margen:   67%               │  │
+│  │ ...                            │  │
+│  │                                │  │
+│  │ INVENTARIO DESCONTADO          │  │
+│  │ Pescado:    -6,750g (45 cev)  │  │
+│  │ Cebolla:    -11,250g          │  │
+│  │ Limon:      -225 und          │  │
+│  │ Arroz:      -9,500g           │  │
+│  │ ...                            │  │
+│  │                                │  │
+│  │ ⚠ FALTANTES (stock < minimo)  │  │
+│  │ Pescado bonito:  2,100g       │  │
+│  │   (minimo: 10,000g)           │  │
+│  │   Comprar: ~8kg para manana   │  │
+│  │ Limon:  45 und                 │  │
+│  │   (minimo: 200 und)           │  │
+│  │   Comprar: ~200 und           │  │
+│  │                                │  │
+│  │ RESUMEN P&L DEL DIA           │  │
+│  │ (+) Ingresos: S/8,750.00     │  │
+│  │ (-) Costo ingredientes:       │  │
+│  │     S/2,890.00                │  │
+│  │ (-) Gastos fijos (prorrateo): │  │
+│  │     S/433.33                  │  │
+│  │ (=) GANANCIA NETA:            │  │
+│  │     S/5,426.67                │  │
+│  └────────────────────────────────┘  │
+└──────────────────────────────────────┘
+```
+
+### 7.3 Flujo del Almacen
+
+```
+┌──────────────────────────────────────────────────────┐
+│                    ALMACEN                            │
+│              200+ ingredientes                        │
+└───────────┬──────────┬──────────┬────────────────────┘
+            │          │          │
+            ▼          ▼          ▼
+     ┌────────────┐ ┌──────┐ ┌──────────┐
+     │  ENTRADAS  │ │SALIDA│ │  MERMA/  │
+     │            │ │  S   │ │  AJUSTE  │
+     │ - Compra   │ │      │ │          │
+     │   proveedor│ │ Auto │ │ - Vencido│
+     │ - Donacion │ │matic │ │ - Danado │
+     │ - Devoluci.│ │ al   │ │ - Ajuste │
+     │            │ │ fact.│ │   fisico │
+     └──────┬─────┘ └──┬───┘ └────┬─────┘
+            │          │          │
+            ▼          ▼          ▼
+     ┌─────────────────────────────────┐
+     │     almacen_movimientos         │
+     │                                 │
+     │  tipo: entrada/salida/ajuste    │
+     │  cantidad: +/-                  │
+     │  motivo: compra/venta/merma     │
+     │  costo_unitario al momento      │
+     │  referencia: factura_id/etc     │
+     └────────────────┬────────────────┘
+                      │
+                      ▼
+     ┌─────────────────────────────────┐
+     │     STOCK ACTUAL (real-time)    │
+     │                                 │
+     │  Pescado bonito:  8,500g  ✅    │
+     │  Cebolla roja:   12,000g  ✅    │
+     │  Limon:            180 und ⚠️   │
+     │  Aji limo:          15 und 🔴   │
+     │                                 │
+     │  ✅ OK  ⚠️ Bajo  🔴 Critico    │
+     └─────────────────────────────────┘
+```
+
+### 7.4 Flujo de Recetas (Producto → Ingredientes)
+
+```
+┌────────────────────────────────────────────────────┐
+│              PRODUCTO: Ceviche Personal             │
+│              Precio venta: S/35.00                  │
+└─────────────────────────┬──────────────────────────┘
+                          │
+                          ▼
+┌────────────────────────────────────────────────────┐
+│                    RECETA                           │
+│                                                    │
+│  ┌─────────────────┬──────┬───────┬──────────┐    │
+│  │ Ingrediente     │ Cant │ Uidad │ Costo    │    │
+│  ├─────────────────┼──────┼───────┼──────────┤    │
+│  │ Pescado bonito  │ 150  │ g     │ S/3.75   │    │
+│  │ Cebolla roja    │ 250  │ g     │ S/0.75   │    │
+│  │ Limon           │ 5    │ und   │ S/1.50   │    │
+│  │ Sal             │ 5    │ g     │ S/0.005  │    │
+│  │ Pimienta        │ 2    │ g     │ S/0.04   │    │
+│  │ Aji limo        │ 3    │ und   │ S/0.60   │    │
+│  │ Cilantro        │ 10   │ g     │ S/0.08   │    │
+│  │ Ajo             │ 5    │ g     │ S/0.03   │    │
+│  │ Camote          │ 100  │ g     │ S/0.30   │    │
+│  │ Choclo          │ 80   │ g     │ S/0.40   │    │
+│  │ Lechuga         │ 30   │ g     │ S/0.09   │    │
+│  ├─────────────────┼──────┼───────┼──────────┤    │
+│  │ COSTO TOTAL     │      │       │ S/7.55   │    │
+│  │ PRECIO VENTA    │      │       │ S/35.00  │    │
+│  │ MARGEN BRUTO    │      │       │ 78.4%    │    │
+│  └─────────────────┴──────┴───────┴──────────┘    │
+└────────────────────────────────────────────────────┘
+         │
+         │ Al vender 1 unidad:
+         ▼
+┌────────────────────────────────────────────────────┐
+│         DESCUENTO AUTOMATICO DEL ALMACEN           │
+│                                                    │
+│  Pescado bonito:  stock -= 150g                    │
+│  Cebolla roja:    stock -= 250g                    │
+│  Limon:           stock -= 5 und                   │
+│  Sal:             stock -= 5g                      │
+│  ... (todos los ingredientes)                      │
+│                                                    │
+│  → almacen_movimientos (tipo: salida,              │
+│    motivo: venta_platillo,                         │
+│    referencia: factura #187)                        │
+└────────────────────────────────────────────────────┘
+```
+
+### 7.5 Arquitectura SaaS Multi-Tenant
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     INTERNET                                 │
+│                                                              │
+│   restaurante1.dignita.tech    restaurante2.dignita.tech     │
+│   restaurante3.dignita.tech    ...hasta N restaurantes       │
+└──────────┬──────────────────────────────┬────────────────────┘
+           │                              │
+           ▼                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                   LOAD BALANCER / PROXY                      │
+│                   (Nginx / Cloudflare)                       │
+└──────────────────────────┬──────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────────┐
+│                  APLICACION NODE.JS                          │
+│                  (dignita.tech core)                          │
+│                                                              │
+│  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐         │
+│  │ Middleware   │  │   Routes    │  │   Views     │         │
+│  │ tenant_id   │  │  /api/*     │  │  EJS        │         │
+│  │ auth        │  │  /mesas     │  │  templates  │         │
+│  │ roles       │  │  /cocina    │  │             │         │
+│  │             │  │  /caja      │  │             │         │
+│  │ Cada request│  │  /almacen   │  │             │         │
+│  │ lleva       │  │  /admin     │  │             │         │
+│  │ tenant_id   │  │  /chat AI   │  │             │         │
+│  └─────────────┘  └─────────────┘  └─────────────┘         │
+└──────────────────────────┬──────────────────────────────────┘
+                           │
+                           ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    BASE DE DATOS MySQL                        │
+│                                                              │
+│  Estrategia: SHARED DATABASE + tenant_id en cada tabla       │
+│                                                              │
+│  ┌──────────────────────────────────────────────────────┐   │
+│  │ tenants                                              │   │
+│  │ id │ nombre         │ subdominio  │ plan   │ activo  │   │
+│  │ 1  │ Cevicheria Mar │ cevimar    │ pro    │ 1       │   │
+│  │ 2  │ Polleria Norte │ polnorte   │ free   │ 1       │   │
+│  │ 3  │ Chifa Dragon   │ chifadragon│ pro    │ 1       │   │
+│  └──────────────────────────────────────────────────────┘   │
+│                                                              │
+│  Todas las tablas existentes agregan:                        │
+│  tenant_id INT NOT NULL → FK a tenants(id)                  │
+│                                                              │
+│  productos(tenant_id, id, nombre, ...)                      │
+│  mesas(tenant_id, id, numero, ...)                          │
+│  facturas(tenant_id, id, total, ...)                        │
+│  almacen_ingredientes(tenant_id, id, nombre, stock, ...)    │
+│  cajas(tenant_id, id, monto_apertura, ...)                  │
+│  usuarios(tenant_id, id, usuario, rol, ...)                 │
+│                                                              │
+│  Cada query: WHERE tenant_id = ? AND ...                    │
+└─────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│                    PLANES SaaS                               │
+│                                                              │
+│  FREE (Gratis)                PRO (S/99/mes)                │
+│  ─────────────                ──────────────                │
+│  - 1 usuario                  - Usuarios ilimitados         │
+│  - 10 mesas                   - Mesas ilimitadas            │
+│  - 50 productos               - Productos ilimitados        │
+│  - Sin almacen                - Almacen completo            │
+│  - Sin recetas                - Recetas + costeo            │
+│  - Sin caja                   - Caja registradora           │
+│  - Sin P&L                    - P&L + Cashflow              │
+│  - Sin reportes PDF           - Reportes PDF diarios        │
+│  - Chat IA basico             - Chat IA con voz             │
+│  - Sin redes sociales         - Redes + competencia         │
+│  - Branding dignita.tech      - Logo propio                 │
+│                                                              │
+│  ENTERPRISE (Contactar)                                      │
+│  ─────────────────────                                       │
+│  - Todo de PRO                                               │
+│  - Multi-sucursal                                            │
+│  - API propia                                                │
+│  - Soporte prioritario                                       │
+│  - Integraciones personalizadas                              │
+│  - Hosting dedicado                                          │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 7.6 Flujo Completo de un Dia (Timeline)
+
+```
+06:00 ─── APERTURA ────────────────────────────────────
+  │
+  ├─► Admin abre caja (S/200 inicial)
+  ├─► Revisa almacen: alertas de stock bajo
+  ├─► Registra compras del dia (proveedor de pescado, verduras)
+  │     → almacen_movimientos: entrada
+  │
+08:00 ─── SERVICIO INICIO ─────────────────────────────
+  │
+  ├─► Meseros abren mesas
+  ├─► Clientes llegan → pedidos → envio a cocina
+  ├─► Cocineros preparan → marcan listo
+  ├─► Meseros entregan → facturan
+  │     → Por cada factura:
+  │       ├─► caja_movimientos: ingreso
+  │       ├─► almacen: descuento ingredientes (receta x qty)
+  │       └─► detalle_facturas: registro
+  │
+  │   (esto se repite ~250 veces al dia)
+  │
+16:00 ─── SERVICIO FIN ────────────────────────────────
+  │
+  ├─► Ultimas facturas
+  ├─► Meseros liberan mesas
+  │
+17:00 ─── CIERRE ──────────────────────────────────────
+  │
+  ├─► Admin cierra caja
+  │     ├─► Sistema calcula total esperado
+  │     ├─► Cajero cuenta efectivo real
+  │     └─► Diferencia registrada
+  │
+  ├─► Admin genera REPORTE PDF
+  │     ├─► Resumen de caja
+  │     ├─► Ventas por metodo
+  │     ├─► Costo por plato (receta x vendidos)
+  │     ├─► Margen bruto por plato
+  │     ├─► Inventario descontado
+  │     ├─► Lista de faltantes
+  │     ├─► Proyeccion de compras para manana
+  │     └─► P&L del dia (ingresos - costos - gastos fijos)
+  │
+  ├─► Admin consulta IA: "Como estuvo el dia?"
+  │     → DIGNITA AI responde con resumen inteligente
+  │
+18:00 ─── FIN ─────────────────────────────────────────
+```
+
+---
+
 **NOTA**: Este documento es solo planificacion. No se ejecutara hasta aprobacion.
 Todos los cambios seran incrementales para no romper la funcionalidad existente.
