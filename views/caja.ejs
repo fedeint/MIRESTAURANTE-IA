@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Caja - dignita.tech</title>
+    <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/theme.css">
+</head>
+<body>
+    <%- include('partials/sidebar') %>
+    <div class="dg-main">
+    <main class="flex-grow-1">
+    <div class="container">
+
+        <% if (!cajaAbierta) { %>
+        <!-- ==================== ABRIR CAJA ==================== -->
+        <div class="row justify-content-center mt-5">
+            <div class="col-md-5">
+                <div class="card shadow">
+                    <div class="card-header text-center">
+                        <h4 class="mb-0"><i class="bi bi-cash-stack me-2"></i>Abrir Caja</h4>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted text-center mb-4">No hay una caja abierta. Ingrese el monto de apertura para iniciar.</p>
+                        <form id="formAbrirCaja">
+                            <div class="mb-3">
+                                <label for="montoApertura" class="form-label">Monto de apertura</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control" id="montoApertura" name="monto_apertura" min="0" step="0.01" required placeholder="0.00">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="turnoApertura" class="form-label">Turno</label>
+                                <select class="form-select" id="turnoApertura" name="turno_id" required>
+                                    <option value="" disabled selected>Seleccione un turno</option>
+                                    <% turnos.forEach(function(t) { %>
+                                        <option value="<%= t.id %>"><%= t.nombre %></option>
+                                    <% }); %>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-success w-100">
+                                <i class="bi bi-unlock me-1"></i> Abrir Caja
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <% } else { %>
+        <!-- ==================== CAJA ABIERTA ==================== -->
+
+        <!-- Header de estado -->
+        <div class="d-flex flex-wrap align-items-center justify-content-between mb-4">
+            <div>
+                <h4 class="mb-1">
+                    <i class="bi bi-cash-stack me-2"></i>Caja
+                    <span class="badge bg-success ms-2">Abierta</span>
+                </h4>
+                <small class="text-muted">
+                    Abierta: <%= new Date(cajaAbierta.fecha_apertura).toLocaleString('es-PE') %> &middot;
+                    Usuario: <strong><%= cajaAbierta.usuario_nombre || 'N/A' %></strong>
+                </small>
+            </div>
+        </div>
+
+        <!-- KPI Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="text-success mb-1"><i class="bi bi-arrow-down-circle fs-3"></i></div>
+                        <h6 class="text-muted mb-1">Ingresos</h6>
+                        <h3 class="text-success mb-0">$<%= Number(totales.ingresos || 0).toFixed(2) %></h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="text-danger mb-1"><i class="bi bi-arrow-up-circle fs-3"></i></div>
+                        <h6 class="text-muted mb-1">Egresos</h6>
+                        <h3 class="text-danger mb-0">$<%= Number(totales.egresos || 0).toFixed(2) %></h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="text-purple mb-1"><i class="bi bi-wallet2 fs-3"></i></div>
+                        <h6 class="text-muted mb-1">Efectivo actual</h6>
+                        <h3 class="mb-0" style="color:#7c3aed;">$<%= Number(totales.efectivo_actual || 0).toFixed(2) %></h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Acciones rapidas -->
+        <div class="d-flex flex-wrap gap-2 mb-4">
+            <button class="btn btn-success" id="btnRegistrarIngreso">
+                <i class="bi bi-plus-circle me-1"></i> Registrar ingreso
+            </button>
+            <button class="btn btn-danger" id="btnRegistrarEgreso">
+                <i class="bi bi-dash-circle me-1"></i> Registrar egreso
+            </button>
+            <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#modalCerrarCaja">
+                <i class="bi bi-lock me-1"></i> Cerrar caja
+            </button>
+        </div>
+
+        <!-- Tabla de movimientos -->
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="bi bi-list-ul me-1"></i>Movimientos</h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Hora</th>
+                                <th>Tipo</th>
+                                <th>Concepto</th>
+                                <th class="text-end">Monto</th>
+                                <th>Metodo</th>
+                                <th>Usuario</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% if (movimientos.length === 0) { %>
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted py-4">No hay movimientos registrados</td>
+                                </tr>
+                            <% } %>
+                            <% movimientos.forEach(function(m) { %>
+                                <tr>
+                                    <td><%= new Date(m.fecha || m.created_at).toLocaleTimeString('es-PE', {hour:'2-digit', minute:'2-digit'}) %></td>
+                                    <td>
+                                        <% if (m.tipo === 'ingreso') { %>
+                                            <span class="badge bg-success">Ingreso</span>
+                                        <% } else { %>
+                                            <span class="badge bg-danger">Egreso</span>
+                                        <% } %>
+                                    </td>
+                                    <td><%= m.concepto || '-' %></td>
+                                    <td class="text-end fw-bold">$<%= Number(m.monto || 0).toFixed(2) %></td>
+                                    <td><%= m.metodo_pago || m.metodo || '-' %></td>
+                                    <td><%= m.usuario_nombre || '-' %></td>
+                                </tr>
+                            <% }); %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== MODAL CERRAR CAJA ==================== -->
+        <div class="modal fade" id="modalCerrarCaja" tabindex="-1" aria-labelledby="modalCerrarCajaLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header bg-warning text-dark">
+                        <h5 class="modal-title" id="modalCerrarCajaLabel"><i class="bi bi-lock me-1"></i> Cerrar Caja</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <form id="formCerrarCaja">
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="montoReal" class="form-label fw-bold">Monto real en caja</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control" id="montoReal" name="monto_cierre" min="0" step="0.01" required placeholder="0.00">
+                                </div>
+                            </div>
+
+                            <h6 class="mb-3">Denominaciones</h6>
+                            <div class="row g-2 mb-3">
+                                <div class="col-4 col-md-3">
+                                    <label class="form-label small">Billetes $200</label>
+                                    <input type="number" class="form-control form-control-sm denom-field" data-valor="200" name="b200" min="0" value="0">
+                                </div>
+                                <div class="col-4 col-md-3">
+                                    <label class="form-label small">Billetes $100</label>
+                                    <input type="number" class="form-control form-control-sm denom-field" data-valor="100" name="b100" min="0" value="0">
+                                </div>
+                                <div class="col-4 col-md-3">
+                                    <label class="form-label small">Billetes $50</label>
+                                    <input type="number" class="form-control form-control-sm denom-field" data-valor="50" name="b50" min="0" value="0">
+                                </div>
+                                <div class="col-4 col-md-3">
+                                    <label class="form-label small">Billetes $20</label>
+                                    <input type="number" class="form-control form-control-sm denom-field" data-valor="20" name="b20" min="0" value="0">
+                                </div>
+                                <div class="col-4 col-md-3">
+                                    <label class="form-label small">Billetes $10</label>
+                                    <input type="number" class="form-control form-control-sm denom-field" data-valor="10" name="b10" min="0" value="0">
+                                </div>
+                                <div class="col-4 col-md-3">
+                                    <label class="form-label small">Monedas $5</label>
+                                    <input type="number" class="form-control form-control-sm denom-field" data-valor="5" name="m5" min="0" value="0">
+                                </div>
+                                <div class="col-4 col-md-3">
+                                    <label class="form-label small">Monedas $2</label>
+                                    <input type="number" class="form-control form-control-sm denom-field" data-valor="2" name="m2" min="0" value="0">
+                                </div>
+                                <div class="col-4 col-md-3">
+                                    <label class="form-label small">Monedas $1</label>
+                                    <input type="number" class="form-control form-control-sm denom-field" data-valor="1" name="m1" min="0" value="0">
+                                </div>
+                                <div class="col-4 col-md-3">
+                                    <label class="form-label small">Monedas $0.50</label>
+                                    <input type="number" class="form-control form-control-sm denom-field" data-valor="0.5" name="m050" min="0" value="0">
+                                </div>
+                            </div>
+                            <div class="alert alert-info py-2">
+                                <strong>Total denominaciones:</strong> $<span id="totalDenominaciones">0.00</span>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="notasCierre" class="form-label">Notas</label>
+                                <textarea class="form-control" id="notasCierre" name="notas" rows="3" placeholder="Observaciones del cierre..."></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-warning"><i class="bi bi-lock me-1"></i> Cerrar Caja</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== MODAL REGISTRAR MOVIMIENTO ==================== -->
+        <div class="modal fade" id="modalMovimiento" tabindex="-1" aria-labelledby="modalMovimientoLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalMovimientoLabel"><i class="bi bi-arrow-left-right me-1"></i> Registrar Movimiento</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <form id="formMovimiento">
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="movTipo" class="form-label">Tipo</label>
+                                <select class="form-select" id="movTipo" name="tipo" required>
+                                    <option value="ingreso">Ingreso</option>
+                                    <option value="egreso">Egreso</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="movConcepto" class="form-label">Concepto</label>
+                                <select class="form-select" id="movConcepto" name="concepto" required>
+                                    <option value="" disabled selected>Seleccione un concepto</option>
+                                    <option value="venta">Venta</option>
+                                    <option value="propina">Propina</option>
+                                    <option value="cobro_pendiente">Cobro pendiente</option>
+                                    <option value="pago_proveedor">Pago a proveedor</option>
+                                    <option value="gasto_operativo">Gasto operativo</option>
+                                    <option value="devolucion">Devolucion</option>
+                                    <option value="adelanto_sueldo">Adelanto de sueldo</option>
+                                    <option value="otro">Otro</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="movMonto" class="form-label">Monto</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input type="number" class="form-control" id="movMonto" name="monto" min="0.01" step="0.01" required placeholder="0.00">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="movMetodo" class="form-label">Metodo de pago</label>
+                                <select class="form-select" id="movMetodo" name="metodo_pago" required>
+                                    <option value="" disabled selected>Seleccione un metodo</option>
+                                    <% metodos.forEach(function(met) { %>
+                                        <option value="<%= met.valor || met.id || met %>"><%= met.nombre || met.label || met %></option>
+                                    <% }); %>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i> Registrar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <% } %>
+
+    </div><!-- container -->
+    </main>
+
+    <%- include('partials/footer') %>
+    </div><!-- dg-main -->
+
+    <script src="/vendor/jquery/jquery.min.js"></script>
+    <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+    (function(){
+        // ===================== ABRIR CAJA =====================
+        const formAbrir = document.getElementById('formAbrirCaja');
+        if (formAbrir) {
+            formAbrir.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const monto = document.getElementById('montoApertura').value;
+                const turno_id = document.getElementById('turnoApertura').value;
+
+                if (!monto || !turno_id) {
+                    return Swal.fire('Campos requeridos', 'Ingrese monto y seleccione turno.', 'warning');
+                }
+
+                const confirm = await Swal.fire({
+                    title: 'Abrir caja',
+                    text: `Se abrira la caja con $${Number(monto).toFixed(2)}`,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Si, abrir',
+                    cancelButtonText: 'Cancelar'
+                });
+                if (!confirm.isConfirmed) return;
+
+                try {
+                    const res = await fetch('/api/caja/abrir', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ monto_apertura: parseFloat(monto), turno_id: parseInt(turno_id) })
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        await Swal.fire('Caja abierta', 'La caja se abrio correctamente.', 'success');
+                        location.reload();
+                    } else {
+                        Swal.fire('Error', data.error || 'No se pudo abrir la caja.', 'error');
+                    }
+                } catch(err) {
+                    Swal.fire('Error', 'Error de conexion.', 'error');
+                }
+            });
+        }
+
+        // ===================== DENOMINACIONES =====================
+        const denomFields = document.querySelectorAll('.denom-field');
+        function calcDenominaciones() {
+            let total = 0;
+            denomFields.forEach(function(inp) {
+                const cantidad = parseInt(inp.value) || 0;
+                const valor = parseFloat(inp.dataset.valor) || 0;
+                total += cantidad * valor;
+            });
+            const el = document.getElementById('totalDenominaciones');
+            if (el) el.textContent = total.toFixed(2);
+        }
+        denomFields.forEach(function(inp) { inp.addEventListener('input', calcDenominaciones); });
+
+        // ===================== CERRAR CAJA =====================
+        const formCerrar = document.getElementById('formCerrarCaja');
+        if (formCerrar) {
+            formCerrar.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const monto_cierre = parseFloat(document.getElementById('montoReal').value);
+                const notas = document.getElementById('notasCierre').value;
+
+                if (isNaN(monto_cierre) || monto_cierre < 0) {
+                    return Swal.fire('Error', 'Ingrese un monto de cierre valido.', 'warning');
+                }
+
+                const denominaciones = {};
+                denomFields.forEach(function(inp) {
+                    denominaciones[inp.name] = parseInt(inp.value) || 0;
+                });
+
+                const confirm = await Swal.fire({
+                    title: 'Cerrar caja',
+                    text: `Monto real: $${monto_cierre.toFixed(2)}. Esta seguro?`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Si, cerrar',
+                    cancelButtonText: 'Cancelar'
+                });
+                if (!confirm.isConfirmed) return;
+
+                try {
+                    const res = await fetch('/api/caja/cerrar', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ monto_cierre, denominaciones, notas })
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        await Swal.fire('Caja cerrada', 'La caja se cerro correctamente.', 'success');
+                        location.reload();
+                    } else {
+                        Swal.fire('Error', data.error || 'No se pudo cerrar la caja.', 'error');
+                    }
+                } catch(err) {
+                    Swal.fire('Error', 'Error de conexion.', 'error');
+                }
+            });
+        }
+
+        // ===================== REGISTRAR MOVIMIENTO =====================
+        const modalMovimiento = document.getElementById('modalMovimiento');
+        const modalMovimientoBS = modalMovimiento ? new bootstrap.Modal(modalMovimiento) : null;
+
+        const btnIngreso = document.getElementById('btnRegistrarIngreso');
+        const btnEgreso = document.getElementById('btnRegistrarEgreso');
+
+        if (btnIngreso) {
+            btnIngreso.addEventListener('click', function() {
+                document.getElementById('movTipo').value = 'ingreso';
+                document.getElementById('modalMovimientoLabel').innerHTML = '<i class="bi bi-plus-circle me-1 text-success"></i> Registrar Ingreso';
+                document.getElementById('formMovimiento').reset();
+                document.getElementById('movTipo').value = 'ingreso';
+                modalMovimientoBS.show();
+            });
+        }
+        if (btnEgreso) {
+            btnEgreso.addEventListener('click', function() {
+                document.getElementById('movTipo').value = 'egreso';
+                document.getElementById('modalMovimientoLabel').innerHTML = '<i class="bi bi-dash-circle me-1 text-danger"></i> Registrar Egreso';
+                document.getElementById('formMovimiento').reset();
+                document.getElementById('movTipo').value = 'egreso';
+                modalMovimientoBS.show();
+            });
+        }
+
+        const formMov = document.getElementById('formMovimiento');
+        if (formMov) {
+            formMov.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const tipo = document.getElementById('movTipo').value;
+                const concepto = document.getElementById('movConcepto').value;
+                const monto = parseFloat(document.getElementById('movMonto').value);
+                const metodo_pago = document.getElementById('movMetodo').value;
+
+                if (!tipo || !concepto || isNaN(monto) || monto <= 0 || !metodo_pago) {
+                    return Swal.fire('Campos requeridos', 'Complete todos los campos.', 'warning');
+                }
+
+                try {
+                    const res = await fetch('/api/caja/movimiento', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ tipo, concepto, monto, metodo_pago })
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        modalMovimientoBS.hide();
+                        await Swal.fire('Registrado', 'El movimiento se registro correctamente.', 'success');
+                        location.reload();
+                    } else {
+                        Swal.fire('Error', data.error || 'No se pudo registrar el movimiento.', 'error');
+                    }
+                } catch(err) {
+                    Swal.fire('Error', 'Error de conexion.', 'error');
+                }
+            });
+        }
+    })();
+    </script>
+</body>
+</html>

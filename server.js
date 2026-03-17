@@ -127,6 +127,7 @@ const chatRoutes = require('./routes/chat');
 const socialApiRoutes = require('./routes/social-api');
 const almacenRoutes = require('./routes/almacen');
 const recetasRoutes = require('./routes/recetas');
+const cajaRoutes = require('./routes/caja');
 
 // Auth routes (públicas): /login /logout /setup
 app.use(authRoutes);
@@ -208,6 +209,10 @@ app.use('/almacen', requireRole('administrador'), almacenRoutes);
 
 // Recetas API (admin)
 app.use('/api/recetas', requireRole('administrador'), recetasRoutes);
+
+// Caja (admin + cajero)
+app.use('/caja', requireRole(['administrador', 'cajero']), cajaRoutes);
+app.use('/api/caja', requireRole(['administrador', 'cajero']), cajaRoutes);
 
 // Chat IA (admin)
 app.use('/chat', requireRole('administrador'), chatRoutes);
