@@ -252,6 +252,7 @@ router.get('/entradas', async (req, res) => {
     res.render('almacen/entradas', { ingredientes, proveedores });
 });
 router.get('/salidas', async (req, res) => {
+  try {
     const tid = req.tenantId || 1;
     const [ingredientes] = await db.query('SELECT id, codigo, nombre, unidad_medida, stock_actual FROM almacen_ingredientes WHERE tenant_id=? AND activo=1 ORDER BY nombre', [tid]);
     const hoy = new Date().toISOString().split('T')[0];
@@ -329,6 +330,10 @@ router.get('/salidas', async (req, res) => {
     } catch(e) { console.error('Ranking salidas error:', e.message); }
 
     res.render('almacen/salidas', { ingredientes, salidasVenta, platos, ranking, cajaInfo });
+  } catch(e) {
+    console.error('Salidas error:', e.message);
+    res.render('almacen/salidas', { ingredientes: [], salidasVenta: [], platos: [], ranking: [], cajaInfo: null });
+  }
 });
 router.get('/historial', (req, res) => res.render('almacen/historial'));
 router.get('/alertas', (req, res) => res.render('almacen/alertas'));
