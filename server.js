@@ -147,6 +147,11 @@ app.get('/', requireAuth, async (req, res) => {
     res.render('dashboard', { dashboard });
 });
 
+// Facturacion rapida (la vista original index.ejs)
+app.get('/facturacion', requireRole(['mesero', 'administrador']), (req, res) => {
+    res.render('index');
+});
+
 // Usar las rutas
 // Panel de usuarios (solo admin)
 app.use('/usuarios', requireRole('administrador'), usuariosRoutes);
