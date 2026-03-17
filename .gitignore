@@ -6,6 +6,9 @@ public/uploads/
 .cu
 dist.zip
 # Archivos de entorno
+.env
+.env.local
+.env.production
 .cursorrules
 dist
 
