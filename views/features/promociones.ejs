@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Promociones - dignita.tech</title>
+    <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/theme.css">
+</head>
+<body>
+    <%- include('../partials/sidebar') %>
+    <div class="dg-main">
+    <main class="flex-grow-1">
+    <div class="container">
+
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <h4 class="mb-0"><i class="bi bi-tag me-2"></i>Promociones</h4>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#promoModal">
+                <i class="bi bi-plus-lg me-1"></i>Nueva promo
+            </button>
+        </div>
+
+        <!-- Tabla de promociones -->
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle" id="tablaPromos">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Tipo</th>
+                                <th>Valor</th>
+                                <th>Código</th>
+                                <th>Vigencia</th>
+                                <th>Usos</th>
+                                <th>Activa</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% if (promociones && promociones.length) { %>
+                                <% promociones.forEach(p => { %>
+                                <tr>
+                                    <td class="fw-semibold"><%= p.nombre %></td>
+                                    <td>
+                                        <%
+                                            const tipoColors = {
+                                                porcentaje: 'primary',
+                                                monto_fijo: 'success',
+                                                '2x1': 'danger',
+                                                happy_hour: 'warning',
+                                                combo: 'info'
+                                            };
+                                            const tipoColor = tipoColors[p.tipo] || 'secondary';
+                                        %>
+                                        <span class="badge bg-<%= tipoColor %>"><%= p.tipo %></span>
+                                    </td>
+                                    <td>
+                                        <% if (p.tipo === 'porcentaje') { %>
+                                            <%= p.valor %>%
+                                        <% } else if (p.tipo === 'monto_fijo') { %>
+                                            S/ <%= parseFloat(p.valor || 0).toFixed(2) %>
+                                        <% } else { %>
+                                            <%= p.valor || '-' %>
+                                        <% } %>
+                                    </td>
+                                    <td>
+                                        <% if (p.codigo_cupon) { %>
+                                            <code><%= p.codigo_cupon %></code>
+                                        <% } else { %>
+                                            <span class="text-muted">-</span>
+                                        <% } %>
+                                    </td>
+                                    <td>
+                                        <small>
+                                            <%= p.fecha_inicio ? new Date(p.fecha_inicio).toLocaleDateString('es-PE') : '?' %>
+                                            -
+                                            <%= p.fecha_fin ? new Date(p.fecha_fin).toLocaleDateString('es-PE') : '?' %>
+                                            <% if (p.hora_inicio || p.hora_fin) { %>
+                                                <br><%= p.hora_inicio || '' %> - <%= p.hora_fin || '' %>
+                                            <% } %>
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <%= p.usos_actuales || 0 %><% if (p.usos_maximo) { %>/<%= p.usos_maximo %><% } %>
+                                    </td>
+                                    <td>
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input" type="checkbox"
+                                                <%= p.activa ? 'checked' : '' %>
+                                                onchange="toggleActiva(<%= p.id %>, this.checked)">
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-secondary" onclick="editarPromo(<%= p.id %>)" title="Editar">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <% }) %>
+                            <% } else { %>
+                                <tr>
+                                    <td colspan="8" class="text-center text-muted py-4">No hay promociones registradas</td>
+                                </tr>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    </main>
+    <%- include('../partials/footer') %>
+    </div><!-- dg-main -->
+
+    <!-- Modal Nueva Promoción -->
+    <div class="modal fade" id="promoModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-tag me-2"></i>Nueva Promoción</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="formPromo">
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Nombre</label>
+                                <input type="text" name="nombre" class="form-control" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Tipo</label>
+                                <select name="tipo" class="form-select" required>
+                                    <option value="porcentaje">Porcentaje (%)</option>
+                                    <option value="monto_fijo">Monto fijo (S/)</option>
+                                    <option value="2x1">2x1</option>
+                                    <option value="happy_hour">Happy Hour</option>
+                                    <option value="combo">Combo</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Valor</label>
+                                <input type="number" name="valor" class="form-control" step="0.01" min="0" placeholder="Ej: 20 (para 20%)">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Código cupón</label>
+                                <input type="text" name="codigo_cupon" class="form-control" placeholder="PROMO2026">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Fecha inicio</label>
+                                <input type="date" name="fecha_inicio" class="form-control" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Fecha fin</label>
+                                <input type="date" name="fecha_fin" class="form-control" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Hora inicio</label>
+                                <input type="time" name="hora_inicio" class="form-control">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Hora fin</label>
+                                <input type="time" name="hora_fin" class="form-control">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Usos máximo</label>
+                                <input type="number" name="usos_maximo" class="form-control" min="0" placeholder="0 = ilimitado">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-save me-1"></i>Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="/vendor/jquery/jquery.min.js"></script>
+    <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="/vendor/sweetalert2/sweetalert2.all.min.js"></script>
+    <script>
+        // Crear promoción
+        document.getElementById('formPromo').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const data = Object.fromEntries(new FormData(this));
+            try {
+                const res = await fetch('/api/features/promociones', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await res.json();
+                if (res.ok) {
+                    Swal.fire('Promoción creada', '', 'success').then(() => location.reload());
+                } else {
+                    Swal.fire('Error', result.error || 'No se pudo crear la promoción', 'error');
+                }
+            } catch (err) {
+                Swal.fire('Error', 'Error de conexión', 'error');
+            }
+        });
+
+        // Toggle activa
+        async function toggleActiva(id, activa) {
+            try {
+                const res = await fetch(`/api/features/promociones/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ activa: activa ? 1 : 0 })
+                });
+                if (!res.ok) {
+                    Swal.fire('Error', 'No se pudo actualizar', 'error');
+                    location.reload();
+                }
+            } catch (err) {
+                Swal.fire('Error', 'Error de conexión', 'error');
+                location.reload();
+            }
+        }
+
+        // Placeholder para editar
+        function editarPromo(id) {
+            Swal.fire('En desarrollo', 'Función de edición próximamente', 'info');
+        }
+    </script>
+</body>
+</html>

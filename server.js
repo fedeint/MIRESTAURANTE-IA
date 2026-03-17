@@ -132,6 +132,7 @@ const sunatRoutes = require('./routes/sunat');
 const administracionRoutes = require('./routes/administracion');
 const canalesRoutes = require('./routes/canales');
 const reportesRoutes = require('./routes/reportes');
+const featuresRoutes = require('./routes/features');
 
 // Auth routes (públicas): /login /logout /setup
 app.use(authRoutes);
@@ -252,6 +253,12 @@ app.get('/ranking', requireRole('administrador'), async (req, res) => {
     } catch (e) { console.error('Ranking stats error:', e.message); }
     res.render('ranking', { stats });
 });
+
+// Features (reservas, delivery, promos, fidelidad - admin)
+app.use('/features', requireRole('administrador'), featuresRoutes);
+app.use('/api/features', requireRole('administrador'), featuresRoutes);
+// Menu digital publico (sin auth)
+app.get('/menu', (req, res, next) => { req.tenantId = 1; next(); }, featuresRoutes.stack ? (req, res, next) => next() : (req, res) => res.redirect('/features/menu'));
 
 // Canales internos (todos los roles)
 app.use('/canales', requireAuth, canalesRoutes);

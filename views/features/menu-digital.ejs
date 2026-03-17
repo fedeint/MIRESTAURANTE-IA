@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menu Digital</title>
+    <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/theme.css">
+    <style>
+        body {
+            background: #f8f9fa;
+        }
+        .menu-header {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            padding: 2rem 0;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .menu-header img.logo {
+            max-height: 80px;
+            margin-bottom: 0.75rem;
+        }
+        .menu-header h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin: 0;
+        }
+        .categoria-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid #22d3ee;
+            display: inline-block;
+        }
+        .producto-card {
+            border: none;
+            border-radius: 12px;
+            overflow: hidden;
+            transition: transform 0.2s, box-shadow 0.2s;
+            height: 100%;
+        }
+        .producto-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .producto-card .card-img-top {
+            height: 160px;
+            object-fit: cover;
+        }
+        .producto-card .card-body {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .producto-precio {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #22d3ee;
+        }
+        .badge-no-disponible {
+            background-color: #dc3545;
+            font-size: 0.75rem;
+        }
+        .no-image-placeholder {
+            height: 160px;
+            background: linear-gradient(135deg, #e9ecef, #dee2e6);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #adb5bd;
+            font-size: 2.5rem;
+        }
+        @media (max-width: 575.98px) {
+            .menu-header h1 { font-size: 1.4rem; }
+            .producto-card .card-img-top,
+            .no-image-placeholder { height: 120px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header -->
+    <div class="menu-header">
+        <div class="container">
+            <% if (typeof config !== 'undefined' && config && config.logo_src) { %>
+                <img src="<%= config.logo_src %>" alt="Logo" class="logo">
+            <% } %>
+            <h1>
+                <% if (typeof config !== 'undefined' && config && config.nombre_negocio) { %>
+                    <%= config.nombre_negocio %>
+                <% } else { %>
+                    Nuestro Menú
+                <% } %>
+            </h1>
+        </div>
+    </div>
+
+    <!-- Menú -->
+    <div class="container pb-5">
+        <%
+            // Agrupar productos por categoría
+            const categorias = {};
+            if (typeof productos !== 'undefined' && productos && productos.length) {
+                productos.forEach(p => {
+                    const cat = p.categoria || 'Otros';
+                    if (!categorias[cat]) categorias[cat] = [];
+                    categorias[cat].push(p);
+                });
+            }
+            const catKeys = Object.keys(categorias);
+        %>
+
+        <% if (catKeys.length) { %>
+            <% catKeys.forEach(cat => { %>
+                <div class="mb-4">
+                    <h2 class="categoria-title"><i class="bi bi-bookmark-fill me-2"></i><%= cat %></h2>
+                    <div class="row g-3">
+                        <% categorias[cat].forEach(p => {
+                            const noDisponible = (p.ingredientes_agotados || 0) > 0;
+                        %>
+                        <div class="col-6 col-md-4 col-lg-3">
+                            <div class="card producto-card shadow-sm <%= noDisponible ? 'opacity-75' : '' %>">
+                                <% if (p.imagen) { %>
+                                    <img src="<%= p.imagen %>" alt="<%= p.nombre %>" class="card-img-top">
+                                <% } else { %>
+                                    <div class="no-image-placeholder">
+                                        <i class="bi bi-cup-hot"></i>
+                                    </div>
+                                <% } %>
+                                <div class="card-body p-3">
+                                    <div>
+                                        <h6 class="card-title mb-1"><%= p.nombre %></h6>
+                                        <% if (noDisponible) { %>
+                                            <span class="badge badge-no-disponible mb-1">No disponible</span>
+                                        <% } %>
+                                    </div>
+                                    <div class="producto-precio mt-2">
+                                        S/ <%= parseFloat(p.precio_unidad || p.precio || 0).toFixed(2) %>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <% }) %>
+                    </div>
+                </div>
+            <% }) %>
+        <% } else { %>
+            <div class="text-center py-5">
+                <i class="bi bi-journal-x display-1 text-muted"></i>
+                <p class="text-muted mt-3 fs-5">El menú no está disponible en este momento</p>
+            </div>
+        <% } %>
+    </div>
+
+    <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
