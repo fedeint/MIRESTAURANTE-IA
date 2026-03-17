@@ -340,9 +340,67 @@ router.get('/salidas', async (req, res) => {
     res.render('almacen/salidas', { ingredientes: [], salidasVenta: [], platos: [], ranking: [], cajaInfo: null });
   }
 });
+// GET /almacen/que-comprar - Prediccion basada en consumo semana pasada
+router.get('/que-comprar', async (req, res) => {
+    try {
+        const tid = req.tenantId || 1;
+        const hoy = new Date();
+        // Mismo dia de la semana pasada
+        const semanaPasada = new Date(hoy);
+        semanaPasada.setDate(semanaPasada.getDate() - 7);
+        const fechaRef = semanaPasada.toISOString().split('T')[0];
+
+        // Consumo del mismo dia la semana pasada
+        const [consumoSemPasada] = await db.query(`
+            SELECT m.ingrediente_id, ai.nombre, ai.unidad_medida, ai.stock_actual, ai.stock_minimo,
+                   ai.costo_unitario, p.nombre as proveedor_nombre,
+                   SUM(m.cantidad) as consumido_semana_pasada
+            FROM almacen_movimientos m
+            JOIN almacen_ingredientes ai ON ai.id = m.ingrediente_id
+            LEFT JOIN proveedores p ON p.id = ai.proveedor_id
+            WHERE m.tenant_id=? AND m.motivo='venta_platillo' AND DATE(m.created_at)=?
+            GROUP BY m.ingrediente_id
+            ORDER BY consumido_semana_pasada DESC
+        `, [tid, fechaRef]);
+
+        // Calcular cuanto falta
+        const listaCompras = consumoSemPasada.map(item => {
+            const stock = Number(item.stock_actual) || 0;
+            const consumo = Number(item.consumido_semana_pasada) || 0;
+            const minimo = Number(item.stock_minimo) || 0;
+            const necesita = Math.max(0, consumo - stock + minimo); // lo que necesitas comprar
+            const diasStock = consumo > 0 ? Math.floor(stock / consumo) : 999;
+            return {
+                ...item,
+                consumo,
+                necesita: necesita > 0 ? necesita : 0,
+                dias_stock: diasStock,
+                costo_estimado: necesita > 0 ? (necesita * Number(item.costo_unitario)).toFixed(2) : '0.00',
+                urgente: stock <= minimo
+            };
+        }).filter(i => i.consumo > 0);
+
+        // Ingredientes bajo minimo que no se consumieron la semana pasada
+        const [bajoMinimo] = await db.query(`
+            SELECT ai.id as ingrediente_id, ai.nombre, ai.unidad_medida, ai.stock_actual, ai.stock_minimo,
+                   ai.costo_unitario, p.nombre as proveedor_nombre
+            FROM almacen_ingredientes ai
+            LEFT JOIN proveedores p ON p.id = ai.proveedor_id
+            WHERE ai.tenant_id=? AND ai.activo=1 AND ai.stock_actual <= ai.stock_minimo
+        `, [tid]);
+
+        const diaSemana = ['Domingo','Lunes','Martes','Miercoles','Jueves','Viernes','Sabado'][hoy.getDay()];
+
+        res.render('almacen/que-comprar', { listaCompras, bajoMinimo, fechaRef, diaSemana });
+    } catch(e) {
+        console.error('Que comprar error:', e.message);
+        res.render('almacen/que-comprar', { listaCompras: [], bajoMinimo: [], fechaRef: '', diaSemana: '' });
+    }
+});
+
 router.get('/historial', (req, res) => res.render('almacen/historial'));
 router.get('/alertas', (req, res) => res.render('almacen/alertas'));
-router.get('/conteo-fisico', (req, res) => res.render('almacen/conteo-fisico'));
+// conteo-fisico eliminado - se maneja desde ingreso diario
 
 // API: CRUD proveedores
 router.post('/api/proveedores', async (req, res) => {
