@@ -19,6 +19,46 @@ Transformar dignita.tech de una app local a un **SaaS multi-tenant** con:
 - Asistente IA con voz (speech-to-text + text-to-speech)
 
 **Contexto del negocio**: ~250 clientes/dia, 40 mesas
+**Subdominio**: nombre-restaurante.dignita.tech (ej: elmarineritopicante.dignita.tech)
+
+---
+
+## 1.1 ROLES DEL SISTEMA (4 roles desde el inicio)
+
+| Rol | Acceso | Responsabilidad |
+|-----|--------|-----------------|
+| **Administrador** | TODO | Gestion total, P&L, config, usuarios, reportes, IA |
+| **Cajero** | Caja, Facturacion, Clientes | Abrir/cerrar caja, facturar, cobrar, registrar pagos |
+| **Mesero** | Mesas, Cocina (solo listos) | Tomar pedidos, enviar a cocina, entregar, facturar desde mesa |
+| **Cocinero** | Cocina, Almacen (solo consulta) | Preparar pedidos, marcar estados, ver stock disponible |
+
+**Cambio requerido en BD** (tabla usuarios):
+```sql
+ALTER TABLE usuarios MODIFY rol ENUM('administrador','cajero','mesero','cocinero') NOT NULL DEFAULT 'mesero';
+```
+
+**Permisos detallados**:
+```
+                        Admin  Cajero  Mesero  Cocinero
+Dashboard               ✅      ❌      ❌      ❌
+Facturacion              ✅      ✅      ❌      ❌
+Mesas                    ✅      ❌      ✅      ❌
+Cocina                   ✅      ❌      👁️      ✅
+Caja (abrir/cerrar)      ✅      ✅      ❌      ❌
+Almacen (CRUD)           ✅      ❌      ❌      ❌
+Almacen (consulta stock) ✅      ❌      ❌      👁️
+Productos                ✅      ❌      ❌      ❌
+Clientes                 ✅      ✅      ❌      ❌
+Ranking                  ✅      ❌      ❌      ❌
+Administracion/P&L       ✅      ❌      ❌      ❌
+Planilla                 ✅      ❌      ❌      ❌
+Canales                  ✅      ✅      ✅      ✅
+Asistente IA             ✅      ✅      ✅      ✅
+Usuarios                 ✅      ❌      ❌      ❌
+Configuracion            ✅      ❌      ❌      ❌
+
+✅ = acceso completo  👁️ = solo lectura  ❌ = sin acceso
+```
 
 ---
 
@@ -139,7 +179,55 @@ CREATE TABLE almacen_movimientos (
 - Bebidas base (gaseosas, jugos, cerveza, agua...)
 - Descartables (platos, vasos, cubiertos, servilletas, bolsas...)
 
-**Vista**: `/almacen` - CRUD de ingredientes con stock, alertas de minimo, movimientos
+#### Partes del modulo Almacen (5 secciones):
+
+```
+/almacen
+  │
+  ├── /almacen/inventario        ← Vista principal: stock actual de todos los ingredientes
+  │     - Tabla con: nombre, categoria, stock actual, unidad, minimo, costo, estado (OK/bajo/critico)
+  │     - Filtros por categoria, estado, busqueda
+  │     - Importar/exportar Excel
+  │
+  ├── /almacen/entradas          ← Registrar compras/ingresos de mercaderia
+  │     - Seleccionar ingrediente → cantidad → costo unitario → proveedor
+  │     - Compra multiple (varios ingredientes a la vez)
+  │     - Fecha de compra, numero de comprobante
+  │     - Actualiza stock_actual automaticamente
+  │
+  ├── /almacen/salidas           ← Salidas manuales (merma, consumo interno, perdida)
+  │     - No incluye ventas (esas son automaticas por receta)
+  │     - Motivo: merma, vencido, consumo interno, regalo, robo
+  │     - Requiere justificacion/nota
+  │
+  ├── /almacen/movimientos       ← Historial completo de entradas y salidas
+  │     - Filtros por fecha, ingrediente, tipo (entrada/salida/ajuste/venta)
+  │     - Trazabilidad: quien, cuando, por que, referencia
+  │     - Exportar a Excel
+  │
+  └── /almacen/alertas           ← Ingredientes bajo minimo + lista de compras sugerida
+        - Lista roja: stock actual < stock minimo
+        - Proyeccion: basado en consumo promedio diario, cuantos dias queda
+        - Generar lista de compras (exportar/imprimir)
+        - Envia alerta automatica al canal #inventario
+```
+
+**12 categorias de ingredientes**:
+| # | Categoria | Ejemplos | Cant. aprox |
+|---|-----------|----------|------------|
+| 1 | Pescados y mariscos | Bonito, toyo, cojinova, pulpo, conchas, langostinos, camarones, choros | ~15 |
+| 2 | Carnes | Pollo, res, cerdo, cordero, higado, mondongo, corazon | ~12 |
+| 3 | Vegetales | Cebolla, tomate, lechuga, zanahoria, pimiento, apio, pepino, rocoto | ~25 |
+| 4 | Legumbres | Frijol, lenteja, garbanzo, pallares, habas | ~8 |
+| 5 | Frutas | Limon, naranja, maracuya, piña, platano, manzana | ~10 |
+| 6 | Condimentos | Sal, pimienta, aji panca, aji amarillo, aji limo, comino, oregano, achiote, huacatay | ~20 |
+| 7 | Cremas y salsas | Mayonesa, ketchup, mostaza, sillao, salsa de ostras, vinagre, salsa criolla | ~12 |
+| 8 | Lacteos y huevos | Leche, queso, mantequilla, crema de leche, huevos | ~8 |
+| 9 | Granos y harinas | Arroz, harina, pan rallado, fideos, avena, quinua, trigo | ~12 |
+| 10 | Aceites y grasas | Aceite vegetal, aceite de oliva, manteca, margarina | ~6 |
+| 11 | Bebidas | Gaseosas, jugos, cerveza, agua, vino, pisco, chicha | ~20 |
+| 12 | Descartables y limpieza | Platos, vasos, cubiertos, servilletas, bolsas, detergente, lejia | ~25 |
+| | **TOTAL** | | **~173+** |
 
 **Referencia GitHub**:
 - [FridgeMan](https://github.com/JackRKelly/FridgeMan) - Food inventory con React/Node/PostgreSQL
@@ -631,7 +719,7 @@ usuarios ──── cajas (apertura/cierre)
 1. Tabla `tenants` (cada restaurante = 1 tenant)
 2. `tenant_id` en TODAS las tablas existentes + nuevas
 3. Middleware que inyecta tenant_id en cada request (basado en subdominio)
-4. Subdominio por restaurante (cevimar.dignita.tech, polnorte.dignita.tech)
+4. Subdominio = nombre del restaurante (elmarineritopicante.dignita.tech)
 5. Aislamiento de datos: cada query lleva WHERE tenant_id = ?
 6. Sistema de planes (Free/Pro/Enterprise) con limites por feature
 7. Facturacion de suscripciones (Stripe / MercadoPago)
@@ -973,8 +1061,8 @@ usuarios ──── cajas (apertura/cierre)
 ┌─────────────────────────────────────────────────────────────┐
 │                     INTERNET                                 │
 │                                                              │
-│   restaurante1.dignita.tech    restaurante2.dignita.tech     │
-│   restaurante3.dignita.tech    ...hasta N restaurantes       │
+│   elmarineritopicante.dignita.tech   pollerialnorte.dignita.tech  │
+│   chifaeldragon.dignita.tech        cevicheriamolly.dignita.tech │
 └──────────┬──────────────────────────────┬────────────────────┘
            │                              │
            ▼                              ▼
@@ -1009,9 +1097,9 @@ usuarios ──── cajas (apertura/cierre)
 │  ┌──────────────────────────────────────────────────────┐   │
 │  │ tenants                                              │   │
 │  │ id │ nombre         │ subdominio  │ plan   │ activo  │   │
-│  │ 1  │ Cevicheria Mar │ cevimar    │ pro    │ 1       │   │
-│  │ 2  │ Polleria Norte │ polnorte   │ free   │ 1       │   │
-│  │ 3  │ Chifa Dragon   │ chifadragon│ pro    │ 1       │   │
+│  │ 1  │ El Marinerito Picante │ elmarineritopicante │ pro  │ 1  │   │
+│  │ 2  │ Polleria El Norte     │ polleriaelnorte     │ free │ 1  │   │
+│  │ 3  │ Chifa El Dragon       │ chifaeldragon       │ pro  │ 1  │   │
 │  └──────────────────────────────────────────────────────┘   │
 │                                                              │
 │  Todas las tablas existentes agregan:                        │
