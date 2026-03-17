@@ -130,6 +130,7 @@ const recetasRoutes = require('./routes/recetas');
 const cajaRoutes = require('./routes/caja');
 const sunatRoutes = require('./routes/sunat');
 const administracionRoutes = require('./routes/administracion');
+const canalesRoutes = require('./routes/canales');
 
 // Auth routes (públicas): /login /logout /setup
 app.use(authRoutes);
@@ -250,6 +251,10 @@ app.get('/ranking', requireRole('administrador'), async (req, res) => {
     } catch (e) { console.error('Ranking stats error:', e.message); }
     res.render('ranking', { stats });
 });
+
+// Canales internos (todos los roles)
+app.use('/canales', requireAuth, canalesRoutes);
+app.use('/api/canales', requireAuth, canalesRoutes);
 
 // Administracion P&L (admin)
 app.use('/administracion', requireRole('administrador'), administracionRoutes);

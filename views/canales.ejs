@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Canales - dignita.tech</title>
+  <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+  <link rel="stylesheet" href="/css/theme.css">
+  <style>
+    .canales-container { display:flex; flex-direction:column; height:calc(100vh - 8rem); }
+    @media (max-width:991.98px) { .canales-container { height:calc(100vh - 56px - 4rem); } }
+
+    /* Channel list */
+    .channel-list { overflow-y:auto; max-height:100%; }
+    .channel-item {
+      cursor:pointer;
+      padding:0.75rem 1rem;
+      border-left:3px solid transparent;
+      transition:all 0.2s;
+    }
+    .channel-item:hover {
+      background:rgba(99,102,241,0.04);
+    }
+    .channel-item.active {
+      background:rgba(99,102,241,0.08);
+      border-left-color:var(--dg-primary, #6366f1);
+    }
+    .channel-item .channel-name {
+      font-weight:600;
+      font-size:0.9rem;
+      color:var(--dg-text);
+    }
+    .channel-item .channel-desc {
+      font-size:0.75rem;
+      color:var(--dg-text-muted, #94a3b8);
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    /* Messages area */
+    .messages-panel {
+      display:flex;
+      flex-direction:column;
+      height:100%;
+      background:var(--dg-surface, #1e1e2e);
+      border:1px solid var(--dg-surface-border, rgba(255,255,255,0.06));
+      border-radius:var(--dg-radius-lg, 0.75rem);
+      overflow:hidden;
+    }
+    .messages-header {
+      flex-shrink:0;
+      padding:0.85rem 1.25rem;
+      background:var(--dg-surface, #1e1e2e);
+      border-bottom:1px solid var(--dg-surface-border, rgba(255,255,255,0.06));
+      font-weight:600;
+    }
+    .messages-body {
+      flex:1;
+      overflow-y:auto;
+      padding:1rem 1.25rem;
+      display:flex;
+      flex-direction:column;
+      gap:0.5rem;
+    }
+    .messages-empty {
+      flex:1;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color:var(--dg-text-muted, #94a3b8);
+      font-size:0.9rem;
+    }
+
+    /* Single message */
+    .msg-row { animation:dg-fadeInUp 0.2s ease-out; }
+    .msg-user { font-weight:600; font-size:0.8rem; color:var(--dg-primary, #6366f1); }
+    .msg-time { font-size:0.7rem; color:var(--dg-text-muted, #94a3b8); margin-left:0.5rem; }
+    .msg-text { font-size:0.9rem; line-height:1.55; color:var(--dg-text, #e2e8f0); margin-top:0.15rem; word-wrap:break-word; }
+
+    .msg-system {
+      background:rgba(6,182,212,0.06);
+      border:1px solid rgba(6,182,212,0.12);
+      border-radius:0.5rem;
+      padding:0.5rem 0.85rem;
+    }
+    .msg-system .msg-user { color:#06b6d4; }
+    .msg-system .msg-text { color:#67e8f9; font-size:0.85rem; }
+
+    /* Pinned */
+    .pinned-section {
+      background:rgba(250,204,21,0.05);
+      border:1px solid rgba(250,204,21,0.12);
+      border-radius:0.5rem;
+      padding:0.6rem 0.85rem;
+      margin-bottom:0.75rem;
+    }
+    .pinned-label { font-size:0.72rem; font-weight:700; color:#facc15; text-transform:uppercase; letter-spacing:0.05em; margin-bottom:0.35rem; }
+    .pinned-msg { font-size:0.82rem; color:var(--dg-text-secondary, #cbd5e1); line-height:1.5; }
+    .pinned-msg + .pinned-msg { margin-top:0.3rem; padding-top:0.3rem; border-top:1px solid rgba(250,204,21,0.08); }
+
+    /* Input area */
+    .msg-input-area {
+      flex-shrink:0;
+      padding:0.75rem 1rem;
+      border-top:1px solid var(--dg-surface-border, rgba(255,255,255,0.06));
+      background:var(--dg-surface, #1e1e2e);
+    }
+    .msg-input-wrap {
+      display:flex;
+      gap:0.5rem;
+      align-items:flex-end;
+    }
+    .msg-input {
+      flex:1;
+      border:1.5px solid var(--dg-surface-border, rgba(255,255,255,0.1));
+      border-radius:0.65rem;
+      background:transparent;
+      color:var(--dg-text, #e2e8f0);
+      padding:0.5rem 0.85rem;
+      font-size:0.9rem;
+      resize:none;
+      max-height:100px;
+      line-height:1.5;
+      font-family:inherit;
+      outline:none;
+      transition:border-color 0.2s;
+    }
+    .msg-input:focus {
+      border-color:var(--dg-primary-light, #818cf8);
+      box-shadow:0 0 0 3px var(--dg-primary-glow, rgba(99,102,241,0.15));
+    }
+    .msg-input::placeholder { color:var(--dg-text-muted, #94a3b8); }
+    .msg-send-btn {
+      width:40px;
+      height:40px;
+      border-radius:0.65rem;
+      border:none;
+      background:linear-gradient(135deg,#6366f1,#4f46e5);
+      color:#fff;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:1rem;
+      cursor:pointer;
+      transition:all 0.2s;
+      flex-shrink:0;
+      box-shadow:0 4px 12px rgba(99,102,241,0.3);
+    }
+    .msg-send-btn:hover { transform:translateY(-1px); box-shadow:0 6px 16px rgba(99,102,241,0.4); }
+    .msg-send-btn:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+  </style>
+</head>
+<body>
+  <%- include('partials/sidebar') %>
+  <div class="dg-main">
+  <main class="flex-grow-1">
+    <div class="container">
+
+      <!-- Header -->
+      <div class="d-flex align-items-center gap-3 mb-3">
+        <div style="width:44px;height:44px;background:linear-gradient(135deg,#6366f1,#06b6d4);border-radius:0.75rem;display:flex;align-items:center;justify-content:center;font-size:1.2rem;color:#fff;box-shadow:0 4px 16px rgba(99,102,241,0.3);">
+          <i class="bi bi-chat-dots-fill"></i>
+        </div>
+        <div>
+          <h5 class="mb-0 fw-bold">Canales</h5>
+          <div class="text-muted small">Comunicacion interna del equipo</div>
+        </div>
+      </div>
+
+      <!-- Two-column layout -->
+      <div class="row g-3 canales-container">
+
+        <!-- Left: Channel list -->
+        <div class="col-md-3">
+          <div class="card h-100">
+            <div class="card-header py-2">
+              <small class="fw-semibold text-uppercase" style="font-size:0.7rem;letter-spacing:0.05em;">
+                <i class="bi bi-hash me-1"></i>Canales (<%= (canales || []).length %>)
+              </small>
+            </div>
+            <div class="card-body p-0 channel-list" id="channelList">
+              <% (canales || []).forEach(function(c, idx) { %>
+                <div class="channel-item list-group-item border-0 <%= idx === 0 ? 'active' : '' %>"
+                     data-id="<%= c.id %>"
+                     data-nombre="<%= c.nombre %>">
+                  <div class="channel-name">
+                    <i class="bi bi-hash me-1" style="opacity:0.5;"></i><%= c.nombre %>
+                  </div>
+                  <% if (c.descripcion) { %>
+                    <div class="channel-desc"><%= c.descripcion %></div>
+                  <% } %>
+                </div>
+              <% }); %>
+              <% if (!(canales && canales.length)) { %>
+                <div class="text-center text-muted small py-4">No hay canales</div>
+              <% } %>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right: Messages -->
+        <div class="col-md-9">
+          <div class="messages-panel" id="messagesPanel">
+            <div class="messages-header" id="messagesHeader">
+              <i class="bi bi-hash me-1" style="opacity:0.5;"></i>
+              <span id="channelTitle">Selecciona un canal</span>
+            </div>
+
+            <!-- Pinned messages -->
+            <div id="pinnedSection" class="pinned-section mx-3 mt-3" style="display:none;">
+              <div class="pinned-label"><i class="bi bi-pin-angle-fill me-1"></i>Mensajes fijados</div>
+              <div id="pinnedMessages"></div>
+            </div>
+
+            <!-- Messages body -->
+            <div class="messages-body" id="messagesBody">
+              <div class="messages-empty" id="messagesEmpty">
+                <div class="text-center">
+                  <i class="bi bi-chat-dots" style="font-size:2.5rem;opacity:0.3;"></i>
+                  <div class="mt-2">Selecciona un canal para ver los mensajes</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Message input -->
+            <div class="msg-input-area">
+              <div class="msg-input-wrap">
+                <textarea class="msg-input" id="msgInput" rows="1" placeholder="Escribe un mensaje..." maxlength="2000" disabled></textarea>
+                <button class="msg-send-btn" id="msgSend" type="button" title="Enviar" disabled>
+                  <i class="bi bi-send-fill"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /row -->
+    </div>
+  </main>
+  <%- include('partials/footer') %>
+  </div>
+
+  <script src="/vendor/jquery/jquery.min.js"></script>
+  <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script>
+  (function() {
+    var currentChannelId = null;
+    var channelItems = document.querySelectorAll('.channel-item');
+    var messagesBody = document.getElementById('messagesBody');
+    var messagesEmpty = document.getElementById('messagesEmpty');
+    var channelTitle = document.getElementById('channelTitle');
+    var pinnedSection = document.getElementById('pinnedSection');
+    var pinnedMessages = document.getElementById('pinnedMessages');
+    var msgInput = document.getElementById('msgInput');
+    var msgSend = document.getElementById('msgSend');
+    var sending = false;
+
+    function escapeHtml(s) {
+      var d = document.createElement('div');
+      d.textContent = s;
+      return d.innerHTML;
+    }
+
+    function formatTime(dateStr) {
+      if (!dateStr) return '';
+      var d = new Date(dateStr);
+      var now = new Date();
+      var sameDay = d.toDateString() === now.toDateString();
+      if (sameDay) {
+        return d.toLocaleTimeString('es-PE', { hour:'2-digit', minute:'2-digit' });
+      }
+      return d.toLocaleDateString('es-PE', { day:'2-digit', month:'short' }) + ' ' +
+             d.toLocaleTimeString('es-PE', { hour:'2-digit', minute:'2-digit' });
+    }
+
+    function renderMessage(msg) {
+      var isSystem = msg.sistema || msg.is_system || (msg.usuario === 'Sistema');
+      var div = document.createElement('div');
+      div.className = 'msg-row' + (isSystem ? ' msg-system' : '');
+      div.innerHTML =
+        '<div>' +
+          '<span class="msg-user">' + escapeHtml(isSystem ? 'Sistema' : (msg.usuario || msg.username || 'Usuario')) + '</span>' +
+          '<span class="msg-time">' + formatTime(msg.created_at || msg.fecha) + '</span>' +
+        '</div>' +
+        '<div class="msg-text">' + escapeHtml(msg.texto || msg.mensaje || '') + '</div>';
+      return div;
+    }
+
+    function renderPinned(msgs) {
+      if (!msgs || !msgs.length) {
+        pinnedSection.style.display = 'none';
+        return;
+      }
+      pinnedSection.style.display = 'block';
+      pinnedMessages.innerHTML = '';
+      msgs.forEach(function(msg) {
+        var div = document.createElement('div');
+        div.className = 'pinned-msg';
+        div.innerHTML =
+          '<i class="bi bi-pin-fill me-1" style="font-size:0.7rem;color:#facc15;"></i>' +
+          '<strong>' + escapeHtml(msg.usuario || msg.username || 'Sistema') + ':</strong> ' +
+          escapeHtml(msg.texto || msg.mensaje || '');
+        pinnedMessages.appendChild(div);
+      });
+    }
+
+    function loadMessages(channelId) {
+      currentChannelId = channelId;
+      messagesBody.innerHTML = '';
+      messagesEmpty.style.display = 'none';
+      pinnedSection.style.display = 'none';
+
+      // Loading state
+      messagesBody.innerHTML = '<div class="messages-empty"><div class="spinner-border spinner-border-sm text-muted" role="status"></div></div>';
+
+      fetch('/api/canales/' + channelId + '/mensajes')
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          messagesBody.innerHTML = '';
+          var mensajes = data.mensajes || data || [];
+          var pinned = data.pinned || data.fijados || [];
+
+          renderPinned(pinned);
+
+          if (!mensajes.length) {
+            messagesBody.innerHTML = '<div class="messages-empty"><div class="text-center"><i class="bi bi-chat" style="font-size:2rem;opacity:0.3;"></i><div class="mt-2">No hay mensajes aun. Se el primero!</div></div></div>';
+            return;
+          }
+
+          mensajes.forEach(function(msg) {
+            messagesBody.appendChild(renderMessage(msg));
+          });
+
+          messagesBody.scrollTop = messagesBody.scrollHeight;
+        })
+        .catch(function(err) {
+          messagesBody.innerHTML = '<div class="messages-empty text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Error al cargar mensajes</div>';
+          console.error('Error cargando mensajes:', err);
+        });
+    }
+
+    function selectChannel(item) {
+      channelItems.forEach(function(el) { el.classList.remove('active'); });
+      item.classList.add('active');
+
+      var id = item.getAttribute('data-id');
+      var nombre = item.getAttribute('data-nombre');
+
+      channelTitle.innerHTML = '<i class="bi bi-hash me-1" style="opacity:0.5;"></i>' + escapeHtml(nombre);
+      msgInput.disabled = false;
+      msgSend.disabled = false;
+      msgInput.placeholder = 'Escribe en #' + nombre + '...';
+      msgInput.focus();
+
+      loadMessages(id);
+    }
+
+    // Click handlers for channels
+    channelItems.forEach(function(item) {
+      item.addEventListener('click', function() {
+        selectChannel(this);
+      });
+    });
+
+    // Auto-select first channel
+    if (channelItems.length > 0) {
+      selectChannel(channelItems[0]);
+    }
+
+    // Send message
+    function sendMessage() {
+      if (sending || !currentChannelId) return;
+      var text = msgInput.value.trim();
+      if (!text) return;
+
+      sending = true;
+      msgSend.disabled = true;
+
+      fetch('/api/canales/' + currentChannelId + '/mensajes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mensaje: text })
+      })
+      .then(function(r) {
+        if (!r.ok) throw new Error('Error al enviar');
+        return r.json();
+      })
+      .then(function(data) {
+        msgInput.value = '';
+        msgInput.style.height = 'auto';
+        // Append the new message or reload all
+        if (data && (data.texto || data.mensaje)) {
+          messagesBody.appendChild(renderMessage(data));
+          messagesBody.scrollTop = messagesBody.scrollHeight;
+          // Remove empty placeholder if present
+          var emptyEl = messagesBody.querySelector('.messages-empty');
+          if (emptyEl) emptyEl.remove();
+        } else {
+          loadMessages(currentChannelId);
+        }
+      })
+      .catch(function(err) {
+        alert('Error al enviar mensaje');
+        console.error('Error enviando mensaje:', err);
+      })
+      .finally(function() {
+        sending = false;
+        msgSend.disabled = false;
+        msgInput.focus();
+      });
+    }
+
+    msgSend.addEventListener('click', sendMessage);
+
+    msgInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+
+    // Auto-resize textarea
+    msgInput.addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = Math.min(this.scrollHeight, 100) + 'px';
+    });
+
+  })();
+  </script>
+</body>
+</html>
