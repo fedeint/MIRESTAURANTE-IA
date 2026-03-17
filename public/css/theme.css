@@ -421,7 +421,13 @@ h1, h2, h3, h4, h5, h6 {
 /* Desktop: always visible */
 @media (min-width: 992px) {
   .dg-mobile-bar { display: none !important; }
-  .dg-sidebar-overlay { display: none !important; }
+  .dg-sidebar-overlay { display: none !important; pointer-events: none !important; opacity: 0 !important; }
+}
+
+/* Safety: ensure overlay never blocks on any screen when not .open */
+.dg-sidebar-overlay:not(.open) {
+  pointer-events: none !important;
+  opacity: 0 !important;
 }
 
 /* ---------- Main Content (with sidebar) ---------- */
