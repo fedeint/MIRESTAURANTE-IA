@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const { registrarAudit } = require('../services/audit');
 
 // Autenticación (login/logout) + Setup inicial (crear primer admin)
 // Relacionado con:
@@ -27,6 +28,35 @@ async function countUsuarios() {
   const [rows] = await db.query('SELECT COUNT(*) AS cnt FROM usuarios');
   return Number(rows?.[0]?.cnt || 0);
 }
+
+// Validar complejidad de contrasena (min 8, 1 mayusc, 1 numero)
+function validarPassword(pwd) {
+  if (!pwd || pwd.length < 8) return 'La contrasena debe tener al menos 8 caracteres';
+  if (!/[A-Z]/.test(pwd)) return 'La contrasena debe tener al menos 1 mayuscula';
+  if (!/[0-9]/.test(pwd)) return 'La contrasena debe tener al menos 1 numero';
+  return null;
+}
+
+// Intentos fallidos en memoria (se resetea al reiniciar - para produccion usar Redis)
+const loginAttempts = {};
+const MAX_ATTEMPTS = 5;
+const LOCK_TIME_MS = 15 * 60 * 1000; // 15 minutos
+
+function checkLocked(usuario) {
+  const entry = loginAttempts[usuario];
+  if (!entry) return false;
+  if (entry.attempts >= MAX_ATTEMPTS && (Date.now() - entry.lastAttempt) < LOCK_TIME_MS) return true;
+  if ((Date.now() - entry.lastAttempt) >= LOCK_TIME_MS) { delete loginAttempts[usuario]; return false; }
+  return false;
+}
+
+function registerFailedAttempt(usuario) {
+  if (!loginAttempts[usuario]) loginAttempts[usuario] = { attempts: 0, lastAttempt: 0 };
+  loginAttempts[usuario].attempts++;
+  loginAttempts[usuario].lastAttempt = Date.now();
+}
+
+function clearAttempts(usuario) { delete loginAttempts[usuario]; }
 
 function defaultRedirectForRole(rol) {
   const r = String(rol || '').toLowerCase();
@@ -65,6 +95,11 @@ router.post('/login', async (req, res) => {
 
   if (!usuario || !password) return res.status(400).render('login', { error: 'Usuario y contraseña son requeridos.' });
 
+  // Bloqueo por intentos fallidos
+  if (checkLocked(usuario)) {
+    return res.status(429).render('login', { error: 'Cuenta bloqueada por multiples intentos fallidos. Intenta en 15 minutos.' });
+  }
+
   const bc = getBcrypt();
   if (!bc) return res.status(500).render('login', { error: 'Falta dependencia bcryptjs. Instala con: npm i bcryptjs' });
 
@@ -74,10 +109,19 @@ router.post('/login', async (req, res) => {
       [usuario]
     );
     const u = rows?.[0];
-    if (!u || Number(u.activo) !== 1) return res.status(401).render('login', { error: 'Usuario o contraseña incorrectos.' });
+    if (!u || Number(u.activo) !== 1) {
+      registerFailedAttempt(usuario);
+      return res.status(401).render('login', { error: 'Usuario o contraseña incorrectos.' });
+    }
 
     const ok = await bc.compare(password, String(u.password_hash || ''));
-    if (!ok) return res.status(401).render('login', { error: 'Usuario o contraseña incorrectos.' });
+    if (!ok) {
+      registerFailedAttempt(usuario);
+      return res.status(401).render('login', { error: 'Usuario o contraseña incorrectos.' });
+    }
+
+    // Login exitoso - limpiar intentos
+    clearAttempts(usuario);
 
     // Guardar sesión
     req.session.user = {
@@ -91,6 +135,9 @@ router.post('/login', async (req, res) => {
     try {
       await db.query('UPDATE usuarios SET last_login = NOW() WHERE id = ?', [u.id]);
     } catch (_) {}
+
+    // Audit login
+    registrarAudit({ tenantId: 1, usuarioId: u.id, accion: 'LOGIN', modulo: 'auth', tabla: 'usuarios', registroId: u.id, ip: req.ip, userAgent: req.headers['user-agent'] });
 
     res.redirect(defaultRedirectForRole(u.rol));
   } catch (e) {
@@ -136,6 +183,8 @@ router.post('/setup', async (req, res) => {
 
   if (!usuario || !password) return res.status(400).render('setup', { error: 'Usuario y contraseña son requeridos.' });
   if (password !== password2) return res.status(400).render('setup', { error: 'Las contraseñas no coinciden.' });
+  const pwdError = validarPassword(password);
+  if (pwdError) return res.status(400).render('setup', { error: pwdError });
 
   const bc = getBcrypt();
   if (!bc) return res.status(500).render('setup', { error: 'Falta dependencia bcryptjs. Instala con: npm i bcryptjs' });

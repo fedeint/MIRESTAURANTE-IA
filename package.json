@@ -1,7 +1,7 @@
 {
-  "name": "ecl-fruver",
-  "version": "1.0.0",
-  "description": "Sistema de Facturación para ECL FRUVER",
+  "name": "dignita-restaurant",
+  "version": "2.0.0",
+  "description": "Sistema de Gestion de Restaurantes - dignita.tech",
   "main": "server.js",
   "bin": "server.js",
   "pkg": {
@@ -40,6 +40,7 @@
     "express-session": "^1.18.2",
     "facebook-nodejs-business-sdk": "^24.0.1",
     "jquery": "^3.7.1",
+    "knex": "^3.1.0",
     "multer": "^1.4.5-lts.1",
     "mysql2": "^3.20.0",
     "qrcode": "^1.5.4",

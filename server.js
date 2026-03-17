@@ -7,6 +7,7 @@ const app = express();
 const db = require('./db');
 const session = require('express-session');
 const { attachUserToLocals, requireAuth, requireRole } = require('./middleware/auth');
+const { attachTenant } = require('./middleware/tenant');
 
 // Crear directorios necesarios
 const createRequiredDirectories = () => {
@@ -54,6 +55,9 @@ app.use(session({
     }
 }));
 
+// Tenant middleware (resuelve tenant_id por request)
+app.use(attachTenant);
+
 // Hacer disponible el usuario en EJS como "user"
 app.use(attachUserToLocals);
 
@@ -76,6 +80,16 @@ app.use('/vendor/select2', express.static(path.join(__dirname, 'node_modules', '
 app.use('/vendor/select2-bootstrap-5-theme', express.static(path.join(__dirname, 'node_modules', 'select2-bootstrap-5-theme', 'dist')));
 // bootstrap-icons usa fuentes (woff/woff2) -> servir carpeta font completa
 app.use('/vendor/bootstrap-icons', express.static(path.join(__dirname, 'node_modules', 'bootstrap-icons', 'font')));
+
+// HTTPS redirect en produccion
+if (process.env.NODE_ENV === 'production') {
+    app.use((req, res, next) => {
+        if (req.headers['x-forwarded-proto'] !== 'https') {
+            return res.redirect(301, `https://${req.headers.host}${req.url}`);
+        }
+        next();
+    });
+}
 
 // CSRF protection para formularios (no para API JSON)
 const csrf = require('csurf');
