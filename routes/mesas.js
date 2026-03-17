@@ -778,15 +778,18 @@ router.put('/items/:itemId/enviar', async (req, res) => {
 
             // === DESCUENTO AUTOMATICO DE ALMACEN al enviar a cocina ===
             try {
+                console.log('[ALMACEN] Descuento para pedido_item:', itemId);
                 const [itemData] = await connection.query(
                     'SELECT producto_id, cantidad FROM pedido_items WHERE id=?', [itemId]
                 );
+                console.log('[ALMACEN] itemData:', JSON.stringify(itemData));
                 if (itemData.length > 0) {
                     const prodId = itemData[0].producto_id;
                     const cantVendida = Number(itemData[0].cantidad) || 1;
                     const [recetaRows] = await connection.query(
                         'SELECT id FROM recetas WHERE producto_id=? AND activa=1 LIMIT 1', [prodId]
                     );
+                    console.log('[ALMACEN] Producto:', prodId, 'Recetas encontradas:', recetaRows.length);
                     if (recetaRows.length > 0) {
                         const [items] = await connection.query(
                             'SELECT ingrediente_id, cantidad FROM receta_items WHERE receta_id=?', [recetaRows[0].id]
@@ -811,7 +814,7 @@ router.put('/items/:itemId/enviar', async (req, res) => {
                     }
                 }
             } catch (almErr) {
-                console.error('Descuento almacen al enviar cocina:', almErr.message);
+                console.error('[ALMACEN] ERROR descuento:', almErr.message, almErr.stack);
             }
 
             // Si el pedido no tenía responsable, lo tomamos del usuario actual que envía.
