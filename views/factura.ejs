@@ -94,15 +94,30 @@
 
         @media screen {
             body {
-                background: #f0f0f0;
+                background: linear-gradient(135deg, #ede9fe 0%, #e0f2fe 50%, #f0f2f8 100%);
                 padding: 20px;
+                font-family: 'Inter', -apple-system, sans-serif;
             }
             .factura {
                 background: white;
-                padding: 20px;
-                box-shadow: 0 0 10px rgba(0,0,0,0.1);
-                border-radius: 5px;
+                padding: 24px;
+                box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+                border-radius: 1rem;
+                border: 1px solid rgba(0,0,0,0.04);
             }
+            .print-button {
+                background: linear-gradient(135deg, #6366f1, #4f46e5);
+                color: white;
+                border: none;
+                padding: 10px 24px;
+                border-radius: 0.75rem;
+                cursor: pointer;
+                font-weight: 600;
+                font-size: 0.95rem;
+                box-shadow: 0 4px 12px rgba(99,102,241,0.3);
+                transition: all 0.2s;
+            }
+            .print-button:hover { transform: translateY(-1px); box-shadow: 0 6px 16px rgba(99,102,241,0.4); }
         }
     </style>
 </head>
@@ -172,17 +187,17 @@
                             <%= Number(item.cantidad).toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) %><%= item.unidad_medida %>
                         </div>
                         <div class="producto-precio">
-                            $<%= Number(item.precio_unitario).toLocaleString('es-CO') %>
+                            S/ <%= Number(item.precio_unitario).toLocaleString('es-CO') %>
                         </div>
                         <div class="producto-total">
-                            $<%= Number(item.subtotal).toLocaleString('es-CO') %>
+                            S/ <%= Number(item.subtotal).toLocaleString('es-CO') %>
                         </div>
                     </div>
                 </div>
             <% }); %>
             
             <div class="total-final">
-                Total: $<%= Number(factura.total).toLocaleString('es-CO') %>
+                Total: S/ <%= Number(factura.total).toLocaleString('es-CO') %>
             </div>
         </div>
 
@@ -196,7 +211,7 @@
                 <% pagos.forEach(function(p) { %>
                     <div>
                         <strong><%= (p.metodo || '').charAt(0).toUpperCase() + (p.metodo || '').slice(1) %>:</strong>
-                        $<%= Number(p.monto || 0).toLocaleString('es-CO') %>
+                        S/ <%= Number(p.monto || 0).toLocaleString('es-CO') %>
                         <% if (p.referencia) { %>
                             <span class="small">(<%= p.referencia %>)</span>
                         <% } %>

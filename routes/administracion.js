@@ -131,7 +131,7 @@ router.get('/gastos', async (req, res) => {
 });
 
 // API: CRUD personal
-router.post('/api/personal', async (req, res) => {
+router.post('/planilla', async (req, res) => {
     try {
         const tid = req.tenantId || 1;
         const { nombre, dni, cargo, tipo_contrato, tipo_pago, monto_pago, regimen_pension, fecha_ingreso } = req.body;
@@ -145,7 +145,7 @@ router.post('/api/personal', async (req, res) => {
 });
 
 // API: Registrar pago planilla
-router.post('/api/planilla/pagar', async (req, res) => {
+router.post('/planilla/pagar', async (req, res) => {
     try {
         const tid = req.tenantId || 1;
         const { personal_id, fecha, horas_trabajadas, notas } = req.body;
@@ -171,7 +171,7 @@ router.post('/api/planilla/pagar', async (req, res) => {
 });
 
 // API: CRUD gastos
-router.post('/api/gastos', async (req, res) => {
+router.post('/gastos', async (req, res) => {
     try {
         const tid = req.tenantId || 1;
         const { categoria_id, concepto, monto, fecha, comprobante, notas } = req.body;
@@ -187,7 +187,7 @@ router.post('/api/gastos', async (req, res) => {
 });
 
 // API: Presupuesto
-router.post('/api/presupuesto', async (req, res) => {
+router.post('/presupuesto', async (req, res) => {
     try {
         const tid = req.tenantId || 1;
         const { categoria_id, mes, anio, monto_presupuestado } = req.body;

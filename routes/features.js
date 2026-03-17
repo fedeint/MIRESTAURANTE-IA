@@ -16,7 +16,7 @@ router.get('/reservas', async (req, res) => {
     res.render('features/reservas', { reservas, mesas, fecha });
 });
 
-router.post('/api/reservas', async (req, res) => {
+router.post('/reservas', async (req, res) => {
     try {
         const tid = req.tenantId || 1;
         const { fecha, hora, cantidad_personas, mesa_id, nombre_cliente, telefono_cliente, canal_origen, notas } = req.body;
@@ -30,7 +30,7 @@ router.post('/api/reservas', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-router.put('/api/reservas/:id/estado', async (req, res) => {
+router.put('/reservas/:id/estado', async (req, res) => {
     try {
         const tid = req.tenantId || 1;
         await db.query('UPDATE reservas SET estado=? WHERE id=? AND tenant_id=?', [req.body.estado, req.params.id, tid]);
@@ -50,7 +50,7 @@ router.get('/delivery', async (req, res) => {
     res.render('features/delivery', { pedidos });
 });
 
-router.post('/api/delivery', async (req, res) => {
+router.post('/delivery', async (req, res) => {
     try {
         const tid = req.tenantId || 1;
         const { tipo, plataforma, direccion, telefono, nombre_cliente, tiempo_estimado_min, comision_plataforma, notas } = req.body;
@@ -63,7 +63,7 @@ router.post('/api/delivery', async (req, res) => {
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
 
-router.put('/api/delivery/:id/estado', async (req, res) => {
+router.put('/delivery/:id/estado', async (req, res) => {
     try {
         const tid = req.tenantId || 1;
         await db.query('UPDATE pedidos_delivery SET estado_entrega=? WHERE id=? AND tenant_id=?', [req.body.estado, req.params.id, tid]);
@@ -79,7 +79,7 @@ router.get('/promociones', async (req, res) => {
     res.render('features/promociones', { promociones });
 });
 
-router.post('/api/promociones', async (req, res) => {
+router.post('/promociones', async (req, res) => {
     try {
         const tid = req.tenantId || 1;
         const { nombre, tipo, valor, codigo_cupon, fecha_inicio, fecha_fin, hora_inicio, hora_fin, usos_maximo } = req.body;
@@ -105,7 +105,7 @@ router.get('/fidelidad', async (req, res) => {
     res.render('features/fidelidad', { clientes });
 });
 
-router.post('/api/fidelidad/acumular', async (req, res) => {
+router.post('/fidelidad/acumular', async (req, res) => {
     try {
         const tid = req.tenantId || 1;
         const { cliente_id, puntos, factura_id } = req.body;
