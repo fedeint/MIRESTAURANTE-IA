@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entrada Rapida - dignita.tech</title>
+    <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/theme.css">
+</head>
+<body>
+    <%- include('../partials/sidebar') %>
+    <div class="dg-main">
+    <main class="flex-grow-1">
+    <div class="container">
+
+        <div class="d-flex align-items-center mb-4 mt-3">
+            <i class="bi bi-box-arrow-in-down fs-2 me-2 text-success"></i>
+            <h2 class="mb-0">Entrada Rapida</h2>
+        </div>
+
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <form id="formEntrada">
+                            <div class="mb-3">
+                                <label class="form-label">Ingrediente</label>
+                                <select id="ingrediente_id" class="form-select" required>
+                                    <option value="">Buscar ingrediente...</option>
+                                    <% ingredientes.forEach(function(i) { %>
+                                        <option value="<%= i._id %>"><%= i.codigo %> - <%= i.nombre %> (Stock: <%= i.stock_actual %> <%= i.unidad_medida %>)</option>
+                                    <% }); %>
+                                </select>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Cantidad</label>
+                                    <input type="number" id="cantidad" class="form-control" step="0.01" min="0.01" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Costo Unitario (S/)</label>
+                                    <input type="number" id="costo_unitario" class="form-control" step="0.01" min="0">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Comprobante <span class="text-muted">(opcional)</span></label>
+                                <input type="text" id="comprobante" class="form-control" placeholder="Ej: Factura F001-00123">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Notas <span class="text-muted">(opcional)</span></label>
+                                <textarea id="notas" class="form-control" rows="2" placeholder="Observaciones adicionales..."></textarea>
+                            </div>
+                            <button type="button" class="btn btn-success w-100" onclick="registrarEntrada()">
+                                <i class="bi bi-box-arrow-in-down me-1"></i>Registrar Entrada
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    </main>
+    <%- include('../partials/footer') %>
+    </div>
+    <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="/vendor/sweetalert2/sweetalert2.all.min.js"></script>
+    <script>
+        async function registrarEntrada() {
+            const ingrediente_id = document.getElementById('ingrediente_id').value;
+            const cantidad = parseFloat(document.getElementById('cantidad').value);
+
+            if (!ingrediente_id || !cantidad || cantidad <= 0) {
+                Swal.fire('Atencion', 'Seleccione un ingrediente y una cantidad valida', 'warning');
+                return;
+            }
+
+            const body = {
+                ingrediente_id: ingrediente_id,
+                cantidad: cantidad,
+                costo_unitario: parseFloat(document.getElementById('costo_unitario').value) || 0,
+                comprobante: document.getElementById('comprobante').value,
+                notas: document.getElementById('notas').value
+            };
+
+            try {
+                const res = await fetch('/almacen/api/entrada', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                const data = await res.json();
+                if (data.success) {
+                    Swal.fire('Entrada Registrada', 'Stock actualizado correctamente', 'success')
+                        .then(() => {
+                            document.getElementById('formEntrada').reset();
+                        });
+                } else {
+                    Swal.fire('Error', data.message || 'Error al registrar entrada', 'error');
+                }
+            } catch (err) {
+                Swal.fire('Error', 'Error de conexion', 'error');
+            }
+        }
+    </script>
+</body>
+</html>

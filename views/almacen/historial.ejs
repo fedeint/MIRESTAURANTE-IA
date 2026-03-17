@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Historial Almacen - dignita.tech</title>
+    <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/theme.css">
+</head>
+<body>
+    <%- include('../partials/sidebar') %>
+    <div class="dg-main">
+    <main class="flex-grow-1">
+    <div class="container">
+
+        <div class="d-flex align-items-center mb-4 mt-3">
+            <i class="bi bi-clock-history fs-2 me-2"></i>
+            <h2 class="mb-0">Historial de Movimientos</h2>
+        </div>
+
+        <!-- Filtros -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <div class="row g-2 align-items-end">
+                    <div class="col-md-2">
+                        <label class="form-label">Desde</label>
+                        <input type="date" id="filtroDesde" class="form-control" onchange="cargarMovimientos()">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Hasta</label>
+                        <input type="date" id="filtroHasta" class="form-control" onchange="cargarMovimientos()">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Tipo</label>
+                        <select id="filtroTipo" class="form-select" onchange="cargarMovimientos()">
+                            <option value="">Todos</option>
+                            <option value="entrada">Entradas</option>
+                            <option value="salida">Salidas</option>
+                            <option value="ajuste">Ajustes</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Buscar</label>
+                        <input type="text" id="filtroBuscar" class="form-control" placeholder="Ingrediente..." oninput="cargarMovimientos()">
+                    </div>
+                    <div class="col-md-2">
+                        <button class="btn btn-outline-secondary w-100" onclick="limpiarFiltros()">
+                            <i class="bi bi-x-circle me-1"></i>Limpiar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabla -->
+        <div class="card shadow-sm">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Ingrediente</th>
+                            <th>Tipo</th>
+                            <th>Cantidad</th>
+                            <th>Stock Anterior</th>
+                            <th>Stock Posterior</th>
+                            <th>Motivo</th>
+                            <th>Usuario</th>
+                            <th>Notas</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tablaMovimientos">
+                        <tr>
+                            <td colspan="9" class="text-center text-muted py-4">
+                                <i class="bi bi-hourglass-split"></i> Cargando movimientos...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+    </main>
+    <%- include('../partials/footer') %>
+    </div>
+    <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="/vendor/sweetalert2/sweetalert2.all.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', cargarMovimientos);
+
+        async function cargarMovimientos() {
+            const params = new URLSearchParams();
+            const desde = document.getElementById('filtroDesde').value;
+            const hasta = document.getElementById('filtroHasta').value;
+            const tipo = document.getElementById('filtroTipo').value;
+            const buscar = document.getElementById('filtroBuscar').value;
+
+            if (desde) params.append('desde', desde);
+            if (hasta) params.append('hasta', hasta);
+            if (tipo) params.append('tipo', tipo);
+            if (buscar) params.append('buscar', buscar);
+
+            try {
+                const res = await fetch('/almacen/api/movimientos?' + params.toString());
+                const data = await res.json();
+                const tbody = document.getElementById('tablaMovimientos');
+
+                if (!data.movimientos || data.movimientos.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-4"><i class="bi bi-inbox"></i> No se encontraron movimientos</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = data.movimientos.map(function(m) {
+                    var tipoBadge = '';
+                    if (m.tipo === 'entrada') tipoBadge = '<span class="badge bg-success">Entrada</span>';
+                    else if (m.tipo === 'salida') tipoBadge = '<span class="badge bg-danger">Salida</span>';
+                    else tipoBadge = '<span class="badge bg-info">Ajuste</span>';
+
+                    var fecha = new Date(m.fecha).toLocaleString('es-PE', { dateStyle: 'short', timeStyle: 'short' });
+
+                    return '<tr>' +
+                        '<td>' + fecha + '</td>' +
+                        '<td>' + (m.ingrediente || '-') + '</td>' +
+                        '<td>' + tipoBadge + '</td>' +
+                        '<td>' + m.cantidad + '</td>' +
+                        '<td>' + (m.stock_anterior != null ? m.stock_anterior : '-') + '</td>' +
+                        '<td>' + (m.stock_posterior != null ? m.stock_posterior : '-') + '</td>' +
+                        '<td>' + (m.motivo || '-') + '</td>' +
+                        '<td>' + (m.usuario || '-') + '</td>' +
+                        '<td>' + (m.notas || '-') + '</td>' +
+                        '</tr>';
+                }).join('');
+            } catch (err) {
+                document.getElementById('tablaMovimientos').innerHTML =
+                    '<tr><td colspan="9" class="text-center text-danger py-4"><i class="bi bi-exclamation-triangle"></i> Error al cargar movimientos</td></tr>';
+            }
+        }
+
+        function limpiarFiltros() {
+            document.getElementById('filtroDesde').value = '';
+            document.getElementById('filtroHasta').value = '';
+            document.getElementById('filtroTipo').value = '';
+            document.getElementById('filtroBuscar').value = '';
+            cargarMovimientos();
+        }
+    </script>
+</body>
+</html>

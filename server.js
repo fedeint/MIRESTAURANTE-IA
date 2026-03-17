@@ -125,6 +125,7 @@ const authRoutes = require('./routes/auth');
 const usuariosRoutes = require('./routes/usuarios');
 const chatRoutes = require('./routes/chat');
 const socialApiRoutes = require('./routes/social-api');
+const almacenRoutes = require('./routes/almacen');
 
 // Auth routes (públicas): /login /logout /setup
 app.use(authRoutes);
@@ -200,6 +201,9 @@ app.use('/api/mesas', requireRole(['mesero', 'administrador']), mesasRoutes);
 // Relacionado con: routes/cocina.js (middlewares por ruta) y routes/mesas.js (restricción servido)
 app.use('/cocina', requireRole(['cocinero', 'mesero', 'administrador']), cocinaRoutes);
 app.use('/api/cocina', requireRole(['cocinero', 'mesero', 'administrador']), cocinaRoutes);
+
+// Almacen (admin)
+app.use('/almacen', requireRole('administrador'), almacenRoutes);
 
 // Chat IA (admin)
 app.use('/chat', requireRole('administrador'), chatRoutes);

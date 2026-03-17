@@ -1,0 +1,247 @@
+const express = require('express');
+const router = express.Router();
+const db = require('../db');
+const { registrarAudit } = require('../services/audit');
+
+// GET /almacen - Dashboard
+router.get('/', async (req, res) => {
+    try {
+        const tid = req.tenantId || 1;
+        const [[totalIngr]] = await db.query('SELECT COUNT(*) as t FROM almacen_ingredientes WHERE tenant_id=? AND activo=1', [tid]);
+        const [[alertas]] = await db.query('SELECT COUNT(*) as t FROM almacen_ingredientes WHERE tenant_id=? AND activo=1 AND stock_actual <= stock_minimo', [tid]);
+        const [[valorInv]] = await db.query('SELECT COALESCE(SUM(stock_actual * costo_unitario),0) as v FROM almacen_ingredientes WHERE tenant_id=? AND activo=1', [tid]);
+        const [categorias] = await db.query('SELECT * FROM almacen_categorias WHERE tenant_id=? AND activo=1 ORDER BY orden', [tid]);
+
+        res.render('almacen/dashboard', {
+            stats: {
+                totalIngredientes: totalIngr.t,
+                alertas: alertas.t,
+                valorInventario: Number(valorInv.v).toFixed(2),
+                categorias
+            }
+        });
+    } catch (e) {
+        console.error('Almacen dashboard error:', e.message);
+        res.render('almacen/dashboard', { stats: { totalIngredientes: 0, alertas: 0, valorInventario: '0.00', categorias: [] } });
+    }
+});
+
+// GET /almacen/inventario - Stock actual
+router.get('/inventario', async (req, res) => {
+    try {
+        const tid = req.tenantId || 1;
+        const [ingredientes] = await db.query(`
+            SELECT i.*, c.nombre as categoria_nombre, c.color as categoria_color,
+                   p.nombre as proveedor_nombre
+            FROM almacen_ingredientes i
+            LEFT JOIN almacen_categorias c ON c.id = i.categoria_id
+            LEFT JOIN proveedores p ON p.id = i.proveedor_id
+            WHERE i.tenant_id = ? AND i.activo = 1
+            ORDER BY c.orden, i.nombre
+        `, [tid]);
+        const [categorias] = await db.query('SELECT * FROM almacen_categorias WHERE tenant_id=? AND activo=1 ORDER BY orden', [tid]);
+        res.render('almacen/inventario', { ingredientes, categorias });
+    } catch (e) {
+        console.error('Inventario error:', e.message);
+        res.render('almacen/inventario', { ingredientes: [], categorias: [] });
+    }
+});
+
+// API: CRUD ingredientes
+router.post('/api/ingredientes', async (req, res) => {
+    try {
+        const tid = req.tenantId || 1;
+        const { categoria_id, nombre, codigo, unidad_medida, stock_minimo, costo_unitario, ubicacion, proveedor_id } = req.body;
+        if (!nombre) return res.status(400).json({ error: 'Nombre requerido' });
+
+        const [result] = await db.query(
+            `INSERT INTO almacen_ingredientes (tenant_id, categoria_id, nombre, codigo, unidad_medida, stock_minimo, costo_unitario, ubicacion, proveedor_id)
+             VALUES (?,?,?,?,?,?,?,?,?)`,
+            [tid, categoria_id||null, nombre, codigo||null, unidad_medida||'kg', stock_minimo||0, costo_unitario||0, ubicacion||null, proveedor_id||null]
+        );
+
+        registrarAudit({ tenantId: tid, usuarioId: req.session?.user?.id || 0, accion: 'INSERT', modulo: 'almacen', tabla: 'almacen_ingredientes', registroId: result[0]?.insertId, datosNuevos: req.body, ip: req.ip });
+        res.status(201).json({ id: result[0]?.insertId, message: 'Ingrediente creado' });
+    } catch (e) {
+        console.error('Crear ingrediente error:', e.message);
+        res.status(500).json({ error: e.message });
+    }
+});
+
+router.put('/api/ingredientes/:id', async (req, res) => {
+    try {
+        const tid = req.tenantId || 1;
+        const { categoria_id, nombre, codigo, unidad_medida, stock_minimo, stock_maximo, costo_unitario, ubicacion, proveedor_id, merma_preparacion_pct } = req.body;
+        await db.query(
+            `UPDATE almacen_ingredientes SET categoria_id=?, nombre=?, codigo=?, unidad_medida=?, stock_minimo=?, stock_maximo=?, costo_unitario=?, ubicacion=?, proveedor_id=?, merma_preparacion_pct=?
+             WHERE id=? AND tenant_id=?`,
+            [categoria_id||null, nombre, codigo||null, unidad_medida||'kg', stock_minimo||0, stock_maximo||null, costo_unitario||0, ubicacion||null, proveedor_id||null, merma_preparacion_pct||0, req.params.id, tid]
+        );
+        res.json({ message: 'Ingrediente actualizado' });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+router.delete('/api/ingredientes/:id', async (req, res) => {
+    try {
+        const tid = req.tenantId || 1;
+        await db.query('UPDATE almacen_ingredientes SET activo=0, deleted_at=NOW() WHERE id=? AND tenant_id=?', [req.params.id, tid]);
+        res.json({ message: 'Ingrediente desactivado' });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// API: Entrada rapida de stock
+router.post('/api/entrada', async (req, res) => {
+    try {
+        const tid = req.tenantId || 1;
+        const uid = req.session?.user?.id || 0;
+        const { ingrediente_id, cantidad, costo_unitario, proveedor_id, comprobante, notas } = req.body;
+
+        if (!ingrediente_id || !cantidad || cantidad <= 0) return res.status(400).json({ error: 'Ingrediente y cantidad requeridos' });
+
+        // Obtener stock actual
+        const [[ingr]] = await db.query('SELECT stock_actual, costo_promedio FROM almacen_ingredientes WHERE id=? AND tenant_id=?', [ingrediente_id, tid]);
+        if (!ingr) return res.status(404).json({ error: 'Ingrediente no encontrado' });
+
+        const stockAnterior = Number(ingr.stock_actual);
+        const cant = Number(cantidad);
+        const costo = Number(costo_unitario) || 0;
+        const stockPosterior = stockAnterior + cant;
+
+        // Costo promedio ponderado
+        const costoPromAnterior = Number(ingr.costo_promedio) || 0;
+        const nuevoCostoProm = stockAnterior > 0
+            ? ((costoPromAnterior * stockAnterior) + (costo * cant)) / stockPosterior
+            : costo;
+
+        // UPDATE atomico
+        await db.query(
+            `UPDATE almacen_ingredientes SET stock_actual = stock_actual + ?, costo_promedio = ?, ultimo_costo = ?, updated_at = NOW()
+             WHERE id = ? AND tenant_id = ?`,
+            [cant, nuevoCostoProm, costo, ingrediente_id, tid]
+        );
+
+        // Registrar movimiento
+        await db.query(
+            `INSERT INTO almacen_movimientos (tenant_id, ingrediente_id, tipo, cantidad, stock_anterior, stock_posterior, costo_unitario, costo_total, motivo, comprobante, notas, usuario_id)
+             VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`,
+            [tid, ingrediente_id, 'entrada', cant, stockAnterior, stockPosterior, costo, costo * cant, 'compra_proveedor', comprobante||null, notas||null, uid]
+        );
+
+        res.json({ message: 'Entrada registrada', stock_actual: stockPosterior });
+    } catch (e) {
+        console.error('Entrada error:', e.message);
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// API: Salida manual
+router.post('/api/salida', async (req, res) => {
+    try {
+        const tid = req.tenantId || 1;
+        const uid = req.session?.user?.id || 0;
+        const { ingrediente_id, cantidad, motivo, notas } = req.body;
+
+        if (!ingrediente_id || !cantidad || cantidad <= 0) return res.status(400).json({ error: 'Ingrediente y cantidad requeridos' });
+        if (!motivo) return res.status(400).json({ error: 'Motivo requerido para salidas manuales' });
+
+        const [[ingr]] = await db.query('SELECT stock_actual, costo_unitario FROM almacen_ingredientes WHERE id=? AND tenant_id=?', [ingrediente_id, tid]);
+        if (!ingr) return res.status(404).json({ error: 'Ingrediente no encontrado' });
+
+        const stockAnterior = Number(ingr.stock_actual);
+        const cant = Number(cantidad);
+        const stockPosterior = stockAnterior - cant;
+
+        await db.query(
+            `UPDATE almacen_ingredientes SET stock_actual = stock_actual - ?, updated_at = NOW() WHERE id = ? AND tenant_id = ?`,
+            [cant, ingrediente_id, tid]
+        );
+
+        await db.query(
+            `INSERT INTO almacen_movimientos (tenant_id, ingrediente_id, tipo, cantidad, stock_anterior, stock_posterior, costo_unitario, costo_total, motivo, notas, usuario_id)
+             VALUES (?,?,?,?,?,?,?,?,?,?,?)`,
+            [tid, ingrediente_id, motivo.startsWith('merma') ? 'merma' : 'salida', cant, stockAnterior, stockPosterior, Number(ingr.costo_unitario), cant * Number(ingr.costo_unitario), motivo, notas||null, uid]
+        );
+
+        res.json({ message: 'Salida registrada', stock_actual: stockPosterior });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// API: Historial de movimientos
+router.get('/api/movimientos', async (req, res) => {
+    try {
+        const tid = req.tenantId || 1;
+        const { ingrediente_id, tipo, desde, hasta, limit: lim } = req.query;
+        let sql = `SELECT m.*, i.nombre as ingrediente_nombre, u.usuario as usuario_nombre
+                    FROM almacen_movimientos m
+                    LEFT JOIN almacen_ingredientes i ON i.id = m.ingrediente_id
+                    LEFT JOIN usuarios u ON u.id = m.usuario_id
+                    WHERE m.tenant_id = ?`;
+        const params = [tid];
+
+        if (ingrediente_id) { sql += ' AND m.ingrediente_id = ?'; params.push(ingrediente_id); }
+        if (tipo) { sql += ' AND m.tipo = ?'; params.push(tipo); }
+        if (desde) { sql += ' AND DATE(m.created_at) >= ?'; params.push(desde); }
+        if (hasta) { sql += ' AND DATE(m.created_at) <= ?'; params.push(hasta); }
+
+        sql += ' ORDER BY m.created_at DESC LIMIT ?';
+        params.push(Number(lim) || 100);
+
+        const [movimientos] = await db.query(sql, params);
+        res.json(movimientos);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// API: Alertas (stock bajo minimo)
+router.get('/api/alertas', async (req, res) => {
+    try {
+        const tid = req.tenantId || 1;
+        const [alertas] = await db.query(`
+            SELECT i.*, c.nombre as categoria_nombre
+            FROM almacen_ingredientes i
+            LEFT JOIN almacen_categorias c ON c.id = i.categoria_id
+            WHERE i.tenant_id = ? AND i.activo = 1 AND i.stock_actual <= i.stock_minimo
+            ORDER BY (i.stock_actual / NULLIF(i.stock_minimo, 0)) ASC
+        `, [tid]);
+        res.json(alertas);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// GET vistas
+router.get('/proveedores', async (req, res) => {
+    const [proveedores] = await db.query('SELECT * FROM proveedores WHERE tenant_id=? AND deleted_at IS NULL ORDER BY nombre', [req.tenantId||1]);
+    res.render('almacen/proveedores', { proveedores });
+});
+
+router.get('/entradas', (req, res) => res.render('almacen/entradas'));
+router.get('/salidas', (req, res) => res.render('almacen/salidas'));
+router.get('/historial', (req, res) => res.render('almacen/historial'));
+router.get('/alertas', (req, res) => res.render('almacen/alertas'));
+router.get('/conteo-fisico', (req, res) => res.render('almacen/conteo-fisico'));
+
+// API: CRUD proveedores
+router.post('/api/proveedores', async (req, res) => {
+    try {
+        const tid = req.tenantId || 1;
+        const { nombre, ruc, telefono, email, direccion, contacto_nombre, tipo, dias_credito } = req.body;
+        if (!nombre) return res.status(400).json({ error: 'Nombre requerido' });
+        const [result] = await db.query(
+            'INSERT INTO proveedores (tenant_id, nombre, ruc, telefono, email, direccion, contacto_nombre, tipo, dias_credito) VALUES (?,?,?,?,?,?,?,?,?)',
+            [tid, nombre, ruc||null, telefono||null, email||null, direccion||null, contacto_nombre||null, tipo||'mayorista', dias_credito||0]
+        );
+        res.status(201).json({ id: result[0]?.insertId, message: 'Proveedor creado' });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+module.exports = router;
