@@ -28,7 +28,7 @@
                             <div class="mb-3">
                                 <label for="montoApertura" class="form-label">Monto de apertura</label>
                                 <div class="input-group">
-                                    <span class="input-group-text">$</span>
+                                    <span class="input-group-text">S/</span>
                                     <input type="number" class="form-control" id="montoApertura" name="monto_apertura" min="0" step="0.01" required placeholder="0.00">
                                 </div>
                             </div>
@@ -170,7 +170,7 @@
                             <div class="mb-3">
                                 <label for="montoReal" class="form-label fw-bold">Monto real en caja</label>
                                 <div class="input-group">
-                                    <span class="input-group-text">$</span>
+                                    <span class="input-group-text">S/</span>
                                     <input type="number" class="form-control" id="montoReal" name="monto_cierre" min="0" step="0.01" required placeholder="0.00">
                                 </div>
                             </div>
@@ -215,7 +215,46 @@
                                 </div>
                             </div>
                             <div class="alert alert-info py-2">
-                                <strong>Total denominaciones:</strong> S/<span id="totalDenominaciones">0.00</span>
+                                <strong>Total efectivo (billetes+monedas):</strong> S/<span id="totalDenominaciones">0.00</span>
+                            </div>
+
+                            <!-- Medios digitales -->
+                            <h6 class="fw-bold mt-3"><i class="bi bi-phone me-1"></i>Medios digitales y tarjeta</h6>
+                            <div class="row g-2 mb-3">
+                                <div class="col-md-4">
+                                    <label class="form-label small">Yape</label>
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text">S/</span>
+                                        <input type="number" class="form-control digital-field" id="cierreYape" min="0" step="0.01" value="0">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small">Plin</label>
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text">S/</span>
+                                        <input type="number" class="form-control digital-field" id="cierrePlin" min="0" step="0.01" value="0">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small">Tarjeta (POS)</label>
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text">S/</span>
+                                        <input type="number" class="form-control digital-field" id="cierreTarjeta" min="0" step="0.01" value="0">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small">Transferencia</label>
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text">S/</span>
+                                        <input type="number" class="form-control digital-field" id="cierreTransferencia" min="0" step="0.01" value="0">
+                                    </div>
+                                </div>
+                                <div class="col-md-8">
+                                    <label class="form-label small">&nbsp;</label>
+                                    <div class="alert alert-success py-2 mb-0">
+                                        <strong>TOTAL GENERAL:</strong> S/<span id="totalCierreGeneral">0.00</span>
+                                    </div>
+                                </div>
                             </div>
 
                             <div class="mb-3">
@@ -266,7 +305,7 @@
                             <div class="mb-3">
                                 <label for="movMonto" class="form-label">Monto</label>
                                 <div class="input-group">
-                                    <span class="input-group-text">$</span>
+                                    <span class="input-group-text">S/</span>
                                     <input type="number" class="form-control" id="movMonto" name="monto" min="0.01" step="0.01" required placeholder="0.00">
                                 </div>
                             </div>
@@ -355,7 +394,22 @@
             const el = document.getElementById('totalDenominaciones');
             if (el) el.textContent = total.toFixed(2);
         }
-        denomFields.forEach(function(inp) { inp.addEventListener('input', calcDenominaciones); });
+        denomFields.forEach(function(inp) { inp.addEventListener('input', calcDenominaciones); inp.addEventListener('input', calcTotalGeneral); });
+
+        // Total general (efectivo + digitales)
+        const digitalFields = document.querySelectorAll('.digital-field');
+        function calcTotalGeneral() {
+            let efectivo = 0;
+            denomFields.forEach(function(inp) { efectivo += (parseInt(inp.value)||0) * (parseFloat(inp.dataset.valor)||0); });
+            let digital = 0;
+            digitalFields.forEach(function(inp) { digital += parseFloat(inp.value) || 0; });
+            var totalGen = document.getElementById('totalCierreGeneral');
+            if (totalGen) totalGen.textContent = (efectivo + digital).toFixed(2);
+            // Actualizar monto real automaticamente
+            var montoReal = document.getElementById('montoReal');
+            if (montoReal) montoReal.value = (efectivo + digital).toFixed(2);
+        }
+        digitalFields.forEach(function(inp) { inp.addEventListener('input', calcTotalGeneral); });
 
         // ===================== CERRAR CAJA =====================
         const formCerrar = document.getElementById('formCerrarCaja');
