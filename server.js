@@ -77,6 +77,12 @@ app.use('/vendor/select2-bootstrap-5-theme', express.static(path.join(__dirname,
 // bootstrap-icons usa fuentes (woff/woff2) -> servir carpeta font completa
 app.use('/vendor/bootstrap-icons', express.static(path.join(__dirname, 'node_modules', 'bootstrap-icons', 'font')));
 
+// CSRF protection para formularios (no para API JSON)
+const csrf = require('csurf');
+const csrfProtection = csrf({ cookie: false });
+// Se aplica solo a formularios que lo necesiten, no globalmente
+// Las APIs JSON estan protegidas por SOP + Content-Type check
+
 // Headers de seguridad y CORS
 app.use((req, res, next) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
