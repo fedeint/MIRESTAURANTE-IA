@@ -21,6 +21,37 @@
             <span class="badge bg-danger"><%= new Date().toLocaleDateString('es-PE') %></span>
         </div>
 
+        <!-- INFO CAJA -->
+        <% if (cajaInfo) { %>
+        <div class="card mb-4" style="background:linear-gradient(135deg,rgba(16,185,129,0.06),rgba(6,182,212,0.04))!important;border:1px solid rgba(16,185,129,0.15)!important;">
+            <div class="card-body py-3">
+                <div class="d-flex align-items-center gap-3 flex-wrap">
+                    <div style="width:44px;height:44px;background:linear-gradient(135deg,#10b981,#059669);border-radius:.75rem;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2rem;">
+                        <i class="bi bi-person-badge-fill"></i>
+                    </div>
+                    <div>
+                        <div class="fw-bold">Cajero: <%= cajaInfo.usuario_nombre_completo || cajaInfo.usuario_nombre || 'Sin nombre' %></div>
+                        <div class="small text-muted">
+                            Caja abierta a las <strong><%= new Date(cajaInfo.fecha_apertura).toLocaleTimeString('es-PE', {hour:'2-digit',minute:'2-digit'}) %></strong>
+                            &middot; Estado: <span class="badge bg-<%= cajaInfo.estado === 'abierta' ? 'success' : 'secondary' %>"><%= cajaInfo.estado %></span>
+                            <% if (cajaInfo.fecha_cierre) { %>
+                                &middot; Cerrada: <%= new Date(cajaInfo.fecha_cierre).toLocaleTimeString('es-PE', {hour:'2-digit',minute:'2-digit'}) %>
+                            <% } %>
+                        </div>
+                    </div>
+                    <div class="ms-auto text-end">
+                        <div class="small text-muted">Todas las salidas de hoy son bajo la caja de</div>
+                        <strong style="color:#059669;"><%= cajaInfo.usuario_nombre_completo || cajaInfo.usuario_nombre %></strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <% } else { %>
+        <div class="alert alert-warning small mb-4">
+            <i class="bi bi-exclamation-triangle me-1"></i>No hay caja abierta hoy. Las salidas no se registraran hasta que se abra caja.
+        </div>
+        <% } %>
+
         <!-- RANKING TOP 10 -->
         <div class="card mb-4">
             <div class="card-header fw-bold d-flex align-items-center gap-2">

@@ -256,6 +256,19 @@ router.get('/salidas', async (req, res) => {
     const [ingredientes] = await db.query('SELECT id, codigo, nombre, unidad_medida, stock_actual FROM almacen_ingredientes WHERE tenant_id=? AND activo=1 ORDER BY nombre', [tid]);
     const hoy = new Date().toISOString().split('T')[0];
 
+    // Caja abierta hoy (quien abrio, a que hora)
+    let cajaInfo = null;
+    try {
+        const [[caja]] = await db.query(`
+            SELECT c.*, u.usuario as usuario_nombre, u.nombre as usuario_nombre_completo
+            FROM cajas c
+            LEFT JOIN usuarios u ON u.id = c.usuario_id
+            WHERE c.tenant_id=? AND DATE(c.fecha_apertura)=?
+            ORDER BY c.fecha_apertura DESC LIMIT 1
+        `, [tid, hoy]);
+        cajaInfo = caja || null;
+    } catch(e) {}
+
     // Salidas agrupadas por pedido_item (plato) con mesa
     const [salidasVenta] = await db.query(`
         SELECT m.*, i.nombre as ingrediente_nombre, u.usuario as usuario_nombre,
@@ -315,7 +328,7 @@ router.get('/salidas', async (req, res) => {
         ranking = rankRows || [];
     } catch(e) { console.error('Ranking salidas error:', e.message); }
 
-    res.render('almacen/salidas', { ingredientes, salidasVenta, platos, ranking });
+    res.render('almacen/salidas', { ingredientes, salidasVenta, platos, ranking, cajaInfo });
 });
 router.get('/historial', (req, res) => res.render('almacen/historial'));
 router.get('/alertas', (req, res) => res.render('almacen/alertas'));
