@@ -120,114 +120,334 @@ CREATE TABLE caja_movimientos (
 
 ---
 
-### 2.2 ALMACEN / INVENTARIO
+### 2.2 ALMACEN / INVENTARIO (Modulo critico)
 
-**Concepto**: Gestionar 200+ ingredientes (carnes, legumbres, vegetales, cremas, condimentos, etc.) con stock, costos y alertas de minimo.
+**Concepto**: El almacen es el CORAZON del control de costos. Gestiona 200+ ingredientes con trazabilidad completa: quien compro, cuanto pago, cuando entro, como salio, y cuanto queda.
 
-**Tablas nuevas**:
+**"Si el almacen esta bien, todo esta bien"**
+
+#### TABLAS DE BASE DE DATOS
+
 ```sql
+-- 1. Categorias de ingredientes
 CREATE TABLE almacen_categorias (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    nombre VARCHAR(100) NOT NULL,              -- 'Carnes', 'Legumbres', 'Vegetales', 'Cremas', 'Condimentos', etc.
+    nombre VARCHAR(100) NOT NULL,
+    icono VARCHAR(50) NULL,                     -- 'bi-fish' para pescados, etc.
+    color VARCHAR(20) NULL,                     -- '#ef4444' para identificar visual
     orden INT DEFAULT 0,
+    activo TINYINT(1) DEFAULT 1,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- 2. Proveedores
+CREATE TABLE proveedores (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(200) NOT NULL,               -- 'Terminal Pesquero Don Pepe'
+    ruc VARCHAR(20) NULL,                       -- RUC del proveedor
+    telefono VARCHAR(20) NULL,
+    email VARCHAR(100) NULL,
+    direccion VARCHAR(300) NULL,
+    contacto_nombre VARCHAR(100) NULL,          -- Nombre de la persona de contacto
+    tipo ENUM('mayorista','minorista','productor','distribuidor') DEFAULT 'mayorista',
+    calificacion INT NULL,                      -- 1-5 estrellas
+    notas TEXT NULL,
+    activo TINYINT(1) DEFAULT 1,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- 3. Ingredientes (el inventario)
 CREATE TABLE almacen_ingredientes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     categoria_id INT NULL,
-    codigo VARCHAR(50) NULL,
-    nombre VARCHAR(150) NOT NULL,              -- 'Pescado bonito', 'Cebolla roja', 'Limon', 'Sal', 'Aji limo'
-    unidad_medida ENUM('kg','g','lt','ml','und') NOT NULL DEFAULT 'g',
+    proveedor_id INT NULL,                      -- Proveedor habitual
+    codigo VARCHAR(50) NULL,                    -- Codigo interno: 'PES-001'
+    nombre VARCHAR(150) NOT NULL,
+    descripcion VARCHAR(300) NULL,
+    unidad_medida ENUM('kg','g','lt','ml','und','docena','saco','caja') NOT NULL DEFAULT 'kg',
+    unidad_compra ENUM('kg','g','lt','ml','und','docena','saco','caja') NOT NULL DEFAULT 'kg',
+    factor_conversion DECIMAL(10,4) DEFAULT 1,  -- Si compras en kg pero usas en g: factor=1000
     stock_actual DECIMAL(12,3) NOT NULL DEFAULT 0,
-    stock_minimo DECIMAL(12,3) NOT NULL DEFAULT 0,  -- Alerta cuando baja de aqui
-    costo_unitario DECIMAL(10,4) NOT NULL DEFAULT 0, -- Costo por unidad de medida (ej: S/25.00 por kg)
-    proveedor VARCHAR(200) NULL,
+    stock_minimo DECIMAL(12,3) NOT NULL DEFAULT 0,
+    stock_maximo DECIMAL(12,3) NULL,            -- Para no sobre-stockear
+    costo_unitario DECIMAL(10,4) NOT NULL DEFAULT 0,
+    costo_promedio DECIMAL(10,4) NOT NULL DEFAULT 0,  -- Promedio ponderado historico
+    ultimo_costo DECIMAL(10,4) NULL,            -- Ultimo precio de compra
+    ubicacion VARCHAR(100) NULL,                -- 'Refrigerador 1', 'Almacen seco', 'Congelador'
+    perecible TINYINT(1) DEFAULT 1,
+    dias_vencimiento INT NULL,                  -- Vida util en dias
+    temperatura_almacen VARCHAR(50) NULL,       -- '0-4°C', 'Ambiente', '-18°C'
     activo TINYINT(1) DEFAULT 1,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (categoria_id) REFERENCES almacen_categorias(id)
+    FOREIGN KEY (categoria_id) REFERENCES almacen_categorias(id),
+    FOREIGN KEY (proveedor_id) REFERENCES proveedores(id)
 );
 
--- Movimientos de stock (entradas, salidas, ajustes)
+-- 4. Ordenes de compra (antes de recibir la mercaderia)
+CREATE TABLE ordenes_compra (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    proveedor_id INT NOT NULL,
+    numero_orden VARCHAR(50) NULL,              -- Correlativo: 'OC-2026-0001'
+    fecha_orden DATE NOT NULL,
+    fecha_entrega_esperada DATE NULL,
+    fecha_recibida DATE NULL,
+    estado ENUM('borrador','enviada','parcial','recibida','cancelada') DEFAULT 'borrador',
+    subtotal DECIMAL(12,2) DEFAULT 0,
+    igv DECIMAL(12,2) DEFAULT 0,               -- 18% IGV Peru
+    total DECIMAL(12,2) DEFAULT 0,
+    comprobante_tipo ENUM('boleta','factura','sin_comprobante') DEFAULT 'sin_comprobante',
+    comprobante_numero VARCHAR(50) NULL,
+    notas TEXT NULL,
+    usuario_id INT NOT NULL,                    -- Quien creo la orden
+    recibido_por INT NULL,                      -- Quien recibio la mercaderia
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (proveedor_id) REFERENCES proveedores(id),
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+);
+
+-- 5. Detalle de orden de compra (items)
+CREATE TABLE orden_compra_items (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    orden_id INT NOT NULL,
+    ingrediente_id INT NOT NULL,
+    cantidad_pedida DECIMAL(12,3) NOT NULL,
+    cantidad_recibida DECIMAL(12,3) NULL,       -- Puede ser diferente (faltante o excedente)
+    costo_unitario DECIMAL(10,4) NOT NULL,
+    subtotal DECIMAL(12,2) NOT NULL,
+    estado ENUM('pendiente','recibido','parcial','rechazado') DEFAULT 'pendiente',
+    notas VARCHAR(200) NULL,                    -- 'Llego en mal estado', 'Falta 2kg'
+    FOREIGN KEY (orden_id) REFERENCES ordenes_compra(id) ON DELETE CASCADE,
+    FOREIGN KEY (ingrediente_id) REFERENCES almacen_ingredientes(id)
+);
+
+-- 6. Movimientos de stock (TODA entrada y salida pasa por aqui)
 CREATE TABLE almacen_movimientos (
     id INT AUTO_INCREMENT PRIMARY KEY,
     ingrediente_id INT NOT NULL,
-    tipo ENUM('entrada','salida','ajuste','merma') NOT NULL,
-    cantidad DECIMAL(12,3) NOT NULL,            -- Positiva=entrada, Negativa=salida
-    costo_unitario DECIMAL(10,4) NULL,          -- Costo al momento del movimiento
-    motivo VARCHAR(200) NULL,                    -- 'compra', 'venta_platillo', 'merma', 'ajuste_inventario'
-    referencia_tipo VARCHAR(50) NULL,            -- 'factura', 'compra', 'manual'
-    referencia_id INT NULL,                      -- factura_id, compra_id, etc.
-    usuario_id INT NULL,
+    tipo ENUM('entrada','salida','ajuste','merma','devolucion','transferencia') NOT NULL,
+    cantidad DECIMAL(12,3) NOT NULL,
+    stock_anterior DECIMAL(12,3) NOT NULL,      -- Stock ANTES del movimiento
+    stock_posterior DECIMAL(12,3) NOT NULL,      -- Stock DESPUES del movimiento
+    costo_unitario DECIMAL(10,4) NULL,
+    costo_total DECIMAL(12,2) NULL,
+    motivo ENUM(
+        'compra_proveedor',                     -- Entrada por compra
+        'venta_platillo',                       -- Salida automatica por receta al facturar
+        'merma_vencimiento',                    -- Ingrediente se vencio
+        'merma_dano',                           -- Se daño/rompio
+        'merma_preparacion',                    -- Desperdicio normal de preparacion
+        'consumo_interno',                      -- Comida del personal, degustacion
+        'ajuste_inventario',                    -- Correccion por conteo fisico
+        'devolucion_proveedor',                 -- Se devolvio al proveedor
+        'regalo',                               -- Se regalo a cliente/otro
+        'robo_perdida'                          -- Perdida no justificada
+    ) NOT NULL,
+    referencia_tipo VARCHAR(50) NULL,           -- 'orden_compra', 'factura', 'manual'
+    referencia_id INT NULL,                     -- orden_compra.id, factura.id, etc.
+    comprobante VARCHAR(100) NULL,              -- Numero de boleta/factura del proveedor
+    notas TEXT NULL,                            -- Descripcion libre
+    usuario_id INT NOT NULL,                    -- QUIEN hizo este movimiento
+    turno VARCHAR(20) NULL,                     -- 'manana', 'tarde', 'noche'
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (ingrediente_id) REFERENCES almacen_ingredientes(id),
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
+);
+
+-- 7. Historial diario (resumen consolidado por dia)
+CREATE TABLE almacen_historial_diario (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    fecha DATE NOT NULL,
+    ingrediente_id INT NOT NULL,
+    stock_inicio_dia DECIMAL(12,3) NOT NULL,    -- Stock al abrir
+    total_entradas DECIMAL(12,3) DEFAULT 0,     -- Total comprado en el dia
+    total_salidas_venta DECIMAL(12,3) DEFAULT 0,-- Total usado por ventas (recetas)
+    total_salidas_merma DECIMAL(12,3) DEFAULT 0,-- Total perdido por merma
+    total_salidas_otros DECIMAL(12,3) DEFAULT 0,-- Consumo interno, ajustes
+    stock_fin_dia DECIMAL(12,3) NOT NULL,       -- Stock al cerrar
+    costo_total_entradas DECIMAL(12,2) DEFAULT 0,
+    costo_total_salidas DECIMAL(12,2) DEFAULT 0,
+    usuario_cierre INT NULL,                    -- Quien cerro el dia
+    UNIQUE KEY uq_fecha_ingrediente (fecha, ingrediente_id),
     FOREIGN KEY (ingrediente_id) REFERENCES almacen_ingredientes(id)
+);
+
+-- 8. Conteo fisico (inventario fisico periodico)
+CREATE TABLE almacen_conteo_fisico (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    fecha DATE NOT NULL,
+    ingrediente_id INT NOT NULL,
+    stock_sistema DECIMAL(12,3) NOT NULL,       -- Lo que dice el sistema
+    stock_contado DECIMAL(12,3) NOT NULL,       -- Lo que se conto fisicamente
+    diferencia DECIMAL(12,3) NOT NULL,          -- contado - sistema
+    ajustado TINYINT(1) DEFAULT 0,              -- Si ya se creo el movimiento de ajuste
+    notas VARCHAR(200) NULL,
+    usuario_id INT NOT NULL,                    -- Quien hizo el conteo
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (ingrediente_id) REFERENCES almacen_ingredientes(id),
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id)
 );
 ```
 
-**Categorias sugeridas (200+ ingredientes)**:
-- Pescados y mariscos (bonito, toyo, cojinova, pulpo, conchas, langostinos...)
-- Carnes (pollo, res, cerdo, chancho, cordero...)
-- Vegetales (cebolla, tomate, lechuga, zanahoria, pimiento...)
-- Legumbres (frijol, lenteja, garbanzo, pallares...)
-- Frutas (limon, naranja, maracuya...)
-- Condimentos (sal, pimienta, aji panca, aji amarillo, aji limo, comino, oregano...)
-- Cremas y salsas (mayonesa, ketchup, mostaza, salsa de ostras, sillao...)
-- Lacteos (leche, queso, mantequilla, crema de leche...)
-- Granos y harinas (arroz, harina, pan rallado, fideos...)
-- Aceites y grasas (aceite vegetal, aceite de oliva, manteca...)
-- Bebidas base (gaseosas, jugos, cerveza, agua...)
-- Descartables (platos, vasos, cubiertos, servilletas, bolsas...)
-
-#### Partes del modulo Almacen (5 secciones):
+#### SECCIONES DEL MODULO ALMACEN (8 secciones):
 
 ```
 /almacen
   │
-  ├── /almacen/inventario        ← Vista principal: stock actual de todos los ingredientes
-  │     - Tabla con: nombre, categoria, stock actual, unidad, minimo, costo, estado (OK/bajo/critico)
-  │     - Filtros por categoria, estado, busqueda
-  │     - Importar/exportar Excel
+  ├── /almacen/dashboard          ← RESUMEN: KPIs del almacen
+  │     - Valor total del inventario (sum stock * costo)
+  │     - Ingredientes con alerta (bajo minimo)
+  │     - Compras del dia (monto total)
+  │     - Merma del dia (monto perdido)
+  │     - Top 5 ingredientes mas usados (ultimos 7 dias)
+  │     - Grafico: consumo vs compras (ultimos 30 dias)
   │
-  ├── /almacen/entradas          ← Registrar compras/ingresos de mercaderia
-  │     - Seleccionar ingrediente → cantidad → costo unitario → proveedor
-  │     - Compra multiple (varios ingredientes a la vez)
-  │     - Fecha de compra, numero de comprobante
-  │     - Actualiza stock_actual automaticamente
+  ├── /almacen/inventario         ← STOCK ACTUAL de todos los ingredientes
+  │     - Tabla: codigo, nombre, categoria, stock, unidad, minimo, maximo, costo, estado
+  │     - Semaforo: 🟢 OK  🟡 Bajo (< minimo x 1.5)  🔴 Critico (< minimo)  ⚫ Agotado
+  │     - Filtros: por categoria, por estado, por ubicacion, busqueda
+  │     - CRUD de ingredientes (crear, editar, desactivar)
+  │     - Importar/exportar Excel masivo
   │
-  ├── /almacen/salidas           ← Salidas manuales (merma, consumo interno, perdida)
-  │     - No incluye ventas (esas son automaticas por receta)
-  │     - Motivo: merma, vencido, consumo interno, regalo, robo
-  │     - Requiere justificacion/nota
+  ├── /almacen/proveedores        ← CRUD de proveedores
+  │     - Nombre, RUC, telefono, email, direccion, contacto
+  │     - Tipo: mayorista, minorista, productor, distribuidor
+  │     - Calificacion (1-5 estrellas)
+  │     - Historial de compras por proveedor
+  │     - Ingredientes que provee (relacion)
   │
-  ├── /almacen/movimientos       ← Historial completo de entradas y salidas
-  │     - Filtros por fecha, ingrediente, tipo (entrada/salida/ajuste/venta)
-  │     - Trazabilidad: quien, cuando, por que, referencia
-  │     - Exportar a Excel
+  ├── /almacen/compras            ← ORDENES DE COMPRA
+  │     - Crear orden: seleccionar proveedor → agregar items → cantidades → costos
+  │     - Estados: borrador → enviada → parcial → recibida / cancelada
+  │     - Al recibir: ingresar cantidad real recibida (puede diferir del pedido)
+  │     - Al confirmar recepcion:
+  │       → Se crean movimientos de entrada automaticos
+  │       → Se actualiza stock_actual de cada ingrediente
+  │       → Se actualiza ultimo_costo y costo_promedio
+  │       → Se registra en caja_movimientos (egreso por compra)
+  │     - Comprobante: boleta/factura/sin comprobante
+  │     - Historial de ordenes con filtros por fecha/proveedor/estado
   │
-  └── /almacen/alertas           ← Ingredientes bajo minimo + lista de compras sugerida
-        - Lista roja: stock actual < stock minimo
-        - Proyeccion: basado en consumo promedio diario, cuantos dias queda
-        - Generar lista de compras (exportar/imprimir)
-        - Envia alerta automatica al canal #inventario
+  ├── /almacen/entradas           ← ENTRADA RAPIDA (sin orden de compra)
+  │     - Para compras pequenas o del dia a dia (mercado)
+  │     - Seleccionar ingrediente → cantidad → costo → proveedor (opcional)
+  │     - Compra multiple (varios ingredientes en 1 formulario)
+  │     - Registra: quien compro, cuanto pago, que trajo, a que hora
+  │     - Genera movimiento tipo 'entrada', motivo 'compra_proveedor'
+  │
+  ├── /almacen/salidas            ← SALIDAS MANUALES (no incluye ventas)
+  │     - Motivos: merma_vencimiento, merma_dano, merma_preparacion,
+  │       consumo_interno, devolucion_proveedor, regalo, robo_perdida
+  │     - REQUIERE: justificacion escrita + aprobacion admin si > X monto
+  │     - Cada salida queda registrada con usuario, hora, motivo
+  │     - Las salidas por venta son AUTOMATICAS (no aparecen aqui)
+  │
+  ├── /almacen/historial          ← HISTORIAL COMPLETO (trazabilidad total)
+  │     - Vista por DIA: que paso cada dia con cada ingrediente
+  │       → Stock inicio → Entradas (quien compro, cuanto) → Salidas (ventas, merma) → Stock fin
+  │     - Vista por INGREDIENTE: toda la vida de un ingrediente
+  │     - Vista por USUARIO: todo lo que hizo un usuario en el almacen
+  │     - Filtros: por fecha, ingrediente, tipo movimiento, usuario, motivo
+  │     - Exportar a Excel/PDF
+  │     - Cada registro muestra: stock_anterior → movimiento → stock_posterior
+  │
+  └── /almacen/conteo-fisico      ← INVENTARIO FISICO (verificacion)
+        - Programar conteo: seleccionar categoria o todos
+        - Ingresar cantidad contada vs cantidad del sistema
+        - Mostrar diferencias (sobrante/faltante por ingrediente)
+        - Generar ajustes automaticos para corregir stock
+        - Historial de conteos con fecha y responsable
+        - Recomendado: conteo semanal o quincenal
 ```
 
-**12 categorias de ingredientes**:
-| # | Categoria | Ejemplos | Cant. aprox |
-|---|-----------|----------|------------|
-| 1 | Pescados y mariscos | Bonito, toyo, cojinova, pulpo, conchas, langostinos, camarones, choros | ~15 |
-| 2 | Carnes | Pollo, res, cerdo, cordero, higado, mondongo, corazon | ~12 |
-| 3 | Vegetales | Cebolla, tomate, lechuga, zanahoria, pimiento, apio, pepino, rocoto | ~25 |
-| 4 | Legumbres | Frijol, lenteja, garbanzo, pallares, habas | ~8 |
-| 5 | Frutas | Limon, naranja, maracuya, piña, platano, manzana | ~10 |
-| 6 | Condimentos | Sal, pimienta, aji panca, aji amarillo, aji limo, comino, oregano, achiote, huacatay | ~20 |
-| 7 | Cremas y salsas | Mayonesa, ketchup, mostaza, sillao, salsa de ostras, vinagre, salsa criolla | ~12 |
-| 8 | Lacteos y huevos | Leche, queso, mantequilla, crema de leche, huevos | ~8 |
-| 9 | Granos y harinas | Arroz, harina, pan rallado, fideos, avena, quinua, trigo | ~12 |
-| 10 | Aceites y grasas | Aceite vegetal, aceite de oliva, manteca, margarina | ~6 |
-| 11 | Bebidas | Gaseosas, jugos, cerveza, agua, vino, pisco, chicha | ~20 |
-| 12 | Descartables y limpieza | Platos, vasos, cubiertos, servilletas, bolsas, detergente, lejia | ~25 |
-| | **TOTAL** | | **~173+** |
+#### FLUJO COMPLETO DEL ALMACEN:
+
+```
+                    ┌─────────────────────────┐
+                    │     INICIO DEL DIA      │
+                    │  stock_inicio = actual   │
+                    └───────────┬─────────────┘
+                                │
+              ┌─────────────────┼─────────────────┐
+              │                 │                 │
+              ▼                 ▼                 ▼
+    ┌──────────────────┐ ┌────────────┐ ┌──────────────────┐
+    │  COMPRAS/        │ │  SERVICIO  │ │  MERMA/          │
+    │  ENTRADAS        │ │  (ventas)  │ │  SALIDAS         │
+    │                  │ │            │ │                  │
+    │ Admin/encargado  │ │ Automatico │ │ Cocinero/Admin   │
+    │ va al mercado    │ │ al facturar│ │ reporta perdida  │
+    │                  │ │            │ │                  │
+    │ Registra:        │ │ Por cada   │ │ Registra:        │
+    │ - Que compro     │ │ platillo   │ │ - Que se perdio  │
+    │ - Cuanto (kg,und)│ │ vendido:   │ │ - Cuanto         │
+    │ - A que precio   │ │ receta x   │ │ - Por que        │
+    │ - A quien le     │ │ cantidad = │ │ - Foto (opcional)│
+    │   compro         │ │ descuento  │ │                  │
+    │ - Comprobante    │ │ automatico │ │ Motivos:         │
+    │ - A que hora     │ │            │ │ - Vencido        │
+    │                  │ │ Todo queda │ │ - Danado         │
+    │ stock += compra  │ │ en almacen │ │ - Desperdicio    │
+    │                  │ │ _movim.    │ │ - Consumo intern.│
+    │ caja -= pago     │ │            │ │ - Robo/perdida   │
+    └────────┬─────────┘ └─────┬──────┘ └────────┬─────────┘
+             │                 │                 │
+             └─────────────────┼─────────────────┘
+                               │
+                               ▼
+                 ┌──────────────────────────┐
+                 │   HISTORIAL DEL DIA      │
+                 │                          │
+                 │  Pescado bonito:          │
+                 │  Inicio:  10,000g         │
+                 │  + Compra: 5,000g (Juan,  │
+                 │    07:30, S/125, mercado  │
+                 │    central, boleta #456)  │
+                 │  - Ventas: 6,750g (45     │
+                 │    ceviches = auto)       │
+                 │  - Merma: 200g (Maria,    │
+                 │    15:20, "se vencio")    │
+                 │  = Final: 8,050g          │
+                 │                          │
+                 │  ALERTA: Limon < minimo   │
+                 │  → Notifica #inventario   │
+                 │  → Sugiere compra manana  │
+                 └──────────────────────────┘
+                               │
+                               ▼
+                 ┌──────────────────────────┐
+                 │   CONTEO FISICO          │
+                 │   (semanal/quincenal)    │
+                 │                          │
+                 │  Sistema dice: 8,050g    │
+                 │  Conteo real:  7,900g    │
+                 │  Diferencia:   -150g     │
+                 │                          │
+                 │  → Generar ajuste        │
+                 │  → Investigar causa      │
+                 └──────────────────────────┘
+```
+
+#### 12 CATEGORIAS DE INGREDIENTES (~200+):
+
+| # | Categoria | Ejemplos | Cant. | Ubicacion tipica |
+|---|-----------|----------|-------|-----------------|
+| 1 | Pescados y mariscos | Bonito, toyo, cojinova, pulpo, conchas, langostinos, camarones, choros, pota | ~15 | Refrigerador 0-4°C |
+| 2 | Carnes | Pollo, res, cerdo, cordero, higado, mondongo, corazon, chanfainita | ~12 | Congelador -18°C |
+| 3 | Vegetales | Cebolla roja, tomate, lechuga, zanahoria, pimiento, apio, pepino, rocoto, choclo, vainita, zapallo | ~25 | Refrigerador / Ambiente |
+| 4 | Tuberculos | Papa, camote, yuca, olluco | ~6 | Almacen seco |
+| 5 | Legumbres | Frijol, lenteja, garbanzo, pallares, habas, arvejas | ~8 | Almacen seco |
+| 6 | Frutas | Limon, naranja, maracuya, piña, platano, manzana, cocona | ~10 | Ambiente / Refrigerador |
+| 7 | Condimentos y especias | Sal, pimienta, aji panca, aji amarillo, aji limo, comino, oregano, achiote, huacatay, culantro, kion | ~22 | Almacen seco |
+| 8 | Cremas, salsas y vinagres | Mayonesa, ketchup, mostaza, sillao, salsa de ostras, vinagre, ocopa, huancaina | ~14 | Refrigerador |
+| 9 | Lacteos y huevos | Leche, queso fresco, queso parmesano, mantequilla, crema de leche, huevos | ~10 | Refrigerador |
+| 10 | Granos, harinas y pastas | Arroz, harina, pan rallado, fideos, avena, quinua, trigo, chuño | ~14 | Almacen seco |
+| 11 | Aceites, grasas y azucar | Aceite vegetal, aceite de oliva, manteca, margarina, azucar, miel | ~8 | Almacen seco |
+| 12 | Bebidas | Gaseosas, jugos, cerveza, agua, vino, pisco, chicha morada, emoliente | ~22 | Ambiente / Refrigerador |
+| 13 | Descartables | Platos tecnopor, vasos, cubiertos, servilletas, bolsas, papel aluminio, film | ~18 |  Almacen seco |
+| 14 | Limpieza | Detergente, lejia, desinfectante, esponja, guantes, trapeador | ~12 | Almacen limpieza |
+| | **TOTAL** | | **~196** | |
 
 **Referencia GitHub**:
 - [FridgeMan](https://github.com/JackRKelly/FridgeMan) - Food inventory con React/Node/PostgreSQL
