@@ -7,6 +7,8 @@ $(function(){
   let entregadosItems = []; // items estado='servido' (cargados por rango de fecha)
   let rechazadosItems = []; // items estado='rechazado' (cargados por rango de fecha)
   let autoRefreshTimer = null;
+  let lastDataHash = '';
+  const ALERTA_MINUTOS = 8; // Priorizar pedidos > 8 minutos
 
   function setText(id, value){
     const el = document.getElementById(id);
@@ -70,7 +72,12 @@ $(function(){
   async function cargarCola(){
     const resp = await fetch(`/api/cocina/cola?_=${Date.now()}`, { cache: 'no-store' });
     const items = await resp.json();
-    allItems = Array.isArray(items) ? items : [];
+    const newItems = Array.isArray(items) ? items : [];
+    // Solo re-renderizar si los datos cambiaron (evita parpadeo)
+    const newHash = JSON.stringify(newItems.map(i => i.id + ':' + i.estado));
+    if (newHash === lastDataHash) return;
+    lastDataHash = newHash;
+    allItems = newItems;
     render();
   }
 
@@ -203,6 +210,13 @@ $(function(){
     const totalLineas = mesaItems.length;
     const totalUnidades = mesaItems.reduce((acc, it) => acc + Math.max(0, Number(it.cantidad || 0)), 0);
 
+    // Timer: minutos desde que se envio
+    const minutos = ref ? Math.floor((Date.now() - ref.getTime()) / 60000) : 0;
+    const esUrgente = minutos >= ALERTA_MINUTOS;
+    const timerColor = esUrgente ? '#ef4444' : minutos >= 5 ? '#f59e0b' : '#10b981';
+    const timerBg = esUrgente ? 'rgba(239,68,68,0.08)' : 'transparent';
+    const timerLabel = minutos < 1 ? 'ahora' : minutos + ' min';
+
     const detalles = mesaItems.map(it => {
       const producto = escapeHtml(it.producto_nombre);
       const nota = String(it.nota || '').trim();
@@ -225,19 +239,23 @@ $(function(){
       </div>` : '';
 
     return `
-      <div class="card cocina-card border-start border-4 border-primary">
+      <div class="card cocina-card border-start border-4 ${esUrgente ? 'border-danger' : 'border-primary'}" style="background:${timerBg};">
         <div class="card-body">
           <div class="d-flex justify-content-between gap-2 mb-2">
             <div>
               <div class="d-flex align-items-center gap-2 flex-wrap">
                 <span class="badge text-bg-dark"><i class="bi bi-grid-3x3-gap me-1"></i>Mesa ${mesa}</span>
                 <span class="badge text-bg-primary"><i class="bi bi-send me-1"></i>Enviado</span>
+                <span class="badge" style="background:${timerColor};color:#fff;font-size:.85rem;${esUrgente ? 'animation:pulse 1s infinite;' : ''}">
+                  <i class="bi bi-stopwatch me-1"></i>${timerLabel}
+                </span>
+                ${esUrgente ? '<span class="badge bg-danger">PRIORIDAD</span>' : ''}
               </div>
               <div class="meta mt-1">${hora ? `${hora} · ${timeAgo(ref)}` : timeAgo(ref)}</div>
               <div class="meta mt-1"><i class="bi bi-person-badge me-1"></i>Mesero: ${mesero}</div>
             </div>
             <div class="text-end">
-              <div class="badge text-bg-light border">Líneas: ${totalLineas}</div>
+              <div class="badge text-bg-light border">Lineas: ${totalLineas}</div>
               <div class="badge text-bg-light border ms-1">Unidades: ${totalUnidades}</div>
             </div>
           </div>
@@ -367,7 +385,13 @@ $(function(){
       if(!enviadosPorMesa.has(k)) enviadosPorMesa.set(k, []);
       enviadosPorMesa.get(k).push(it);
     });
-    [...enviadosPorMesa.entries()].forEach(([, arr]) => {
+    // Ordenar por urgencia: mas antiguos primero (PRIORIDAD)
+    const enviadosEntries = [...enviadosPorMesa.entries()].sort((a, b) => {
+      const refA = parseDate((a[1][0] || {}).enviado_at) || parseDate((a[1][0] || {}).created_at) || new Date();
+      const refB = parseDate((b[1][0] || {}).enviado_at) || parseDate((b[1][0] || {}).created_at) || new Date();
+      return refA.getTime() - refB.getTime(); // mas antiguo primero
+    });
+    enviadosEntries.forEach(([, arr]) => {
       enviadosEl.append(cardMesaEnviados(arr));
     });
 

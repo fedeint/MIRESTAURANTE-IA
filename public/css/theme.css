@@ -1052,6 +1052,12 @@ footer.bg-dark a:hover {
 .card:nth-child(3) { animation-delay: 0.1s; }
 .card:nth-child(4) { animation-delay: 0.15s; }
 
+/* ---------- Cocina Timer Pulse ---------- */
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.05); }
+}
+
 /* ---------- KPI Badge ---------- */
 .kpi-badge {
   font-weight: 700 !important;
