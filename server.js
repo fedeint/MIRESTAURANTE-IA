@@ -131,6 +131,7 @@ const cajaRoutes = require('./routes/caja');
 const sunatRoutes = require('./routes/sunat');
 const administracionRoutes = require('./routes/administracion');
 const canalesRoutes = require('./routes/canales');
+const reportesRoutes = require('./routes/reportes');
 
 // Auth routes (públicas): /login /logout /setup
 app.use(authRoutes);
@@ -255,6 +256,9 @@ app.get('/ranking', requireRole('administrador'), async (req, res) => {
 // Canales internos (todos los roles)
 app.use('/canales', requireAuth, canalesRoutes);
 app.use('/api/canales', requireAuth, canalesRoutes);
+
+// Reportes PDF (admin)
+app.use('/api/reportes', requireRole('administrador'), reportesRoutes);
 
 // Administracion P&L (admin)
 app.use('/administracion', requireRole('administrador'), administracionRoutes);
