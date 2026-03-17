@@ -193,44 +193,8 @@ router.post('/', async (req, res) => {
                 // Si la tabla no existe (instalación vieja), no rompemos la creación de factura
             }
 
-            // === DESCUENTO AUTOMATICO DE ALMACEN (recetas) ===
-            try {
-                for (const prod of productos) {
-                    // Buscar receta activa del producto
-                    const [recetaRows] = await connection.query(
-                        'SELECT id FROM recetas WHERE producto_id=? AND activa=1 LIMIT 1', [prod.producto_id]
-                    );
-                    if (!recetaRows || !recetaRows[0]) continue;
-
-                    // Items de la receta
-                    const [items] = await connection.query(
-                        'SELECT ingrediente_id, cantidad, unidad_medida FROM receta_items WHERE receta_id=?', [recetaRows[0].id]
-                    );
-
-                    for (const item of items) {
-                        if (!item.ingrediente_id) continue;
-                        const cantNecesaria = Number(item.cantidad) * Number(prod.cantidad);
-
-                        // Descuento atomico
-                        await connection.query(
-                            'UPDATE almacen_ingredientes SET stock_actual = stock_actual - ? WHERE id = ?',
-                            [cantNecesaria, item.ingrediente_id]
-                        );
-
-                        // Registrar movimiento
-                        const [[ingr]] = await connection.query(
-                            'SELECT stock_actual, costo_unitario FROM almacen_ingredientes WHERE id=?', [item.ingrediente_id]
-                        );
-                        await connection.query(
-                            `INSERT INTO almacen_movimientos (tenant_id, ingrediente_id, tipo, cantidad, stock_anterior, stock_posterior, costo_unitario, costo_total, motivo, referencia_tipo, referencia_id, usuario_id)
-                             VALUES (1,?,'salida',?,?,?,?,?,'venta_platillo','factura',?,0)`,
-                            [item.ingrediente_id, cantNecesaria, Number(ingr.stock_actual) + cantNecesaria, Number(ingr.stock_actual), Number(ingr.costo_unitario), cantNecesaria * Number(ingr.costo_unitario), factura_id]
-                        );
-                    }
-                }
-            } catch (almErr) {
-                console.error('Descuento almacen error (no bloquea factura):', almErr.message);
-            }
+            // NOTA: El descuento de almacen se hace al ENVIAR A COCINA (routes/mesas.js)
+            // No al facturar, porque los ingredientes se usan cuando se prepara, no cuando se cobra.
 
             // === REGISTRO EN CAJA ===
             try {

@@ -776,6 +776,44 @@ router.put('/items/:itemId/enviar', async (req, res) => {
                 [targetEstado, targetEstado, itemId]
             );
 
+            // === DESCUENTO AUTOMATICO DE ALMACEN al enviar a cocina ===
+            try {
+                const [itemData] = await connection.query(
+                    'SELECT producto_id, cantidad FROM pedido_items WHERE id=?', [itemId]
+                );
+                if (itemData.length > 0) {
+                    const prodId = itemData[0].producto_id;
+                    const cantVendida = Number(itemData[0].cantidad) || 1;
+                    const [recetaRows] = await connection.query(
+                        'SELECT id FROM recetas WHERE producto_id=? AND activa=1 LIMIT 1', [prodId]
+                    );
+                    if (recetaRows.length > 0) {
+                        const [items] = await connection.query(
+                            'SELECT ingrediente_id, cantidad FROM receta_items WHERE receta_id=?', [recetaRows[0].id]
+                        );
+                        for (const ing of items) {
+                            if (!ing.ingrediente_id) continue;
+                            const cantNecesaria = Number(ing.cantidad) * cantVendida;
+                            await connection.query(
+                                'UPDATE almacen_ingredientes SET stock_actual = stock_actual - ? WHERE id = ?',
+                                [cantNecesaria, ing.ingrediente_id]
+                            );
+                            // Registrar movimiento
+                            const [[stockAhora]] = await connection.query(
+                                'SELECT stock_actual, costo_unitario FROM almacen_ingredientes WHERE id=?', [ing.ingrediente_id]
+                            );
+                            await connection.query(
+                                `INSERT INTO almacen_movimientos (tenant_id, ingrediente_id, tipo, cantidad, stock_anterior, stock_posterior, costo_unitario, costo_total, motivo, referencia_tipo, referencia_id, usuario_id)
+                                 VALUES (1,?,'salida',?,?,?,?,?,'venta_platillo','pedido_item',?,?)`,
+                                [ing.ingrediente_id, cantNecesaria, Number(stockAhora.stock_actual) + cantNecesaria, Number(stockAhora.stock_actual), Number(stockAhora.costo_unitario), cantNecesaria * Number(stockAhora.costo_unitario), itemId, req.session?.user?.id || 0]
+                            );
+                        }
+                    }
+                }
+            } catch (almErr) {
+                console.error('Descuento almacen al enviar cocina:', almErr.message);
+            }
+
             // Si el pedido no tenía responsable, lo tomamos del usuario actual que envía.
             if (meseroNombre) {
                 await connection.query(
