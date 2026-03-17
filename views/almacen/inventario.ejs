@@ -49,14 +49,14 @@
                     <thead class="table-light">
                         <tr>
                             <th>Codigo</th>
-                            <th>Nombre</th>
+                            <th>Nombre / Proveedor</th>
                             <th>Categoria</th>
-                            <th>Stock Actual</th>
-                            <th>Unidad</th>
+                            <th>Stock</th>
                             <th>Minimo</th>
-                            <th>Costo Unit.</th>
+                            <th>Costo</th>
+                            <th>Ultimo ingreso</th>
                             <th>Estado</th>
-                            <th>Acciones</th>
+                            <th></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -69,10 +69,17 @@
                                     <%= i.categoria_nombre || 'Sin categoria' %>
                                 </span>
                             </td>
-                            <td><%= i.stock_actual %></td>
-                            <td><%= i.unidad_medida %></td>
-                            <td><%= i.stock_minimo %></td>
-                            <td>S/ <%= i.costo_unitario %></td>
+                            <td><%= Number(i.stock_actual).toFixed(1) %> <small class="text-muted"><%= i.unidad_medida %></small></td>
+                            <td><%= Number(i.stock_minimo).toFixed(1) %></td>
+                            <td>S/ <%= Number(i.costo_unitario).toFixed(2) %></td>
+                            <td class="small">
+                                <% if (i.ultimo_ingreso_fecha) { %>
+                                    <%= new Date(i.ultimo_ingreso_fecha).toLocaleDateString('es-PE') %> <%= new Date(i.ultimo_ingreso_fecha).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'}) %><br>
+                                    <span class="text-muted"><i class="bi bi-person-fill me-1"></i><%= i.ultimo_ingreso_usuario || '-' %></span>
+                                <% } else { %>
+                                    <span class="text-muted">Sin ingresos</span>
+                                <% } %>
+                            </td>
                             <td>
                                 <% if (i.stock_actual === 0) { %>
                                     <span class="badge bg-dark">Agotado</span>

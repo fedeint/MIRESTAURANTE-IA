@@ -32,10 +32,19 @@ router.get('/inventario', async (req, res) => {
         const tid = req.tenantId || 1;
         const [ingredientes] = await db.query(`
             SELECT i.*, c.nombre as categoria_nombre, c.color as categoria_color,
-                   p.nombre as proveedor_nombre
+                   p.nombre as proveedor_nombre,
+                   ult.created_at as ultimo_ingreso_fecha,
+                   u_ult.usuario as ultimo_ingreso_usuario
             FROM almacen_ingredientes i
             LEFT JOIN almacen_categorias c ON c.id = i.categoria_id
             LEFT JOIN proveedores p ON p.id = i.proveedor_id
+            LEFT JOIN (
+                SELECT ingrediente_id, MAX(id) as max_id
+                FROM almacen_movimientos WHERE tipo='entrada'
+                GROUP BY ingrediente_id
+            ) last_mov ON last_mov.ingrediente_id = i.id
+            LEFT JOIN almacen_movimientos ult ON ult.id = last_mov.max_id
+            LEFT JOIN usuarios u_ult ON u_ult.id = ult.usuario_id
             WHERE i.tenant_id = ? AND i.activo = 1
             ORDER BY c.orden, i.nombre
         `, [tid]);
