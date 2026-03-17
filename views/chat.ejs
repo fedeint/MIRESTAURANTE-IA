@@ -277,11 +277,19 @@
                 <!-- Input -->
                 <div class="chat-input-area">
                     <div class="chat-input-wrap">
-                        <textarea class="chat-input" id="chatInput" rows="1" placeholder="Escribe tu pregunta..." maxlength="2000"></textarea>
+                        <textarea class="chat-input" id="chatInput" rows="1" placeholder="Escribe o habla tu pregunta..." maxlength="2000"></textarea>
+                        <button class="chat-voice-btn" id="voiceBtn" type="button" title="Hablar" style="width:42px;height:42px;border-radius:0.75rem;border:1.5px solid #e2e8f0;background:transparent;color:#64748b;display:flex;align-items:center;justify-content:center;font-size:1.1rem;cursor:pointer;transition:all .2s;flex-shrink:0;">
+                            <i class="bi bi-mic-fill"></i>
+                        </button>
                         <button class="chat-send-btn" id="chatSend" type="button" title="Enviar">
                             <i class="bi bi-send-fill"></i>
                         </button>
                     </div>
+                    <div class="d-flex justify-content-between align-items-center mt-1">
+                        <div class="form-check form-switch" style="font-size:0.72rem;">
+                            <input class="form-check-input" type="checkbox" id="voiceAutoRead" checked style="transform:scale(0.8);">
+                            <label class="form-check-label text-muted" for="voiceAutoRead">Leer respuestas en voz alta</label>
+                        </div>
                     <div class="text-center mt-2">
                         <span class="text-muted" id="chatProvider" style="font-size:0.72rem;">Powered by Kimi AI (Moonshot) &middot; Los datos se consultan en tiempo real de tu base de datos</span>
                     </div>
@@ -460,6 +468,72 @@
         });
 
         inputEl.focus();
+
+        // ========= VOZ (Web Speech API) =========
+        var voiceBtn = document.getElementById('voiceBtn');
+        var voiceAutoRead = document.getElementById('voiceAutoRead');
+        var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        var isListening = false;
+
+        if (SpeechRecognition && voiceBtn) {
+            var recognition = new SpeechRecognition();
+            recognition.lang = 'es-PE';
+            recognition.interimResults = false;
+            recognition.maxAlternatives = 1;
+
+            voiceBtn.addEventListener('click', function() {
+                if (isListening) {
+                    recognition.stop();
+                    return;
+                }
+                recognition.start();
+                isListening = true;
+                voiceBtn.style.background = 'linear-gradient(135deg,#ef4444,#dc2626)';
+                voiceBtn.style.color = '#fff';
+                voiceBtn.style.border = 'none';
+                voiceBtn.innerHTML = '<i class="bi bi-mic-fill"></i>';
+            });
+
+            recognition.onresult = function(event) {
+                var transcript = event.results[0][0].transcript;
+                inputEl.value = transcript;
+                sendBtn.click();
+            };
+
+            recognition.onend = function() {
+                isListening = false;
+                voiceBtn.style.background = 'transparent';
+                voiceBtn.style.color = '#64748b';
+                voiceBtn.style.border = '1.5px solid #e2e8f0';
+            };
+
+            recognition.onerror = function() {
+                isListening = false;
+                voiceBtn.style.background = 'transparent';
+                voiceBtn.style.color = '#64748b';
+                voiceBtn.style.border = '1.5px solid #e2e8f0';
+            };
+        } else if (voiceBtn) {
+            voiceBtn.style.display = 'none';
+        }
+
+        // Text-to-Speech para respuestas
+        function leerEnVozAlta(texto) {
+            if (!voiceAutoRead || !voiceAutoRead.checked) return;
+            if (!window.speechSynthesis) return;
+            window.speechSynthesis.cancel();
+            var utt = new SpeechSynthesisUtterance(texto.replace(/\*\*/g, '').replace(/`/g, ''));
+            utt.lang = 'es-PE';
+            utt.rate = 1.1;
+            window.speechSynthesis.speak(utt);
+        }
+
+        // Hook into addMessage to auto-read AI responses
+        var _origAddMessage = addMessage;
+        addMessage = function(role, content, isError) {
+            _origAddMessage(role, content, isError);
+            if (role === 'assistant' && !isError) leerEnVozAlta(content);
+        };
     })();
     </script>
 </body>
