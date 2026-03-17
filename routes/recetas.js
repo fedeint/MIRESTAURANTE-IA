@@ -31,10 +31,20 @@ router.get('/:productoId', async (req, res) => {
         let costoTotal = 0;
         items.forEach(item => {
             if (item.ingrediente_id) {
-                const costoBase = Number(item.ingrediente_costo) || 0;
+                const costoBase = Number(item.ingrediente_costo) || 0; // costo por kg/lt/und
                 const merma = Number(item.merma_preparacion_pct) || 0;
                 const costoConMerma = merma > 0 ? costoBase / (1 - merma) : costoBase;
-                item.costo_item = costoConMerma * Number(item.cantidad);
+                const cant = Number(item.cantidad) || 0;
+                const unidad = String(item.unidad_medida || '').toLowerCase();
+                const ingUnidad = String(item.ingrediente_unidad || '').toLowerCase();
+
+                // Convertir: si receta usa g/ml pero costo es por kg/lt
+                let costoUnitConvertido = costoConMerma;
+                if ((unidad === 'g' || unidad === 'ml') && (ingUnidad === 'kg' || ingUnidad === 'lt')) {
+                    costoUnitConvertido = costoConMerma / 1000;
+                }
+
+                item.costo_item = costoUnitConvertido * cant;
                 costoTotal += item.costo_item;
             }
         });

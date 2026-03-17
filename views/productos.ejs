@@ -332,7 +332,16 @@
             body.innerHTML = '';
             var total = 0;
             recetaItems.forEach(function(item, idx){
-                var costo = item.costo * item.cantidad;
+                // Costo unitario viene en precio/kg o precio/lt
+                // Si la cantidad es en g o ml, dividir entre 1000
+                var costoUnit = item.costo || 0;
+                var cant = item.cantidad || 0;
+                var costo;
+                if ((item.unidad_medida === 'g' || item.unidad_medida === 'ml') && costoUnit > 1) {
+                    costo = (costoUnit / 1000) * cant; // convertir kg→g o lt→ml
+                } else {
+                    costo = costoUnit * cant;
+                }
                 total += costo;
                 var tr = document.createElement('tr');
                 tr.innerHTML = '<td>' + item.nombre + '</td><td class="text-end">' + item.cantidad + '</td><td>' + item.unidad_medida + '</td><td class="text-end">S/ ' + costo.toFixed(2) + '</td><td><button type="button" class="btn btn-sm btn-outline-danger btn-quitar-ingr" data-idx="' + idx + '"><i class="bi bi-x"></i></button></td>';
