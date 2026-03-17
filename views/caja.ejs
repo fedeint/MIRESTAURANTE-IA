@@ -178,44 +178,44 @@
                             <h6 class="mb-3">Denominaciones</h6>
                             <div class="row g-2 mb-3">
                                 <div class="col-4 col-md-3">
-                                    <label class="form-label small">Billetes $200</label>
+                                    <label class="form-label small">Billetes S/200</label>
                                     <input type="number" class="form-control form-control-sm denom-field" data-valor="200" name="b200" min="0" value="0">
                                 </div>
                                 <div class="col-4 col-md-3">
-                                    <label class="form-label small">Billetes $100</label>
+                                    <label class="form-label small">Billetes S/100</label>
                                     <input type="number" class="form-control form-control-sm denom-field" data-valor="100" name="b100" min="0" value="0">
                                 </div>
                                 <div class="col-4 col-md-3">
-                                    <label class="form-label small">Billetes $50</label>
+                                    <label class="form-label small">Billetes S/50</label>
                                     <input type="number" class="form-control form-control-sm denom-field" data-valor="50" name="b50" min="0" value="0">
                                 </div>
                                 <div class="col-4 col-md-3">
-                                    <label class="form-label small">Billetes $20</label>
+                                    <label class="form-label small">Billetes S/20</label>
                                     <input type="number" class="form-control form-control-sm denom-field" data-valor="20" name="b20" min="0" value="0">
                                 </div>
                                 <div class="col-4 col-md-3">
-                                    <label class="form-label small">Billetes $10</label>
+                                    <label class="form-label small">Billetes S/10</label>
                                     <input type="number" class="form-control form-control-sm denom-field" data-valor="10" name="b10" min="0" value="0">
                                 </div>
                                 <div class="col-4 col-md-3">
-                                    <label class="form-label small">Monedas $5</label>
+                                    <label class="form-label small">Monedas S/5</label>
                                     <input type="number" class="form-control form-control-sm denom-field" data-valor="5" name="m5" min="0" value="0">
                                 </div>
                                 <div class="col-4 col-md-3">
-                                    <label class="form-label small">Monedas $2</label>
+                                    <label class="form-label small">Monedas S/2</label>
                                     <input type="number" class="form-control form-control-sm denom-field" data-valor="2" name="m2" min="0" value="0">
                                 </div>
                                 <div class="col-4 col-md-3">
-                                    <label class="form-label small">Monedas $1</label>
+                                    <label class="form-label small">Monedas S/1</label>
                                     <input type="number" class="form-control form-control-sm denom-field" data-valor="1" name="m1" min="0" value="0">
                                 </div>
                                 <div class="col-4 col-md-3">
-                                    <label class="form-label small">Monedas $0.50</label>
+                                    <label class="form-label small">Monedas S/0.50</label>
                                     <input type="number" class="form-control form-control-sm denom-field" data-valor="0.5" name="m050" min="0" value="0">
                                 </div>
                             </div>
                             <div class="alert alert-info py-2">
-                                <strong>Total denominaciones:</strong> $<span id="totalDenominaciones">0.00</span>
+                                <strong>Total denominaciones:</strong> S/<span id="totalDenominaciones">0.00</span>
                             </div>
 
                             <div class="mb-3">
@@ -275,7 +275,7 @@
                                 <select class="form-select" id="movMetodo" name="metodo_pago" required>
                                     <option value="" disabled selected>Seleccione un metodo</option>
                                     <% metodos.forEach(function(met) { %>
-                                        <option value="<%= met.valor || met.id || met %>"><%= met.nombre || met.label || met %></option>
+                                        <option value="<%= met.id %>"><%= met.nombre %> <% if (met.comision_pct > 0) { %>(comision <%= met.comision_pct %>%)<% } %></option>
                                     <% }); %>
                                 </select>
                             </div>
@@ -316,7 +316,7 @@
 
                 const confirm = await Swal.fire({
                     title: 'Abrir caja',
-                    text: `Se abrira la caja con $${Number(monto).toFixed(2)}`,
+                    text: `Se abrira la caja con S/${Number(monto).toFixed(2)}`,
                     icon: 'question',
                     showCancelButton: true,
                     confirmButtonText: 'Si, abrir',
@@ -376,7 +376,7 @@
 
                 const confirm = await Swal.fire({
                     title: 'Cerrar caja',
-                    text: `Monto real: $${monto_cierre.toFixed(2)}. Esta seguro?`,
+                    text: `Monto real: S/${monto_cierre.toFixed(2)}. Esta seguro?`,
                     icon: 'warning',
                     showCancelButton: true,
                     confirmButtonText: 'Si, cerrar',

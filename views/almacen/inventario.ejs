@@ -61,12 +61,12 @@
                     </thead>
                     <tbody>
                         <% ingredientes.forEach(function(i) { %>
-                        <tr data-categoria="<%= i.categoria %>" data-nombre="<%= i.nombre %>" data-codigo="<%= i.codigo %>">
+                        <tr data-categoria="<%= i.categoria_nombre || '' %>" data-nombre="<%= i.nombre %>" data-codigo="<%= i.codigo %>">
                             <td><code><%= i.codigo %></code></td>
-                            <td><%= i.nombre %></td>
+                            <td><strong><%= i.nombre %></strong><% if (i.proveedor_nombre) { %><br><small class="text-muted"><%= i.proveedor_nombre %></small><% } %></td>
                             <td>
                                 <span class="badge" style="background-color: <%= i.categoria_color || '#6c757d' %>;">
-                                    <%= i.categoria %>
+                                    <%= i.categoria_nombre || 'Sin categoria' %>
                                 </span>
                             </td>
                             <td><%= i.stock_actual %></td>

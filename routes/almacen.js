@@ -236,8 +236,27 @@ router.get('/proveedores', async (req, res) => {
     res.render('almacen/proveedores', { proveedores });
 });
 
-router.get('/entradas', (req, res) => res.render('almacen/entradas'));
-router.get('/salidas', (req, res) => res.render('almacen/salidas'));
+router.get('/entradas', async (req, res) => {
+    const tid = req.tenantId || 1;
+    const [ingredientes] = await db.query('SELECT id, codigo, nombre, unidad_medida, stock_actual, costo_unitario FROM almacen_ingredientes WHERE tenant_id=? AND activo=1 ORDER BY nombre', [tid]);
+    const [proveedores] = await db.query('SELECT id, nombre FROM proveedores WHERE tenant_id=? AND deleted_at IS NULL ORDER BY nombre', [tid]);
+    res.render('almacen/entradas', { ingredientes, proveedores });
+});
+router.get('/salidas', async (req, res) => {
+    const tid = req.tenantId || 1;
+    const [ingredientes] = await db.query('SELECT id, codigo, nombre, unidad_medida, stock_actual FROM almacen_ingredientes WHERE tenant_id=? AND activo=1 ORDER BY nombre', [tid]);
+    // Salidas automaticas de hoy (platos vendidos)
+    const hoy = new Date().toISOString().split('T')[0];
+    const [salidasVenta] = await db.query(`
+        SELECT m.*, i.nombre as ingrediente_nombre, u.usuario as usuario_nombre
+        FROM almacen_movimientos m
+        LEFT JOIN almacen_ingredientes i ON i.id=m.ingrediente_id
+        LEFT JOIN usuarios u ON u.id=m.usuario_id
+        WHERE m.tenant_id=? AND m.motivo='venta_platillo' AND DATE(m.created_at)=?
+        ORDER BY m.created_at DESC
+    `, [tid, hoy]);
+    res.render('almacen/salidas', { ingredientes, salidasVenta });
+});
 router.get('/historial', (req, res) => res.render('almacen/historial'));
 router.get('/alertas', (req, res) => res.render('almacen/alertas'));
 router.get('/conteo-fisico', (req, res) => res.render('almacen/conteo-fisico'));

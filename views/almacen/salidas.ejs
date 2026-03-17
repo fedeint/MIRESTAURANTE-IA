@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Salida Manual - dignita.tech</title>
+    <title>Salidas Almacen - dignita.tech</title>
     <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
     <link rel="stylesheet" href="/css/theme.css">
@@ -13,56 +13,82 @@
     <div class="dg-main">
     <main class="flex-grow-1">
     <div class="container">
-
-        <div class="d-flex align-items-center mb-4 mt-3">
-            <i class="bi bi-box-arrow-up fs-2 me-2 text-danger"></i>
-            <h2 class="mb-0">Salida Manual</h2>
+        <div class="d-flex align-items-center justify-content-between mb-4 mt-3">
+            <div>
+                <h4 class="fw-bold mb-0"><i class="bi bi-box-arrow-up me-2 text-danger"></i>Salidas de Almacen</h4>
+                <p class="text-muted small mb-0">Platos vendidos (automatico) + merma, consumo interno</p>
+            </div>
+            <span class="badge bg-danger"><%= new Date().toLocaleDateString('es-PE') %></span>
         </div>
 
-        <div class="row justify-content-center">
-            <div class="col-md-8">
-                <div class="card shadow-sm">
-                    <div class="card-body">
-                        <form id="formSalida">
-                            <div class="mb-3">
-                                <label class="form-label">Ingrediente</label>
-                                <select id="ingrediente_id" class="form-select" required>
-                                    <option value="">Seleccionar ingrediente...</option>
-                                    <% ingredientes.forEach(function(i) { %>
-                                        <option value="<%= i._id %>"><%= i.codigo %> - <%= i.nombre %> (Stock: <%= i.stock_actual %> <%= i.unidad_medida %>)</option>
-                                    <% }); %>
-                                </select>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Cantidad</label>
-                                <input type="number" id="cantidad" class="form-control" step="0.01" min="0.01" required>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Motivo</label>
-                                <select id="motivo" class="form-select" required>
-                                    <option value="">Seleccionar motivo...</option>
-                                    <option value="merma_vencimiento">Merma por vencimiento</option>
-                                    <option value="merma_dano">Merma por dano</option>
-                                    <option value="merma_preparacion">Merma por preparacion</option>
-                                    <option value="consumo_interno">Consumo interno</option>
-                                    <option value="devolucion_proveedor">Devolucion a proveedor</option>
-                                    <option value="regalo">Regalo</option>
-                                    <option value="robo_perdida">Robo / Perdida</option>
-                                </select>
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Notas <span class="text-danger">*</span></label>
-                                <textarea id="notas" class="form-control" rows="3" placeholder="Describa el motivo de la salida..." required></textarea>
-                            </div>
-                            <button type="button" class="btn btn-danger w-100" onclick="registrarSalida()">
-                                <i class="bi bi-box-arrow-up me-1"></i>Registrar Salida
-                            </button>
-                        </form>
-                    </div>
+        <!-- Salidas automaticas por ventas -->
+        <div class="card mb-4">
+            <div class="card-header fw-bold d-flex align-items-center gap-2">
+                <i class="bi bi-receipt text-success"></i>
+                Descuento automatico por platos vendidos hoy
+                <span class="badge bg-success ms-auto"><%= salidasVenta.length %> movimientos</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead><tr><th>Hora</th><th>Ingrediente</th><th>Cantidad</th><th>Costo</th><th>Factura</th></tr></thead>
+                        <tbody>
+                            <% if (salidasVenta.length === 0) { %>
+                                <tr><td colspan="5" class="text-center text-muted py-3">Sin ventas hoy. Los ingredientes se descuentan al facturar.</td></tr>
+                            <% } else { salidasVenta.forEach(function(m) { %>
+                                <tr>
+                                    <td><%= new Date(m.created_at).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'}) %></td>
+                                    <td><%= m.ingrediente_nombre %></td>
+                                    <td class="text-danger fw-bold">-<%= Number(m.cantidad).toFixed(2) %></td>
+                                    <td>S/ <%= Number(m.costo_total||0).toFixed(2) %></td>
+                                    <td><% if(m.referencia_id){ %><span class="badge bg-primary">#<%= m.referencia_id %></span><% }else{ %>-<% } %></td>
+                                </tr>
+                            <% }); } %>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
 
+        <!-- Salida manual -->
+        <div class="card">
+            <div class="card-header fw-bold"><i class="bi bi-exclamation-triangle text-warning me-1"></i>Registrar salida manual</div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Ingrediente</label>
+                        <select id="sal_ingrediente" class="form-select" required>
+                            <option value="">-- Seleccionar --</option>
+                            <% ingredientes.forEach(function(i) { %>
+                                <option value="<%= i.id %>"><%= i.nombre %> (<%= Number(i.stock_actual).toFixed(1) %> <%= i.unidad_medida %>)</option>
+                            <% }); %>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold">Cantidad</label>
+                        <input type="number" id="sal_cantidad" class="form-control" step="0.01" min="0.01">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Motivo</label>
+                        <select id="sal_motivo" class="form-select">
+                            <option value="merma_vencimiento">Vencido</option>
+                            <option value="merma_dano">Danado</option>
+                            <option value="merma_preparacion">Desperdicio</option>
+                            <option value="consumo_interno">Comida personal</option>
+                            <option value="regalo">Regalo</option>
+                            <option value="robo_perdida">Perdida</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Justificacion</label>
+                        <input type="text" id="sal_notas" class="form-control" placeholder="Obligatorio">
+                    </div>
+                    <div class="col-12">
+                        <button type="button" class="btn btn-warning w-100" onclick="registrarSalida()"><i class="bi bi-box-arrow-up me-1"></i>Registrar salida</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
     </main>
     <%- include('../partials/footer') %>
@@ -70,62 +96,13 @@
     <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
     <script src="/vendor/sweetalert2/sweetalert2.all.min.js"></script>
     <script>
-        async function registrarSalida() {
-            const ingrediente_id = document.getElementById('ingrediente_id').value;
-            const cantidad = parseFloat(document.getElementById('cantidad').value);
-            const motivo = document.getElementById('motivo').value;
-            const notas = document.getElementById('notas').value.trim();
-
-            if (!ingrediente_id || !cantidad || cantidad <= 0) {
-                Swal.fire('Atencion', 'Seleccione un ingrediente y una cantidad valida', 'warning');
-                return;
-            }
-            if (!motivo) {
-                Swal.fire('Atencion', 'Seleccione un motivo', 'warning');
-                return;
-            }
-            if (!notas) {
-                Swal.fire('Atencion', 'Las notas son obligatorias para salidas', 'warning');
-                return;
-            }
-
-            const result = await Swal.fire({
-                title: 'Confirmar salida',
-                text: 'Se descontara ' + cantidad + ' unidades del stock. Esta seguro?',
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonText: 'Si, registrar',
-                cancelButtonText: 'Cancelar'
-            });
-
-            if (!result.isConfirmed) return;
-
-            const body = {
-                ingrediente_id: ingrediente_id,
-                cantidad: cantidad,
-                motivo: motivo,
-                notas: notas
-            };
-
-            try {
-                const res = await fetch('/almacen/api/salida', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(body)
-                });
-                const data = await res.json();
-                if (data.success) {
-                    Swal.fire('Salida Registrada', 'Stock actualizado correctamente', 'success')
-                        .then(() => {
-                            document.getElementById('formSalida').reset();
-                        });
-                } else {
-                    Swal.fire('Error', data.message || 'Error al registrar salida', 'error');
-                }
-            } catch (err) {
-                Swal.fire('Error', 'Error de conexion', 'error');
-            }
-        }
+    async function registrarSalida(){
+        var i=document.getElementById('sal_ingrediente').value,c=parseFloat(document.getElementById('sal_cantidad').value),m=document.getElementById('sal_motivo').value,n=document.getElementById('sal_notas').value;
+        if(!i||!c||!m||!n){Swal.fire('','Completa todos los campos','warning');return;}
+        var r=await Swal.fire({title:'Confirmar',text:'Descontar '+c+' por '+m,icon:'warning',showCancelButton:true,confirmButtonText:'Si'});
+        if(!r.isConfirmed)return;
+        try{var res=await fetch('/almacen/api/salida',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ingrediente_id:i,cantidad:c,motivo:m,notas:n})});var d=await res.json();if(!res.ok)throw new Error(d.error);Swal.fire({icon:'success',title:'Registrado',timer:1500,showConfirmButton:false}).then(()=>location.reload());}catch(e){Swal.fire('Error',e.message,'error');}
+    }
     </script>
 </body>
 </html>
