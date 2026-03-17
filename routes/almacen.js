@@ -47,6 +47,20 @@ router.get('/inventario', async (req, res) => {
     }
 });
 
+// API: Listar ingredientes (para selects en recetas, etc.)
+router.get('/api/ingredientes', async (req, res) => {
+    try {
+        const tid = req.tenantId || 1;
+        const [ingredientes] = await db.query(
+            'SELECT id, nombre, unidad_medida, costo_unitario, stock_actual FROM almacen_ingredientes WHERE tenant_id=? AND activo=1 ORDER BY nombre',
+            [tid]
+        );
+        res.json(ingredientes);
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
 // API: CRUD ingredientes
 router.post('/api/ingredientes', async (req, res) => {
     try {
