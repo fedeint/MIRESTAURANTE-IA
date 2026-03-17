@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const { registrarAudit } = require('../services/audit');
+const { rankingDisponibilidad } = require('../services/disponibilidad');
 
 // GET /almacen - Dashboard
 router.get('/', async (req, res) => {
@@ -49,10 +50,14 @@ router.get('/inventario', async (req, res) => {
             ORDER BY c.orden, i.nombre
         `, [tid]);
         const [categorias] = await db.query('SELECT * FROM almacen_categorias WHERE tenant_id=? AND activo=1 ORDER BY orden', [tid]);
-        res.render('almacen/inventario', { ingredientes, categorias });
+        // Ranking de platos disponibles
+        let rankingPlatos = [];
+        try { rankingPlatos = await rankingDisponibilidad(); } catch(e) {}
+
+        res.render('almacen/inventario', { ingredientes, categorias, rankingPlatos });
     } catch (e) {
         console.error('Inventario error:', e.message);
-        res.render('almacen/inventario', { ingredientes: [], categorias: [] });
+        res.render('almacen/inventario', { ingredientes: [], categorias: [], rankingPlatos: [] });
     }
 });
 

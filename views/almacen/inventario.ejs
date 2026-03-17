@@ -103,6 +103,45 @@
             </div>
         </div>
 
+        <!-- RANKING DE PLATOS DISPONIBLES -->
+        <div class="card shadow-sm mt-4">
+            <div class="card-header fw-bold d-flex align-items-center gap-2">
+                <i class="bi bi-trophy-fill text-warning"></i>
+                Ranking: Platos disponibles segun inventario
+                <span class="badge bg-primary ms-auto"><%= rankingPlatos ? rankingPlatos.length : 0 %> platos</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead><tr><th>#</th><th>Plato</th><th class="text-center">Disponible</th><th>Ingrediente limitante</th><th class="text-center">Ingredientes</th></tr></thead>
+                        <tbody>
+                            <% if (!rankingPlatos || rankingPlatos.length === 0) { %>
+                                <tr><td colspan="5" class="text-center text-muted py-3">No hay platos con receta configurada</td></tr>
+                            <% } else { rankingPlatos.forEach(function(p, idx) { %>
+                                <tr<% if (p.disponible === 0) { %> style="background:rgba(239,68,68,0.06);"<% } else if (p.disponible <= 5) { %> style="background:rgba(245,158,11,0.06);"<% } %>>
+                                    <td><%= idx + 1 %></td>
+                                    <td class="fw-semibold"><%= p.nombre %></td>
+                                    <td class="text-center">
+                                        <% if (p.disponible === 0) { %>
+                                            <span class="badge bg-danger">AGOTADO</span>
+                                        <% } else if (p.disponible <= 5) { %>
+                                            <span class="badge bg-warning text-dark"><%= p.disponible %></span>
+                                        <% } else if (p.disponible <= 20) { %>
+                                            <span class="badge bg-info"><%= p.disponible %></span>
+                                        <% } else { %>
+                                            <span class="badge bg-success"><%= p.disponible %></span>
+                                        <% } %>
+                                    </td>
+                                    <td class="small text-muted"><%= p.ingrediente_limitante || '-' %></td>
+                                    <td class="text-center"><span class="badge bg-light text-dark"><%= p.ingredientes_total %></span></td>
+                                </tr>
+                            <% }); } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
     </div>
     </main>
     <%- include('../partials/footer') %>

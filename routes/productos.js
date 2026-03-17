@@ -1,12 +1,22 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const { calcularDisponibilidadProducto, rankingDisponibilidad } = require('../services/disponibilidad');
 let ExcelJS; // import perezoso para template/import
 
 // GET /productos - Mostrar página de productos
 router.get('/', async (req, res) => {
     try {
         const [productos] = await db.query('SELECT * FROM productos ORDER BY nombre');
+
+        // Calcular disponibilidad de cada producto
+        for (const prod of productos) {
+            const disp = await calcularDisponibilidadProducto(prod.id);
+            prod.disponible = disp.disponible;
+            prod.sinReceta = disp.sinReceta;
+            prod.ingrediente_limitante = disp.ingrediente_limitante;
+        }
+
         res.render('productos', { productos: productos || [] });
     } catch (error) {
         console.error('Error al obtener productos:', error);

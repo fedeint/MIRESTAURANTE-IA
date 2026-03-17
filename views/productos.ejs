@@ -52,7 +52,8 @@
                                 <th style="width:50px"></th>
                                 <th>Codigo</th>
                                 <th>Nombre</th>
-                                <th class="text-end">Precio venta</th>
+                                <th class="text-end">Precio</th>
+                                <th class="text-center">Disponible</th>
                                 <th class="text-center">Acciones</th>
                             </tr>
                         </thead>
@@ -69,6 +70,17 @@
                                     <td><%= producto.codigo %></td>
                                     <td><%= producto.nombre %></td>
                                     <td class="text-end">S/ <%= (Number(producto.precio_unidad) || 0).toFixed(2) %></td>
+                                    <td class="text-center">
+                                        <% if (producto.sinReceta) { %>
+                                            <span class="badge bg-secondary" title="Sin receta configurada">-</span>
+                                        <% } else if (producto.disponible === 0) { %>
+                                            <span class="badge bg-danger" title="Agotado - <%= producto.ingrediente_limitante %>">AGOTADO</span>
+                                        <% } else if (producto.disponible <= 5) { %>
+                                            <span class="badge bg-warning text-dark" title="Bajo - <%= producto.ingrediente_limitante %>"><%= producto.disponible %> platos</span>
+                                        <% } else { %>
+                                            <span class="badge bg-success"><%= producto.disponible %> platos</span>
+                                        <% } %>
+                                    </td>
                                     <td class="text-center">
                                         <div class="action-buttons">
                                             <!-- Gestión de productos hijos (Padre -> Hijos) -->
