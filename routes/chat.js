@@ -282,7 +282,7 @@ async function obtenerContextoNegocio() {
         const [ventas] = await db.query(`
             SELECT COUNT(*) as total, COALESCE(SUM(total), 0) as monto
             FROM facturas
-            WHERE fecha >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+            WHERE fecha >= NOW() - INTERVAL '30 days'
         `);
         partes.push(`VENTAS (ultimos 30 dias): ${ventas[0].total} facturas, monto total S/${Number(ventas[0].monto).toFixed(2)}`);
     } catch (e) {}
@@ -292,7 +292,7 @@ async function obtenerContextoNegocio() {
         const [metodos] = await db.query(`
             SELECT forma_pago, COUNT(*) as cantidad, SUM(total) as monto
             FROM facturas
-            WHERE fecha >= DATE_SUB(NOW(), INTERVAL 30 DAY)
+            WHERE fecha >= NOW() - INTERVAL '30 days'
             GROUP BY forma_pago
         `);
         if (metodos.length > 0) {
@@ -312,7 +312,7 @@ async function obtenerContextoNegocio() {
         const [hoy] = await db.query(`
             SELECT COUNT(*) as total, COALESCE(SUM(total), 0) as monto
             FROM facturas
-            WHERE DATE(fecha) = CURDATE()
+            WHERE fecha::date = CURRENT_DATE
         `);
         partes.push(`VENTAS HOY: ${hoy[0].total} facturas, S/${Number(hoy[0].monto).toFixed(2)}`);
     } catch (e) {}
@@ -323,8 +323,8 @@ async function obtenerContextoNegocio() {
             SELECT p.nombre, SUM(df.cantidad) as total_vendido, SUM(df.subtotal) as total_monto
             FROM detalle_factura df
             JOIN productos p ON p.id = df.producto_id
-            WHERE df.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)
-            GROUP BY df.producto_id
+            WHERE df.created_at >= NOW() - INTERVAL '30 days'
+            GROUP BY df.producto_id, p.nombre
             ORDER BY total_vendido DESC
             LIMIT 10
         `);

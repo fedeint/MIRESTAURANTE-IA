@@ -9,7 +9,7 @@ router.get('/', async (req, res) => {
         const tid = req.tenantId || 1;
         // Caja abierta actual
         const [[cajaAbierta]] = await db.query(
-            'SELECT * FROM cajas WHERE tenant_id=? AND estado="abierta" ORDER BY fecha_apertura DESC LIMIT 1', [tid]
+            "SELECT * FROM cajas WHERE tenant_id=? AND estado='abierta' ORDER BY fecha_apertura DESC LIMIT 1", [tid]
         );
 
         let movimientos = [];
@@ -54,13 +54,13 @@ router.post('/abrir', async (req, res) => {
         const uid = req.session?.user?.id || 0;
 
         // Verificar que no hay caja abierta
-        const [[abierta]] = await db.query('SELECT id FROM cajas WHERE tenant_id=? AND estado="abierta" LIMIT 1', [tid]);
+        const [[abierta]] = await db.query("SELECT id FROM cajas WHERE tenant_id=? AND estado='abierta' LIMIT 1", [tid]);
         if (abierta) return res.status(400).json({ error: 'Ya hay una caja abierta. Cierra la actual primero.' });
 
         const { monto_apertura, turno_id, nombre_caja } = req.body;
         const [result] = await db.query(
             `INSERT INTO cajas (tenant_id, turno_id, usuario_id, nombre_caja, fecha_apertura, monto_apertura, estado)
-             VALUES (?,?,?,?,NOW(),?,'abierta')`,
+             VALUES (?,?,?,?,NOW(),?,'abierta') RETURNING id`,
             [tid, turno_id || null, uid, nombre_caja || 'Caja 1', monto_apertura || 0]
         );
 
@@ -84,7 +84,7 @@ router.post('/cerrar', async (req, res) => {
         const tid = req.tenantId || 1;
         const uid = req.session?.user?.id || 0;
 
-        const [[caja]] = await db.query('SELECT * FROM cajas WHERE tenant_id=? AND estado="abierta" ORDER BY fecha_apertura DESC LIMIT 1', [tid]);
+        const [[caja]] = await db.query("SELECT * FROM cajas WHERE tenant_id=? AND estado='abierta' ORDER BY fecha_apertura DESC LIMIT 1", [tid]);
         if (!caja) return res.status(400).json({ error: 'No hay caja abierta' });
 
         // Verificar que no haya mesas ocupadas
@@ -129,7 +129,7 @@ router.post('/movimiento', async (req, res) => {
         const tid = req.tenantId || 1;
         const uid = req.session?.user?.id || 0;
 
-        const [[caja]] = await db.query('SELECT id FROM cajas WHERE tenant_id=? AND estado="abierta" LIMIT 1', [tid]);
+        const [[caja]] = await db.query("SELECT id FROM cajas WHERE tenant_id=? AND estado='abierta' LIMIT 1", [tid]);
         if (!caja) return res.status(400).json({ error: 'No hay caja abierta' });
 
         const { tipo, concepto, monto, metodo_pago_id, notas } = req.body;

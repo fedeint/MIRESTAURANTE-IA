@@ -435,30 +435,27 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(() => document.getElementById('nuevoItemHijoNombre')?.focus(), 250);
     };
     
-    // Manejar búsqueda de productos con debounce
+    // Búsqueda de productos con debounce
+    // Nota: cuando la vista es el grid de cartas (productos.ejs), el filtrado real
+    // lo hace el script inline de la página via data-nombre/data-codigo en cada card.
+    // Este handler solo actúa si existe la tabla legacy #productosTabla.
     buscarProducto.addEventListener('input', function(e) {
         const searchTerm = e.target.value.toLowerCase();
-        
-        // Limpiar el timeout anterior
         clearTimeout(timeoutId);
-        
-        // Si el término de búsqueda está vacío, mostrar todos los productos
+
+        const tablaLegacy = document.getElementById('productosTabla');
+        if (!tablaLegacy) return; // Vista de cards: el filtrado lo maneja el script inline
+
         if (!searchTerm) {
-            document.querySelectorAll('#productosTabla tr').forEach(row => {
-                row.style.display = '';
-            });
+            tablaLegacy.querySelectorAll('tr').forEach(row => { row.style.display = ''; });
             return;
         }
-        
-        // Esperar 300ms antes de realizar la búsqueda
         timeoutId = setTimeout(() => {
-            document.querySelectorAll('#productosTabla tr').forEach(row => {
-                const codigo = row.cells[0].textContent.toLowerCase();
-                const nombre = row.cells[1].textContent.toLowerCase();
-                row.style.display = 
-                    codigo.includes(searchTerm) || nombre.includes(searchTerm) 
-                        ? '' 
-                        : 'none';
+            tablaLegacy.querySelectorAll('tr').forEach(row => {
+                const codigo = row.cells[0]?.textContent.toLowerCase() || '';
+                const nombre = row.cells[1]?.textContent.toLowerCase() || '';
+                row.style.display =
+                    codigo.includes(searchTerm) || nombre.includes(searchTerm) ? '' : 'none';
             });
         }, 300);
     });

@@ -71,7 +71,7 @@ async function getEnvioCocinaConfig(executor) {
         };
     } catch (e) {
         // Compatibilidad con instalaciones donde aún no existe alguna columna nueva.
-        if (String(e?.code || '') === 'ER_BAD_FIELD_ERROR') {
+        if (String(e?.code || '') === 'ER_BAD_FIELD_ERROR' || String(e?.code || '') === '42703') {
             const [rows] = await q.query('SELECT cocina_auto_listo_comanda FROM configuracion_impresion LIMIT 1');
             return {
                 auto_listo_comanda: Number(rows?.[0]?.cocina_auto_listo_comanda || 0) === 1,
@@ -253,7 +253,7 @@ router.post('/crear', async (req, res) => {
         const { numero, descripcion } = req.body || {};
         if (!numero) return res.status(400).json({ error: 'El número de mesa es requerido' });
         const [result] = await db.query(
-            'INSERT INTO mesas (numero, descripcion, estado) VALUES (?, ?, ?)',
+            'INSERT INTO mesas (numero, descripcion, estado) VALUES (?, ?, ?) RETURNING id',
             [String(numero), descripcion || null, 'libre']
         );
         res.status(201).json({ id: result.insertId });
@@ -313,7 +313,7 @@ router.delete('/:mesaId', async (req, res) => {
         }
 
         const [result] = await db.query('DELETE FROM mesas WHERE id = ?', [mesaId]);
-        if (result.affectedRows === 0) return res.status(404).json({ error: 'Mesa no encontrada' });
+        if ((result?.affectedRows || 0) === 0) return res.status(404).json({ error: 'Mesa no encontrada' });
 
         res.json({ message: 'Mesa eliminada' });
     } catch (error) {
@@ -358,7 +358,7 @@ router.post('/abrir', async (req, res) => {
             }
 
             const [insert] = await connection.query(
-                `INSERT INTO pedidos (mesa_id, cliente_id, mesero_nombre, estado, total, notas) VALUES (?, ?, ?, 'abierto', 0, ?)` ,
+                `INSERT INTO pedidos (mesa_id, cliente_id, mesero_nombre, estado, total, notas) VALUES (?, ?, ?, 'abierto', 0, ?) RETURNING id`,
                 [mesa_id, cliente_id || null, meseroNombre, notas || null]
             );
 
@@ -591,7 +591,7 @@ router.post('/pedidos/:pedidoId/items', async (req, res) => {
             await connection.beginTransaction();
             const [result] = await connection.query(
                 `INSERT INTO pedido_items (pedido_id, producto_id, cantidad, unidad_medida, precio_unitario, subtotal, estado, nota)
-                 VALUES (?, ?, ?, ?, ?, ?, 'pendiente', ?)` ,
+                 VALUES (?, ?, ?, ?, ?, ?, 'pendiente', ?) RETURNING id`,
                 [pedidoId, producto_id, cantidad, unidad || 'UND', precio, subtotal, nota || null]
             );
             const [pedidoRows] = await connection.query('SELECT mesa_id FROM pedidos WHERE id = ? LIMIT 1', [pedidoId]);
@@ -1092,32 +1092,28 @@ router.post('/pedidos/:pedidoId/facturar', async (req, res) => {
             }
 
             const [facturaInsert] = await connection.query(
-                `INSERT INTO facturas (cliente_id, total, forma_pago) VALUES (?, ?, ?)`,
+                `INSERT INTO facturas (cliente_id, total, forma_pago) VALUES (?, ?, ?) RETURNING id`,
                 [cliente_id, total, formaPagoDB]
             );
             const facturaId = facturaInsert.insertId;
 
-            const detallesValues = items.map(i => [
-                facturaId,
-                i.producto_id,
-                i.cantidad,
-                i.precio_unitario,
-                i.unidad_medida,
-                i.subtotal
-            ]);
-            await connection.query(
-                `INSERT INTO detalle_factura (factura_id, producto_id, cantidad, precio_unitario, unidad_medida, subtotal) VALUES ?`,
-                [detallesValues]
-            );
+            // PostgreSQL does not support VALUES ? bulk syntax; insert individually
+            for (const i of items) {
+                await connection.query(
+                    `INSERT INTO detalle_factura (factura_id, producto_id, cantidad, precio_unitario, unidad_medida, subtotal) VALUES (?, ?, ?, ?, ?, ?)`,
+                    [facturaId, i.producto_id, i.cantidad, i.precio_unitario, i.unidad_medida, i.subtotal]
+                );
+            }
 
             // Guardar pagos en factura_pagos (si existe la tabla)
             try {
                 if (pagosNorm.length > 0) {
-                    const pagosValues = pagosNorm.map(p => ([facturaId, p.metodo, p.monto, p.referencia]));
-                    await connection.query(
-                        'INSERT INTO factura_pagos (factura_id, metodo, monto, referencia) VALUES ?',
-                        [pagosValues]
-                    );
+                    for (const p of pagosNorm) {
+                        await connection.query(
+                            'INSERT INTO factura_pagos (factura_id, metodo, monto, referencia) VALUES (?, ?, ?, ?)',
+                            [facturaId, p.metodo, p.monto, p.referencia]
+                        );
+                    }
                 } else {
                     await connection.query(
                         'INSERT INTO factura_pagos (factura_id, metodo, monto, referencia) VALUES (?, ?, ?, ?)',
@@ -1189,7 +1185,7 @@ router.put('/pedidos/:pedidoId/mover', async (req, res) => {
                 [pedido.mesa_id]
             );
             if ((restantesOrigen[0]?.cnt || 0) === 0) {
-                await connection.query('UPDATE mesas SET estado = "libre" WHERE id = ?', [pedido.mesa_id]);
+                await connection.query("UPDATE mesas SET estado = 'libre' WHERE id = ?", [pedido.mesa_id]);
             }
 
             // Recalcular estado de ambas mesas según items activos reales.

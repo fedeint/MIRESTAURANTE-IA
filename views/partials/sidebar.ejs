@@ -5,8 +5,11 @@
         currentPath==='/ranking' ; const panelAdmin=currentPath.startsWith('/administracion') || currentPath==='/sunat'
         ; const hasSubmodule=panelAlmacen || panelProductos || panelAdmin; %>
 
+        <!-- Precargar fuente de iconos para evitar parpadeo al navegar -->
+        <link rel="preload" href="/vendor/bootstrap-icons/fonts/bootstrap-icons.woff2" as="font" type="font/woff2" crossorigin>
         <!-- CSS critico inline: evita flash blanco y parpadeo al navegar -->
         <style>
+          @font-face{font-display:block;font-family:"bootstrap-icons";src:url("/vendor/bootstrap-icons/fonts/bootstrap-icons.woff2") format("woff2"),url("/vendor/bootstrap-icons/fonts/bootstrap-icons.woff") format("woff");}
           body{background:#FFF8F0;background-image:linear-gradient(135deg,#FFF8F0 0%,#FAFAF7 100%);background-attachment:fixed;margin:0;}
           [data-theme="dark"] body{background:#0f172a;background-image:linear-gradient(135deg,#0f172a 0%,#1e1b4b 50%,#0f172a 100%);}
           .dg-sidebar{height:100vh;position:fixed;top:0;left:0;z-index:1050;background:#131627;display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;transition:width .25s ease;}

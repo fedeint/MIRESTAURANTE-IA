@@ -84,7 +84,7 @@ async function emitirComprobante(tenantId, facturaId, tipoDoc) {
     // Crear registro comprobante
     const [result] = await db.query(
         `INSERT INTO comprobantes_electronicos (tenant_id, factura_id, tipo, serie, correlativo, fecha_emision, cliente_tipo_doc, cliente_num_doc, cliente_razon_social, subtotal_sin_igv, igv, total_con_igv, estado)
-         VALUES (?,?,?,?,?,NOW(),?,?,?,?,?,?,'pendiente')`,
+         VALUES (?,?,?,?,?,NOW(),?,?,?,?,?,?,'pendiente') RETURNING id`,
         [tenantId, facturaId, tipo, serie, correlativo, clienteTipoDoc, factura.numero_documento || '00000000', factura.razon_social || factura.cliente_nombre || 'VARIOS', subtotal, igv, total]
     );
 

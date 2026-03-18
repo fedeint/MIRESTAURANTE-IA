@@ -72,8 +72,8 @@ router.get('/comprobantes', async (req, res) => {
         const { desde, hasta, tipo, estado } = req.query;
         let sql = 'SELECT ce.*, f.total FROM comprobantes_electronicos ce LEFT JOIN facturas f ON f.id=ce.factura_id WHERE ce.tenant_id=?';
         const params = [tid];
-        if (desde) { sql += ' AND DATE(ce.fecha_emision) >= ?'; params.push(desde); }
-        if (hasta) { sql += ' AND DATE(ce.fecha_emision) <= ?'; params.push(hasta); }
+        if (desde) { sql += ' AND ce.fecha_emision::date >= ?'; params.push(desde); }
+        if (hasta) { sql += ' AND ce.fecha_emision::date <= ?'; params.push(hasta); }
         if (tipo) { sql += ' AND ce.tipo = ?'; params.push(tipo); }
         if (estado) { sql += ' AND ce.estado = ?'; params.push(estado); }
         sql += ' ORDER BY ce.created_at DESC LIMIT 100';

@@ -84,12 +84,12 @@ router.post('/api/ingredientes', async (req, res) => {
 
         const [result] = await db.query(
             `INSERT INTO almacen_ingredientes (tenant_id, categoria_id, nombre, codigo, unidad_medida, stock_minimo, costo_unitario, ubicacion, proveedor_id)
-             VALUES (?,?,?,?,?,?,?,?,?)`,
+             VALUES (?,?,?,?,?,?,?,?,?) RETURNING id`,
             [tid, categoria_id||null, nombre, codigo||null, unidad_medida||'kg', stock_minimo||0, costo_unitario||0, ubicacion||null, proveedor_id||null]
         );
 
-        registrarAudit({ tenantId: tid, usuarioId: req.session?.user?.id || 0, accion: 'INSERT', modulo: 'almacen', tabla: 'almacen_ingredientes', registroId: result[0]?.insertId, datosNuevos: req.body, ip: req.ip });
-        res.status(201).json({ id: result[0]?.insertId, message: 'Ingrediente creado' });
+        registrarAudit({ tenantId: tid, usuarioId: req.session?.user?.id || 0, accion: 'INSERT', modulo: 'almacen', tabla: 'almacen_ingredientes', registroId: result?.insertId, datosNuevos: req.body, ip: req.ip });
+        res.status(201).json({ id: result?.insertId, message: 'Ingrediente creado' });
     } catch (e) {
         console.error('Crear ingrediente error:', e.message);
         res.status(500).json({ error: e.message });
@@ -214,8 +214,8 @@ router.get('/api/movimientos', async (req, res) => {
 
         if (ingrediente_id) { sql += ' AND m.ingrediente_id = ?'; params.push(ingrediente_id); }
         if (tipo) { sql += ' AND m.tipo = ?'; params.push(tipo); }
-        if (desde) { sql += ' AND DATE(m.created_at) >= ?'; params.push(desde); }
-        if (hasta) { sql += ' AND DATE(m.created_at) <= ?'; params.push(hasta); }
+        if (desde) { sql += ' AND m.created_at::date >= ?'; params.push(desde); }
+        if (hasta) { sql += ' AND m.created_at::date <= ?'; params.push(hasta); }
 
         sql += ' ORDER BY m.created_at DESC LIMIT ?';
         params.push(Number(lim) || 100);
@@ -269,7 +269,7 @@ router.get('/salidas', async (req, res) => {
             SELECT c.*, u.usuario as usuario_nombre, u.nombre as usuario_nombre_completo
             FROM cajas c
             LEFT JOIN usuarios u ON u.id = c.usuario_id
-            WHERE c.tenant_id=? AND DATE(c.fecha_apertura)=?
+            WHERE c.tenant_id=? AND c.fecha_apertura::date=?
             ORDER BY c.fecha_apertura DESC LIMIT 1
         `, [tid, hoy]);
         cajaInfo = caja || null;
@@ -282,7 +282,7 @@ router.get('/salidas', async (req, res) => {
         FROM almacen_movimientos m
         LEFT JOIN almacen_ingredientes i ON i.id=m.ingrediente_id
         LEFT JOIN usuarios u ON u.id=m.usuario_id
-        WHERE m.tenant_id=? AND m.motivo='venta_platillo' AND DATE(m.created_at)=?
+        WHERE m.tenant_id=? AND m.motivo='venta_platillo' AND m.created_at::date=?
         ORDER BY m.created_at DESC
     `, [tid, hoy]);
 
@@ -326,7 +326,7 @@ router.get('/salidas', async (req, res) => {
             FROM almacen_movimientos m
             JOIN pedido_items pi ON pi.id=m.referencia_id
             JOIN productos p ON p.id=pi.producto_id
-            WHERE m.tenant_id=? AND m.motivo='venta_platillo' AND DATE(m.created_at)=?
+            WHERE m.tenant_id=? AND m.motivo='venta_platillo' AND m.created_at::date=?
             GROUP BY p.id
             ORDER BY veces DESC
             LIMIT 10
@@ -358,7 +358,7 @@ router.get('/que-comprar', async (req, res) => {
             FROM almacen_movimientos m
             JOIN almacen_ingredientes ai ON ai.id = m.ingrediente_id
             LEFT JOIN proveedores p ON p.id = ai.proveedor_id
-            WHERE m.tenant_id=? AND m.motivo='venta_platillo' AND DATE(m.created_at)=?
+            WHERE m.tenant_id=? AND m.motivo='venta_platillo' AND m.created_at::date=?
             GROUP BY m.ingrediente_id
             ORDER BY consumido_semana_pasada DESC
         `, [tid, fechaRef]);
@@ -409,10 +409,10 @@ router.post('/api/proveedores', async (req, res) => {
         const { nombre, ruc, telefono, email, direccion, contacto_nombre, tipo, dias_credito } = req.body;
         if (!nombre) return res.status(400).json({ error: 'Nombre requerido' });
         const [result] = await db.query(
-            'INSERT INTO proveedores (tenant_id, nombre, ruc, telefono, email, direccion, contacto_nombre, tipo, dias_credito) VALUES (?,?,?,?,?,?,?,?,?)',
+            'INSERT INTO proveedores (tenant_id, nombre, ruc, telefono, email, direccion, contacto_nombre, tipo, dias_credito) VALUES (?,?,?,?,?,?,?,?,?) RETURNING id',
             [tid, nombre, ruc||null, telefono||null, email||null, direccion||null, contacto_nombre||null, tipo||'mayorista', dias_credito||0]
         );
-        res.status(201).json({ id: result[0]?.insertId, message: 'Proveedor creado' });
+        res.status(201).json({ id: result?.insertId, message: 'Proveedor creado' });
     } catch (e) {
         res.status(500).json({ error: e.message });
     }

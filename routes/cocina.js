@@ -65,13 +65,13 @@ router.get('/entregados', requireRole(['cocinero', 'mesero', 'administrador']), 
         // Validación simple de formato (YYYY-MM-DD). Si no cumple, ignoramos filtro.
         const isDate = (s) => /^\d{4}-\d{2}-\d{2}$/.test(String(s || ''));
         if (isDate(desde) && isDate(hasta)) {
-            where.push(`DATE(COALESCE(i.servido_at, i.updated_at, i.created_at)) BETWEEN ? AND ?`);
+            where.push(`COALESCE(i.servido_at, i.updated_at, i.created_at)::date BETWEEN ? AND ?`);
             params.push(desde, hasta);
         } else if (isDate(desde) && !isDate(hasta)) {
-            where.push(`DATE(COALESCE(i.servido_at, i.updated_at, i.created_at)) >= ?`);
+            where.push(`COALESCE(i.servido_at, i.updated_at, i.created_at)::date >= ?`);
             params.push(desde);
         } else if (!isDate(desde) && isDate(hasta)) {
-            where.push(`DATE(COALESCE(i.servido_at, i.updated_at, i.created_at)) <= ?`);
+            where.push(`COALESCE(i.servido_at, i.updated_at, i.created_at)::date <= ?`);
             params.push(hasta);
         }
 
@@ -114,13 +114,13 @@ router.get('/rechazados', requireRole(['cocinero', 'mesero', 'administrador']), 
         // Validación simple de formato (YYYY-MM-DD). Si no cumple, ignoramos filtro.
         const isDate = (s) => /^\d{4}-\d{2}-\d{2}$/.test(String(s || ''));
         if (isDate(desde) && isDate(hasta)) {
-            where.push(`DATE(COALESCE(i.updated_at, i.created_at)) BETWEEN ? AND ?`);
+            where.push(`COALESCE(i.updated_at, i.created_at)::date BETWEEN ? AND ?`);
             params.push(desde, hasta);
         } else if (isDate(desde) && !isDate(hasta)) {
-            where.push(`DATE(COALESCE(i.updated_at, i.created_at)) >= ?`);
+            where.push(`COALESCE(i.updated_at, i.created_at)::date >= ?`);
             params.push(desde);
         } else if (!isDate(desde) && isDate(hasta)) {
-            where.push(`DATE(COALESCE(i.updated_at, i.created_at)) <= ?`);
+            where.push(`COALESCE(i.updated_at, i.created_at)::date <= ?`);
             params.push(hasta);
         }
 
@@ -155,7 +155,7 @@ router.put('/item/:id/estado', requireRole(['cocinero', 'administrador']), async
             `UPDATE pedido_items SET estado = ?, ${timestampField} = NOW() WHERE id = ? AND estado IN ('enviado','preparando')`,
             [estado, id]
         );
-        if (result.affectedRows === 0) return res.status(404).json({ error: 'Item no encontrado o en estado no válido' });
+        if ((result?.affectedRows || 0) === 0) return res.status(404).json({ error: 'Item no encontrado o en estado no válido' });
         res.json({ message: 'Estado actualizado' });
     } catch (error) {
         console.error('Error al actualizar estado en cocina:', error);
@@ -174,13 +174,12 @@ router.put('/mesa/:mesaId/preparar', requireRole(['cocinero', 'administrador']),
             return res.status(400).json({ error: 'Mesa inválida' });
         }
 
-        // Actualiza todos los items "enviado" asociados a pedidos de la mesa.
-        // Usamos JOIN para evitar tener que traer ids al backend en dos pasos.
+        // PostgreSQL does not support UPDATE ... JOIN; use a subquery instead.
         const [result] = await db.query(
-            `UPDATE pedido_items i
-             JOIN pedidos p ON p.id = i.pedido_id
-             SET i.estado = 'preparando', i.preparado_at = NOW()
-             WHERE p.mesa_id = ? AND i.estado = 'enviado'`,
+            `UPDATE pedido_items
+             SET estado = 'preparando', preparado_at = NOW()
+             WHERE estado = 'enviado'
+               AND pedido_id IN (SELECT id FROM pedidos WHERE mesa_id = ?)`,
             [mesaId]
         );
 

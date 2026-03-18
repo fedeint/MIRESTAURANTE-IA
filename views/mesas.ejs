@@ -21,6 +21,298 @@
           border-left: 0 !important;
         }
       }
+
+      /* ---- Mesa Card Redesign ---- */
+
+      /* State color tokens */
+      :root {
+        --mc-libre-color:    #16a34a;
+        --mc-libre-bg:       rgba(22, 163, 74, 0.07);
+        --mc-libre-border:   rgba(22, 163, 74, 0.28);
+        --mc-libre-glow:     rgba(22, 163, 74, 0.18);
+
+        --mc-ocupada-color:  #ea580c;
+        --mc-ocupada-bg:     rgba(234, 88, 12, 0.07);
+        --mc-ocupada-border: rgba(234, 88, 12, 0.30);
+        --mc-ocupada-glow:   rgba(234, 88, 12, 0.18);
+
+        --mc-reservada-color:  #2563eb;
+        --mc-reservada-bg:     rgba(37, 99, 235, 0.07);
+        --mc-reservada-border: rgba(37, 99, 235, 0.28);
+        --mc-reservada-glow:   rgba(37, 99, 235, 0.18);
+      }
+
+      /* Grid gap */
+      #gridMesas { --bs-gutter-x: 1rem; --bs-gutter-y: 1rem; }
+
+      /* Base card reset — override the global .card styles for mesa cards only */
+      .mesa-card {
+        background: #ffffff !important;
+        border: 1.5px solid rgba(0,0,0,0.07) !important;
+        border-radius: 12px !important;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.06) !important;
+        transition: transform 0.22s cubic-bezier(0.4,0,0.2,1),
+                    box-shadow 0.22s cubic-bezier(0.4,0,0.2,1),
+                    border-color 0.22s cubic-bezier(0.4,0,0.2,1) !important;
+        cursor: pointer;
+        overflow: hidden;
+        /* Override global card margin */
+        margin-bottom: 0 !important;
+        animation: none !important;
+      }
+
+      /* State variants — border + background tint */
+      .mesa-card[data-mesa-estado="libre"] {
+        border-color: var(--mc-libre-border) !important;
+        background: linear-gradient(160deg, #ffffff 60%, var(--mc-libre-bg)) !important;
+      }
+      .mesa-card[data-mesa-estado="ocupada"] {
+        border-color: var(--mc-ocupada-border) !important;
+        background: linear-gradient(160deg, #ffffff 60%, var(--mc-ocupada-bg)) !important;
+      }
+      .mesa-card[data-mesa-estado="reservada"] {
+        border-color: var(--mc-reservada-border) !important;
+        background: linear-gradient(160deg, #ffffff 60%, var(--mc-reservada-bg)) !important;
+      }
+
+      /* Hover — lift + glow per state */
+      .mesa-card:hover {
+        transform: translateY(-5px) !important;
+      }
+      .mesa-card[data-mesa-estado="libre"]:hover {
+        box-shadow: 0 8px 28px var(--mc-libre-glow), 0 2px 8px rgba(0,0,0,0.06) !important;
+        border-color: var(--mc-libre-color) !important;
+      }
+      .mesa-card[data-mesa-estado="ocupada"]:hover {
+        box-shadow: 0 8px 28px var(--mc-ocupada-glow), 0 2px 8px rgba(0,0,0,0.06) !important;
+        border-color: var(--mc-ocupada-color) !important;
+      }
+      .mesa-card[data-mesa-estado="reservada"]:hover {
+        box-shadow: 0 8px 28px var(--mc-reservada-glow), 0 2px 8px rgba(0,0,0,0.06) !important;
+        border-color: var(--mc-reservada-color) !important;
+      }
+
+      /* State accent bar — 3px left strip */
+      .mesa-card::before {
+        content: '';
+        position: absolute;
+        left: 0; top: 0; bottom: 0;
+        width: 3px;
+        border-radius: 12px 0 0 12px;
+        pointer-events: none;
+      }
+      .mesa-card[data-mesa-estado="libre"]::before    { background: var(--mc-libre-color); }
+      .mesa-card[data-mesa-estado="ocupada"]::before  { background: var(--mc-ocupada-color); }
+      .mesa-card[data-mesa-estado="reservada"]::before{ background: var(--mc-reservada-color); }
+
+      /* Card body padding */
+      .mesa-card .card-body {
+        padding: 1rem 1rem 0.875rem 1.125rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+      }
+
+      /* ---- Header row: number + badge ---- */
+      .mc-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 0.5rem;
+        margin-bottom: 0.25rem;
+      }
+
+      .mc-number {
+        font-size: 1.75rem;
+        font-weight: 800;
+        line-height: 1;
+        letter-spacing: -0.04em;
+        color: #1a1a1a;
+      }
+
+      /* Dot + pill badge */
+      .mc-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 0.2rem 0.6rem 0.2rem 0.45rem;
+        border-radius: 100px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        text-transform: capitalize;
+        white-space: nowrap;
+        flex-shrink: 0;
+      }
+      .mc-badge-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+
+      .mc-badge.mc-libre {
+        background: rgba(22,163,74,0.12);
+        color: #15803d;
+      }
+      .mc-badge.mc-libre .mc-badge-dot { background: #16a34a; }
+
+      .mc-badge.mc-ocupada {
+        background: rgba(234,88,12,0.12);
+        color: #c2410c;
+      }
+      .mc-badge.mc-ocupada .mc-badge-dot { background: #ea580c; }
+
+      .mc-badge.mc-reservada {
+        background: rgba(37,99,235,0.12);
+        color: #1d4ed8;
+      }
+      .mc-badge.mc-reservada .mc-badge-dot { background: #2563eb; }
+
+      /* ---- Description ---- */
+      .mc-desc {
+        font-size: 0.775rem;
+        color: var(--dg-text-secondary);
+        margin: 0.2rem 0 0.75rem;
+        min-height: 1em;
+        line-height: 1.4;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      /* ---- Time elapsed (ocupada) ---- */
+      .mc-time {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: #c2410c;
+        background: rgba(234,88,12,0.08);
+        border-radius: 100px;
+        padding: 0.15rem 0.5rem;
+        margin-bottom: 0.65rem;
+        width: fit-content;
+      }
+      .mc-time i { font-size: 0.65rem; }
+
+      /* ---- Action buttons row ---- */
+      .mc-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+        margin-top: auto;
+      }
+
+      /* Primary row: Liberar + Abrir pedido */
+      .mc-actions-primary {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 0.4rem;
+      }
+
+      /* Secondary row: Ver pedido */
+      /* Already full-width via .mc-actions */
+
+      /* Tertiary row: Editar + Eliminar */
+      .mc-actions-admin {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.4rem;
+      }
+
+      /* Shared action button base */
+      .mc-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        border-radius: 8px !important;
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.4rem 0.65rem;
+        white-space: nowrap;
+        transition: all 0.15s ease;
+        border-width: 1.5px !important;
+        border-style: solid !important;
+        letter-spacing: 0;
+        line-height: 1;
+      }
+      .mc-btn i { font-size: 0.8rem; flex-shrink: 0; }
+
+      /* On mobile: hide button text, show icon only */
+      @media (max-width: 575.98px) {
+        .mc-btn .mc-btn-text { display: none; }
+        .mc-btn { padding: 0.45rem 0.55rem; }
+      }
+
+      /* Specific button styles reusing Bootstrap outline classes */
+      .mc-btn-liberar {
+        border-color: #cbd5e1 !important;
+        color: #475569 !important;
+        background: transparent !important;
+      }
+      .mc-btn-liberar:hover {
+        background: rgba(71,85,105,0.08) !important;
+        border-color: #94a3b8 !important;
+        color: #1e293b !important;
+      }
+
+      .mc-btn-pedido {
+        border-color: var(--mc-ocupada-border) !important;
+        color: var(--mc-ocupada-color) !important;
+        background: var(--mc-ocupada-bg) !important;
+      }
+      .mc-btn-pedido:hover {
+        background: rgba(234,88,12,0.14) !important;
+        border-color: var(--mc-ocupada-color) !important;
+        color: #9a3412 !important;
+      }
+
+      .mc-btn-ver {
+        border-color: rgba(37,99,235,0.25) !important;
+        color: #2563eb !important;
+        background: rgba(37,99,235,0.05) !important;
+        width: 100%;
+      }
+      .mc-btn-ver:hover {
+        background: rgba(37,99,235,0.12) !important;
+        border-color: #2563eb !important;
+      }
+
+      .mc-btn-editar {
+        border-color: #e2e8f0 !important;
+        color: #334155 !important;
+        background: transparent !important;
+      }
+      .mc-btn-editar:hover {
+        background: rgba(51,65,85,0.07) !important;
+        border-color: #94a3b8 !important;
+      }
+
+      .mc-btn-eliminar {
+        border-color: rgba(239,68,68,0.25) !important;
+        color: #dc2626 !important;
+        background: transparent !important;
+      }
+      .mc-btn-eliminar:hover {
+        background: rgba(239,68,68,0.1) !important;
+        border-color: #ef4444 !important;
+      }
+      .mc-btn-eliminar:disabled,
+      .mc-btn-eliminar[disabled] {
+        opacity: 0.38 !important;
+        cursor: not-allowed !important;
+        pointer-events: none;
+      }
+
+      /* Divider line between desc/time and actions */
+      .mc-divider {
+        height: 1px;
+        background: rgba(0,0,0,0.06);
+        margin: 0.5rem 0 0.6rem;
+      }
     </style>
  </head>
 <body>
@@ -33,9 +325,9 @@
             <button id="btnNuevaMesa" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>Nueva mesa</button>
         </div>
 
-        <div class="row" id="gridMesas">
+        <div class="row g-3" id="gridMesas">
             <% mesas.forEach(m => { %>
-                <div class="col-6 col-md-4 col-lg-3 mb-3">
+                <div class="col-6 col-md-4 col-lg-3">
                     <div
                         class="card mesa-card position-relative"
                         data-mesa-id="<%= m.id %>"
@@ -45,40 +337,76 @@
                         data-mesa-pedidos-abiertos="<%= m.pedidos_abiertos || 0 %>"
                     >
                         <div class="card-body">
-                            <span class="badge rounded-pill bg-<%= m.estado === 'libre' ? 'success' : (m.estado === 'ocupada' ? 'warning' : 'secondary') %> estado-badge">
-                                <%= m.estado %>
-                            </span>
-                            <h5 class="card-title mb-1">Mesa <%= m.numero %></h5>
-                            <p class="text-muted small mb-3"><%= m.descripcion || '' %></p>
-                            <div class="d-grid gap-2">
-                                <button class="btn btn-outline-secondary btn-sm btnLiberarMesa">
-                                    <i class="bi bi-unlock me-1"></i> Liberar mesa
+
+                            <%/* ---- Header: big number + state badge ---- */%>
+                            <div class="mc-header">
+                                <span class="mc-number"><%= m.numero %></span>
+                                <span class="mc-badge mc-<%= m.estado %>">
+                                    <span class="mc-badge-dot"></span>
+                                    <%= m.estado %>
+                                </span>
+                            </div>
+
+                            <%/* ---- Description ---- */%>
+                            <p class="mc-desc"><%= m.descripcion || '&nbsp;' %></p>
+
+                            <%/* ---- Time elapsed (only for ocupada) ---- */%>
+                            <% if (m.estado === 'ocupada') { %>
+                                <span class="mc-time">
+                                    <i class="bi bi-clock"></i>
+                                    <span class="mc-elapsed" data-mesa-id="<%= m.id %>">--</span>
+                                </span>
+                            <% } %>
+
+                            <div class="mc-divider"></div>
+
+                            <%/* ---- Action buttons ---- */%>
+                            <div class="mc-actions">
+
+                                <%/* Row 1: Liberar + Abrir pedido */%>
+                                <div class="mc-actions-primary">
+                                    <button class="btn mc-btn mc-btn-liberar btnLiberarMesa"
+                                            data-bs-toggle="tooltip"
+                                            title="Liberar mesa">
+                                        <i class="bi bi-unlock"></i>
+                                        <span class="mc-btn-text">Liberar</span>
+                                    </button>
+                                    <button class="btn mc-btn mc-btn-pedido btnAbrirPedido">
+                                        <i class="bi bi-door-open"></i>
+                                        <span class="mc-btn-text">Abrir&nbsp;/ Continuar</span>
+                                    </button>
+                                </div>
+
+                                <%/* Row 2: Ver pedido */%>
+                                <button class="btn mc-btn mc-btn-ver btnVerPedido">
+                                    <i class="bi bi-list-ul"></i>
+                                    <span class="mc-btn-text">Ver pedido</span>
                                 </button>
-                                <button class="btn btn-outline-primary btn-sm btnAbrirPedido">
-                                    <i class="bi bi-door-open me-1"></i> Abrir / Continuar pedido
-                                </button>
-                                <button class="btn btn-outline-secondary btn-sm btnVerPedido">
-                                    <i class="bi bi-list-ul me-1"></i> Ver pedido
-                                </button>
-                                <div class="btn-group" role="group" aria-label="Acciones mesa">
-                                    <button class="btn btn-outline-dark btn-sm btnEditarMesa">
-                                        <i class="bi bi-pencil-square me-1"></i> Editar
+
+                                <%/* Row 3: Editar + Eliminar */%>
+                                <div class="mc-actions-admin">
+                                    <button class="btn mc-btn mc-btn-editar btnEditarMesa">
+                                        <i class="bi bi-pencil-square"></i>
+                                        <span class="mc-btn-text">Editar</span>
                                     </button>
                                     <button
-                                        class="btn btn-outline-danger btn-sm btnEliminarMesa"
+                                        class="btn mc-btn mc-btn-eliminar btnEliminarMesa"
                                         <%= (m.pedidos_abiertos || 0) > 0 ? 'disabled' : '' %>
                                         data-bs-toggle="tooltip"
                                         title="<%= (m.pedidos_abiertos || 0) > 0 ? 'No se puede eliminar: tiene pedido activo' : 'Eliminar mesa' %>"
                                     >
-                                        <i class="bi bi-trash me-1"></i> Eliminar
+                                        <i class="bi bi-trash"></i>
+                                        <span class="mc-btn-text">Eliminar</span>
                                     </button>
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+
+                            </div><%/* /mc-actions */%>
+
+                        </div><%/* /card-body */%>
+                    </div><%/* /mesa-card */%>
+                </div><%/* /col */%>
             <% }) %>
-        </div>
+        </div><%/* /gridMesas */%>
     </div>
 
     <!-- Offcanvas Pedido -->

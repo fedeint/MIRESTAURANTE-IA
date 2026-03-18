@@ -1,13 +1,14 @@
 require('dotenv').config();
 
 module.exports = {
-  client: 'mysql2',
-  connection: {
-    host: process.env.DB_HOST || 'localhost',
-    user: process.env.DB_USER || 'root',
+  client: 'pg',
+  connection: process.env.DATABASE_URL || {
+    host: process.env.DB_HOST || 'db.vfltsjcktxgmqbrzwthn.supabase.co',
+    user: process.env.DB_USER || 'postgres',
     password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_DATABASE || 'reconocimiento',
-    port: Number(process.env.DB_PORT) || 3306
+    database: process.env.DB_DATABASE || 'postgres',
+    port: Number(process.env.DB_PORT) || 5432,
+    ssl: { rejectUnauthorized: false }
   },
   migrations: {
     directory: './migrations',

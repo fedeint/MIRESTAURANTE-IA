@@ -23,7 +23,7 @@ router.post('/reservas', async (req, res) => {
         if (!fecha || !hora || !cantidad_personas) return res.status(400).json({ error: 'Fecha, hora y personas requeridos' });
         const [result] = await db.query(
             `INSERT INTO reservas (tenant_id, fecha, hora, cantidad_personas, mesa_id, nombre_cliente, telefono_cliente, canal_origen, notas, usuario_id)
-             VALUES (?,?,?,?,?,?,?,?,?,?)`,
+             VALUES (?,?,?,?,?,?,?,?,?,?) RETURNING id`,
             [tid, fecha, hora, cantidad_personas, mesa_id||null, nombre_cliente||null, telefono_cliente||null, canal_origen||'telefono', notas||null, req.session?.user?.id||0]
         );
         res.status(201).json({ id: result.insertId, message: 'Reserva creada' });
@@ -56,7 +56,7 @@ router.post('/delivery', async (req, res) => {
         const { tipo, plataforma, direccion, telefono, nombre_cliente, tiempo_estimado_min, comision_plataforma, notas } = req.body;
         const [result] = await db.query(
             `INSERT INTO pedidos_delivery (tenant_id, tipo, plataforma, direccion, telefono, nombre_cliente, tiempo_estimado_min, comision_plataforma, notas)
-             VALUES (?,?,?,?,?,?,?,?,?)`,
+             VALUES (?,?,?,?,?,?,?,?,?) RETURNING id`,
             [tid, tipo||'delivery', plataforma||'propio', direccion||null, telefono||null, nombre_cliente||null, tiempo_estimado_min||null, comision_plataforma||0, notas||null]
         );
         res.status(201).json({ id: result.insertId, message: 'Pedido delivery creado' });
@@ -114,12 +114,12 @@ router.post('/fidelidad/acumular', async (req, res) => {
         // Upsert puntos
         await db.query(`
             INSERT INTO fidelidad_puntos (tenant_id, cliente_id, puntos_acumulados, puntos_disponibles)
-            VALUES (?,?,?,?) ON DUPLICATE KEY UPDATE puntos_acumulados=puntos_acumulados+?, puntos_disponibles=puntos_disponibles+?
-        `, [tid, cliente_id, puntos, puntos, puntos, puntos]);
+            VALUES (?,?,?,?) ON CONFLICT (tenant_id, cliente_id) DO UPDATE SET puntos_acumulados=fidelidad_puntos.puntos_acumulados+EXCLUDED.puntos_acumulados, puntos_disponibles=fidelidad_puntos.puntos_disponibles+EXCLUDED.puntos_disponibles
+        `, [tid, cliente_id, puntos, puntos]);
 
         // Movimiento
         await db.query(
-            'INSERT INTO fidelidad_movimientos (tenant_id, cliente_id, tipo, puntos, factura_id, descripcion) VALUES (?,?,"acumulacion",?,?,?)',
+            "INSERT INTO fidelidad_movimientos (tenant_id, cliente_id, tipo, puntos, factura_id, descripcion) VALUES (?,?,'acumulacion',?,?,?)",
             [tid, cliente_id, puntos, factura_id||null, `Acumulacion por compra`]
         );
 

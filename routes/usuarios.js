@@ -73,14 +73,16 @@ let _permisosColumnReady = false;
 async function ensurePermisosColumn() {
   if (_permisosColumnReady) return;
   try {
-    const [cols] = await db.query("SHOW COLUMNS FROM usuarios LIKE 'permisos'");
+    const [cols] = await db.query(
+      "SELECT column_name FROM information_schema.columns WHERE table_name='usuarios' AND column_name='permisos' LIMIT 1"
+    );
     if (cols.length === 0) {
       await db.query('ALTER TABLE usuarios ADD COLUMN permisos TEXT DEFAULT NULL');
       console.log('Columna permisos agregada a usuarios');
     }
     _permisosColumnReady = true;
   } catch (e) {
-    if (e && e.code === 'ER_DUP_FIELDNAME') {
+    if (e && (e.code === 'ER_DUP_FIELDNAME' || String(e.message || '').includes('already exists'))) {
       _permisosColumnReady = true;
     } else {
       console.error('Error ensuring permisos column:', e.message);
@@ -179,13 +181,13 @@ router.post('/', async (req, res) => {
     const hash = await bc.hash(password, 10);
     const permisosJson = permisosRaw ? sanitizePermisos(permisosRaw) : null;
     const [result] = await db.query(
-      'INSERT INTO usuarios (usuario, nombre, password_hash, rol, activo, permisos) VALUES (?, ?, ?, ?, ?, ?)',
+      'INSERT INTO usuarios (usuario, nombre, password_hash, rol, activo, permisos) VALUES (?, ?, ?, ?, ?, ?) RETURNING id',
       [usuario, nombre || null, hash, rol, activo, permisosJson]
     );
     res.status(201).json({ id: result.insertId });
   } catch (e) {
     console.error('Error crear usuario:', e);
-    if (e && e.code === 'ER_DUP_ENTRY') return res.status(409).json({ error: 'Ese usuario ya existe' });
+    if (e && (e.code === 'ER_DUP_ENTRY' || String(e.message || '').includes('unique') || String(e.message || '').includes('duplicate'))) return res.status(409).json({ error: 'Ese usuario ya existe' });
     res.status(500).json({ error: 'Error al crear usuario' });
   }
 });
@@ -231,7 +233,7 @@ router.put('/:id(\\d+)', async (req, res) => {
     res.json({ message: 'Usuario actualizado' });
   } catch (e) {
     console.error('Error actualizar usuario:', e);
-    if (e && e.code === 'ER_DUP_ENTRY') return res.status(409).json({ error: 'Ese usuario ya existe' });
+    if (e && (e.code === 'ER_DUP_ENTRY' || String(e.message || '').includes('unique') || String(e.message || '').includes('duplicate'))) return res.status(409).json({ error: 'Ese usuario ya existe' });
     res.status(500).json({ error: 'Error al actualizar usuario' });
   }
 });

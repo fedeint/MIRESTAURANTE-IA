@@ -63,15 +63,15 @@ router.post('/', async (req, res) => {
         }
 
         const [result] = await db.query(
-            'INSERT INTO clientes (nombre, direccion, telefono, tipo_documento, numero_documento, email) VALUES (?, ?, ?, ?, ?, ?)',
+            'INSERT INTO clientes (nombre, direccion, telefono, tipo_documento, numero_documento, email) VALUES (?, ?, ?, ?, ?, ?) RETURNING id',
             [nombre, direccion || null, telefono || null, tipo_documento || 'DNI', numero_documento || null, email || null]
         );
 
         console.log('Cliente creado:', result);
 
-        res.status(201).json({ 
+        res.status(201).json({
             id: result.insertId,
-            message: 'Cliente creado exitosamente' 
+            message: 'Cliente creado exitosamente'
         });
     } catch (error) {
         console.error('Error al crear cliente:', error);
@@ -88,12 +88,12 @@ router.put('/:id', async (req, res) => {
             return res.status(400).json({ error: 'El nombre es requerido' });
         }
 
-        const result = await db.query(
+        const [result] = await db.query(
             'UPDATE clientes SET nombre = ?, direccion = ?, telefono = ?, tipo_documento = ?, numero_documento = ?, email = ? WHERE id = ?',
             [nombre, direccion || null, telefono || null, tipo_documento || 'DNI', numero_documento || null, email || null, req.params.id]
         );
 
-        if (result.affectedRows === 0) {
+        if ((result?.affectedRows || 0) === 0) {
             return res.status(404).json({ error: 'Cliente no encontrado' });
         }
 
@@ -107,9 +107,9 @@ router.put('/:id', async (req, res) => {
 // DELETE /clientes/:id - Eliminar cliente
 router.delete('/:id', async (req, res) => {
     try {
-        const result = await db.query('DELETE FROM clientes WHERE id = ?', [req.params.id]);
-        
-        if (result.affectedRows === 0) {
+        const [result] = await db.query('DELETE FROM clientes WHERE id = ?', [req.params.id]);
+
+        if ((result?.affectedRows || 0) === 0) {
             return res.status(404).json({ error: 'Cliente no encontrado' });
         }
 

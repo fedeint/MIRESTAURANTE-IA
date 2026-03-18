@@ -76,7 +76,7 @@ router.post('/:productoId', async (req, res) => {
         // Crear nueva receta
         const [recetaResult] = await db.query(
             `INSERT INTO recetas (tenant_id, producto_id, version, rendimiento_porciones, tiempo_preparacion_min, food_cost_objetivo_pct, activa)
-             VALUES (?,?,?,?,?,?,1)`,
+             VALUES (?,?,?,?,?,?,1) RETURNING id`,
             [tid, pid, newVersion, rendimiento_porciones || 1, tiempo_preparacion_min || null, food_cost_objetivo_pct || null]
         );
         const recetaId = recetaResult.insertId;

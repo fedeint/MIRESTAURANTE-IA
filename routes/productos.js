@@ -97,7 +97,7 @@ router.post('/:padreId(\\d+)/hijos', async (req, res) => {
 
         // Insert idempotente (si ya existe, no rompe)
         await db.query(
-            'INSERT IGNORE INTO producto_hijos (producto_padre_id, producto_hijo_id) VALUES (?, ?)',
+            'INSERT INTO producto_hijos (producto_padre_id, producto_hijo_id) VALUES (?, ?) ON CONFLICT DO NOTHING',
             [padreId, hijoId]
         );
 
@@ -177,11 +177,11 @@ router.post('/:padreId(\\d+)/hijos-items', async (req, res) => {
         if (!padre) return res.status(404).json({ error: 'Producto padre no encontrado' });
 
         const [result] = await db.query(
-            'INSERT IGNORE INTO producto_hijos_items (producto_padre_id, nombre, orden) VALUES (?, ?, ?)',
+            'INSERT INTO producto_hijos_items (producto_padre_id, nombre, orden) VALUES (?, ?, ?) ON CONFLICT DO NOTHING RETURNING id',
             [padreId, nombre, Number.isFinite(orden) ? orden : 0]
         );
 
-        // Nota: INSERT IGNORE no informa duplicado; devolvemos 201 igual (idempotente)
+        // ON CONFLICT DO NOTHING: if duplicate, RETURNING returns nothing; we return 201 anyway (idempotent)
         res.status(201).json({ id: result?.insertId || null, message: 'Item hijo agregado' });
     } catch (error) {
         console.error('Error al agregar hijo-item al producto:', error);
@@ -237,18 +237,18 @@ router.post('/', async (req, res) => {
             return res.status(400).json({ error: 'El código y nombre son requeridos' });
         }
 
-        const result = await db.query(
-            'INSERT INTO productos (codigo, nombre, precio_kg, precio_unidad, precio_libra, imagen) VALUES (?, ?, ?, ?, ?, ?)',
+        const [result] = await db.query(
+            'INSERT INTO productos (codigo, nombre, precio_kg, precio_unidad, precio_libra, imagen) VALUES (?, ?, ?, ?, ?, ?) RETURNING id',
             [codigo, nombre, precio_kg || 0, precio_unidad || 0, precio_libra || 0, imagen || null]
         );
 
-        res.status(201).json({ 
+        res.status(201).json({
             id: result.insertId,
-            message: 'Producto creado exitosamente' 
+            message: 'Producto creado exitosamente'
         });
     } catch (error) {
         console.error('Error al crear producto:', error);
-        if (error.code === 'ER_DUP_ENTRY') {
+        if (error.code === 'ER_DUP_ENTRY' || String(error.message || '').includes('unique') || String(error.message || '').includes('duplicate')) {
             return res.status(400).json({ error: 'Ya existe un producto con ese código' });
         }
         res.status(500).json({ error: 'Error al crear producto' });
@@ -265,19 +265,19 @@ router.put('/:id', async (req, res) => {
             return res.status(400).json({ error: 'El código y nombre son requeridos' });
         }
 
-        const result = await db.query(
+        const [result] = await db.query(
             'UPDATE productos SET codigo = ?, nombre = ?, precio_kg = ?, precio_unidad = ?, precio_libra = ?, imagen = ? WHERE id = ?',
             [codigo, nombre, precio_kg || 0, precio_unidad || 0, precio_libra || 0, imagen || null, req.params.id]
         );
 
-        if (result.affectedRows === 0) {
+        if ((result?.affectedRows || 0) === 0) {
             return res.status(404).json({ error: 'Producto no encontrado' });
         }
 
         res.json({ message: 'Producto actualizado exitosamente' });
     } catch (error) {
         console.error('Error al actualizar producto:', error);
-        if (error.code === 'ER_DUP_ENTRY') {
+        if (error.code === 'ER_DUP_ENTRY' || String(error.message || '').includes('unique') || String(error.message || '').includes('duplicate')) {
             return res.status(400).json({ error: 'Ya existe un producto con ese código' });
         }
         res.status(500).json({ error: 'Error al actualizar producto' });
@@ -287,9 +287,9 @@ router.put('/:id', async (req, res) => {
 // DELETE /productos/:id - Eliminar producto
 router.delete('/:id', async (req, res) => {
     try {
-        const result = await db.query('DELETE FROM productos WHERE id = ?', [req.params.id]);
-        
-        if (result.affectedRows === 0) {
+        const [result] = await db.query('DELETE FROM productos WHERE id = ?', [req.params.id]);
+
+        if ((result?.affectedRows || 0) === 0) {
             return res.status(404).json({ error: 'Producto no encontrado' });
         }
 
@@ -385,7 +385,7 @@ router.post('/importar', upload.single('archivo'), async (req, res) => {
             await connection.beginTransaction();
             for (const p of rows) {
                 await connection.query(
-                    'INSERT INTO productos (codigo, nombre, precio_kg, precio_unidad, precio_libra) VALUES (?,?,?,?,?) ON DUPLICATE KEY UPDATE nombre=VALUES(nombre), precio_kg=VALUES(precio_kg), precio_unidad=VALUES(precio_unidad), precio_libra=VALUES(precio_libra)',
+                    'INSERT INTO productos (codigo, nombre, precio_kg, precio_unidad, precio_libra) VALUES (?,?,?,?,?) ON CONFLICT (codigo) DO UPDATE SET nombre=EXCLUDED.nombre, precio_kg=EXCLUDED.precio_kg, precio_unidad=EXCLUDED.precio_unidad, precio_libra=EXCLUDED.precio_libra',
                     [p.codigo, p.nombre, p.precio_kg, p.precio_unidad, p.precio_libra]
                 );
             }

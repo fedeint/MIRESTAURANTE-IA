@@ -502,6 +502,21 @@ h1, h2, h3, h4, h5, h6 {
 .dg-sidebar-overlay:not(.open) {
   pointer-events: none !important;
   opacity: 0 !important;
+  visibility: hidden !important;
+}
+
+/* Desktop: NUNCA mostrar overlay (z-index 0, invisible, sin eventos) */
+@media (min-width: 992px) {
+  .dg-sidebar-overlay,
+  .dg-sidebar-overlay.open,
+  #sidebarOverlay,
+  #sidebarOverlay.open {
+    display: none !important;
+    pointer-events: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    z-index: -1 !important;
+  }
 }
 
 /* ---------- Main Content (with sidebar) ---------- */
@@ -538,18 +553,31 @@ h1, h2, h3, h4, h5, h6 {
 
 @media (min-width: 992px) {
   .dg-main { transition: margin-left 0.25s ease; }
-  /* Expanded: sidebar 260 + panel 180 */
+  .dg-panel { transition: left 0.25s ease, opacity 0.2s ease; }
+
+  /* Expanded: sidebar 260 */
   body.sidebar-expanded .dg-main { margin-left: 260px; }
+  body.sidebar-expanded.body-has-panel .dg-main,
   body.sidebar-expanded .dg-main.has-panel { margin-left: 440px; }
   body.sidebar-expanded .dg-panel { left: 260px; }
-  /* Semi: sidebar 64 + panel 180 */
+
+  /* Semi: sidebar 64 */
   body.sidebar-semi .dg-main { margin-left: 64px; }
+  body.sidebar-semi.body-has-panel .dg-main,
   body.sidebar-semi .dg-main.has-panel { margin-left: 244px; }
   body.sidebar-semi .dg-panel { left: 64px; }
-  /* Collapsed: sidebar 64 + panel si hay submodulos */
+
+  /* Collapsed: sidebar 64 */
   body.sidebar-collapsed .dg-main { margin-left: 64px; }
+  body.sidebar-collapsed.body-has-panel .dg-main,
   body.sidebar-collapsed .dg-main.has-panel { margin-left: 244px; }
   body.sidebar-collapsed .dg-panel { left: 64px; }
+
+  /* Cuando el panel se oculta via JS, remover body-has-panel */
+  body.panel-hidden .dg-main { /* margin-left ya manejado por sidebar state */ }
+  body.sidebar-expanded.panel-hidden .dg-main { margin-left: 260px !important; }
+  body.sidebar-semi.panel-hidden .dg-main,
+  body.sidebar-collapsed.panel-hidden .dg-main { margin-left: 64px !important; }
 }
 
 @media (max-width: 991.98px) {

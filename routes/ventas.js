@@ -13,7 +13,7 @@ function buildVentasWhere(queryParams) {
     const params = [];
 
     if (queryParams.desde && queryParams.hasta) {
-        where.push('DATE(f.fecha) BETWEEN ? AND ?');
+        where.push('f.fecha::date BETWEEN ? AND ?');
         params.push(queryParams.desde, queryParams.hasta);
     }
 

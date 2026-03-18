@@ -162,7 +162,7 @@ router.post('/login', async (req, res) => {
   } catch (e) {
     console.error('Error login:', e);
     // Si la tabla no existe aún, guiar a migración
-    if (e && e.code === 'ER_NO_SUCH_TABLE') {
+    if (e && (e.code === 'ER_NO_SUCH_TABLE' || e.code === '42P01')) {
       return res.status(500).render('login', { error: 'Falta migración: cree la tabla usuarios (ver database.sql).' });
     }
     res.status(500).render('login', { error: 'Error interno al iniciar sesión.' });
@@ -221,10 +221,10 @@ router.post('/setup', async (req, res) => {
     res.redirect('/login');
   } catch (e) {
     console.error('Error setup:', e);
-    if (e && e.code === 'ER_NO_SUCH_TABLE') {
+    if (e && (e.code === 'ER_NO_SUCH_TABLE' || e.code === '42P01')) {
       return res.status(500).render('setup', { error: 'Falta migración: cree la tabla usuarios (ver database.sql).' });
     }
-    if (e && e.code === 'ER_DUP_ENTRY') {
+    if (e && (e.code === 'ER_DUP_ENTRY' || String(e.message || '').includes('unique') || String(e.message || '').includes('duplicate'))) {
       return res.status(400).render('setup', { error: 'Ya existe un usuario con ese nombre.' });
     }
     res.status(500).render('setup', { error: 'Error interno creando el usuario administrador.' });

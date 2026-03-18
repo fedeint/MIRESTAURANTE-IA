@@ -152,13 +152,13 @@ router.post('/', async (req, res) => {
 
             // Insertar factura
             const [result] = await connection.query(
-                'INSERT INTO facturas (cliente_id, total, forma_pago) VALUES (?, ?, ?)',
+                'INSERT INTO facturas (cliente_id, total, forma_pago) VALUES (?, ?, ?) RETURNING id',
                 [cliente_id, totalNum, formaPagoDB]
             );
 
             const factura_id = result.insertId;
 
-            // Insertar detalles de factura
+            // Insertar detalles de factura (PostgreSQL does not support VALUES ? bulk syntax; insert individually)
             const detallesValues = productos.map(p => [
                 factura_id,
                 p.producto_id,
@@ -168,20 +168,23 @@ router.post('/', async (req, res) => {
                 p.subtotal
             ]);
 
-            await connection.query(
-                'INSERT INTO detalle_factura (factura_id, producto_id, cantidad, precio_unitario, unidad_medida, subtotal) VALUES ?',
-                [detallesValues]
-            );
+            for (const det of detallesValues) {
+                await connection.query(
+                    'INSERT INTO detalle_factura (factura_id, producto_id, cantidad, precio_unitario, unidad_medida, subtotal) VALUES (?, ?, ?, ?, ?, ?)',
+                    det
+                );
+            }
 
             // Guardar pagos (pago mixto) si existe la tabla factura_pagos
             // Relacionado con database.sql -> tabla factura_pagos
             try {
                 if (pagosNorm.length > 0) {
-                    const pagosValues = pagosNorm.map(p => ([factura_id, p.metodo, p.monto, p.referencia]));
-                    await connection.query(
-                        'INSERT INTO factura_pagos (factura_id, metodo, monto, referencia) VALUES ?',
-                        [pagosValues]
-                    );
+                    for (const p of pagosNorm) {
+                        await connection.query(
+                            'INSERT INTO factura_pagos (factura_id, metodo, monto, referencia) VALUES (?, ?, ?, ?)',
+                            [factura_id, p.metodo, p.monto, p.referencia]
+                        );
+                    }
                 } else {
                     // Compatibilidad: crear 1 pago con el método seleccionado y el total
                     await connection.query(

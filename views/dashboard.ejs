@@ -3,191 +3,381 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - dignita.tech</title>
+    <title>Inicio - dignita.tech</title>
     <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
     <link rel="stylesheet" href="/css/theme.css">
+    <style>
+      .agenda-day{width:48px;text-align:center;padding:6px 4px;border-radius:12px;cursor:pointer;transition:all 0.15s;font-family:'DM Sans',sans-serif;}
+      .agenda-day:hover{background:rgba(255,107,53,0.08);}
+      .agenda-day.active{background:#FF6B35;color:#fff !important;box-shadow:0 2px 8px rgba(255,107,53,0.3);}
+      .agenda-day .day-name{font-size:0.65rem;font-weight:500;color:#9CA3AF;text-transform:capitalize;}
+      .agenda-day .day-num{font-size:1rem;font-weight:700;color:#1A1A1A;}
+      .agenda-day.active .day-name,.agenda-day.active .day-num{color:#fff;}
+      .tarea-check{width:22px;height:22px;border-radius:50%;border:2px solid #D1D5DB;background:transparent;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all 0.2s;padding:0;}
+      .tarea-check:hover{border-color:#FF6B35;background:rgba(255,107,53,0.08);}
+      .tarea-check:hover i{opacity:1 !important;}
+      .tarea-done{background:#22C55E !important;border-color:#22C55E !important;}
+      .tarea-done i{opacity:1 !important;color:#fff !important;}
+      .hist-item{transition:all 0.2s;}
+    </style>
 </head>
 <body>
     <%- include('partials/sidebar') %>
     <div class="dg-main">
     <main class="flex-grow-1">
-    <div class="container">
+    <div class="container-fluid" style="max-width:1200px;padding-top:1.5rem;">
 
-        <!-- Welcome -->
-        <div class="card mb-4" style="background:linear-gradient(135deg,rgba(99,102,241,0.08),rgba(6,182,212,0.05))!important;border:1px solid rgba(99,102,241,0.12)!important;">
-            <div class="card-body py-4">
-                <div class="d-flex align-items-center gap-3">
-                    <div style="width:56px;height:56px;background:linear-gradient(135deg,#6366f1,#06b6d4);border-radius:1rem;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.5rem;box-shadow:0 8px 24px rgba(99,102,241,0.3);"><i class="bi bi-fire"></i></div>
-                    <div>
-                        <h4 class="fw-bold mb-0">Hola, <%= dashboard.userName %>!</h4>
-                        <p class="text-muted mb-0">Bienvenido a <strong>dignita.tech</strong> - Aqui tienes el resumen de tu restaurante hoy</p>
-                    </div>
-                    <div class="ms-auto d-none d-md-block text-end">
-                        <div class="small text-muted"><%= new Date().toLocaleDateString('es-PE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) %></div>
-                    </div>
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h3 class="fw-bold mb-1" style="font-family:'DM Sans',sans-serif;letter-spacing:-0.02em;">
+                    <% var hora = new Date().getHours(); %>
+                    <%= hora < 12 ? 'Buenos dias' : hora < 18 ? 'Buenas tardes' : 'Buenas noches' %>, <%= dashboard.userName %>
+                </h3>
+                <p class="text-muted small mb-0"><%= new Date().toLocaleDateString('es-PE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) %> · restaurante.dignita.tech</p>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+                <div class="position-relative">
+                    <button class="btn btn-light border" style="border-radius:10px;width:38px;height:38px;padding:0;display:flex;align-items:center;justify-content:center;">
+                        <i class="bi bi-bell" style="font-size:1.1rem;"></i>
+                    </button>
+                    <% if (dashboard.alertas > 0) { %>
+                    <span style="position:absolute;top:-4px;right:-4px;width:18px;height:18px;background:#EF4444;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.6rem;font-weight:700;color:#fff;"><%= dashboard.alertas %></span>
+                    <% } %>
+                </div>
+                <div style="width:38px;height:38px;background:#FF6B35;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:0.8rem;font-family:'DM Sans',sans-serif;">
+                    <%= dashboard.userName ? dashboard.userName.substring(0,2).toUpperCase() : 'AD' %>
                 </div>
             </div>
         </div>
 
-        <!-- KPI Cards Row 1 -->
-        <div class="row g-3 mb-4">
-            <div class="col-6 col-lg-3">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center gap-3">
-                            <div style="width:46px;height:46px;background:linear-gradient(135deg,#10b981,#059669);border-radius:.875rem;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2rem;"><i class="bi bi-cash-stack"></i></div>
-                            <div>
-                                <div class="text-muted small fw-bold">Ventas hoy</div>
-                                <div style="font-size:1.4rem;font-weight:800;color:#10b981;">S/ <%= dashboard.ventasHoy %></div>
-                                <div class="text-muted" style="font-size:.7rem;"><%= dashboard.facturasHoy %> facturas</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-6 col-lg-3">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center gap-3">
-                            <div style="width:46px;height:46px;background:linear-gradient(135deg,#6366f1,#4f46e5);border-radius:.875rem;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2rem;"><i class="bi bi-graph-up-arrow"></i></div>
-                            <div>
-                                <div class="text-muted small fw-bold">Ventas del mes</div>
-                                <div style="font-size:1.4rem;font-weight:800;color:#6366f1;">S/ <%= dashboard.ventasMes %></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-6 col-lg-3">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center gap-3">
-                            <div style="width:46px;height:46px;background:linear-gradient(135deg,#f59e0b,#d97706);border-radius:.875rem;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2rem;"><i class="bi bi-grid-3x3-gap-fill"></i></div>
-                            <div>
-                                <div class="text-muted small fw-bold">Mesas</div>
-                                <div style="font-size:1.4rem;font-weight:800;color:#f59e0b;"><%= dashboard.mesasOcupadas %>/<%= dashboard.mesasTotal %></div>
-                                <div class="text-muted" style="font-size:.7rem;"><%= dashboard.mesasTotal - dashboard.mesasOcupadas %> libres</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-6 col-lg-3">
-                <div class="card h-100">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center gap-3">
-                            <div style="width:46px;height:46px;background:linear-gradient(135deg,#ec4899,#f43f5e);border-radius:.875rem;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2rem;"><i class="bi bi-box-seam-fill"></i></div>
-                            <div>
-                                <div class="text-muted small fw-bold">Productos vendidos</div>
-                                <div style="font-size:1.4rem;font-weight:800;color:#ec4899;"><%= dashboard.productosVendidosHoy %></div>
-                                <div class="text-muted" style="font-size:.7rem;">hoy</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        <div class="row g-4">
+            <!-- COLUMNA IZQUIERDA -->
+            <div class="col-lg-8">
 
-        <!-- Row 2: Quick actions + Top products -->
-        <div class="row g-3 mb-4">
-            <!-- Top products today -->
-            <div class="col-lg-6">
-                <div class="card h-100">
-                    <div class="card-header d-flex align-items-center gap-2">
-                        <i class="bi bi-trophy-fill" style="color:#f59e0b;"></i>
-                        <span class="fw-bold">Productos mas vendidos hoy</span>
-                    </div>
-                    <div class="card-body p-0">
-                        <% if (dashboard.topProductos.length === 0) { %>
-                            <div class="text-center text-muted py-4">
-                                <i class="bi bi-inbox" style="font-size:2rem;"></i>
-                                <p class="small mb-0 mt-1">Aun no hay ventas hoy</p>
+                <!-- Pendientes -->
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="fw-bold mb-0" style="font-family:'DM Sans',sans-serif;">Pendientes</h6>
+                    <button class="btn btn-sm d-flex align-items-center gap-1" id="btnNuevaTarea" style="background:#FF6B35;color:#fff;border-radius:8px;font-size:0.75rem;font-weight:600;padding:4px 12px;">
+                        <i class="bi bi-plus-lg" style="font-size:0.7rem;"></i> Agregar
+                    </button>
+                </div>
+
+                <!-- Input para nueva tarea (oculto por defecto) -->
+                <div id="nuevaTareaForm" style="display:none;" class="mb-3">
+                    <div class="card" style="border:2px dashed #FF6B35;border-radius:14px;background:#FFF8F0;">
+                        <div class="card-body py-2 px-3">
+                            <input type="text" id="nuevaTareaTitulo" class="form-control form-control-sm border-0 bg-transparent" placeholder="Que necesitas hacer?" style="font-weight:600;font-size:0.9rem;box-shadow:none;">
+                            <div class="d-flex gap-2 mt-1 align-items-center">
+                                <input type="text" id="nuevaTareaDesc" class="form-control form-control-sm border-0 bg-transparent flex-grow-1" placeholder="Detalle (opcional)" style="font-size:0.75rem;box-shadow:none;">
+                                <button id="btnGuardarTarea" class="btn btn-sm" style="background:#FF6B35;color:#fff;border-radius:6px;font-size:0.7rem;padding:2px 10px;">Guardar</button>
+                                <button id="btnCancelarTarea" class="btn btn-sm btn-light" style="border-radius:6px;font-size:0.7rem;padding:2px 10px;">Cancelar</button>
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <% if (dashboard.pendientes && dashboard.pendientes.length > 0) { %>
+                  <% dashboard.pendientes.forEach(function(p) { %>
+                  <div class="card mb-2 tarea-card" data-tarea-id="<%= p.id %>" style="border:none;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,0.04);transition:opacity 0.3s,transform 0.3s,max-height 0.3s;<%= p.urgente ? 'border-left:3px solid #EF4444;' : '' %>">
+                    <div class="card-body d-flex align-items-center gap-3 py-3">
+                        <% if (p.id) { %>
+                        <button class="tarea-check btn-check-tarea" data-id="<%= p.id %>" style="border-color:<%= p.color %>;" title="Completar">
+                            <i class="bi bi-check2" style="font-size:0.7rem;color:<%= p.color %>;opacity:0;transition:opacity 0.15s;"></i>
+                        </button>
                         <% } else { %>
-                            <div class="list-group list-group-flush">
-                                <% dashboard.topProductos.forEach(function(p, i) { %>
-                                    <div class="list-group-item d-flex align-items-center gap-2 py-2">
-                                        <% if (i === 0) { %>
-                                            <span style="width:28px;height:28px;background:#f59e0b;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-weight:bold;font-size:.8rem;">1</span>
-                                        <% } else if (i === 1) { %>
-                                            <span style="width:28px;height:28px;background:#9ca3af;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-weight:bold;font-size:.8rem;">2</span>
-                                        <% } else if (i === 2) { %>
-                                            <span style="width:28px;height:28px;background:#cd7f32;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;color:#fff;font-weight:bold;font-size:.8rem;">3</span>
-                                        <% } else { %>
-                                            <span class="badge" style="background:rgba(100,116,139,0.1);color:#64748b;width:28px;"><%= i+1 %></span>
-                                        <% } %>
-                                        <span class="fw-semibold flex-grow-1"><%= p.nombre %></span>
-                                        <span class="badge" style="background:rgba(99,102,241,0.1);color:#6366f1;"><%= p.qty %> uds</span>
-                                    </div>
-                                <% }); %>
-                            </div>
+                        <div style="width:8px;height:8px;border-radius:4px;background:<%= p.color %>;flex-shrink:0;"></div>
                         <% } %>
+                        <div class="flex-grow-1">
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="fw-semibold" style="font-size:0.9rem;"><%= p.titulo %></span>
+                                <% if (p.tipo === 'auto') { %>
+                                <span style="font-size:0.55rem;background:#FF6B3515;color:#FF6B35;padding:1px 6px;border-radius:4px;font-weight:600;">DalIA</span>
+                                <% } %>
+                            </div>
+                            <div class="text-muted" style="font-size:0.75rem;"><%= p.desc %></div>
+                        </div>
+                        <div class="d-flex align-items-center gap-1">
+                            <% if (p.href && p.href !== '#') { %>
+                            <a href="<%= p.href %>" class="btn btn-sm" style="background:<%= p.urgente ? '#EF4444' : p.color %>;color:#fff;border-radius:8px;font-size:0.75rem;font-weight:600;padding:4px 14px;"><%= p.btn %></a>
+                            <% } %>
+                            <% if (p.tipo === 'manual' && p.id) { %>
+                            <button class="btn btn-sm btn-delete-tarea" data-id="<%= p.id %>" style="background:transparent;border:none;color:#D1D5DB;font-size:0.8rem;padding:4px;" title="Eliminar"><i class="bi bi-trash3"></i></button>
+                            <% } %>
+                        </div>
+                    </div>
+                  </div>
+                  <% }); %>
+                <% } else { %>
+                <div class="card mb-2" style="border:none;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                    <div class="card-body d-flex align-items-center gap-3 py-3">
+                        <div style="width:22px;height:22px;border-radius:50%;background:#22C55E;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                            <i class="bi bi-check2" style="color:#fff;font-size:0.75rem;"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold" style="font-size:0.9rem;color:#16A34A;">Todo al dia</div>
+                            <div class="text-muted" style="font-size:0.75rem;">No hay tareas pendientes. Buen trabajo!</div>
+                        </div>
                     </div>
                 </div>
+                <% } %>
+
+                <!-- ===== AGENDA ===== -->
+                <%
+                  var hoy = new Date();
+                  var diaSemana = hoy.getDay();
+                  var lunes = new Date(hoy);
+                  lunes.setDate(hoy.getDate() - ((diaSemana + 6) % 7));
+                  var diasSemana = [];
+                  var nombresDias = ['Lun','Mar','Mie','Jue','Vie','Sab','Dom'];
+                  for (var d = 0; d < 7; d++) {
+                    var dia = new Date(lunes);
+                    dia.setDate(lunes.getDate() + d);
+                    diasSemana.push({ nombre: nombresDias[d], num: dia.getDate(), fecha: dia.toISOString().split('T')[0], esHoy: dia.toDateString() === hoy.toDateString() });
+                  }
+                  var mesActual = hoy.toLocaleDateString('es-PE', { month: 'short' });
+                %>
+                <div class="card mt-4 mb-3" style="border:none;border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                    <div class="card-body pb-2">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="fw-bold mb-0" style="font-family:'DM Sans',sans-serif;font-style:italic;font-size:1.1rem;">Agenda</h6>
+                            <span style="font-size:0.8rem;font-weight:600;color:#FF6B35;font-family:'DM Sans',sans-serif;">
+                                <%= hoy.toLocaleDateString('es-PE', {weekday:'short'}).charAt(0).toUpperCase() + hoy.toLocaleDateString('es-PE', {weekday:'short'}).slice(1) %>, <%= hoy.getDate() %> <%= mesActual.charAt(0).toUpperCase() + mesActual.slice(1) %>
+                            </span>
+                        </div>
+                        <!-- Dias de la semana -->
+                        <div class="d-flex justify-content-between mb-3">
+                            <% diasSemana.forEach(function(dia) { %>
+                            <div class="agenda-day <%= dia.esHoy ? 'active' : '' %>" data-fecha="<%= dia.fecha %>">
+                                <div class="day-name"><%= dia.nombre %></div>
+                                <div class="day-num"><%= dia.num %></div>
+                            </div>
+                            <% }); %>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tareas completadas hoy -->
+                <% if (dashboard.historialTareas && dashboard.historialTareas.length > 0) { %>
+                <div class="mb-4">
+                    <div class="d-flex align-items-center gap-2 mb-2" id="toggleHistorial" style="cursor:pointer;">
+                        <h6 class="fw-bold mb-0" style="font-family:'DM Sans',sans-serif;font-size:0.85rem;">Completadas</h6>
+                        <span class="badge" style="background:#22C55E20;color:#16A34A;font-size:0.65rem;border-radius:6px;"><%= dashboard.historialTareas.length %></span>
+                        <i class="bi bi-chevron-down" id="historialChevron" style="font-size:0.7rem;color:#9CA3AF;transition:transform 0.2s;"></i>
+                    </div>
+                    <div id="historialList" style="display:none;">
+                      <% dashboard.historialTareas.forEach(function(h) { %>
+                      <div class="d-flex align-items-center gap-3 py-2 hist-item" style="border-bottom:1px solid #F3F4F6;">
+                          <div class="tarea-check tarea-done" style="width:20px;height:20px;">
+                              <i class="bi bi-check2" style="font-size:0.6rem;color:#fff;opacity:1;"></i>
+                          </div>
+                          <div class="flex-grow-1">
+                              <div style="font-size:0.82rem;color:#9CA3AF;text-decoration:line-through;"><%= h.titulo %></div>
+                              <% if (h.descripcion) { %>
+                              <div style="font-size:0.7rem;color:#D1D5DB;"><%= h.descripcion %></div>
+                              <% } %>
+                          </div>
+                          <div style="font-size:0.65rem;color:#D1D5DB;white-space:nowrap;"><%= h.completada_at ? new Date(h.completada_at).toLocaleTimeString('es-PE', {hour:'2-digit',minute:'2-digit'}) : '' %></div>
+                      </div>
+                      <% }); %>
+                    </div>
+                </div>
+                <% } %>
+
             </div>
 
-            <!-- Quick actions -->
-            <div class="col-lg-6">
-                <div class="card h-100">
-                    <div class="card-header d-flex align-items-center gap-2">
-                        <i class="bi bi-lightning-charge-fill" style="color:#6366f1;"></i>
-                        <span class="fw-bold">Acceso rapido</span>
-                    </div>
-                    <div class="card-body">
-                        <div class="row g-2">
-                            <div class="col-6">
-                                <a href="/mesas" class="d-flex align-items-center gap-2 p-3 rounded text-decoration-none" style="background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.12);border-radius:.75rem!important;">
-                                    <div style="width:38px;height:38px;background:linear-gradient(135deg,#f59e0b,#d97706);border-radius:.625rem;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1rem;"><i class="bi bi-grid-3x3-gap-fill"></i></div>
-                                    <div><div class="fw-bold small" style="color:#92400e;">Mesas</div><div style="font-size:.7rem;color:#b45309;"><%= dashboard.mesasTotal %> mesas</div></div>
-                                </a>
-                            </div>
-                            <div class="col-6">
-                                <a href="/cocina" class="d-flex align-items-center gap-2 p-3 rounded text-decoration-none" style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.12);border-radius:.75rem!important;">
-                                    <div style="width:38px;height:38px;background:linear-gradient(135deg,#ef4444,#dc2626);border-radius:.625rem;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1rem;"><i class="bi bi-fire"></i></div>
-                                    <div><div class="fw-bold small" style="color:#991b1b;">Cocina</div><div style="font-size:.7rem;color:#b91c1c;">Ver pedidos</div></div>
-                                </a>
-                            </div>
-                            <div class="col-6">
-                                <a href="/ventas" class="d-flex align-items-center gap-2 p-3 rounded text-decoration-none" style="background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.12);border-radius:.75rem!important;">
-                                    <div style="width:38px;height:38px;background:linear-gradient(135deg,#10b981,#059669);border-radius:.625rem;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1rem;"><i class="bi bi-receipt"></i></div>
-                                    <div><div class="fw-bold small" style="color:#065f46;">Ventas</div><div style="font-size:.7rem;color:#047857;">Historial</div></div>
-                                </a>
-                            </div>
-                            <div class="col-6">
-                                <a href="/productos" class="d-flex align-items-center gap-2 p-3 rounded text-decoration-none" style="background:rgba(99,102,241,0.06);border:1px solid rgba(99,102,241,0.12);border-radius:.75rem!important;">
-                                    <div style="width:38px;height:38px;background:linear-gradient(135deg,#6366f1,#4f46e5);border-radius:.625rem;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1rem;"><i class="bi bi-box-seam-fill"></i></div>
-                                    <div><div class="fw-bold small" style="color:#3730a3;">Productos</div><div style="font-size:.7rem;color:#4338ca;">Gestionar</div></div>
-                                </a>
-                            </div>
-                            <div class="col-6">
-                                <a href="/clientes" class="d-flex align-items-center gap-2 p-3 rounded text-decoration-none" style="background:rgba(6,182,212,0.06);border:1px solid rgba(6,182,212,0.12);border-radius:.75rem!important;">
-                                    <div style="width:38px;height:38px;background:linear-gradient(135deg,#06b6d4,#0891b2);border-radius:.625rem;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1rem;"><i class="bi bi-people-fill"></i></div>
-                                    <div><div class="fw-bold small" style="color:#155e75;">Clientes</div><div style="font-size:.7rem;color:#0e7490;"><%= dashboard.clientesTotal %> registrados</div></div>
-                                </a>
-                            </div>
-                            <div class="col-6">
-                                <a href="/chat" class="d-flex align-items-center gap-2 p-3 rounded text-decoration-none" style="background:linear-gradient(135deg,rgba(99,102,241,0.06),rgba(6,182,212,0.06));border:1px solid rgba(99,102,241,0.12);border-radius:.75rem!important;">
-                                    <div style="width:38px;height:38px;background:linear-gradient(135deg,#6366f1,#06b6d4);border-radius:.625rem;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1rem;"><i class="bi bi-robot"></i></div>
-                                    <div><div class="fw-bold small" style="color:#3730a3;">Asistente IA</div><div style="font-size:.7rem;color:#4338ca;">Preguntame</div></div>
-                                </a>
+            <!-- COLUMNA DERECHA -->
+            <div class="col-lg-4">
+                <!-- KPIs -->
+                <h6 class="fw-bold mb-3" style="font-family:'DM Sans',sans-serif;">Hoy en numeros</h6>
+                <div class="row g-2 mb-4">
+                    <div class="col-4">
+                        <div class="card text-center" style="border:none;border-radius:12px;box-shadow:0 2px 6px rgba(0,0,0,0.04);">
+                            <div class="card-body py-2 px-1">
+                                <div style="font-size:1rem;font-weight:800;color:#22C55E;font-family:'DM Sans',sans-serif;">S/ <%= dashboard.ventasHoy %></div>
+                                <div style="font-size:0.6rem;color:#9CA3AF;">Ventas</div>
                             </div>
                         </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="card text-center" style="border:none;border-radius:12px;box-shadow:0 2px 6px rgba(0,0,0,0.04);">
+                            <div class="card-body py-2 px-1">
+                                <div style="font-size:1rem;font-weight:800;color:#FF6B35;font-family:'DM Sans',sans-serif;"><%= dashboard.mesasOcupadas %>/<%= dashboard.mesasTotal %></div>
+                                <div style="font-size:0.6rem;color:#9CA3AF;">Mesas</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-4">
+                        <div class="card text-center" style="border:none;border-radius:12px;box-shadow:0 2px 6px rgba(0,0,0,0.04);">
+                            <div class="card-body py-2 px-1">
+                                <div style="font-size:1rem;font-weight:800;color:#6366F1;font-family:'DM Sans',sans-serif;"><%= dashboard.productosVendidosHoy %></div>
+                                <div style="font-size:0.6rem;color:#9CA3AF;">Platos</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- IA del sistema dice -->
+                <h6 class="fw-bold mb-3" style="font-family:'DM Sans',sans-serif;">DalIA dice:</h6>
+
+                <% (dashboard.iaInsights || []).forEach(function(insight) { %>
+                <div class="card mb-2" style="border:none;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,0.03);">
+                    <div class="card-body d-flex align-items-start gap-2 py-2 px-3">
+                        <div style="width:6px;height:6px;border-radius:3px;background:<%= insight.color %>;margin-top:6px;flex-shrink:0;"></div>
+                        <div>
+                            <div style="font-size:0.8rem;font-weight:500;"><%= insight.texto %></div>
+                            <div style="font-size:0.7rem;color:#9CA3AF;">Consejo de DalIA</div>
+                        </div>
+                    </div>
+                </div>
+                <% }); %>
+
+                <!-- Acceso rapido -->
+                <h6 class="fw-bold mb-3 mt-4" style="font-family:'DM Sans',sans-serif;">Acceso rapido</h6>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <a href="/mesas" class="card text-decoration-none" style="border:none;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,0.03);">
+                            <div class="card-body py-2 px-3 d-flex align-items-center gap-2">
+                                <i class="bi bi-grid-3x3-gap-fill" style="color:#FF6B35;"></i>
+                                <span style="font-size:0.8rem;font-weight:500;color:#1A1A1A;">Mesas</span>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a href="/cocina" class="card text-decoration-none" style="border:none;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,0.03);">
+                            <div class="card-body py-2 px-3 d-flex align-items-center gap-2">
+                                <i class="bi bi-fire" style="color:#EF4444;"></i>
+                                <span style="font-size:0.8rem;font-weight:500;color:#1A1A1A;">Cocina</span>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a href="/productos" class="card text-decoration-none" style="border:none;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,0.03);">
+                            <div class="card-body py-2 px-3 d-flex align-items-center gap-2">
+                                <i class="bi bi-egg-fried" style="color:#6366F1;"></i>
+                                <span style="font-size:0.8rem;font-weight:500;color:#1A1A1A;">Productos</span>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a href="/chat" class="card text-decoration-none" style="border:none;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,0.03);">
+                            <div class="card-body py-2 px-3 d-flex align-items-center gap-2">
+                                <i class="bi bi-stars" style="color:#FF6B35;"></i>
+                                <span style="font-size:0.8rem;font-weight:500;color:#1A1A1A;">Asistente IA</span>
+                            </div>
+                        </a>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Footer info -->
-        <div class="text-center mb-3">
-            <span class="text-muted small">Creado por <strong>Leonidas Yauri</strong>, CEO de <strong style="color:#6366f1;">dignita.tech</strong></span>
+        <div class="text-center mt-4 mb-3">
+            <span class="text-muted" style="font-size:0.7rem;">Creado por <strong>Leonidas Yauri</strong>, CEO de <strong style="color:#FF6B35;">dignita.tech</strong></span>
         </div>
 
     </div>
     </main>
     <%- include('partials/footer') %>
     </div>
-
     <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script>
+    // Checkboxes para completar tareas
+    document.querySelectorAll('.btn-check-tarea').forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            var id = this.getAttribute('data-id');
+            var card = this.closest('.tarea-card');
+            var checkBtn = this;
+            fetch('/api/tareas/' + id + '/completar', { method: 'PUT' })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                if (data.completada) {
+                    checkBtn.classList.add('tarea-done');
+                    card.style.opacity = '0.4';
+                    card.style.transform = 'scale(0.98)';
+                    card.querySelector('.fw-semibold').style.textDecoration = 'line-through';
+                    setTimeout(function() {
+                        card.style.maxHeight = card.offsetHeight + 'px';
+                        card.style.overflow = 'hidden';
+                        requestAnimationFrame(function() {
+                            card.style.transition = 'max-height 0.3s,opacity 0.3s,margin 0.3s,padding 0.3s';
+                            card.style.maxHeight = '0';
+                            card.style.marginBottom = '0';
+                            card.style.opacity = '0';
+                        });
+                        setTimeout(function() { card.remove(); }, 400);
+                    }, 600);
+                }
+            });
+        });
+    });
+
+    // Toggle historial completadas
+    var toggleBtn = document.getElementById('toggleHistorial');
+    var histList = document.getElementById('historialList');
+    var chevron = document.getElementById('historialChevron');
+    if (toggleBtn && histList) {
+        toggleBtn.addEventListener('click', function() {
+            var open = histList.style.display !== 'none';
+            histList.style.display = open ? 'none' : '';
+            if (chevron) chevron.style.transform = open ? '' : 'rotate(180deg)';
+        });
+    }
+
+    // Nueva tarea manual
+    var btnNueva = document.getElementById('btnNuevaTarea');
+    var formNueva = document.getElementById('nuevaTareaForm');
+    var inputTitulo = document.getElementById('nuevaTareaTitulo');
+    var inputDesc = document.getElementById('nuevaTareaDesc');
+    var btnGuardar = document.getElementById('btnGuardarTarea');
+    var btnCancelar = document.getElementById('btnCancelarTarea');
+
+    if (btnNueva) {
+        btnNueva.addEventListener('click', function() {
+            formNueva.style.display = '';
+            inputTitulo.focus();
+            btnNueva.style.display = 'none';
+        });
+    }
+    if (btnCancelar) {
+        btnCancelar.addEventListener('click', function() {
+            formNueva.style.display = 'none';
+            btnNueva.style.display = '';
+            inputTitulo.value = '';
+            inputDesc.value = '';
+        });
+    }
+    if (btnGuardar) {
+        btnGuardar.addEventListener('click', function() {
+            var titulo = (inputTitulo.value || '').trim();
+            if (!titulo) return inputTitulo.focus();
+            fetch('/api/tareas', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ titulo: titulo, descripcion: (inputDesc.value || '').trim() })
+            })
+            .then(function(r) { return r.json(); })
+            .then(function() { location.reload(); });
+        });
+    }
+    if (inputTitulo) {
+        inputTitulo.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') { e.preventDefault(); btnGuardar.click(); }
+            if (e.key === 'Escape') btnCancelar.click();
+        });
+    }
+
+    // Eliminar tarea manual
+    document.querySelectorAll('.btn-delete-tarea').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var id = this.getAttribute('data-id');
+            var card = this.closest('.tarea-card');
+            if (!confirm('Eliminar esta tarea?')) return;
+            fetch('/api/tareas/' + id, { method: 'DELETE' })
+            .then(function() { card.remove(); });
+        });
+    });
+    </script>
 </body>
 </html>

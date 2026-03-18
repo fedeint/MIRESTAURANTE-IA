@@ -11,7 +11,7 @@ router.get('/diario', async (req, res) => {
 
         // 1. Caja
         const [[caja]] = await db.query(`
-            SELECT * FROM cajas WHERE tenant_id=? AND DATE(fecha_apertura)=? ORDER BY fecha_apertura DESC LIMIT 1
+            SELECT * FROM cajas WHERE tenant_id=? AND fecha_apertura::date=? ORDER BY fecha_apertura DESC LIMIT 1
         `, [tid, fecha]);
 
         let cajaIngresos = 0, cajaEgresos = 0;
@@ -31,7 +31,7 @@ router.get('/diario', async (req, res) => {
                    COALESCE(SUM(CASE WHEN forma_pago='efectivo' THEN total ELSE 0 END),0) as efectivo,
                    COALESCE(SUM(CASE WHEN forma_pago='tarjeta' THEN total ELSE 0 END),0) as tarjeta,
                    COALESCE(SUM(CASE WHEN forma_pago='transferencia' THEN total ELSE 0 END),0) as transferencia
-            FROM facturas WHERE DATE(fecha)=?
+            FROM facturas WHERE fecha::date=?
         `, [fecha]);
 
         // 3. Top productos
@@ -41,7 +41,7 @@ router.get('/diario', async (req, res) => {
             FROM detalle_factura df
             JOIN facturas f ON f.id=df.factura_id
             JOIN productos p ON p.id=df.producto_id
-            WHERE DATE(f.fecha)=?
+            WHERE f.fecha::date=?
             GROUP BY df.producto_id ORDER BY qty DESC LIMIT 10
         `, [fecha]);
 
@@ -57,7 +57,7 @@ router.get('/diario', async (req, res) => {
         const [[gastosMes]] = await db.query(`
             SELECT COALESCE(SUM(g.monto),0) as total
             FROM gastos g JOIN gastos_categorias gc ON gc.id=g.categoria_id
-            WHERE g.tenant_id=? AND gc.tipo='fijo' AND MONTH(g.fecha)=MONTH(?) AND YEAR(g.fecha)=YEAR(?)
+            WHERE g.tenant_id=? AND gc.tipo='fijo' AND EXTRACT(MONTH FROM g.fecha)=EXTRACT(MONTH FROM ?::date) AND EXTRACT(YEAR FROM g.fecha)=EXTRACT(YEAR FROM ?::date)
         `, [tid, fecha, fecha]);
         const gastosFijosDia = Number(gastosMes.total) / 30;
 

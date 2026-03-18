@@ -1,0 +1,822 @@
+<%
+  /* Only render the mascot when a user session exists */
+  const _mascotaUser = (typeof user !== 'undefined' && user);
+  const _mascotaName = _mascotaUser ? (user.nombre || user.usuario || 'Jefe') : '';
+%>
+<% if (_mascotaUser) { %>
+
+<!-- ============================================================
+     MASCOTA CHEF IA - Floating widget
+     Rendered by: views/partials/mascota.ejs
+     Included from: views/partials/sidebar.ejs
+============================================================ -->
+
+<!-- Toggle switch: fixed top-right, always visible when logged in -->
+<div class="mascota-module-toggle" id="mascotaModuleToggle">
+  <span style="font-size:16px;line-height:1;"><img src="/uploads/dalia.png" alt="DalIA" style="width:18px;height:18px;object-fit:cover;border-radius:50%;vertical-align:middle;"></span>
+  <span class="mascota-toggle-label">DalIA</span>
+  <label class="form-check form-switch mb-0" style="padding-left:2.5em;">
+    <input class="form-check-input" type="checkbox" id="mascotaToggle" checked style="cursor:pointer;">
+  </label>
+</div>
+
+<!-- Floating mascot container -->
+<div class="mascota-container" id="mascotaContainer">
+
+  <!-- Speech bubble (shown above the circle) -->
+  <div class="mascota-bubble" id="mascotaBubble" role="dialog" aria-label="Mensaje del DalIA">
+    <!-- Arrow pointing down toward the circle -->
+    <div class="mascota-bubble-arrow"></div>
+
+    <!-- Bubble header -->
+    <div class="mascota-bubble-header">
+      <span class="mascota-bubble-title"><img src="/uploads/dalia.png" alt="DalIA" style="width:18px;height:18px;object-fit:cover;border-radius:50%;vertical-align:middle;margin-right:4px;"> DalIA dice:</span>
+      <button class="mascota-bubble-close" id="mascotaBubbleClose" aria-label="Cerrar">&times;</button>
+    </div>
+
+    <!-- Bubble message -->
+    <p class="mascota-bubble-text" id="mascotaBubbleText"></p>
+
+    <!-- Chat input -->
+    <div class="mascota-chat-input" id="mascotaChatInput">
+      <div class="mascota-input-wrap">
+        <input type="text" id="mascotaInput" placeholder="Preguntale a DalIA..." autocomplete="off">
+        <button id="mascotaSendBtn" title="Enviar" aria-label="Enviar">
+          <i class="bi bi-send-fill"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Dismiss button -->
+    <button class="mascota-bubble-btn" id="mascotaBubbleBtn">Entendido</button>
+  </div>
+
+  <!-- The chef circle -->
+  <div class="mascota-circle" id="mascotaCircle" title="DalIA - tu asistente inteligente" role="button" tabindex="0" aria-label="DalIA">
+    <span id="mascotaEmoji"><img src="/uploads/dalia.png" alt="DalIA" style="width:54px;height:54px;object-fit:cover;border-radius:50%;"></span>
+    <!-- Zzz indicator (sleep mode) -->
+    <span class="mascota-zzz" id="mascotaZzz">zzz</span>
+  </div>
+
+</div>
+
+<!-- ============================================================
+     STYLES
+============================================================ -->
+<style>
+/* ---------- CSS custom properties ---------- */
+:root {
+  --mascota-orange: #FF6B35;
+  --mascota-orange-shadow: rgba(255, 107, 53, 0.35);
+  --mascota-bubble-bg: #ffffff;
+  --mascota-text: #1A1A1A;
+  --mascota-text-muted: #6B7280;
+  --mascota-radius: 16px;
+}
+
+/* ---------- Toggle switch ---------- */
+.mascota-module-toggle {
+  position: fixed;
+  top: 12px;
+  right: 24px;
+  z-index: 9998;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  padding: 6px 14px;
+  border-radius: 100px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #E5E7EB;
+  transition: opacity 0.2s;
+}
+
+.mascota-toggle-label {
+  font-size: 12px;
+  font-family: 'DM Sans', sans-serif;
+  color: #6B7280;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Orange accent on the Bootstrap switch */
+.mascota-module-toggle .form-check-input:checked {
+  background-color: var(--mascota-orange);
+  border-color: var(--mascota-orange);
+}
+.mascota-module-toggle .form-check-input:focus {
+  box-shadow: 0 0 0 0.2rem rgba(255, 107, 53, 0.25);
+  border-color: var(--mascota-orange);
+}
+
+/* ---------- Floating container ---------- */
+.mascota-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0;
+  transition: opacity 0.3s, transform 0.3s;
+}
+
+/* ---------- Chef circle ---------- */
+.mascota-circle {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  background: var(--mascota-orange);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 32px;
+  line-height: 1;
+  box-shadow: 0 4px 16px var(--mascota-orange-shadow);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  user-select: none;
+  flex-shrink: 0;
+}
+
+.mascota-circle:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 24px var(--mascota-orange-shadow);
+}
+
+.mascota-circle:active {
+  transform: scale(0.97);
+}
+
+/* Zzz text (sleep mode) */
+.mascota-zzz {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'DM Sans', sans-serif;
+  color: var(--mascota-orange);
+  background: #fff;
+  border-radius: 8px;
+  padding: 1px 4px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+  opacity: 0;
+  transition: opacity 0.4s;
+  pointer-events: none;
+  letter-spacing: 1px;
+}
+
+/* ---------- Speech bubble ---------- */
+.mascota-bubble {
+  position: absolute;
+  bottom: 72px;
+  right: 0;
+  width: 300px;
+  max-width: calc(100vw - 48px);
+  background: var(--mascota-bubble-bg);
+  border-radius: var(--mascota-radius);
+  border-top: 3px solid var(--mascota-orange);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  padding: 14px 16px 12px;
+  display: none;
+  animation: mascotaFadeIn 0.3s ease forwards;
+}
+
+.mascota-bubble.show {
+  display: block;
+}
+
+/* Down-pointing arrow toward the circle */
+.mascota-bubble-arrow {
+  position: absolute;
+  bottom: -9px;
+  right: 22px;
+  width: 18px;
+  height: 18px;
+  background: var(--mascota-bubble-bg);
+  transform: rotate(45deg);
+  box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.06);
+  border-radius: 2px;
+  z-index: -1;
+}
+
+/* Bubble header */
+.mascota-bubble-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.mascota-bubble-title {
+  font-size: 13px;
+  font-weight: 700;
+  font-family: 'DM Sans', sans-serif;
+  color: var(--mascota-text);
+}
+
+.mascota-bubble-close {
+  background: none;
+  border: none;
+  font-size: 18px;
+  line-height: 1;
+  color: var(--mascota-text-muted);
+  cursor: pointer;
+  padding: 0 2px;
+  transition: color 0.15s;
+}
+.mascota-bubble-close:hover { color: var(--mascota-text); }
+
+/* Bubble message text */
+.mascota-bubble-text {
+  font-size: 13px;
+  font-family: 'DM Sans', sans-serif;
+  color: var(--mascota-text);
+  line-height: 1.55;
+  margin: 0 0 12px;
+}
+
+/* Chat input */
+.mascota-chat-input {
+  margin: 0 0 10px;
+}
+.mascota-input-wrap {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  background: #F5F5F5;
+  border-radius: 10px;
+  padding: 4px 4px 4px 12px;
+  border: 1px solid #E5E7EB;
+  transition: border-color 0.2s;
+}
+.mascota-input-wrap:focus-within {
+  border-color: var(--mascota-orange);
+}
+.mascota-input-wrap input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font-size: 12px;
+  font-family: 'DM Sans', sans-serif;
+  color: var(--mascota-text);
+  outline: none;
+  padding: 4px 0;
+}
+.mascota-input-wrap input::placeholder {
+  color: #9CA3AF;
+}
+.mascota-input-wrap button {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border: none;
+  background: var(--mascota-orange);
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.15s;
+  flex-shrink: 0;
+}
+.mascota-input-wrap button:hover { opacity: 0.85; }
+.mascota-bubble-text.mascota-loading::after {
+  content: '';
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid #E5E7EB;
+  border-top-color: var(--mascota-orange);
+  border-radius: 50%;
+  animation: mascotaSpin 0.6s linear infinite;
+  margin-left: 6px;
+  vertical-align: middle;
+}
+@keyframes mascotaSpin { to { transform: rotate(360deg); } }
+
+/* Dismiss button */
+.mascota-bubble-btn {
+  display: inline-flex;
+  align-items: center;
+  font-size: 12px;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 600;
+  color: #fff;
+  background: var(--mascota-orange);
+  border: none;
+  border-radius: 8px;
+  padding: 5px 14px;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.mascota-bubble-btn:hover { opacity: 0.88; }
+
+/* ---------- Animations ---------- */
+@keyframes mascotaFadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes mascotaBounce {
+  0%, 100% { transform: translateY(0) scale(1); }
+  40%       { transform: translateY(-10px) scale(1.05); }
+  70%       { transform: translateY(-4px) scale(1.02); }
+}
+
+@keyframes mascotaShake {
+  0%,  100% { transform: rotate(0deg); }
+  15%        { transform: rotate(-10deg); }
+  30%        { transform: rotate(10deg); }
+  45%        { transform: rotate(-8deg); }
+  60%        { transform: rotate(8deg); }
+  75%        { transform: rotate(-4deg); }
+  90%        { transform: rotate(4deg); }
+}
+
+@keyframes mascotaSleepPulse {
+  0%, 100% { opacity: 0.5; transform: rotate(10deg) scale(0.97); }
+  50%       { opacity: 0.55; transform: rotate(10deg) scale(1); }
+}
+
+/* ---------- State classes applied via JS ---------- */
+.mascota-state-sleep .mascota-circle {
+  animation: mascotaSleepPulse 2.5s ease infinite;
+}
+.mascota-state-sleep .mascota-zzz {
+  opacity: 1;
+}
+
+.mascota-bounce .mascota-circle {
+  animation: mascotaBounce 0.55s ease 2;
+}
+
+.mascota-shake .mascota-circle {
+  animation: mascotaShake 0.45s ease 2;
+}
+
+/* ---------- Hidden state (toggle OFF) ---------- */
+.mascota-container.mascota-hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: scale(0.85);
+}
+
+/* ---------- Responsive: push bubble left on small screens ---------- */
+@media (max-width: 480px) {
+  .mascota-bubble {
+    right: auto;
+    left: 0;
+    width: 260px;
+  }
+  .mascota-bubble-arrow {
+    right: auto;
+    left: 22px;
+  }
+  .mascota-module-toggle {
+    right: 12px;
+    top: 8px;
+  }
+}
+</style>
+
+<!-- ============================================================
+     JAVASCRIPT
+============================================================ -->
+<script>
+(function () {
+  'use strict';
+
+  /* ------------------------------------------------------------------ */
+  /* 1. Module-aware tips                                                 */
+  /* ------------------------------------------------------------------ */
+  var MASCOTA_TIPS = {
+    '/': [
+      'Bienvenido jefe! Desde aqui puedes ver el resumen de tu dia: ventas, mesas ocupadas y alertas de stock.',
+      'Revisa las pendientes del dia antes de abrir el restaurante.',
+      'Los KPIs de la derecha te muestran las ventas, mesas y platos del dia en tiempo real.'
+    ],
+    '/caja': [
+      'Recuerda abrir la caja antes de que los meseros empiecen a tomar pedidos.',
+      'Al cerrar caja, cuenta bien los billetes y monedas. El sistema te ayuda con el desglose.',
+      'Si usas Yape o Plin, registra el monto en la seccion correspondiente al cerrar.'
+    ],
+    '/facturacion': [
+      'Aqui generas facturas y boletas. Asegurate de tener el RUC del cliente para facturas.',
+      'Las facturas se envian automaticamente a SUNAT si esta configurado.',
+      'Puedes reimprimir cualquier comprobante desde el historial.'
+    ],
+    '/mesas': [
+      'Cada mesa muestra su estado: libre (verde), ocupada (naranja), por cobrar (roja).',
+      'Para agregar productos a una mesa, haz clic en ella y busca el plato.',
+      'Los pedidos se envian a cocina automaticamente cuando presionas "Enviar a cocina".',
+      'Al enviar a cocina, los insumos se descuentan del almacen automaticamente.'
+    ],
+    '/cocina': [
+      'Los pedidos aparecen en orden. Los que tienen mas de 8 minutos se marcan como prioritarios.',
+      'Marca "Listo" cuando el plato este preparado para que el mesero lo recoja.',
+      'El timer te ayuda a controlar los tiempos de preparacion.'
+    ],
+    '/ventas': [
+      'Aqui ves el historico de ventas por dia, semana o mes.',
+      'Puedes filtrar por metodo de pago: efectivo, Yape, Plin o tarjeta.',
+      'Los graficos te muestran tendencias para planificar mejor tu inventario.'
+    ],
+    '/almacen': [
+      'El inventario se actualiza automaticamente cuando se preparan platos.',
+      'Revisa las alertas de stock bajo para saber que comprar.',
+      'Registra tus ingresos diarios de insumos en "Ingreso diario".'
+    ],
+    '/almacen/inventario': [
+      'Cada ingrediente tiene un stock minimo. Cuando baja de ahi, aparece una alerta.',
+      'El costo unitario es por kg, litro o unidad segun el insumo.'
+    ],
+    '/almacen/entradas': [
+      'Registra aqui todo lo que compras. Selecciona el proveedor y el precio.',
+      'El stock se actualiza automaticamente al registrar una entrada.'
+    ],
+    '/almacen/salidas': [
+      'Las salidas se registran automaticamente al preparar platos.',
+      'Tambien puedes registrar salidas manuales por merma o desperdicio.'
+    ],
+    '/almacen/que-comprar': [
+      'Esta lista te dice exactamente que comprar basado en el stock minimo de cada insumo.',
+      'Puedes exportar la lista para llevarla al mercado.'
+    ],
+    '/almacen/proveedores': [
+      'Registra tus proveedores con nombre, telefono y productos que ofrecen.',
+      'Tener proveedores organizados te ayuda a hacer compras mas rapido.'
+    ],
+    '/almacen/historial': [
+      'Aqui ves todos los movimientos: entradas, salidas y ajustes de inventario.',
+      'Usa los filtros de fecha para auditar periodos especificos.'
+    ],
+    '/productos': [
+      'Cada producto tiene una receta con ingredientes y cantidades exactas.',
+      'La disponibilidad se calcula automaticamente segun el stock de ingredientes.',
+      'Puedes ver cuantos platos puedes preparar con el stock actual.'
+    ],
+    '/ranking': [
+      'El ranking muestra que platos tienen mas disponibilidad segun tu inventario actual.',
+      'Los platos con 0 disponibles aparecen como agotados en el sistema.'
+    ],
+    '/clientes': [
+      'Registra clientes frecuentes para facturacion rapida.',
+      'El RUC o DNI del cliente se usa para generar facturas electronicas.'
+    ],
+    '/administracion': [
+      'Aqui ves las finanzas del restaurante: ingresos, gastos y utilidad.',
+      'Revisa el P&L (Ganancias y Perdidas) para entender si el negocio es rentable.'
+    ],
+    '/administracion/planilla': [
+      'Registra a tu personal y sus sueldos diarios o mensuales.',
+      'No olvides registrar los pagos del dia para llevar el control.'
+    ],
+    '/administracion/gastos': [
+      'Registra gastos como luz, agua, internet, alquiler, gas.',
+      'Los gastos se reflejan automaticamente en el P&L del restaurante.'
+    ],
+    '/sunat': [
+      'Configura tu conexion con SUNAT para enviar comprobantes electronicos.',
+      'Necesitas tu certificado digital y clave SOL para la facturacion electronica.'
+    ],
+    '/canales': [
+      'Conecta tus redes sociales para ver las publicaciones de tu competencia.',
+      'Puedes monitorear Facebook e Instagram desde aqui.'
+    ],
+    '/usuarios': [
+      'Gestiona quien tiene acceso a cada modulo del sistema.',
+      'Cada rol tiene permisos por defecto, pero puedes personalizarlos.',
+      'Un mesero solo ve Mesas y Cocina. Un cocinero solo ve Cocina.'
+    ],
+    '/configuracion': [
+      'Configura los datos de tu restaurante: nombre, RUC, direccion.',
+      'Aqui puedes cambiar el tema visual y las preferencias del sistema.'
+    ],
+    '/chat': [
+      'Preguntale cualquier cosa sobre tu negocio a la IA.',
+      'Puedes preguntar: cuanto vendi hoy?, que plato se vende mas?, etc.'
+    ]
+  };
+
+  /* Fallback tips for unknown paths */
+  var TIPS_FALLBACK = [
+    'Recuerda revisar el stock de insumos periodicamente.',
+    'Un buen control de costos marca la diferencia en la rentabilidad.',
+    'Mantener el sistema actualizado te ayuda a tomar mejores decisiones.'
+  ];
+
+  /* ------------------------------------------------------------------ */
+  /* 2. DOM references                                                    */
+  /* ------------------------------------------------------------------ */
+  var container   = document.getElementById('mascotaContainer');
+  var circle      = document.getElementById('mascotaCircle');
+  var bubble      = document.getElementById('mascotaBubble');
+  var bubbleText  = document.getElementById('mascotaBubbleText');
+  var bubbleClose = document.getElementById('mascotaBubbleClose');
+  var bubbleBtn   = document.getElementById('mascotaBubbleBtn');
+  var emojiEl     = document.getElementById('mascotaEmoji');
+  var zzzEl       = document.getElementById('mascotaZzz');
+  var toggle      = document.getElementById('mascotaToggle');
+
+  if (!container || !circle) return; /* Safety guard */
+
+  /* ------------------------------------------------------------------ */
+  /* 3. State                                                             */
+  /* ------------------------------------------------------------------ */
+  var isOpen        = false;   /* Is bubble currently visible?          */
+  var isSleeping    = false;
+  var isShaking     = false;
+  var clickCount    = 0;
+  var clickTimer    = null;
+  var idleTimer     = null;
+  var greetingTimer = null;
+  var tipIndex      = -1;      /* Tracks last shown tip to avoid repeat  */
+
+  /* ------------------------------------------------------------------ */
+  /* 4. Helper: get tips for current page                                 */
+  /* ------------------------------------------------------------------ */
+  function getTipsForPage() {
+    var path = window.location.pathname.replace(/\/$/, '') || '/';
+    /* Exact match first */
+    if (MASCOTA_TIPS[path]) return MASCOTA_TIPS[path];
+    /* Prefix match (e.g. /almacen/xyz -> /almacen) */
+    var parts = path.split('/');
+    while (parts.length > 1) {
+      parts.pop();
+      var candidate = parts.join('/') || '/';
+      if (MASCOTA_TIPS[candidate]) return MASCOTA_TIPS[candidate];
+    }
+    return TIPS_FALLBACK;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* 5. Helper: pick next tip (sequential rotation, skip last shown)     */
+  /* ------------------------------------------------------------------ */
+  function pickNextTip() {
+    var tips = getTipsForPage();
+    if (tips.length === 1) return tips[0];
+    var next;
+    do {
+      next = Math.floor(Math.random() * tips.length);
+    } while (next === tipIndex && tips.length > 1);
+    tipIndex = next;
+    return tips[next];
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* 6. Bubble open / close                                               */
+  /* ------------------------------------------------------------------ */
+  function showBubble(text) {
+    bubbleText.textContent = text;
+    /* Re-trigger animation */
+    bubble.classList.remove('show');
+    void bubble.offsetHeight; /* reflow */
+    bubble.classList.add('show');
+    isOpen = true;
+  }
+
+  function closeBubble() {
+    bubble.classList.remove('show');
+    isOpen = false;
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* 7. Greeting based on time of day                                     */
+  /* ------------------------------------------------------------------ */
+  function getGreeting() {
+    var h = new Date().getHours();
+    if (h < 12)       return 'Buenos dias, jefe!';
+    else if (h < 18)  return 'Buenas tardes, jefe!';
+    else              return 'Buenas noches, jefe!';
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* 8. Sleep / wake                                                      */
+  /* ------------------------------------------------------------------ */
+  function goToSleep() {
+    if (isSleeping) return;
+    isSleeping = true;
+    container.classList.add('mascota-state-sleep');
+    closeBubble();
+  }
+
+  function wakeUp() {
+    if (!isSleeping) return;
+    isSleeping = false;
+    container.classList.remove('mascota-state-sleep');
+    resetIdleTimer();
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* 9. Idle timer (2 minutes to fall asleep)                            */
+  /* ------------------------------------------------------------------ */
+  function resetIdleTimer() {
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(goToSleep, 2 * 60 * 1000);
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* 10. Animation helpers                                               */
+  /* ------------------------------------------------------------------ */
+  function triggerAnim(cls, durationMs) {
+    container.classList.remove('mascota-bounce', 'mascota-shake');
+    void container.offsetHeight;
+    container.classList.add(cls);
+    setTimeout(function () { container.classList.remove(cls); }, durationMs);
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* 11. Click handler on the circle                                     */
+  /* ------------------------------------------------------------------ */
+  circle.addEventListener('click', function () {
+    /* Wake up if sleeping */
+    if (isSleeping) {
+      wakeUp();
+      showBubble(pickNextTip());
+      triggerAnim('mascota-bounce', 1200);
+      return;
+    }
+
+    resetIdleTimer();
+
+    /* Rapid-click detection */
+    clickCount++;
+    clearTimeout(clickTimer);
+    clickTimer = setTimeout(function () { clickCount = 0; }, 2000);
+
+    if (clickCount >= 5) {
+      clickCount = 0;
+      closeBubble();
+      showBubble('Dejame trabajar tranquilo!');
+      triggerAnim('mascota-shake', 1000);
+      return;
+    }
+
+    /* Normal behaviour: toggle bubble */
+    if (isOpen) {
+      closeBubble();
+    } else {
+      showBubble(pickNextTip());
+      triggerAnim('mascota-bounce', 1100);
+    }
+  });
+
+  /* Keyboard accessibility */
+  circle.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      circle.click();
+    }
+  });
+
+  /* ------------------------------------------------------------------ */
+  /* 12. Close buttons                                                   */
+  /* ------------------------------------------------------------------ */
+  bubbleClose.addEventListener('click', closeBubble);
+  bubbleBtn.addEventListener('click', closeBubble);
+
+  /* ------------------------------------------------------------------ */
+  /* 12b. Chat input: send question to AI                               */
+  /* ------------------------------------------------------------------ */
+  var chatInput   = document.getElementById('mascotaInput');
+  var chatSendBtn = document.getElementById('mascotaSendBtn');
+
+  function sendChatMessage() {
+    var msg = (chatInput.value || '').trim();
+    if (!msg) return;
+    chatInput.value = '';
+    bubbleText.textContent = 'Pensando...';
+    bubbleText.classList.add('mascota-loading');
+    if (!isOpen) openBubble(msg);
+
+    fetch('/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mensaje: msg, rol: '<%= _mascotaUser ? (user.rol || "") : "" %>' })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      bubbleText.classList.remove('mascota-loading');
+      var respuesta = data.respuesta || data.response || data.reply || data.message || 'No tengo respuesta para eso, jefe.';
+      // Truncate if too long for the small bubble
+      if (respuesta.length > 250) respuesta = respuesta.substring(0, 247) + '...';
+      bubbleText.textContent = respuesta;
+    })
+    .catch(function(err) {
+      bubbleText.classList.remove('mascota-loading');
+      bubbleText.textContent = 'Ay, no pude conectarme. Intenta de nuevo, jefe.';
+    });
+  }
+
+  if (chatSendBtn) {
+    chatSendBtn.addEventListener('click', sendChatMessage);
+  }
+  if (chatInput) {
+    chatInput.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        sendChatMessage();
+      }
+    });
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* 13. Mouse proximity: wake up when cursor is close                  */
+  /* ------------------------------------------------------------------ */
+  document.addEventListener('mousemove', function (e) {
+    if (!isSleeping) return;
+    var rect = circle.getBoundingClientRect();
+    var cx = rect.left + rect.width / 2;
+    var cy = rect.top  + rect.height / 2;
+    var dist = Math.sqrt(Math.pow(e.clientX - cx, 2) + Math.pow(e.clientY - cy, 2));
+    if (dist < 120) wakeUp();
+  });
+
+  /* ------------------------------------------------------------------ */
+  /* 14. Toggle switch (show / hide mascot)                             */
+  /* ------------------------------------------------------------------ */
+  function applyToggleState(enabled) {
+    if (enabled) {
+      container.classList.remove('mascota-hidden');
+    } else {
+      container.classList.add('mascota-hidden');
+      closeBubble();
+    }
+    localStorage.setItem('mascota-enabled', enabled ? '1' : '0');
+  }
+
+  toggle.addEventListener('change', function () {
+    applyToggleState(toggle.checked);
+  });
+
+  /* Restore saved preference */
+  var saved = localStorage.getItem('mascota-enabled');
+  if (saved === '0') {
+    toggle.checked = false;
+    applyToggleState(false);
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* 15. Initial greeting on page load                                  */
+  /* ------------------------------------------------------------------ */
+  greetingTimer = setTimeout(function () {
+    /* Only show greeting if mascot is visible */
+    if (toggle.checked) {
+      showBubble(getGreeting());
+      triggerAnim('mascota-bounce', 1100);
+
+      /* Auto-close greeting after 3 s */
+      setTimeout(function () {
+        if (isOpen && bubbleText.textContent === getGreeting()) {
+          closeBubble();
+        }
+      }, 3000);
+    }
+
+    resetIdleTimer();
+  }, 1200);
+
+  /* ------------------------------------------------------------------ */
+  /* 16. Public API (other modules can call window.mascota.*)           */
+  /* ------------------------------------------------------------------ */
+  window.mascota = {
+    /**
+     * Show a custom message in the bubble (called from other pages).
+     * @param {string} mensaje
+     */
+    notificar: function (mensaje) {
+      if (!toggle.checked) return;
+      wakeUp();
+      showBubble(mensaje || 'Hay algo que revisar!');
+      triggerAnim('mascota-bounce', 1100);
+      resetIdleTimer();
+    },
+
+    /**
+     * Show a success/celebration message.
+     * @param {string} mensaje
+     */
+    celebrar: function (mensaje) {
+      if (!toggle.checked) return;
+      wakeUp();
+      showBubble(mensaje || 'Todo va de maravilla!');
+      triggerAnim('mascota-bounce', 1100);
+      resetIdleTimer();
+    },
+
+    /** Programmatically close the bubble */
+    cerrar: closeBubble,
+
+    /** Wake the mascot */
+    despertar: wakeUp
+  };
+
+})();
+</script>
+
+<% } /* end if _mascotaUser */ %>

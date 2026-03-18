@@ -153,35 +153,256 @@ app.get('/', requireAuth, async (req, res) => {
     if (rol === 'mesero') return res.redirect('/mesas');
 
     // Admin dashboard data
-    const dashboard = { ventasHoy: 0, ventasMes: 0, mesasTotal: 0, mesasOcupadas: 0, productosVendidosHoy: 0, clientesTotal: 0, alertas: 0, topProductos: [], userName: req.session?.user?.nombre || req.session?.user?.usuario || 'Admin', facturasHoy: 0 };
+    const dashboard = { ventasHoy: 0, ventasMes: 0, mesasTotal: 0, mesasOcupadas: 0, productosVendidosHoy: 0, clientesTotal: 0, alertas: 0, topProductos: [], userName: req.session?.user?.nombre || req.session?.user?.usuario || 'Admin', facturasHoy: 0, cajaAbierta: false, personalSinPago: 0, personalTotal: 0, meserosActivos: 0, ratioMesasPorMesero: 0, ventasAyer: 0, pendientes: [], iaInsights: [] };
     try {
         const tid = req.tenantId || 1;
-        const [[vh]] = await db.query("SELECT COUNT(*) as c, COALESCE(SUM(total),0) as m FROM facturas WHERE tenant_id=? AND DATE(fecha)=CURDATE()", [tid]);
+        const [[vh]] = await db.query("SELECT COUNT(*) as c, COALESCE(SUM(total),0) as m FROM facturas WHERE fecha::date = CURRENT_DATE");
         dashboard.ventasHoy = Number(vh.m).toFixed(2);
         dashboard.facturasHoy = vh.c;
 
-        const [[vm]] = await db.query("SELECT COALESCE(SUM(total),0) as m FROM facturas WHERE tenant_id=? AND fecha >= DATE_SUB(NOW(), INTERVAL 30 DAY)", [tid]);
+        const [[vm]] = await db.query("SELECT COALESCE(SUM(total),0) as m FROM facturas WHERE fecha >= NOW() - INTERVAL '30 days'");
         dashboard.ventasMes = Number(vm.m).toFixed(2);
 
-        const [[mt]] = await db.query("SELECT COUNT(*) as t FROM mesas WHERE tenant_id=?", [tid]);
+        const [[mt]] = await db.query("SELECT COUNT(*) as t FROM mesas");
         dashboard.mesasTotal = mt.t;
-        const [[mo]] = await db.query("SELECT COUNT(*) as t FROM mesas WHERE tenant_id=? AND estado='ocupada'", [tid]);
+        const [[mo]] = await db.query("SELECT COUNT(*) as t FROM mesas WHERE estado='ocupada'");
         dashboard.mesasOcupadas = mo.t;
 
-        const [[ph]] = await db.query("SELECT COALESCE(SUM(df.cantidad),0) as t FROM detalle_factura df JOIN facturas f ON f.id=df.factura_id WHERE f.tenant_id=? AND DATE(f.fecha)=CURDATE()", [tid]);
+        const [[ph]] = await db.query("SELECT COALESCE(SUM(df.cantidad),0) as t FROM detalle_factura df JOIN facturas f ON f.id=df.factura_id WHERE f.fecha::date = CURRENT_DATE");
         dashboard.productosVendidosHoy = Number(ph.t);
 
-        const [[cl]] = await db.query("SELECT COUNT(*) as t FROM clientes WHERE tenant_id=?", [tid]);
+        const [[cl]] = await db.query("SELECT COUNT(*) as t FROM clientes");
         dashboard.clientesTotal = cl.t;
 
-        const [tp] = await db.query("SELECT p.nombre, SUM(df.cantidad) as qty FROM detalle_factura df JOIN productos p ON p.id=df.producto_id JOIN facturas f ON f.id=df.factura_id WHERE f.tenant_id=? AND DATE(f.fecha)=CURDATE() GROUP BY df.producto_id ORDER BY qty DESC LIMIT 5", [tid]);
+        const [tp] = await db.query("SELECT p.nombre, SUM(df.cantidad) as qty FROM detalle_factura df JOIN productos p ON p.id=df.producto_id JOIN facturas f ON f.id=df.factura_id WHERE f.fecha::date = CURRENT_DATE GROUP BY df.producto_id, p.nombre ORDER BY qty DESC LIMIT 5");
         dashboard.topProductos = tp || [];
 
         const [[al]] = await db.query("SELECT COUNT(*) as t FROM almacen_ingredientes WHERE tenant_id=? AND activo=1 AND stock_actual <= stock_minimo", [tid]);
         dashboard.alertas = al.t;
+
+        // Caja abierta?
+        try {
+            const [[caja]] = await db.query("SELECT id FROM cajas WHERE tenant_id=? AND estado='abierta' LIMIT 1", [tid]);
+            dashboard.cajaAbierta = !!caja;
+        } catch(_) {}
+
+        // Personal sin pago hoy
+        try {
+            const [[pTotal]] = await db.query("SELECT COUNT(*) as t FROM personal WHERE tenant_id=? AND activo=1", [tid]);
+            dashboard.personalTotal = pTotal.t;
+            const [[pPagados]] = await db.query("SELECT COUNT(DISTINCT personal_id) as t FROM planilla_pagos WHERE tenant_id=? AND fecha::date = CURRENT_DATE", [tid]);
+            dashboard.personalSinPago = Math.max(0, pTotal.t - pPagados.t);
+        } catch(_) {}
+
+        // Meseros activos y ratio mesas/mesero
+        try {
+            const [[meseros]] = await db.query("SELECT COUNT(*) as t FROM usuarios WHERE rol='mesero' AND activo=1");
+            dashboard.meserosActivos = meseros.t;
+            dashboard.ratioMesasPorMesero = meseros.t > 0 ? Math.round(dashboard.mesasTotal / meseros.t) : 0;
+        } catch(_) {}
+
+        // Ventas ayer (para comparar)
+        try {
+            const [[va]] = await db.query("SELECT COALESCE(SUM(total),0) as m FROM facturas WHERE fecha::date = CURRENT_DATE - INTERVAL '1 day'");
+            dashboard.ventasAyer = Number(va.m).toFixed(2);
+        } catch(_) {}
+
+        // === PENDIENTES DINAMICOS CON PRIORIDAD ===
+        // Prioridad: 1=critico (bloquea operacion), 2=urgente (afecta servicio), 3=importante (afecta finanzas), 4=info
+        const pendientes = [];
+
+        // P1 CRITICO: Caja cerrada bloquea TODO el flujo de mesas/cocina/facturación
+        if (!dashboard.cajaAbierta) {
+            pendientes.push({ prioridad: 1, color: '#EF4444', titulo: 'Abrir caja del dia', desc: 'Sin caja abierta los meseros no pueden tomar pedidos', btn: 'Abrir', href: '/caja', urgente: true });
+        }
+
+        // P1 CRITICO: Ingredientes en 0 = platos que no se pueden preparar
+        let platosAgotados = 0;
+        try {
+            const [[pa]] = await db.query("SELECT COUNT(*) as t FROM almacen_ingredientes WHERE tenant_id=? AND activo=1 AND stock_actual <= 0", [tid]);
+            platosAgotados = pa.t;
+        } catch(_) {}
+        if (platosAgotados > 0) {
+            pendientes.push({ prioridad: 1, color: '#EF4444', titulo: 'Insumos agotados', desc: platosAgotados + ' ingredientes con stock en 0. No se pueden preparar platos', btn: 'Ver', href: '/almacen/inventario', urgente: true });
+        }
+
+        // P2 URGENTE: Stock bajo (no agotado pero cerca)
+        if (dashboard.alertas > 0) {
+            const esUrgente = dashboard.alertas > 10;
+            pendientes.push({ prioridad: 2, color: '#F59E0B', titulo: 'Comprar insumos', desc: dashboard.alertas + ' insumos bajo minimo' + (esUrgente ? ' — comprar antes del servicio' : ''), btn: 'Ver', href: '/almacen/que-comprar', urgente: esUrgente });
+        }
+
+        // P2 URGENTE: Ratio mesas/mesero muy alto = mal servicio
+        if (dashboard.meserosActivos > 0 && dashboard.ratioMesasPorMesero > 15) {
+            pendientes.push({ prioridad: 2, color: '#EF4444', titulo: 'Falta personal de salon', desc: dashboard.meserosActivos + ' meseros para ' + dashboard.mesasTotal + ' mesas (' + dashboard.ratioMesasPorMesero + ' mesas c/u)', btn: 'Ver', href: '/usuarios', urgente: true });
+        } else if (dashboard.meserosActivos === 0 && dashboard.mesasTotal > 0) {
+            pendientes.push({ prioridad: 2, color: '#EF4444', titulo: 'Sin meseros registrados', desc: 'Crea al menos un usuario mesero para operar las mesas', btn: 'Crear', href: '/usuarios', urgente: true });
+        }
+
+        // P3 IMPORTANTE: Planilla pendiente
+        if (dashboard.personalSinPago > 0 && dashboard.personalTotal > 0) {
+            pendientes.push({ prioridad: 3, color: '#3B82F6', titulo: 'Pago de personal', desc: dashboard.personalSinPago + ' de ' + dashboard.personalTotal + ' empleados sin pago hoy', btn: 'Pagar', href: '/administracion/planilla', urgente: false });
+        }
+
+        // P3 IMPORTANTE: Gastos fijos del mes sin registrar
+        try {
+            const [[gf]] = await db.query("SELECT COUNT(*) as t FROM gastos g JOIN gastos_categorias gc ON gc.id=g.categoria_id WHERE g.tenant_id=? AND gc.tipo='fijo' AND EXTRACT(MONTH FROM g.fecha)=EXTRACT(MONTH FROM CURRENT_DATE) AND EXTRACT(YEAR FROM g.fecha)=EXTRACT(YEAR FROM CURRENT_DATE)", [tid]);
+            if (gf.t === 0) {
+                pendientes.push({ prioridad: 3, color: '#8B5CF6', titulo: 'Registrar gastos fijos del mes', desc: 'Alquiler, luz, agua, internet — registralos para ver el P&L real', btn: 'Ir', href: '/administracion/gastos', urgente: false });
+            }
+        } catch(_) {}
+
+        // P4 INFO: Sin ventas aun hoy
+        if (Number(dashboard.facturasHoy) === 0 && dashboard.cajaAbierta) {
+            pendientes.push({ prioridad: 4, color: '#6366F1', titulo: 'Sin ventas hoy', desc: 'La caja esta abierta pero no hay facturas registradas', btn: 'Mesas', href: '/mesas', urgente: false });
+        }
+
+        // P4 INFO: Revisar reporte del dia anterior
+        if (Number(dashboard.ventasAyer) > 0) {
+            try {
+                const [[reporteVisto]] = await db.query("SELECT id FROM admin_tareas WHERE tenant_id=? AND titulo='Revisar cierre de ayer' AND created_at::date = CURRENT_DATE AND completada=1 LIMIT 1", [tid]);
+                if (!reporteVisto) {
+                    pendientes.push({ prioridad: 4, color: '#14B8A6', titulo: 'Revisar cierre de ayer', desc: 'Ayer se facturo S/' + dashboard.ventasAyer + ' — revisa el resumen', btn: 'Ver', href: '/ventas', urgente: false });
+                }
+            } catch(_) {}
+        }
+
+        // Ordenar por prioridad (1=critico primero)
+        pendientes.sort((a, b) => a.prioridad - b.prioridad);
+
+        // Sincronizar tareas auto con BD (upsert por titulo+fecha)
+        const uid = req.session?.user?.id || 0;
+        for (const p of pendientes) {
+            try {
+                const [[existe]] = await db.query(
+                    "SELECT id FROM admin_tareas WHERE tenant_id=? AND titulo=? AND created_at::date = CURRENT_DATE AND tipo='auto' LIMIT 1",
+                    [tid, p.titulo]
+                );
+                if (!existe) {
+                    await db.query(
+                        "INSERT INTO admin_tareas (tenant_id, usuario_id, tipo, titulo, descripcion, color, href, btn_texto, urgente) VALUES (?,?,'auto',?,?,?,?,?,?) RETURNING id",
+                        [tid, uid, p.titulo, p.desc, p.color, p.href || null, p.btn || null, p.urgente ? 1 : 0]
+                    );
+                }
+            } catch(_) {}
+        }
+
+        // Cargar pendientes activos (auto de hoy no completados + manuales no completados)
+        try {
+            const [tareasActivas] = await db.query(
+                "SELECT * FROM admin_tareas WHERE tenant_id=? AND completada=0 AND (tipo='manual' OR created_at::date = CURRENT_DATE) ORDER BY urgente DESC, created_at ASC",
+                [tid]
+            );
+            dashboard.pendientes = tareasActivas.map(t => ({
+                id: t.id, color: t.color || '#F59E0B', titulo: t.titulo, desc: t.descripcion || '',
+                btn: t.btn_texto || 'Ver', href: t.href || '#', urgente: Number(t.urgente) === 1,
+                tipo: t.tipo
+            }));
+        } catch(_) {
+            dashboard.pendientes = pendientes; // fallback
+        }
+
+        // Historial de tareas completadas (ultimas 20)
+        try {
+            const [historial] = await db.query(
+                "SELECT t.*, u.nombre as usuario_nombre FROM admin_tareas t LEFT JOIN usuarios u ON u.id=t.usuario_id WHERE t.tenant_id=? AND t.completada=1 ORDER BY t.completada_at DESC LIMIT 20",
+                [tid]
+            );
+            dashboard.historialTareas = historial;
+        } catch(_) {
+            dashboard.historialTareas = [];
+        }
+
+        // === IA INSIGHTS DINAMICOS ===
+        const iaInsights = [];
+
+        // Estado de inventario
+        if (dashboard.alertas === 0) {
+            iaInsights.push({ color: '#22C55E', texto: 'Inventario listo para el servicio' });
+        } else if (dashboard.alertas <= 5) {
+            iaInsights.push({ color: '#F59E0B', texto: dashboard.alertas + ' insumos cerca del limite' });
+        } else {
+            iaInsights.push({ color: '#EF4444', texto: dashboard.alertas + ' insumos agotandose. Revisar compras urgente' });
+        }
+
+        // Mesas
+        const pctOcupacion = dashboard.mesasTotal > 0 ? Math.round((dashboard.mesasOcupadas / dashboard.mesasTotal) * 100) : 0;
+        if (pctOcupacion === 0) {
+            iaInsights.push({ color: '#3B82F6', texto: 'Todas las mesas libres. Buen momento para limpiar y preparar' });
+        } else if (pctOcupacion >= 80) {
+            iaInsights.push({ color: '#EF4444', texto: 'Ocupacion al ' + pctOcupacion + '%. Considerar lista de espera' });
+        } else {
+            iaInsights.push({ color: '#FF6B35', texto: dashboard.mesasOcupadas + ' de ' + dashboard.mesasTotal + ' mesas ocupadas (' + pctOcupacion + '%)' });
+        }
+
+        // Comparar ventas con ayer
+        const ventasHoyNum = Number(dashboard.ventasHoy);
+        const ventasAyerNum = Number(dashboard.ventasAyer);
+        if (ventasHoyNum > 0 && ventasAyerNum > 0) {
+            const diff = Math.round(((ventasHoyNum / ventasAyerNum) - 1) * 100);
+            if (diff > 0) {
+                iaInsights.push({ color: '#22C55E', texto: 'Ventas ' + diff + '% arriba vs ayer (S/' + dashboard.ventasAyer + ')' });
+            } else if (diff < -20) {
+                iaInsights.push({ color: '#EF4444', texto: 'Ventas ' + Math.abs(diff) + '% abajo vs ayer. Ayer fue S/' + dashboard.ventasAyer });
+            } else {
+                iaInsights.push({ color: '#F59E0B', texto: 'Ventas similares a ayer (S/' + dashboard.ventasAyer + ')' });
+            }
+        } else if (ventasHoyNum === 0 && ventasAyerNum > 0) {
+            iaInsights.push({ color: '#F59E0B', texto: 'Ayer se vendio S/' + dashboard.ventasAyer + '. Hoy aun sin ventas' });
+        }
+
+        // Caja
+        if (!dashboard.cajaAbierta) {
+            iaInsights.push({ color: '#EF4444', texto: 'Caja cerrada. Abrela para empezar a operar' });
+        }
+
+        dashboard.iaInsights = iaInsights;
     } catch (e) { console.error('Dashboard error:', e.message); }
 
     res.render('dashboard', { dashboard });
+});
+
+// API: Completar/descompletar tarea del dashboard
+app.put('/api/tareas/:id/completar', requireAuth, async (req, res) => {
+    try {
+        const tid = req.tenantId || 1;
+        const tareaId = Number(req.params.id);
+        const [[tarea]] = await db.query("SELECT id, completada FROM admin_tareas WHERE id=? AND tenant_id=?", [tareaId, tid]);
+        if (!tarea) return res.status(404).json({ error: 'Tarea no encontrada' });
+        const nuevoEstado = Number(tarea.completada) === 1 ? 0 : 1;
+        await db.query("UPDATE admin_tareas SET completada=?, completada_at=? WHERE id=?", [nuevoEstado, nuevoEstado ? new Date() : null, tareaId]);
+        res.json({ completada: nuevoEstado === 1 });
+    } catch(e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// API: Crear tarea manual
+app.post('/api/tareas', requireAuth, async (req, res) => {
+    try {
+        const tid = req.tenantId || 1;
+        const uid = req.session?.user?.id || 0;
+        const titulo = String(req.body.titulo || '').trim();
+        if (!titulo) return res.status(400).json({ error: 'Titulo requerido' });
+        const [result] = await db.query(
+            "INSERT INTO admin_tareas (tenant_id, usuario_id, tipo, titulo, descripcion, color, urgente) VALUES (?,?,'manual',?,?,?,?) RETURNING id",
+            [tid, uid, titulo, req.body.descripcion || null, req.body.color || '#3B82F6', req.body.urgente ? 1 : 0]
+        );
+        res.status(201).json({ id: result.insertId });
+    } catch(e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
+// API: Eliminar tarea manual
+app.delete('/api/tareas/:id', requireAuth, async (req, res) => {
+    try {
+        const tid = req.tenantId || 1;
+        await db.query("DELETE FROM admin_tareas WHERE id=? AND tenant_id=? AND tipo='manual'", [req.params.id, tid]);
+        res.json({ ok: true });
+    } catch(e) {
+        res.status(500).json({ error: e.message });
+    }
 });
 
 // Facturacion rapida (la vista original index.ejs)
@@ -249,14 +470,14 @@ app.get('/ranking', requireRole('administrador'), async (req, res) => {
     const stats = { ventasMes: 0, productoEstrella: 'N/A', clientesActivos: 0, ticketPromedio: 0, ventasHoy: 0, topProductos: [] };
     try {
         const tid = req.tenantId || 1;
-        const [[vm]] = await db.query("SELECT COUNT(*) as t, COALESCE(SUM(total),0) as m FROM facturas WHERE tenant_id=? AND fecha >= DATE_SUB(NOW(), INTERVAL 30 DAY)", [tid]);
+        const [[vm]] = await db.query("SELECT COUNT(*) as t, COALESCE(SUM(total),0) as m FROM facturas WHERE fecha >= NOW() - INTERVAL '30 days'");
         stats.ventasMes = Number(vm.m).toFixed(2);
-        const [[vh]] = await db.query("SELECT COUNT(*) as t, COALESCE(SUM(total),0) as m FROM facturas WHERE tenant_id=? AND DATE(fecha)=CURDATE()", [tid]);
+        const [[vh]] = await db.query("SELECT COUNT(*) as t, COALESCE(SUM(total),0) as m FROM facturas WHERE fecha::date = CURRENT_DATE");
         stats.ventasHoy = Number(vh.m).toFixed(2);
         stats.ticketPromedio = vm.t > 0 ? (Number(vm.m) / vm.t).toFixed(2) : '0.00';
-        const [[cl]] = await db.query("SELECT COUNT(*) as t FROM clientes WHERE tenant_id=?", [tid]);
+        const [[cl]] = await db.query("SELECT COUNT(*) as t FROM clientes");
         stats.clientesActivos = cl.t;
-        const [tp] = await db.query("SELECT p.nombre, SUM(df.cantidad) as qty, SUM(df.subtotal) as monto FROM detalle_factura df JOIN productos p ON p.id=df.producto_id JOIN facturas f ON f.id=df.factura_id WHERE f.tenant_id=? AND df.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) GROUP BY df.producto_id ORDER BY qty DESC LIMIT 10", [tid]);
+        const [tp] = await db.query("SELECT p.nombre, SUM(df.cantidad) as qty, SUM(df.subtotal) as monto FROM detalle_factura df JOIN productos p ON p.id=df.producto_id JOIN facturas f ON f.id=df.factura_id WHERE df.created_at >= NOW() - INTERVAL '30 days' GROUP BY df.producto_id, p.nombre ORDER BY qty DESC LIMIT 10");
         stats.topProductos = tp || [];
         if (tp.length > 0) stats.productoEstrella = tp[0].nombre;
     } catch (e) { console.error('Ranking stats error:', e.message); }
@@ -315,6 +536,9 @@ app.use((err, req, res, next) => {
         });
     }
 });
+
+// Export app for Vercel serverless
+module.exports = app;
 
 // Puerto fijo: 1995
 // - APP_PORT: variable específica de este sistema
@@ -382,4 +606,7 @@ process.on('SIGINT', () => {
     process.exit(0);
 });
 
-startServer(); 
+// Solo arrancar servidor si se ejecuta directamente (no en Vercel)
+if (require.main === module) {
+    startServer();
+} 
