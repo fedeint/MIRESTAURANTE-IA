@@ -208,18 +208,20 @@ h1, h2, h3, h4, h5, h6 {
 .dg-sidebar-expanded .dg-sidebar-link i { font-size: 1.15rem; width: 20px; text-align: center; }
 .dg-sidebar-expanded .dg-sidebar-link:hover { background: rgba(255,255,255,0.06); color: #ddd; }
 .dg-sidebar-expanded .dg-sidebar-link.active {
-  background: var(--dg-primary); color: #fff; font-weight: 600;
-  box-shadow: 0 2px 8px rgba(255,107,53,0.3);
+  background: linear-gradient(135deg, #FF6B35, #E55A2B); color: #fff; font-weight: 600;
+  box-shadow: 0 4px 16px rgba(255,107,53,0.35);
+  border-radius: 12px;
 }
 .dg-sidebar-expanded .dg-sidebar-link.active i { color: #fff; }
 .dg-sidebar-expanded .dg-sidebar-link.active-glow {
-  background: rgba(255,107,53,0.12); color: #FF6B35;
+  background: rgba(255,107,53,0.08); color: #FF8A5C;
 }
 .dg-sidebar-expanded .dg-sidebar-link.active-glow i { color: #FF6B35; }
 .dg-sidebar-expanded .dg-sidebar-section {
   font-size: 10px; font-weight: 700; text-transform: uppercase;
-  letter-spacing: 1px; color: #4B5072;
-  padding: 16px 12px 6px;
+  letter-spacing: 1.5px; color: #6B5B4E;
+  padding: 20px 12px 8px;
+  font-family: 'DM Sans', sans-serif;
 }
 
 /* Collapsed state (64px icons only) */
@@ -517,19 +519,19 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Sub-items inline (estado expandido) */
 .dg-sub-items {
-  display: flex; flex-direction: column; gap: 1px;
-  padding: 2px 0 4px 32px;
+  display: flex; flex-direction: column; gap: 0;
+  padding: 4px 0 8px 42px;
 }
 .dg-sub-link {
-  display: flex; align-items: center; gap: 8px;
-  padding: 6px 10px; border-radius: 6px;
-  font-size: 12px; color: #8B8FAD; text-decoration: none;
-  transition: all 0.15s;
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 12px; border-radius: 6px;
+  font-size: 13px; color: #8B8FAD; text-decoration: none;
+  transition: all 0.15s; font-weight: 400;
 }
-.dg-sub-link:hover { color: #ddd; }
-.dg-sub-link.active { color: #fff; font-weight: 600; }
+.dg-sub-link:hover { color: #ccc; }
+.dg-sub-link.active { color: #fff; font-weight: 700; }
 .dg-sub-dot {
-  width: 5px; height: 5px; border-radius: 50%;
+  width: 6px; height: 6px; border-radius: 50%;
   background: #4B5072; flex-shrink: 0;
 }
 .dg-sub-link.active .dg-sub-dot { background: var(--dg-primary); }
