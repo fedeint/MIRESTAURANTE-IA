@@ -4,7 +4,8 @@ const db = require('../db');
 async function requireCajaAbierta(req, res, next) {
     try {
         const [[caja]] = await db.query(
-            "SELECT id FROM cajas WHERE tenant_id=1 AND estado='abierta' LIMIT 1"
+            "SELECT id FROM cajas WHERE tenant_id=? AND estado='abierta' LIMIT 1",
+            [req.tenantId || 1]
         );
         if (caja) {
             req.cajaId = caja.id;

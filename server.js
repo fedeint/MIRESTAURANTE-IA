@@ -35,7 +35,7 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 
 // Aumentar el límite de tamaño del cuerpo de la petición
-app.use(express.json({limit: '50mb'}));
+app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Sesiones (login)
@@ -103,8 +103,10 @@ app.use((req, res, next) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
     res.setHeader('X-Frame-Options', 'SAMEORIGIN');
     res.setHeader('X-XSS-Protection', '1; mode=block');
-    const allowedOrigin = process.env.CORS_ORIGIN || req.headers.origin || '*';
-    res.setHeader('Access-Control-Allow-Origin', allowedOrigin);
+    const corsOrigin = process.env.CORS_ORIGIN;
+    if (corsOrigin) {
+        res.setHeader('Access-Control-Allow-Origin', corsOrigin);
+    }
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     // Responder preflight sin caer en 404
@@ -134,6 +136,7 @@ const administracionRoutes = require('./routes/administracion');
 const canalesRoutes = require('./routes/canales');
 const reportesRoutes = require('./routes/reportes');
 const featuresRoutes = require('./routes/features');
+const ttsRoutes = require('./routes/tts');
 
 // Auth routes (públicas): /login /logout /setup
 app.use(authRoutes);
@@ -150,28 +153,32 @@ app.get('/', requireAuth, async (req, res) => {
     if (rol === 'mesero') return res.redirect('/mesas');
 
     // Admin dashboard data
-    const dashboard = { ventasHoy: 0, ventasMes: 0, mesasTotal: 0, mesasOcupadas: 0, productosVendidosHoy: 0, clientesTotal: 0, topProductos: [], userName: req.session?.user?.nombre || req.session?.user?.usuario || 'Admin' };
+    const dashboard = { ventasHoy: 0, ventasMes: 0, mesasTotal: 0, mesasOcupadas: 0, productosVendidosHoy: 0, clientesTotal: 0, alertas: 0, topProductos: [], userName: req.session?.user?.nombre || req.session?.user?.usuario || 'Admin', facturasHoy: 0 };
     try {
-        const [[vh]] = await db.query("SELECT COUNT(*) as c, COALESCE(SUM(total),0) as m FROM facturas WHERE DATE(fecha)=CURDATE()");
+        const tid = req.tenantId || 1;
+        const [[vh]] = await db.query("SELECT COUNT(*) as c, COALESCE(SUM(total),0) as m FROM facturas WHERE tenant_id=? AND DATE(fecha)=CURDATE()", [tid]);
         dashboard.ventasHoy = Number(vh.m).toFixed(2);
         dashboard.facturasHoy = vh.c;
 
-        const [[vm]] = await db.query("SELECT COALESCE(SUM(total),0) as m FROM facturas WHERE fecha >= DATE_SUB(NOW(), INTERVAL 30 DAY)");
+        const [[vm]] = await db.query("SELECT COALESCE(SUM(total),0) as m FROM facturas WHERE tenant_id=? AND fecha >= DATE_SUB(NOW(), INTERVAL 30 DAY)", [tid]);
         dashboard.ventasMes = Number(vm.m).toFixed(2);
 
-        const [[mt]] = await db.query("SELECT COUNT(*) as t FROM mesas");
+        const [[mt]] = await db.query("SELECT COUNT(*) as t FROM mesas WHERE tenant_id=?", [tid]);
         dashboard.mesasTotal = mt.t;
-        const [[mo]] = await db.query("SELECT COUNT(*) as t FROM mesas WHERE estado='ocupada'");
+        const [[mo]] = await db.query("SELECT COUNT(*) as t FROM mesas WHERE tenant_id=? AND estado='ocupada'", [tid]);
         dashboard.mesasOcupadas = mo.t;
 
-        const [[ph]] = await db.query("SELECT COALESCE(SUM(df.cantidad),0) as t FROM detalle_factura df JOIN facturas f ON f.id=df.factura_id WHERE DATE(f.fecha)=CURDATE()");
+        const [[ph]] = await db.query("SELECT COALESCE(SUM(df.cantidad),0) as t FROM detalle_factura df JOIN facturas f ON f.id=df.factura_id WHERE f.tenant_id=? AND DATE(f.fecha)=CURDATE()", [tid]);
         dashboard.productosVendidosHoy = Number(ph.t);
 
-        const [[cl]] = await db.query("SELECT COUNT(*) as t FROM clientes");
+        const [[cl]] = await db.query("SELECT COUNT(*) as t FROM clientes WHERE tenant_id=?", [tid]);
         dashboard.clientesTotal = cl.t;
 
-        const [tp] = await db.query("SELECT p.nombre, SUM(df.cantidad) as qty FROM detalle_factura df JOIN productos p ON p.id=df.producto_id JOIN facturas f ON f.id=df.factura_id WHERE DATE(f.fecha)=CURDATE() GROUP BY df.producto_id ORDER BY qty DESC LIMIT 5");
+        const [tp] = await db.query("SELECT p.nombre, SUM(df.cantidad) as qty FROM detalle_factura df JOIN productos p ON p.id=df.producto_id JOIN facturas f ON f.id=df.factura_id WHERE f.tenant_id=? AND DATE(f.fecha)=CURDATE() GROUP BY df.producto_id ORDER BY qty DESC LIMIT 5", [tid]);
         dashboard.topProductos = tp || [];
+
+        const [[al]] = await db.query("SELECT COUNT(*) as t FROM almacen_ingredientes WHERE tenant_id=? AND activo=1 AND stock_actual <= stock_minimo", [tid]);
+        dashboard.alertas = al.t;
     } catch (e) { console.error('Dashboard error:', e.message); }
 
     res.render('dashboard', { dashboard });
@@ -208,7 +215,7 @@ app.use('/api/mesas', requireRole(['mesero', 'administrador']), mesasRoutes);
 // - Mesero: solo visualiza y marca "Entregado" en la pestaña de listos (la acción se hace vía /api/mesas/items/:id/estado con validación)
 // Relacionado con: routes/cocina.js (middlewares por ruta) y routes/mesas.js (restricción servido)
 app.use('/cocina', requireRole(['cocinero', 'mesero', 'administrador']), requireCajaAbierta, cocinaRoutes);
-app.use('/api/cocina', requireRole(['cocinero', 'mesero', 'administrador']), cocinaRoutes);
+app.use('/api/cocina', requireRole(['cocinero', 'mesero', 'administrador']), requireCajaAbierta, cocinaRoutes);
 
 // Almacen (admin)
 app.use('/almacen', requireRole('administrador'), almacenRoutes);
@@ -241,14 +248,15 @@ app.get('/competencia', requireRole('administrador'), (req, res) => res.render('
 app.get('/ranking', requireRole('administrador'), async (req, res) => {
     const stats = { ventasMes: 0, productoEstrella: 'N/A', clientesActivos: 0, ticketPromedio: 0, ventasHoy: 0, topProductos: [] };
     try {
-        const [[vm]] = await db.query("SELECT COUNT(*) as t, COALESCE(SUM(total),0) as m FROM facturas WHERE fecha >= DATE_SUB(NOW(), INTERVAL 30 DAY)");
+        const tid = req.tenantId || 1;
+        const [[vm]] = await db.query("SELECT COUNT(*) as t, COALESCE(SUM(total),0) as m FROM facturas WHERE tenant_id=? AND fecha >= DATE_SUB(NOW(), INTERVAL 30 DAY)", [tid]);
         stats.ventasMes = Number(vm.m).toFixed(2);
-        const [[vh]] = await db.query("SELECT COUNT(*) as t, COALESCE(SUM(total),0) as m FROM facturas WHERE DATE(fecha)=CURDATE()");
+        const [[vh]] = await db.query("SELECT COUNT(*) as t, COALESCE(SUM(total),0) as m FROM facturas WHERE tenant_id=? AND DATE(fecha)=CURDATE()", [tid]);
         stats.ventasHoy = Number(vh.m).toFixed(2);
         stats.ticketPromedio = vm.t > 0 ? (Number(vm.m) / vm.t).toFixed(2) : '0.00';
-        const [[cl]] = await db.query("SELECT COUNT(*) as t FROM clientes");
+        const [[cl]] = await db.query("SELECT COUNT(*) as t FROM clientes WHERE tenant_id=?", [tid]);
         stats.clientesActivos = cl.t;
-        const [tp] = await db.query("SELECT p.nombre, SUM(df.cantidad) as qty, SUM(df.subtotal) as monto FROM detalle_factura df JOIN productos p ON p.id=df.producto_id WHERE df.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) GROUP BY df.producto_id ORDER BY qty DESC LIMIT 10");
+        const [tp] = await db.query("SELECT p.nombre, SUM(df.cantidad) as qty, SUM(df.subtotal) as monto FROM detalle_factura df JOIN productos p ON p.id=df.producto_id JOIN facturas f ON f.id=df.factura_id WHERE f.tenant_id=? AND df.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) GROUP BY df.producto_id ORDER BY qty DESC LIMIT 10", [tid]);
         stats.topProductos = tp || [];
         if (tp.length > 0) stats.productoEstrella = tp[0].nombre;
     } catch (e) { console.error('Ranking stats error:', e.message); }
@@ -259,11 +267,14 @@ app.get('/ranking', requireRole('administrador'), async (req, res) => {
 app.use('/features', requireRole('administrador'), featuresRoutes);
 app.use('/api/features', requireRole('administrador'), featuresRoutes);
 // Menu digital publico (sin auth)
-app.get('/menu', (req, res, next) => { req.tenantId = 1; next(); }, featuresRoutes.stack ? (req, res, next) => next() : (req, res) => res.redirect('/features/menu'));
+app.get('/menu', (req, res) => res.redirect('/features/menu'));
 
 // Canales internos (todos los roles)
 app.use('/canales', requireAuth, canalesRoutes);
 app.use('/api/canales', requireAuth, canalesRoutes);
+
+// TTS - Text to Speech (mascota)
+app.use('/api/tts', requireAuth, ttsRoutes);
 
 // Reportes PDF (admin)
 app.use('/api/reportes', requireRole('administrador'), reportesRoutes);
@@ -289,9 +300,9 @@ app.use((req, res, next) => {
 // Manejo de errores generales
 app.use((err, req, res, next) => {
     console.error('Error en la aplicación:', err);
-    
+
     if (req.xhr || (req.headers.accept && req.headers.accept.indexOf('json') > -1)) {
-        res.status(500).json({ 
+        res.status(500).json({
             error: 'Error interno del servidor',
             message: process.env.NODE_ENV === 'development' ? err.message : 'Error interno'
         });
@@ -305,11 +316,11 @@ app.use((err, req, res, next) => {
     }
 });
 
-// Puerto preferido:
-// - APP_PORT: variable específica de este sistema (recomendada para evitar conflictos con otros proyectos)
-// - PORT: compatibilidad con entornos existentes
-// - 3002: fallback por defecto
-const PORT = Number(process.env.APP_PORT || process.env.PORT || 3002);
+// Puerto fijo: 1995
+// - APP_PORT: variable específica de este sistema
+// - PORT: configurado en .env (1995)
+// - 1995: fallback por defecto
+const PORT = Number(process.env.APP_PORT || process.env.PORT || 1995);
 
 // Verificar la conexión a la base de datos antes de iniciar el servidor
 async function startServer() {
@@ -342,7 +353,7 @@ async function startServer() {
                         if (intentosRestantes > 0) {
                             const siguiente = puerto + 1;
                             console.warn(`Puerto ${puerto} en uso. Probando ${siguiente}...`);
-                            try { server.close(); } catch (_) {}
+                            try { server.close(); } catch (_) { }
                             return resolve(listenConFallback(siguiente, intentosRestantes - 1));
                         }
                         return reject(new Error(`No hay puertos disponibles desde ${puerto} hasta ${puerto + maxIntentosPuerto}`));

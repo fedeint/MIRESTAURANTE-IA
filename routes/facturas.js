@@ -198,14 +198,16 @@ router.post('/', async (req, res) => {
 
             // === REGISTRO EN CAJA ===
             try {
+                const facTid = req.tenantId || 1;
                 const [cajaRows] = await connection.query(
-                    "SELECT id FROM cajas WHERE tenant_id=1 AND estado='abierta' ORDER BY fecha_apertura DESC LIMIT 1"
+                    "SELECT id FROM cajas WHERE tenant_id=? AND estado='abierta' ORDER BY fecha_apertura DESC LIMIT 1",
+                    [facTid]
                 );
                 if (cajaRows && cajaRows[0]) {
                     await connection.query(
                         `INSERT INTO caja_movimientos (tenant_id, caja_id, tipo, concepto, monto, usuario_id)
-                         VALUES (1,?,'ingreso','venta_factura',?,0)`,
-                        [cajaRows[0].id, totalNum]
+                         VALUES (?,?,'ingreso','venta_factura',?,0)`,
+                        [facTid, cajaRows[0].id, totalNum]
                     );
                 }
             } catch (cajaErr) {

@@ -88,7 +88,7 @@ router.post('/cerrar', async (req, res) => {
         if (!caja) return res.status(400).json({ error: 'No hay caja abierta' });
 
         // Verificar que no haya mesas ocupadas
-        const [mesasOcupadas] = await db.query("SELECT id, numero, descripcion FROM mesas WHERE estado = 'ocupada'");
+        const [mesasOcupadas] = await db.query("SELECT id, numero, descripcion FROM mesas WHERE tenant_id=? AND estado = 'ocupada'", [tid]);
         if (mesasOcupadas && mesasOcupadas.length > 0) {
             return res.status(400).json({
                 error: 'No se puede cerrar caja con mesas ocupadas',

@@ -807,8 +807,8 @@ router.put('/items/:itemId/enviar', async (req, res) => {
                             );
                             await connection.query(
                                 `INSERT INTO almacen_movimientos (tenant_id, ingrediente_id, tipo, cantidad, stock_anterior, stock_posterior, costo_unitario, costo_total, motivo, referencia_tipo, referencia_id, usuario_id)
-                                 VALUES (1,?,'salida',?,?,?,?,?,'venta_platillo','pedido_item',?,?)`,
-                                [ing.ingrediente_id, cantNecesaria, Number(stockAhora.stock_actual) + cantNecesaria, Number(stockAhora.stock_actual), Number(stockAhora.costo_unitario), cantNecesaria * Number(stockAhora.costo_unitario), itemId, req.session?.user?.id || 0]
+                                 VALUES (?,?,'salida',?,?,?,?,?,'venta_platillo','pedido_item',?,?)`,
+                                [req.tenantId || 1, ing.ingrediente_id, cantNecesaria, Number(stockAhora.stock_actual) + cantNecesaria, Number(stockAhora.stock_actual), Number(stockAhora.costo_unitario), cantNecesaria * Number(stockAhora.costo_unitario), itemId, req.session?.user?.id || 0]
                             );
                         }
                     }

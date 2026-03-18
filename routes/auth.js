@@ -42,21 +42,27 @@ const loginAttempts = {};
 const MAX_ATTEMPTS = 5;
 const LOCK_TIME_MS = 15 * 60 * 1000; // 15 minutos
 
-function checkLocked(usuario) {
-  const entry = loginAttempts[usuario];
+function attemptKey(usuario, ip) {
+  return `${usuario}::${ip || 'unknown'}`;
+}
+
+function checkLocked(usuario, ip) {
+  const key = attemptKey(usuario, ip);
+  const entry = loginAttempts[key];
   if (!entry) return false;
   if (entry.attempts >= MAX_ATTEMPTS && (Date.now() - entry.lastAttempt) < LOCK_TIME_MS) return true;
-  if ((Date.now() - entry.lastAttempt) >= LOCK_TIME_MS) { delete loginAttempts[usuario]; return false; }
+  if ((Date.now() - entry.lastAttempt) >= LOCK_TIME_MS) { delete loginAttempts[key]; return false; }
   return false;
 }
 
-function registerFailedAttempt(usuario) {
-  if (!loginAttempts[usuario]) loginAttempts[usuario] = { attempts: 0, lastAttempt: 0 };
-  loginAttempts[usuario].attempts++;
-  loginAttempts[usuario].lastAttempt = Date.now();
+function registerFailedAttempt(usuario, ip) {
+  const key = attemptKey(usuario, ip);
+  if (!loginAttempts[key]) loginAttempts[key] = { attempts: 0, lastAttempt: 0 };
+  loginAttempts[key].attempts++;
+  loginAttempts[key].lastAttempt = Date.now();
 }
 
-function clearAttempts(usuario) { delete loginAttempts[usuario]; }
+function clearAttempts(usuario, ip) { delete loginAttempts[attemptKey(usuario, ip)]; }
 
 function defaultRedirectForRole(rol) {
   const r = String(rol || '').toLowerCase();
@@ -95,8 +101,9 @@ router.post('/login', async (req, res) => {
 
   if (!usuario || !password) return res.status(400).render('login', { error: 'Usuario y contraseña son requeridos.' });
 
-  // Bloqueo por intentos fallidos
-  if (checkLocked(usuario)) {
+  // Bloqueo por intentos fallidos (por usuario + IP)
+  const clientIp = req.ip;
+  if (checkLocked(usuario, clientIp)) {
     return res.status(429).render('login', { error: 'Cuenta bloqueada por multiples intentos fallidos. Intenta en 15 minutos.' });
   }
 
@@ -110,25 +117,37 @@ router.post('/login', async (req, res) => {
     );
     const u = rows?.[0];
     if (!u || Number(u.activo) !== 1) {
-      registerFailedAttempt(usuario);
+      registerFailedAttempt(usuario, clientIp);
       return res.status(401).render('login', { error: 'Usuario o contraseña incorrectos.' });
     }
 
     const ok = await bc.compare(password, String(u.password_hash || ''));
     if (!ok) {
-      registerFailedAttempt(usuario);
+      registerFailedAttempt(usuario, clientIp);
       return res.status(401).render('login', { error: 'Usuario o contraseña incorrectos.' });
     }
 
     // Login exitoso - limpiar intentos
-    clearAttempts(usuario);
+    clearAttempts(usuario, clientIp);
+
+    // Cargar permisos del usuario
+    let permisos = null;
+    try {
+      const [permRows] = await db.query('SELECT permisos FROM usuarios WHERE id = ? LIMIT 1', [u.id]);
+      const raw = permRows?.[0]?.permisos;
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed)) permisos = parsed;
+      }
+    } catch (_) {}
 
     // Guardar sesión
     req.session.user = {
       id: u.id,
       usuario: u.usuario,
       nombre: u.nombre || '',
-      rol: u.rol
+      rol: u.rol,
+      permisos: permisos
     };
 
     // last_login
@@ -137,7 +156,7 @@ router.post('/login', async (req, res) => {
     } catch (_) {}
 
     // Audit login
-    registrarAudit({ tenantId: 1, usuarioId: u.id, accion: 'LOGIN', modulo: 'auth', tabla: 'usuarios', registroId: u.id, ip: req.ip, userAgent: req.headers['user-agent'] });
+    registrarAudit({ tenantId: req.tenantId || 1, usuarioId: u.id, accion: 'LOGIN', modulo: 'auth', tabla: 'usuarios', registroId: u.id, ip: req.ip, userAgent: req.headers['user-agent'] });
 
     res.redirect(defaultRedirectForRole(u.rol));
   } catch (e) {
