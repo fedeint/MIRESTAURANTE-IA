@@ -546,9 +546,10 @@ h1, h2, h3, h4, h5, h6 {
   body.sidebar-semi .dg-main { margin-left: 64px; }
   body.sidebar-semi .dg-main.has-panel { margin-left: 244px; }
   body.sidebar-semi .dg-panel { left: 64px; }
-  /* Collapsed: sidebar 64 only */
+  /* Collapsed: sidebar 64 + panel si hay submodulos */
   body.sidebar-collapsed .dg-main { margin-left: 64px; }
-  body.sidebar-collapsed .dg-panel { display: none !important; }
+  body.sidebar-collapsed .dg-main.has-panel { margin-left: 244px; }
+  body.sidebar-collapsed .dg-panel { left: 64px; }
 }
 
 @media (max-width: 991.98px) {

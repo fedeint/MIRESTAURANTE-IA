@@ -181,16 +181,15 @@
       if(toggleIcon) toggleIcon.className = 'bi bi-chevron-right';
       document.body.classList.add('sidebar-semi');
     } else {
-      // Colapsado: 64px solo iconos, sin panel
+      // Colapsado: 64px solo iconos, panel aparece si hay submodulos
       sidebar.setAttribute('data-state','collapsed');
       sidebar.classList.remove('dg-sidebar-expanded');
       sidebar.classList.add('dg-sidebar-collapsed');
       if(navExpanded) navExpanded.style.display = 'none';
       if(navIcons) navIcons.style.display = '';
-      if(panel) panel.style.display = 'none';
       if(toggleIcon) toggleIcon.className = 'bi bi-chevron-right';
       document.body.classList.add('sidebar-collapsed');
-      if(mainEl) mainEl.classList.remove('has-panel');
+      // Panel visible si hay submodulos (misma logica que semi)
     }
   }
 
