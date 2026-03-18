@@ -44,37 +44,13 @@
 
       <div class="dg-sidebar-section">OPERACIONES</div>
       <a href="/almacen" class="dg-sidebar-link <%= panelAlmacen ? 'active' : '' %>"><i class="bi bi-box-seam"></i><span>Almacen</span></a>
-      <% if (panelAlmacen) { %>
-        <div class="dg-sub-items">
-          <a href="/almacen/inventario" class="dg-sub-link <%= currentPath==='/almacen/inventario'||currentPath==='/almacen' ? 'active' : '' %>"><span class="dg-sub-dot"></span>Inventario</a>
-          <a href="/almacen/entradas" class="dg-sub-link <%= currentPath==='/almacen/entradas' ? 'active' : '' %>"><span class="dg-sub-dot"></span>Ingreso diario</a>
-          <a href="/almacen/salidas" class="dg-sub-link <%= currentPath==='/almacen/salidas' ? 'active' : '' %>"><span class="dg-sub-dot"></span>Salida insumos</a>
-          <a href="/almacen/que-comprar" class="dg-sub-link <%= currentPath==='/almacen/que-comprar' ? 'active' : '' %>"><span class="dg-sub-dot"></span>Que comprar</a>
-          <a href="/almacen/proveedores" class="dg-sub-link <%= currentPath==='/almacen/proveedores' ? 'active' : '' %>"><span class="dg-sub-dot"></span>Proveedores</a>
-          <a href="/almacen/historial" class="dg-sub-link <%= currentPath==='/almacen/historial' ? 'active' : '' %>"><span class="dg-sub-dot"></span>Historial</a>
-        </div>
-      <% } %>
 
       <div class="dg-sidebar-section">GESTION</div>
       <a href="/productos" class="dg-sidebar-link <%= panelProductos ? 'active' : '' %>"><i class="bi bi-egg-fried"></i><span>Productos</span></a>
-      <% if (panelProductos) { %>
-        <div class="dg-sub-items">
-          <a href="/productos" class="dg-sub-link <%= currentPath==='/productos' ? 'active' : '' %>"><span class="dg-sub-dot"></span>Carta</a>
-          <a href="/ranking" class="dg-sub-link <%= currentPath==='/ranking' ? 'active' : '' %>"><span class="dg-sub-dot"></span>Ranking disponibilidad</a>
-        </div>
-      <% } %>
       <a href="/clientes" class="dg-sidebar-link <%= currentPath === '/clientes' ? 'active' : '' %>"><i class="bi bi-people-fill"></i><span>Clientes</span></a>
 
       <div class="dg-sidebar-section">ADMINISTRACION</div>
-      <a href="/administracion" class="dg-sidebar-link <%= panelAdmin ? 'active' : '' %>"><i class="bi bi-bar-chart-line-fill"></i><span>P&L / Finanzas</span></a>
-      <% if (panelAdmin) { %>
-        <div class="dg-sub-items">
-          <a href="/administracion" class="dg-sub-link <%= currentPath==='/administracion' ? 'active' : '' %>"><span class="dg-sub-dot"></span>P&L</a>
-          <a href="/administracion/planilla" class="dg-sub-link <%= currentPath==='/administracion/planilla' ? 'active' : '' %>"><span class="dg-sub-dot"></span>Planilla</a>
-          <a href="/administracion/gastos" class="dg-sub-link <%= currentPath==='/administracion/gastos' ? 'active' : '' %>"><span class="dg-sub-dot"></span>Gastos</a>
-          <a href="/sunat" class="dg-sub-link <%= currentPath==='/sunat' ? 'active' : '' %>"><span class="dg-sub-dot"></span>SUNAT</a>
-        </div>
-      <% } %>
+      <a href="/administracion" class="dg-sidebar-link <%= panelAdmin ? 'active' : '' %>"><i class="bi bi-bar-chart-line-fill"></i><span>Administracion</span></a>
 
       <div class="dg-sidebar-section">COMUNICACION</div>
       <a href="/canales" class="dg-sidebar-link <%= currentPath === '/canales' ? 'active' : '' %>"><i class="bi bi-chat-dots-fill"></i><span>Canales</span></a>
@@ -182,31 +158,30 @@
     localStorage.setItem('dg-sidebar-state', s);
     document.body.classList.remove('sidebar-expanded','sidebar-semi','sidebar-collapsed');
 
+    // Panel siempre visible si hay submodulos
+    if(panel) panel.style.display = '';
+    if(mainEl && panel) mainEl.classList.add('has-panel');
+
     if (s === 1) {
-      // Expanded: 260px, text+icons, submodules inline
+      // Expandido: 260px con texto + panel al lado si hay submodulos
       sidebar.setAttribute('data-state','expanded');
       sidebar.classList.add('dg-sidebar-expanded');
       sidebar.classList.remove('dg-sidebar-collapsed');
       if(navExpanded) navExpanded.style.display = '';
       if(navIcons) navIcons.style.display = 'none';
-      if(panel) panel.style.display = 'none';
       if(toggleIcon) toggleIcon.className = 'bi bi-chevron-left';
       document.body.classList.add('sidebar-expanded');
-      if(mainEl) mainEl.classList.remove('has-panel');
     } else if (s === 2) {
-      // Semi: 64px icons + panel if submodule
+      // Semi: 64px iconos + panel al lado si hay submodulos
       sidebar.setAttribute('data-state','semi');
       sidebar.classList.remove('dg-sidebar-expanded');
       sidebar.classList.add('dg-sidebar-collapsed');
       if(navExpanded) navExpanded.style.display = 'none';
       if(navIcons) navIcons.style.display = '';
-      if(panel) panel.style.display = '';
       if(toggleIcon) toggleIcon.className = 'bi bi-chevron-right';
       document.body.classList.add('sidebar-semi');
-      if(mainEl && panel) mainEl.classList.add('has-panel');
-      else if(mainEl) mainEl.classList.remove('has-panel');
     } else {
-      // Collapsed: 64px icons only, no panel
+      // Colapsado: 64px solo iconos, sin panel
       sidebar.setAttribute('data-state','collapsed');
       sidebar.classList.remove('dg-sidebar-expanded');
       sidebar.classList.add('dg-sidebar-collapsed');

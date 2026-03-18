@@ -300,7 +300,7 @@ h1, h2, h3, h4, h5, h6 {
   height: 100vh;
   position: fixed;
   top: 0;
-  left: 64px;
+  left: 64px; /* default for collapsed sidebar */
   z-index: 1049;
   background: var(--dg-nav-panel);
   padding: 16px 10px;
@@ -538,10 +538,17 @@ h1, h2, h3, h4, h5, h6 {
 
 @media (min-width: 992px) {
   .dg-main { transition: margin-left 0.25s ease; }
+  /* Expanded: sidebar 260 + panel 180 */
   body.sidebar-expanded .dg-main { margin-left: 260px; }
+  body.sidebar-expanded .dg-main.has-panel { margin-left: 440px; }
+  body.sidebar-expanded .dg-panel { left: 260px; }
+  /* Semi: sidebar 64 + panel 180 */
   body.sidebar-semi .dg-main { margin-left: 64px; }
   body.sidebar-semi .dg-main.has-panel { margin-left: 244px; }
+  body.sidebar-semi .dg-panel { left: 64px; }
+  /* Collapsed: sidebar 64 only */
   body.sidebar-collapsed .dg-main { margin-left: 64px; }
+  body.sidebar-collapsed .dg-panel { display: none !important; }
 }
 
 @media (max-width: 991.98px) {
