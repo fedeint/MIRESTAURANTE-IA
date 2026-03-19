@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Configura tu Restaurante - dignita.tech</title>
+  <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* ===== Reset & Base ===== */
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body {
+      min-height: 100vh;
+      margin: 0;
+      font-family: 'DM Sans', system-ui, sans-serif;
+      background: #FFF8F0;
+    }
+
+    /* ===== Layout ===== */
+    .ob-shell {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ===== Top bar ===== */
+    .ob-topbar {
+      background: #fff;
+      border-bottom: 1px solid #F0E8E0;
+      padding: 16px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .ob-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .ob-brand-icon {
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, #F97316, #EA580C);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 1rem;
+    }
+    .ob-brand-name {
+      font-weight: 800;
+      font-size: 1.1rem;
+      letter-spacing: -0.03em;
+      color: #1A1A1A;
+    }
+    .ob-brand-name span { color: #F97316; }
+
+    /* ===== Progress bar ===== */
+    .ob-progress-wrap {
+      padding: 20px 32px 0;
+      background: #fff;
+    }
+    .ob-steps {
+      display: flex;
+      gap: 0;
+      max-width: 640px;
+      margin: 0 auto;
+    }
+    .ob-step-indicator {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      position: relative;
+    }
+    .ob-step-indicator:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      top: 15px;
+      left: calc(50% + 16px);
+      right: calc(-50% + 16px);
+      height: 2px;
+      background: #F0E8E0;
+      transition: background 0.35s;
+    }
+    .ob-step-indicator.done::after { background: #F97316; }
+
+    .ob-step-circle {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      border: 2px solid #E5D5C8;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #B0A09A;
+      transition: all 0.35s;
+      z-index: 1;
+    }
+    .ob-step-indicator.active .ob-step-circle {
+      border-color: #F97316;
+      background: #F97316;
+      color: #fff;
+      box-shadow: 0 0 0 4px rgba(249,115,22,0.15);
+    }
+    .ob-step-indicator.done .ob-step-circle {
+      border-color: #F97316;
+      background: #F97316;
+      color: #fff;
+    }
+    .ob-step-label {
+      font-size: 0.65rem;
+      font-weight: 600;
+      color: #B0A09A;
+      text-align: center;
+      white-space: nowrap;
+    }
+    .ob-step-indicator.active .ob-step-label,
+    .ob-step-indicator.done .ob-step-label {
+      color: #F97316;
+    }
+
+    .ob-progress-bar-thin {
+      height: 3px;
+      background: #F0E8E0;
+      border-radius: 2px;
+      max-width: 640px;
+      margin: 12px auto 0;
+      overflow: hidden;
+    }
+    .ob-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #F97316, #EA580C);
+      border-radius: 2px;
+      transition: width 0.45s cubic-bezier(.4,0,.2,1);
+    }
+
+    /* ===== Main content ===== */
+    .ob-body {
+      flex: 1;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 40px 20px 60px;
+    }
+    .ob-card {
+      background: #fff;
+      border-radius: 20px;
+      box-shadow: 0 4px 32px rgba(249,115,22,0.06), 0 1px 4px rgba(0,0,0,0.05);
+      width: 100%;
+      max-width: 640px;
+      overflow: hidden;
+    }
+    .ob-card-header {
+      background: linear-gradient(135deg, #F97316 0%, #EA580C 100%);
+      padding: 28px 32px 24px;
+      color: #fff;
+    }
+    .ob-card-header .step-tag {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      opacity: 0.8;
+      margin-bottom: 6px;
+    }
+    .ob-card-header h2 {
+      font-size: 1.5rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin: 0 0 4px;
+    }
+    .ob-card-header p {
+      font-size: 0.875rem;
+      opacity: 0.85;
+      margin: 0;
+    }
+    .ob-card-body {
+      padding: 32px;
+    }
+
+    /* ===== Form elements ===== */
+    .ob-label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #374151;
+      margin-bottom: 6px;
+      display: block;
+    }
+    .ob-label .ob-optional {
+      font-weight: 400;
+      color: #9CA3AF;
+      margin-left: 4px;
+    }
+    .ob-input {
+      display: block;
+      width: 100%;
+      padding: 10px 14px;
+      border: 1.5px solid #E5D5C8;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      font-family: inherit;
+      background: #FAFAF8;
+      color: #1A1A1A;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      outline: none;
+    }
+    .ob-input:focus {
+      border-color: #F97316;
+      box-shadow: 0 0 0 3px rgba(249,115,22,0.12);
+      background: #fff;
+    }
+    .ob-input::placeholder { color: #C4B5AC; }
+    .ob-select {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='%239CA3AF' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 34px;
+    }
+    .ob-field { margin-bottom: 20px; }
+    .ob-field:last-child { margin-bottom: 0; }
+    .ob-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 540px) { .ob-row { grid-template-columns: 1fr; } }
+
+    /* ===== Logo upload ===== */
+    .ob-logo-zone {
+      border: 2px dashed #E5D5C8;
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+      position: relative;
+    }
+    .ob-logo-zone:hover { border-color: #F97316; background: #FFF8F0; }
+    .ob-logo-zone input { display: none; }
+    .ob-logo-preview {
+      width: 72px;
+      height: 72px;
+      border-radius: 12px;
+      object-fit: cover;
+      display: none;
+      margin: 0 auto 8px;
+    }
+    .ob-logo-placeholder { color: #C4B5AC; }
+    .ob-logo-placeholder i { font-size: 2rem; display: block; margin-bottom: 6px; }
+    .ob-logo-placeholder span { font-size: 0.8rem; }
+
+    /* ===== Staff section ===== */
+    .ob-staff-card {
+      border: 1.5px solid #F0E8E0;
+      border-radius: 14px;
+      padding: 20px;
+      margin-bottom: 16px;
+      position: relative;
+    }
+    .ob-staff-card:last-child { margin-bottom: 0; }
+    .ob-staff-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .ob-staff-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.9rem;
+      color: #fff;
+    }
+    .ob-staff-icon.mesero   { background: linear-gradient(135deg,#3B82F6,#2563EB); }
+    .ob-staff-icon.cocinero { background: linear-gradient(135deg,#22C55E,#16A34A); }
+    .ob-staff-icon.cajero   { background: linear-gradient(135deg,#F59E0B,#D97706); }
+    .ob-staff-title h6 {
+      margin: 0;
+      font-size: 0.875rem;
+      font-weight: 700;
+      color: #374151;
+    }
+    .ob-staff-title small {
+      font-size: 0.72rem;
+      color: #9CA3AF;
+    }
+    .ob-skip-note {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 16px;
+      background: #FFF8F0;
+      border-radius: 10px;
+      font-size: 0.8rem;
+      color: #9CA3AF;
+      margin-bottom: 20px;
+    }
+
+    /* ===== Step 4 - Summary ===== */
+    .ob-summary-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid #F5F0EB;
+    }
+    .ob-summary-item:last-child { border-bottom: none; }
+    .ob-summary-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      background: linear-gradient(135deg,#FFF0E5,#FDE8D2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #F97316;
+      font-size: 0.95rem;
+      flex-shrink: 0;
+    }
+    .ob-summary-label { font-size: 0.75rem; color: #9CA3AF; margin-bottom: 1px; }
+    .ob-summary-value { font-size: 0.9rem; font-weight: 600; color: #1A1A1A; }
+
+    .ob-dalia-box {
+      background: linear-gradient(135deg, #FFF8F0 0%, #FFF0E5 100%);
+      border: 1.5px solid #F9C99A;
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+    .ob-dalia-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .ob-dalia-avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #F97316, #EA580C);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-size: 1.1rem;
+    }
+    .ob-dalia-name {
+      font-size: 0.8rem;
+      font-weight: 700;
+      color: #F97316;
+    }
+    .ob-dalia-sub {
+      font-size: 0.7rem;
+      color: #D97706;
+    }
+    .ob-dalia-text {
+      font-size: 0.875rem;
+      color: #4B3A2E;
+      line-height: 1.55;
+    }
+
+    .ob-nextsteps { list-style: none; padding: 0; margin: 0; }
+    .ob-nextsteps li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      font-size: 0.855rem;
+      color: #374151;
+      margin-bottom: 6px;
+      background: #FAFAF8;
+      border: 1px solid #F0E8E0;
+      transition: background 0.15s;
+    }
+    .ob-nextsteps li:hover { background: #FFF0E5; }
+    .ob-nextsteps li i { color: #F97316; width: 18px; text-align: center; }
+
+    /* ===== Buttons ===== */
+    .ob-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 24px 32px;
+      border-top: 1px solid #F5F0EB;
+      gap: 12px;
+    }
+    .ob-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 24px;
+      border-radius: 12px;
+      font-size: 0.875rem;
+      font-weight: 700;
+      font-family: inherit;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+      text-decoration: none;
+    }
+    .ob-btn-primary {
+      background: linear-gradient(135deg, #F97316, #EA580C);
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(249,115,22,0.30);
+    }
+    .ob-btn-primary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(249,115,22,0.40);
+    }
+    .ob-btn-primary:active { transform: translateY(0); }
+    .ob-btn-ghost {
+      background: transparent;
+      color: #9CA3AF;
+      border: 1.5px solid #E5D5C8;
+    }
+    .ob-btn-ghost:hover { background: #FFF8F0; color: #F97316; border-color: #F97316; }
+    .ob-btn-skip {
+      background: transparent;
+      color: #C4B5AC;
+      border: none;
+      padding: 8px 12px;
+      font-size: 0.8rem;
+    }
+    .ob-btn-skip:hover { color: #9CA3AF; }
+    .ob-btn-success {
+      background: linear-gradient(135deg, #22C55E, #16A34A);
+      color: #fff;
+      box-shadow: 0 4px 14px rgba(34,197,94,0.30);
+    }
+    .ob-btn-success:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(34,197,94,0.40);
+    }
+    .ob-btn[disabled] {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    /* ===== Spinner overlay ===== */
+    .ob-spinner-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(255,248,240,0.75);
+      backdrop-filter: blur(4px);
+      z-index: 9999;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .ob-spinner-overlay.active { display: flex; }
+    .ob-spinner {
+      width: 52px;
+      height: 52px;
+      border: 4px solid #F0E8E0;
+      border-top-color: #F97316;
+      border-radius: 50%;
+      animation: ob-spin 0.8s linear infinite;
+    }
+    @keyframes ob-spin { to { transform: rotate(360deg); } }
+    .ob-spinner-text { font-size: 0.9rem; font-weight: 600; color: #F97316; }
+
+    /* ===== Error alert ===== */
+    .ob-error {
+      display: none;
+      background: #FEF2F2;
+      border: 1px solid #FECACA;
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-size: 0.85rem;
+      color: #DC2626;
+      margin-bottom: 20px;
+    }
+    .ob-error.active { display: flex; gap: 8px; align-items: flex-start; }
+
+    /* ===== Step transitions ===== */
+    .ob-step-panel { display: none; }
+    .ob-step-panel.active { display: block; animation: ob-fadein 0.3s ease; }
+    @keyframes ob-fadein { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+    /* ===== Responsive tweaks ===== */
+    @media (max-width: 600px) {
+      .ob-topbar { padding: 12px 20px; }
+      .ob-progress-wrap { padding: 16px 20px 0; }
+      .ob-card-body, .ob-footer { padding: 20px; }
+      .ob-card-header { padding: 20px; }
+      .ob-body { padding: 20px 12px 40px; }
+    }
+  </style>
+</head>
+<body>
+<div class="ob-shell">
+
+  <!-- Top bar -->
+  <div class="ob-topbar">
+    <div class="ob-brand">
+      <div class="ob-brand-icon"><i class="bi bi-fire"></i></div>
+      <div class="ob-brand-name">dignita<span>.tech</span></div>
+    </div>
+    <div style="font-size:0.78rem;color:#9CA3AF;">Configuracion inicial del restaurante</div>
+  </div>
+
+  <!-- Progress -->
+  <div class="ob-progress-wrap">
+    <div class="ob-steps">
+      <div class="ob-step-indicator active" id="si-1">
+        <div class="ob-step-circle" id="sc-1">1</div>
+        <div class="ob-step-label">Tu Restaurante</div>
+      </div>
+      <div class="ob-step-indicator" id="si-2">
+        <div class="ob-step-circle" id="sc-2">2</div>
+        <div class="ob-step-label">Configuracion</div>
+      </div>
+      <div class="ob-step-indicator" id="si-3">
+        <div class="ob-step-circle" id="sc-3">3</div>
+        <div class="ob-step-label">Primer Staff</div>
+      </div>
+      <div class="ob-step-indicator" id="si-4">
+        <div class="ob-step-circle" id="sc-4">4</div>
+        <div class="ob-step-label">Listo</div>
+      </div>
+    </div>
+    <div class="ob-progress-bar-thin">
+      <div class="ob-progress-fill" id="progressFill" style="width:25%"></div>
+    </div>
+  </div>
+
+  <!-- Body -->
+  <div class="ob-body">
+    <div class="ob-card">
+
+      <!-- ============================================================ -->
+      <!-- STEP 1: Tu Restaurante                                        -->
+      <!-- ============================================================ -->
+      <div class="ob-step-panel active" id="step-1">
+        <div class="ob-card-header">
+          <div class="step-tag">Paso 1 de 4</div>
+          <h2>Tu Restaurante</h2>
+          <p>Cuéntanos sobre tu negocio para personalizarlo</p>
+        </div>
+        <div class="ob-card-body">
+
+          <div id="ob-error-1" class="ob-error">
+            <i class="bi bi-exclamation-circle-fill" style="flex-shrink:0;margin-top:1px;"></i>
+            <span id="ob-error-1-text"></span>
+          </div>
+
+          <!-- Logo upload -->
+          <div class="ob-field">
+            <label class="ob-label">Logo <span class="ob-optional">(opcional)</span></label>
+            <div class="ob-logo-zone" id="logoZone" onclick="document.getElementById('logoInput').click()">
+              <input type="file" id="logoInput" name="logo" accept="image/*">
+              <img id="logoPreview" class="ob-logo-preview" alt="Logo preview">
+              <div class="ob-logo-placeholder" id="logoPlaceholder">
+                <i class="bi bi-image"></i>
+                <span>Haz clic para subir tu logo<br><span style="font-size:0.72rem;color:#D4C5BC;">JPG, PNG, SVG · Max 5MB</span></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Nombre -->
+          <div class="ob-field">
+            <label class="ob-label" for="nombre_empresa">Nombre del restaurante <span style="color:#EF4444">*</span></label>
+            <input type="text" id="nombre_empresa" name="nombre_empresa" class="ob-input"
+              placeholder="Ej: La Buena Mesa" maxlength="100" autocomplete="organization">
+          </div>
+
+          <div class="ob-row">
+            <!-- Telefono -->
+            <div class="ob-field">
+              <label class="ob-label" for="telefono">Telefono <span class="ob-optional">(opcional)</span></label>
+              <input type="tel" id="telefono" name="telefono" class="ob-input"
+                placeholder="Ej: 01 234 5678" maxlength="20">
+            </div>
+            <!-- RUC -->
+            <div class="ob-field">
+              <label class="ob-label" for="ruc">RUC <span class="ob-optional">(opcional)</span></label>
+              <input type="text" id="ruc" name="ruc" class="ob-input"
+                placeholder="Ej: 20512345678" maxlength="11" pattern="\d{0,11}">
+            </div>
+          </div>
+
+          <!-- Direccion -->
+          <div class="ob-field">
+            <label class="ob-label" for="direccion">Direccion <span class="ob-optional">(opcional)</span></label>
+            <input type="text" id="direccion" name="direccion" class="ob-input"
+              placeholder="Ej: Av. La Mar 453, Miraflores, Lima" maxlength="200">
+          </div>
+
+        </div>
+        <div class="ob-footer">
+          <div></div>
+          <button class="ob-btn ob-btn-primary" onclick="goStep(2)">
+            Siguiente <i class="bi bi-arrow-right"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- STEP 2: Configuracion                                         -->
+      <!-- ============================================================ -->
+      <div class="ob-step-panel" id="step-2">
+        <div class="ob-card-header">
+          <div class="step-tag">Paso 2 de 4</div>
+          <h2>Configuracion</h2>
+          <p>Ajustes de moneda, impuestos y formato de impresion</p>
+        </div>
+        <div class="ob-card-body">
+
+          <div class="ob-row">
+            <!-- Moneda -->
+            <div class="ob-field">
+              <label class="ob-label" for="moneda">Moneda</label>
+              <select id="moneda" name="moneda" class="ob-input ob-select">
+                <option value="PEN" selected>PEN - Sol Peruano</option>
+                <option value="USD">USD - Dolar Americano</option>
+                <option value="EUR">EUR - Euro</option>
+                <option value="COP">COP - Peso Colombiano</option>
+                <option value="MXN">MXN - Peso Mexicano</option>
+              </select>
+            </div>
+            <!-- IGV -->
+            <div class="ob-field">
+              <label class="ob-label" for="igv_porcentaje">IGV / IVA (%)</label>
+              <input type="number" id="igv_porcentaje" name="igv_porcentaje" class="ob-input"
+                value="18" min="0" max="100" step="0.01" placeholder="18">
+            </div>
+          </div>
+
+          <!-- Zona horaria -->
+          <div class="ob-field">
+            <label class="ob-label" for="zona_horaria">Zona horaria</label>
+            <select id="zona_horaria" name="zona_horaria" class="ob-input ob-select">
+              <option value="America/Lima" selected>America/Lima (GMT-5)</option>
+              <option value="America/Bogota">America/Bogota (GMT-5)</option>
+              <option value="America/Guayaquil">America/Guayaquil (GMT-5)</option>
+              <option value="America/La_Paz">America/La_Paz (GMT-4)</option>
+              <option value="America/Santiago">America/Santiago (GMT-3/-4)</option>
+              <option value="America/Buenos_Aires">America/Buenos_Aires (GMT-3)</option>
+              <option value="America/Mexico_City">America/Mexico_City (GMT-6)</option>
+              <option value="America/Caracas">America/Caracas (GMT-4)</option>
+            </select>
+          </div>
+
+          <!-- Formato de impresion -->
+          <div class="ob-field">
+            <label class="ob-label">Formato de impresion</label>
+            <div style="display:flex;gap:12px;">
+              <label class="ob-format-opt" id="fmt-80" onclick="selectFormat('80')">
+                <div class="ob-format-icon selected" id="fmtIcon-80">
+                  <i class="bi bi-receipt" style="font-size:1.5rem;"></i>
+                  <span>Ticket 80mm</span>
+                  <small>Recomendado para bares y restaurantes</small>
+                </div>
+              </label>
+              <label class="ob-format-opt" id="fmt-A4" onclick="selectFormat('A4')">
+                <div class="ob-format-icon" id="fmtIcon-A4">
+                  <i class="bi bi-file-text" style="font-size:1.5rem;"></i>
+                  <span>Hoja A4</span>
+                  <small>Para impresoras de oficina</small>
+                </div>
+              </label>
+            </div>
+            <input type="hidden" id="formato_papel" name="formato_papel" value="80">
+          </div>
+
+        </div>
+        <div class="ob-footer">
+          <button class="ob-btn ob-btn-ghost" onclick="goStep(1)">
+            <i class="bi bi-arrow-left"></i> Atras
+          </button>
+          <button class="ob-btn ob-btn-primary" onclick="goStep(3)">
+            Siguiente <i class="bi bi-arrow-right"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- STEP 3: Primer Staff                                          -->
+      <!-- ============================================================ -->
+      <div class="ob-step-panel" id="step-3">
+        <div class="ob-card-header">
+          <div class="step-tag">Paso 3 de 4</div>
+          <h2>Primer Staff</h2>
+          <p>Crea los usuarios para que tu equipo pueda acceder</p>
+        </div>
+        <div class="ob-card-body">
+
+          <div class="ob-skip-note">
+            <i class="bi bi-info-circle" style="color:#F97316;flex-shrink:0;"></i>
+            Todos los campos son opcionales. Puedes crear mas usuarios desde el panel de administracion.
+          </div>
+
+          <!-- Mesero -->
+          <div class="ob-staff-card">
+            <div class="ob-staff-title">
+              <div class="ob-staff-icon mesero"><i class="bi bi-person-badge"></i></div>
+              <div>
+                <h6>Mesero</h6>
+                <small>Toma pedidos y atiende mesas</small>
+              </div>
+            </div>
+            <div class="ob-row">
+              <div class="ob-field">
+                <label class="ob-label" for="mesero_nombre">Nombre completo</label>
+                <input type="text" id="mesero_nombre" name="mesero_nombre" class="ob-input" placeholder="Ej: Juan Perez">
+              </div>
+              <div class="ob-field">
+                <label class="ob-label" for="mesero_usuario">Usuario</label>
+                <input type="text" id="mesero_usuario" name="mesero_usuario" class="ob-input"
+                  placeholder="Ej: mesero1" autocomplete="off">
+              </div>
+            </div>
+            <div class="ob-field">
+              <label class="ob-label" for="mesero_password">Contrasena <span class="ob-optional">(min. 6 caracteres)</span></label>
+              <input type="password" id="mesero_password" name="mesero_password" class="ob-input"
+                placeholder="Ingresa una contrasena" autocomplete="new-password" minlength="6">
+            </div>
+          </div>
+
+          <!-- Cocinero -->
+          <div class="ob-staff-card">
+            <div class="ob-staff-title">
+              <div class="ob-staff-icon cocinero"><i class="bi bi-egg-fried"></i></div>
+              <div>
+                <h6>Cocinero</h6>
+                <small>Recibe y gestiona las comandas</small>
+              </div>
+            </div>
+            <div class="ob-row">
+              <div class="ob-field">
+                <label class="ob-label" for="cocinero_nombre">Nombre completo</label>
+                <input type="text" id="cocinero_nombre" name="cocinero_nombre" class="ob-input" placeholder="Ej: Maria Lopez">
+              </div>
+              <div class="ob-field">
+                <label class="ob-label" for="cocinero_usuario">Usuario</label>
+                <input type="text" id="cocinero_usuario" name="cocinero_usuario" class="ob-input"
+                  placeholder="Ej: cocina1" autocomplete="off">
+              </div>
+            </div>
+            <div class="ob-field">
+              <label class="ob-label" for="cocinero_password">Contrasena</label>
+              <input type="password" id="cocinero_password" name="cocinero_password" class="ob-input"
+                placeholder="Ingresa una contrasena" autocomplete="new-password" minlength="6">
+            </div>
+          </div>
+
+          <!-- Cajero -->
+          <div class="ob-staff-card">
+            <div class="ob-staff-title">
+              <div class="ob-staff-icon cajero"><i class="bi bi-cash-register"></i></div>
+              <div>
+                <h6>Cajero</h6>
+                <small>Cobra y gestiona la caja</small>
+              </div>
+            </div>
+            <div class="ob-row">
+              <div class="ob-field">
+                <label class="ob-label" for="cajero_nombre">Nombre completo</label>
+                <input type="text" id="cajero_nombre" name="cajero_nombre" class="ob-input" placeholder="Ej: Ana Torres">
+              </div>
+              <div class="ob-field">
+                <label class="ob-label" for="cajero_usuario">Usuario</label>
+                <input type="text" id="cajero_usuario" name="cajero_usuario" class="ob-input"
+                  placeholder="Ej: cajero1" autocomplete="off">
+              </div>
+            </div>
+            <div class="ob-field">
+              <label class="ob-label" for="cajero_password">Contrasena</label>
+              <input type="password" id="cajero_password" name="cajero_password" class="ob-input"
+                placeholder="Ingresa una contrasena" autocomplete="new-password" minlength="6">
+            </div>
+          </div>
+
+        </div>
+        <div class="ob-footer">
+          <button class="ob-btn ob-btn-ghost" onclick="goStep(2)">
+            <i class="bi bi-arrow-left"></i> Atras
+          </button>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <button class="ob-btn ob-btn-skip" onclick="submitWizard(true)">Omitir</button>
+            <button class="ob-btn ob-btn-primary" onclick="submitWizard(false)">
+              Guardar y continuar <i class="bi bi-arrow-right"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- STEP 4: Listo!                                                -->
+      <!-- ============================================================ -->
+      <div class="ob-step-panel" id="step-4">
+        <div class="ob-card-header" style="background:linear-gradient(135deg,#22C55E 0%,#16A34A 100%);">
+          <div class="step-tag">Configuracion completa</div>
+          <h2>Tu restaurante esta listo</h2>
+          <p>Aqui tienes un resumen de lo que configuraste</p>
+        </div>
+        <div class="ob-card-body">
+
+          <!-- DalIA message -->
+          <div class="ob-dalia-box">
+            <div class="ob-dalia-header">
+              <div class="ob-dalia-avatar">
+                <span style="font-size:1.2rem;">&#129302;</span>
+              </div>
+              <div>
+                <div class="ob-dalia-name">DalIA</div>
+                <div class="ob-dalia-sub">Tu asistente de IA</div>
+              </div>
+            </div>
+            <div class="ob-dalia-text" id="daliaMessage">
+              Tu restaurante esta configurado correctamente. Desde el dashboard puedes ver el estado de tu negocio en tiempo real. Cuando estés listo, te recomiendo agregar tus primeros productos al menu.
+            </div>
+          </div>
+
+          <!-- Summary -->
+          <div style="margin-bottom:24px;">
+            <div style="font-size:0.78rem;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Resumen</div>
+            <div class="ob-summary-item">
+              <div class="ob-summary-icon"><i class="bi bi-shop"></i></div>
+              <div>
+                <div class="ob-summary-label">Restaurante</div>
+                <div class="ob-summary-value" id="sum-nombre">-</div>
+              </div>
+            </div>
+            <div class="ob-summary-item">
+              <div class="ob-summary-icon"><i class="bi bi-cash-stack"></i></div>
+              <div>
+                <div class="ob-summary-label">Moneda / IGV</div>
+                <div class="ob-summary-value" id="sum-moneda">PEN &bull; 18%</div>
+              </div>
+            </div>
+            <div class="ob-summary-item">
+              <div class="ob-summary-icon"><i class="bi bi-printer"></i></div>
+              <div>
+                <div class="ob-summary-label">Formato de impresion</div>
+                <div class="ob-summary-value" id="sum-formato">Ticket 80mm</div>
+              </div>
+            </div>
+            <div class="ob-summary-item">
+              <div class="ob-summary-icon"><i class="bi bi-people"></i></div>
+              <div>
+                <div class="ob-summary-label">Staff creado</div>
+                <div class="ob-summary-value" id="sum-staff">-</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Next steps -->
+          <div>
+            <div style="font-size:0.78rem;font-weight:700;color:#9CA3AF;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Proximos pasos</div>
+            <ul class="ob-nextsteps">
+              <li><i class="bi bi-grid-3x3-gap-fill"></i> <a href="/productos" style="color:inherit;text-decoration:none;">Agregar productos al menu</a></li>
+              <li><i class="bi bi-table"></i> <a href="/mesas" style="color:inherit;text-decoration:none;">Configurar mesas del salon</a></li>
+              <li><i class="bi bi-box-seam"></i> <a href="/almacen/inventario" style="color:inherit;text-decoration:none;">Agregar ingredientes al almacen</a></li>
+              <li><i class="bi bi-building"></i> <a href="/sunat" style="color:inherit;text-decoration:none;">Conectar con SUNAT <span style="color:#9CA3AF;font-size:0.78rem;">(opcional)</span></a></li>
+            </ul>
+          </div>
+
+        </div>
+        <div class="ob-footer" style="justify-content:center;">
+          <a href="/" class="ob-btn ob-btn-success" style="font-size:1rem;padding:14px 36px;">
+            <i class="bi bi-house-fill"></i> Ir al Dashboard
+          </a>
+        </div>
+      </div>
+
+    </div><!-- /ob-card -->
+  </div><!-- /ob-body -->
+</div><!-- /ob-shell -->
+
+<!-- Spinner overlay -->
+<div class="ob-spinner-overlay" id="spinnerOverlay">
+  <div class="ob-spinner"></div>
+  <div class="ob-spinner-text">Guardando configuracion...</div>
+</div>
+
+<script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script>
+/* =========================================================
+   Format-selector card styles (injected dynamically)
+   ========================================================= */
+(function injectFormatStyles() {
+  const s = document.createElement('style');
+  s.textContent = `
+    .ob-format-opt { flex:1; cursor:pointer; user-select:none; }
+    .ob-format-icon {
+      border: 2px solid #E5D5C8;
+      border-radius: 14px;
+      padding: 16px 12px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      color: #9CA3AF;
+      transition: all 0.2s;
+    }
+    .ob-format-icon span { font-size:0.85rem; font-weight:700; color:#374151; }
+    .ob-format-icon small { font-size:0.7rem; color:#9CA3AF; line-height:1.3; }
+    .ob-format-icon.selected {
+      border-color: #F97316;
+      background: #FFF8F0;
+      color: #F97316;
+      box-shadow: 0 0 0 3px rgba(249,115,22,0.10);
+    }
+    .ob-format-icon.selected span { color: #F97316; }
+  `;
+  document.head.appendChild(s);
+})();
+
+/* =========================================================
+   State
+   ========================================================= */
+let currentStep = 1;
+const TOTAL_STEPS = 4;
+
+/* =========================================================
+   Logo upload
+   ========================================================= */
+document.getElementById('logoInput').addEventListener('change', function() {
+  const file = this.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const preview = document.getElementById('logoPreview');
+    const placeholder = document.getElementById('logoPlaceholder');
+    preview.src = e.target.result;
+    preview.style.display = 'block';
+    placeholder.style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+});
+
+/* =========================================================
+   Format selector
+   ========================================================= */
+function selectFormat(val) {
+  document.getElementById('formato_papel').value = val;
+  document.getElementById('fmtIcon-80').classList.toggle('selected', val === '80');
+  document.getElementById('fmtIcon-A4').classList.toggle('selected', val === 'A4');
+}
+
+/* =========================================================
+   Step navigation
+   ========================================================= */
+function goStep(target) {
+  // Validate step 1 before advancing
+  if (target > 1 && currentStep === 1) {
+    const nombre = document.getElementById('nombre_empresa').value.trim();
+    if (!nombre) {
+      showError(1, 'El nombre del restaurante es requerido para continuar.');
+      document.getElementById('nombre_empresa').focus();
+      return;
+    }
+    clearError(1);
+  }
+
+  // Hide current
+  document.getElementById('step-' + currentStep).classList.remove('active');
+  document.getElementById('si-' + currentStep).classList.remove('active');
+
+  // Mark past steps as done
+  if (target > currentStep) {
+    document.getElementById('si-' + currentStep).classList.add('done');
+    const sc = document.getElementById('sc-' + currentStep);
+    sc.innerHTML = '<i class="bi bi-check-lg" style="font-size:0.85rem;"></i>';
+  } else {
+    // Going back: un-done the current indicator
+    document.getElementById('si-' + currentStep).classList.remove('done');
+    const sc = document.getElementById('sc-' + currentStep);
+    sc.textContent = currentStep;
+  }
+
+  currentStep = target;
+
+  // Show new
+  document.getElementById('step-' + currentStep).classList.add('active');
+  document.getElementById('si-' + currentStep).classList.add('active');
+
+  // Update progress fill
+  const pct = Math.round((currentStep / TOTAL_STEPS) * 100);
+  document.getElementById('progressFill').style.width = pct + '%';
+
+  // Scroll to top of card
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function showError(step, msg) {
+  const el = document.getElementById('ob-error-' + step);
+  const txt = document.getElementById('ob-error-' + step + '-text');
+  if (el && txt) {
+    txt.textContent = msg;
+    el.classList.add('active');
+  }
+}
+function clearError(step) {
+  const el = document.getElementById('ob-error-' + step);
+  if (el) el.classList.remove('active');
+}
+
+/* =========================================================
+   Gather form data
+   ========================================================= */
+function gatherFormData(skipStaff) {
+  const fd = new FormData();
+
+  // Step 1 fields
+  fd.append('nombre_empresa', document.getElementById('nombre_empresa').value.trim());
+  fd.append('telefono',       document.getElementById('telefono').value.trim());
+  fd.append('ruc',            document.getElementById('ruc').value.trim());
+  fd.append('direccion',      document.getElementById('direccion').value.trim());
+
+  // Logo file
+  const logoFile = document.getElementById('logoInput').files[0];
+  if (logoFile) fd.append('logo', logoFile);
+
+  // Step 2 fields
+  fd.append('moneda',          document.getElementById('moneda').value);
+  fd.append('igv_porcentaje',  document.getElementById('igv_porcentaje').value);
+  fd.append('zona_horaria',    document.getElementById('zona_horaria').value);
+  fd.append('formato_papel',   document.getElementById('formato_papel').value);
+
+  // Step 3 – staff (only if not skipping)
+  if (!skipStaff) {
+    fd.append('mesero_nombre',    document.getElementById('mesero_nombre').value.trim());
+    fd.append('mesero_usuario',   document.getElementById('mesero_usuario').value.trim());
+    fd.append('mesero_password',  document.getElementById('mesero_password').value);
+    fd.append('cocinero_nombre',  document.getElementById('cocinero_nombre').value.trim());
+    fd.append('cocinero_usuario', document.getElementById('cocinero_usuario').value.trim());
+    fd.append('cocinero_password',document.getElementById('cocinero_password').value);
+    fd.append('cajero_nombre',    document.getElementById('cajero_nombre').value.trim());
+    fd.append('cajero_usuario',   document.getElementById('cajero_usuario').value.trim());
+    fd.append('cajero_password',  document.getElementById('cajero_password').value);
+  }
+
+  return fd;
+}
+
+/* =========================================================
+   Submit wizard
+   ========================================================= */
+async function submitWizard(skipStaff) {
+  // Basic staff validation: if user provided a username, a password is required
+  if (!skipStaff) {
+    const staffPairs = [
+      { u: 'mesero_usuario',   p: 'mesero_password',   label: 'Mesero' },
+      { u: 'cocinero_usuario', p: 'cocinero_password', label: 'Cocinero' },
+      { u: 'cajero_usuario',   p: 'cajero_password',   label: 'Cajero' }
+    ];
+    for (const pair of staffPairs) {
+      const u = document.getElementById(pair.u).value.trim();
+      const p = document.getElementById(pair.p).value;
+      if (u && !p) {
+        alert('El ' + pair.label + ' tiene usuario pero le falta la contrasena.');
+        document.getElementById(pair.p).focus();
+        return;
+      }
+      if (u && p && p.length < 6) {
+        alert('La contrasena del ' + pair.label + ' debe tener al menos 6 caracteres.');
+        document.getElementById(pair.p).focus();
+        return;
+      }
+    }
+  }
+
+  // Show spinner
+  document.getElementById('spinnerOverlay').classList.add('active');
+
+  try {
+    const fd = gatherFormData(skipStaff);
+    const res = await fetch('/onboarding/setup', {
+      method: 'POST',
+      body: fd
+    });
+
+    const data = await res.json();
+
+    if (!res.ok || !data.ok) {
+      document.getElementById('spinnerOverlay').classList.remove('active');
+      alert('Error: ' + (data.error || 'No se pudo guardar la configuracion'));
+      return;
+    }
+
+    // Success: populate summary and go to step 4
+    populateSummary(data);
+    document.getElementById('spinnerOverlay').classList.remove('active');
+    goStep(4);
+
+  } catch (err) {
+    document.getElementById('spinnerOverlay').classList.remove('active');
+    alert('Error de red: ' + err.message);
+  }
+}
+
+/* =========================================================
+   Populate step 4 summary
+   ========================================================= */
+function populateSummary(data) {
+  const nombre   = document.getElementById('nombre_empresa').value.trim();
+  const moneda   = document.getElementById('moneda').value;
+  const igv      = document.getElementById('igv_porcentaje').value;
+  const formato  = document.getElementById('formato_papel').value;
+  const staffArr = (data.staffCreated || []);
+
+  document.getElementById('sum-nombre').textContent  = nombre || '-';
+  document.getElementById('sum-moneda').textContent  = moneda + ' \u2022 IGV ' + igv + '%';
+  document.getElementById('sum-formato').textContent = formato === 'A4' ? 'Hoja A4' : 'Ticket 80mm';
+
+  if (staffArr.length === 0) {
+    document.getElementById('sum-staff').textContent = 'Sin usuarios adicionales creados';
+  } else {
+    document.getElementById('sum-staff').textContent = staffArr.map(s =>
+      s.nombre + ' (' + s.rol + ')'
+    ).join(', ');
+  }
+
+  // DalIA personalized message
+  const staffErrors = data.staffErrors || [];
+  let msg = '\u00a1' + nombre + ' esta configurado y listo para operar! ';
+  if (staffArr.length > 0) {
+    msg += 'Cree ' + staffArr.length + ' usuario' + (staffArr.length > 1 ? 's' : '') + ' para tu equipo. ';
+  }
+  msg += 'Te recomiendo que tu proxima accion sea agregar los productos del menu para que tus meseros puedan empezar a tomar pedidos.';
+  if (staffErrors.length > 0) {
+    msg += ' Nota: ' + staffErrors.join(' ');
+  }
+  document.getElementById('daliaMessage').textContent = msg;
+}
+</script>
+</body>
+</html>

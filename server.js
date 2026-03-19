@@ -154,9 +154,14 @@ const canalesRoutes = require('./routes/canales');
 const reportesRoutes = require('./routes/reportes');
 const featuresRoutes = require('./routes/features');
 const ttsRoutes = require('./routes/tts');
+const onboardingRoutes = require('./routes/onboarding');
+const superadminRoutes = require('./routes/superadmin');
 
 // Auth routes (públicas): /login /logout /setup
 app.use(authRoutes);
+
+// Onboarding wizard (admin only, before the main dashboard guard)
+app.use('/onboarding', requireAuth, requireRole('administrador'), onboardingRoutes);
 
 // Landing page (always public)
 app.get('/landing', (req, res) => {
@@ -273,6 +278,23 @@ app.get('/', requireAuth, async (req, res) => {
         } catch (e) { console.error('Cajero dashboard error:', e.message); }
 
         return res.render('dashboard-cajero', { cajaDash });
+    }
+
+    // ---- ONBOARDING CHECK (administrador only) ----
+    // If the restaurant hasn't been named yet, guide the admin through the wizard.
+    if (rol === 'administrador' && !req.session?.onboardingCompleted) {
+        try {
+            const tid = req.tenantId || 1;
+            const [[cfgRow]] = await db.query(
+                "SELECT nombre_negocio FROM configuracion_impresion WHERE tenant_id=? LIMIT 1",
+                [tid]
+            );
+            if (!cfgRow || !String(cfgRow.nombre_negocio || '').trim()) {
+                return res.redirect('/onboarding');
+            }
+        } catch (_) {
+            // If the query fails for any reason, don't block the dashboard
+        }
     }
 
     // Admin dashboard data
@@ -606,6 +628,10 @@ app.get('/ranking', requireRole('administrador'), async (req, res) => {
     } catch (e) { console.error('Ranking stats error:', e.message); }
     res.render('ranking', { stats });
 });
+
+// Superadmin panel (superadmin role only - cross-tenant)
+app.use('/superadmin', requireAuth, requireRole('superadmin'), superadminRoutes);
+app.use('/api/superadmin', requireAuth, requireRole('superadmin'), superadminRoutes);
 
 // Features (reservas, delivery, promos, fidelidad - admin)
 app.use('/features', requireRole('administrador'), featuresRoutes);
