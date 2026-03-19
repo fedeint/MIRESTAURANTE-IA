@@ -239,7 +239,7 @@ h1, h2, h3, h4, h5, h6 {
   border: 3px solid #ff9145;
   border-radius: 15px;
   pointer-events: none;
-  z-index: 9999;
+  z-index: 1040;
   filter: blur(0.5px);
 }
 
