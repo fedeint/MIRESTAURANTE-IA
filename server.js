@@ -170,6 +170,67 @@ app.get('/', requireAuth, async (req, res) => {
     if (rol === 'cocinero') return res.redirect('/cocina');
     if (rol === 'mesero') return res.redirect('/mesas');
 
+    // ---- CAJERO dashboard ----
+    if (rol === 'cajero') {
+        const cajaDash = {
+            userName: req.session?.user?.nombre || req.session?.user?.usuario || 'Cajero',
+            cajaAbierta: false,
+            cajaId: null,
+            ventasHoy: '0.00',
+            facturasHoy: 0,
+            efectivoEnCaja: '0.00',
+            metodosHoy: []
+        };
+        try {
+            const tid = req.tenantId || 1;
+
+            // Caja abierta
+            const [[cajaRow]] = await db.query(
+                "SELECT id, monto_apertura FROM cajas WHERE tenant_id=? AND estado='abierta' ORDER BY fecha_apertura DESC LIMIT 1",
+                [tid]
+            );
+            cajaDash.cajaAbierta = !!cajaRow;
+            cajaDash.cajaId = cajaRow ? cajaRow.id : null;
+
+            // Ventas y facturas del dia
+            const [[vhRow]] = await db.query(
+                "SELECT COUNT(*) as c, COALESCE(SUM(total),0) as m FROM facturas WHERE fecha::date = CURRENT_DATE"
+            );
+            cajaDash.ventasHoy = Number(vhRow.m).toFixed(2);
+            cajaDash.facturasHoy = Number(vhRow.c);
+
+            // Efectivo actual en caja (solo movimientos de efectivo)
+            if (cajaRow) {
+                try {
+                    const [[efEfectivo]] = await db.query(
+                        `SELECT COALESCE(SUM(CASE WHEN cm.tipo='ingreso' THEN cm.monto ELSE -cm.monto END),0) as ef
+                         FROM caja_movimientos cm
+                         LEFT JOIN metodos_pago mp ON mp.id = cm.metodo_pago_id
+                         WHERE cm.caja_id=? AND cm.anulado=false AND (mp.nombre ILIKE '%efectivo%' OR mp.nombre ILIKE '%cash%' OR cm.metodo_pago_id IS NULL)`,
+                        [cajaRow.id]
+                    );
+                    cajaDash.efectivoEnCaja = Number(efEfectivo.ef || 0).toFixed(2);
+                } catch (_) {}
+            }
+
+            // Desglose por metodo de pago hoy
+            try {
+                const [metodos] = await db.query(
+                    `SELECT mp.nombre as metodo, COALESCE(SUM(f.total),0) as total, COUNT(f.id) as qty
+                     FROM facturas f
+                     LEFT JOIN metodos_pago mp ON mp.id = f.metodo_pago_id
+                     WHERE f.fecha::date = CURRENT_DATE
+                     GROUP BY mp.nombre
+                     ORDER BY total DESC`
+                );
+                cajaDash.metodosHoy = metodos || [];
+            } catch (_) {}
+
+        } catch (e) { console.error('Cajero dashboard error:', e.message); }
+
+        return res.render('dashboard-cajero', { cajaDash });
+    }
+
     // Admin dashboard data
     const dashboard = { ventasHoy: 0, ventasMes: 0, mesasTotal: 0, mesasOcupadas: 0, productosVendidosHoy: 0, clientesTotal: 0, alertas: 0, topProductos: [], userName: req.session?.user?.nombre || req.session?.user?.usuario || 'Admin', facturasHoy: 0, cajaAbierta: false, personalSinPago: 0, personalTotal: 0, meserosActivos: 0, ratioMesasPorMesero: 0, ventasAyer: 0, pendientes: [], iaInsights: [] };
     try {

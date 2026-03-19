@@ -394,33 +394,73 @@
   /* ------------------------------------------------------------------ */
   /* 1. Module-aware tips                                                 */
   /* ------------------------------------------------------------------ */
+  /* Role injected server-side so the JS can branch per user */
+  var _ROL = '<%= _mascotaUser ? (user.rol || "") : "" %>';
+
   var MASCOTA_TIPS = {
-    '/': [
-      'Bienvenido jefe! Desde aqui puedes ver el resumen de tu dia: ventas, mesas ocupadas y alertas de stock.',
-      'Revisa las pendientes del dia antes de abrir el restaurante.',
-      'Los KPIs de la derecha te muestran las ventas, mesas y platos del dia en tiempo real.'
-    ],
+    '/': (function() {
+      if (_ROL === 'cajero')   return [
+        'Verifica que la caja este abierta antes de empezar el turno.',
+        'La caja lleva un registro de todos los metodos de pago del dia.',
+        'Al cerrar, cuenta el efectivo fisico primero, luego ingresa el monto en el sistema.'
+      ];
+      if (_ROL === 'mesero')   return [
+        'Bienvenido! Ve a Mesas para ver el estado del salon.',
+        'Recuerda sonreir: un buen servicio genera mas propinas y clientes felices.',
+        'Si una mesa tarda, verifica en Cocina el estado de sus pedidos.'
+      ];
+      if (_ROL === 'cocinero') return [
+        'Revisa los pedidos en cola al iniciar tu turno.',
+        'Mantente al dia con el stock de ingredientes para no sorprenderte a media orden.',
+        'Marca los platos como "Listo" en cuanto esten preparados para que el mesero los recoja a tiempo.'
+      ];
+      /* administrador / default */
+      return [
+        'Bienvenido jefe! Desde aqui puedes ver el resumen de tu dia: ventas, mesas ocupadas y alertas de stock.',
+        'Revisa las pendientes del dia antes de abrir el restaurante.',
+        'Los KPIs de la derecha te muestran las ventas, mesas y platos del dia en tiempo real.'
+      ];
+    })(),
     '/caja': [
       'Recuerda abrir la caja antes de que los meseros empiecen a tomar pedidos.',
       'Al cerrar caja, cuenta bien los billetes y monedas. El sistema te ayuda con el desglose.',
-      'Si usas Yape o Plin, registra el monto en la seccion correspondiente al cerrar.'
+      'Si usas Yape o Plin, registra el monto en la seccion correspondiente al cerrar.',
+      'Cuadra el efectivo fisico con el sistema antes de cerrar: diferencias pequenas se acumulan.'
     ],
     '/facturacion': [
       'Aqui generas facturas y boletas. Asegurate de tener el RUC del cliente para facturas.',
       'Las facturas se envian automaticamente a SUNAT si esta configurado.',
       'Puedes reimprimir cualquier comprobante desde el historial.'
     ],
-    '/mesas': [
-      'Cada mesa muestra su estado: libre (verde), ocupada (naranja), por cobrar (roja).',
-      'Para agregar productos a una mesa, haz clic en ella y busca el plato.',
-      'Los pedidos se envian a cocina automaticamente cuando presionas "Enviar a cocina".',
-      'Al enviar a cocina, los insumos se descuentan del almacen automaticamente.'
-    ],
-    '/cocina': [
-      'Los pedidos aparecen en orden. Los que tienen mas de 8 minutos se marcan como prioritarios.',
-      'Marca "Listo" cuando el plato este preparado para que el mesero lo recoja.',
-      'El timer te ayuda a controlar los tiempos de preparacion.'
-    ],
+    '/mesas': (function() {
+      if (_ROL === 'mesero') return [
+        'Recuerda saludar al cliente al sentarlo. Una primera impresion vale mucho!',
+        'Si una mesa lleva mucho tiempo esperando, revisa su estado en Cocina.',
+        'Mesas en naranja tienen pedidos activos. En rojo estan listas para cobrar.',
+        'Agrega productos rapido buscando el nombre del plato en la mesa activa.',
+        'Al enviar a cocina, los insumos se descuentan del almacen automaticamente.'
+      ];
+      return [
+        'Cada mesa muestra su estado: libre (verde), ocupada (naranja), por cobrar (roja).',
+        'Para agregar productos a una mesa, haz clic en ella y busca el plato.',
+        'Los pedidos se envian a cocina automaticamente cuando presionas "Enviar a cocina".',
+        'Al enviar a cocina, los insumos se descuentan del almacen automaticamente.'
+      ];
+    })(),
+    '/cocina': (function() {
+      if (_ROL === 'cocinero') return [
+        'Atiende primero los pedidos con mas tiempo esperando. Estan marcados en rojo.',
+        'Marca "Listo" en cuanto el plato salga de la cocina para que el mesero no espere.',
+        'Revisa el stock de ingredientes al inicio del turno para anticipar faltantes.',
+        'Si un ingrediente se acaba, avisa al administrador para que lo registre en Almacen.',
+        'El timer muestra cuanto lleva cada pedido. Objetivo: menos de 15 minutos por plato.'
+      ];
+      return [
+        'Los pedidos aparecen en orden. Los que tienen mas de 8 minutos se marcan como prioritarios.',
+        'Marca "Listo" cuando el plato este preparado para que el mesero lo recoja.',
+        'El timer te ayuda a controlar los tiempos de preparacion.'
+      ];
+    })(),
     '/ventas': [
       'Aqui ves el historico de ventas por dia, semana o mes.',
       'Puedes filtrar por metodo de pago: efectivo, Yape, Plin o tarjeta.',
@@ -586,13 +626,18 @@
   }
 
   /* ------------------------------------------------------------------ */
-  /* 7. Greeting based on time of day                                     */
+  /* 7. Greeting based on time of day + user role                        */
   /* ------------------------------------------------------------------ */
   function getGreeting() {
     var h = new Date().getHours();
-    if (h < 12)       return 'Buenos dias, jefe!';
-    else if (h < 18)  return 'Buenas tardes, jefe!';
-    else              return 'Buenas noches, jefe!';
+    var saludo = h < 12 ? 'Buenos dias' : h < 18 ? 'Buenas tardes' : 'Buenas noches';
+    var rol = '<%= _mascotaUser ? (user.rol || "") : "" %>';
+
+    if (rol === 'mesero')        return saludo + '! Tus mesas te esperan. Recuerda sonreir y dar un gran servicio!';
+    if (rol === 'cocinero')      return saludo + ', chef! Revisa los pedidos en cola y mantente al dia con el stock.';
+    if (rol === 'cajero')        return saludo + '! Verifica que la caja este abierta antes de empezar.';
+    if (rol === 'administrador') return saludo + ', jefe! Aqui tienes el resumen de tu dia.';
+    return saludo + '!';
   }
 
   /* ------------------------------------------------------------------ */
