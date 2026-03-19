@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Politica de Privacidad - restaurante.dignita.tech</title>
+  <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: #f8fafc; color: #1e293b; min-height: 100vh; }
+
+    .legal-header {
+      background: linear-gradient(135deg, #0f0a2e 0%, #1e1b4b 60%, #312e81 100%);
+      padding: 1.25rem 0; border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .legal-header .brand { color: #fff; font-weight: 800; font-size: 1.1rem; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; }
+    .legal-header .brand .accent { color: #22d3ee; }
+    .legal-header .back-link { color: rgba(255,255,255,0.6); font-size: 0.85rem; text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem; transition: color 0.2s; }
+    .legal-header .back-link:hover { color: #22d3ee; }
+
+    .legal-hero {
+      background: linear-gradient(135deg, #0f0a2e 0%, #1e1b4b 100%);
+      padding: 3rem 0 2.5rem;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .legal-hero .badge-legal {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      background: rgba(99,102,241,0.15); border: 1px solid rgba(99,102,241,0.3);
+      border-radius: 2rem; padding: 0.3rem 0.9rem;
+      font-size: 0.78rem; font-weight: 600; color: #a5b4fc; margin-bottom: 1rem;
+    }
+    .legal-hero h1 { font-size: 2rem; font-weight: 800; color: #fff; letter-spacing: -0.03em; margin-bottom: 0.5rem; }
+    .legal-hero p { color: rgba(255,255,255,0.6); font-size: 0.95rem; }
+    .legal-hero .update-badge {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      background: rgba(34,211,238,0.1); border: 1px solid rgba(34,211,238,0.2);
+      border-radius: 0.5rem; padding: 0.35rem 0.75rem;
+      font-size: 0.78rem; font-weight: 600; color: #22d3ee; margin-top: 0.75rem;
+    }
+
+    /* CONTENT */
+    .legal-content { max-width: 820px; margin: 0 auto; padding: 3rem 1.5rem; }
+
+    /* TABLE OF CONTENTS */
+    .toc-card {
+      background: #fff; border: 1px solid rgba(0,0,0,0.06);
+      border-radius: 1rem; padding: 1.5rem; margin-bottom: 2.5rem;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+    }
+    .toc-card h4 { font-size: 0.85rem; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 1rem; }
+    .toc-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.35rem; }
+    .toc-list li a { font-size: 0.875rem; color: #6366f1; text-decoration: none; display: flex; align-items: center; gap: 0.4rem; padding: 0.2rem 0; }
+    .toc-list li a:hover { color: #4f46e5; text-decoration: underline; }
+
+    /* SECTIONS */
+    .legal-section { margin-bottom: 2.75rem; scroll-margin-top: 2rem; }
+    .section-number {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 32px; height: 32px; background: linear-gradient(135deg,#6366f1,#4f46e5);
+      border-radius: 50%; color: #fff; font-size: 0.78rem; font-weight: 800;
+      flex-shrink: 0;
+    }
+    .legal-section h2 { font-size: 1.2rem; font-weight: 800; color: #1e293b; display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; }
+    .legal-section h3 { font-size: 1rem; font-weight: 700; color: #334155; margin: 1.25rem 0 0.625rem; }
+    .legal-section p { font-size: 0.9rem; color: #475569; line-height: 1.75; margin-bottom: 0.75rem; }
+    .legal-section ul { font-size: 0.9rem; color: #475569; line-height: 1.75; padding-left: 1.25rem; margin-bottom: 0.75rem; }
+    .legal-section ul li { margin-bottom: 0.35rem; }
+
+    /* INFO BOX */
+    .info-box {
+      background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 0.75rem;
+      padding: 1rem 1.125rem; margin: 1rem 0; font-size: 0.875rem; color: #1e3a8a;
+      display: flex; gap: 0.75rem; align-items: flex-start;
+    }
+    .info-box i { color: #3b82f6; flex-shrink: 0; font-size: 1rem; margin-top: 0.1rem; }
+    .warning-box {
+      background: #fffbeb; border: 1px solid #fde68a; border-radius: 0.75rem;
+      padding: 1rem 1.125rem; margin: 1rem 0; font-size: 0.875rem; color: #92400e;
+      display: flex; gap: 0.75rem; align-items: flex-start;
+    }
+    .warning-box i { color: #d97706; flex-shrink: 0; font-size: 1rem; margin-top: 0.1rem; }
+
+    /* PROCESSOR TABLE */
+    .processor-table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.85rem; }
+    .processor-table th { background: #f1f5f9; padding: 0.625rem 0.875rem; font-weight: 700; color: #374151; text-align: left; border: 1px solid #e2e8f0; }
+    .processor-table td { padding: 0.625rem 0.875rem; color: #475569; border: 1px solid #e2e8f0; vertical-align: top; }
+    .processor-table tr:nth-child(even) td { background: #f8fafc; }
+
+    /* ARCO RIGHTS */
+    .arco-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.875rem; margin: 1rem 0; }
+    .arco-item { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.75rem; padding: 1rem; }
+    .arco-item .arco-letter { font-size: 1.5rem; font-weight: 900; color: #6366f1; margin-bottom: 0.25rem; }
+    .arco-item strong { display: block; font-size: 0.875rem; font-weight: 700; color: #1e293b; margin-bottom: 0.25rem; }
+    .arco-item p { font-size: 0.8rem; color: #64748b; margin: 0; line-height: 1.5; }
+
+    /* DIVIDER */
+    .legal-divider { border: none; border-top: 1px solid #e2e8f0; margin: 2rem 0; }
+
+    /* FOOTER */
+    .legal-footer { background: #0f0a2e; padding: 1.25rem 0; border-top: 1px solid rgba(255,255,255,0.06); }
+    .legal-footer span { color: rgba(255,255,255,0.4); font-size: 0.82rem; }
+    .legal-footer a { color: rgba(255,255,255,0.5); font-size: 0.82rem; text-decoration: none; }
+    .legal-footer a:hover { color: #22d3ee; }
+
+    @media (max-width: 640px) {
+      .legal-hero h1 { font-size: 1.5rem; }
+      .arco-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="legal-header">
+    <div class="container">
+      <div class="d-flex justify-content-between align-items-center">
+        <a href="/landing" class="brand">
+          <i class="bi bi-fire" style="color:#22d3ee;"></i>
+          restaurante<span class="accent">.dignita.tech</span>
+        </a>
+        <a href="/landing" class="back-link"><i class="bi bi-arrow-left"></i> Volver al inicio</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <div class="legal-hero">
+    <div class="container">
+      <div class="badge-legal"><i class="bi bi-shield-lock"></i> Documento legal</div>
+      <h1>Politica de Privacidad</h1>
+      <p>Dignita Tech S.A.C. — restaurante.dignita.tech</p>
+      <div class="update-badge"><i class="bi bi-calendar3"></i> Ultima actualizacion: 19 de marzo de 2026</div>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="legal-content">
+
+    <!-- TABLE OF CONTENTS -->
+    <div class="toc-card">
+      <h4><i class="bi bi-list-ul me-2"></i>Contenido</h4>
+      <ol class="toc-list">
+        <li><a href="#s1"><i class="bi bi-chevron-right"></i>Identidad del responsable del tratamiento</a></li>
+        <li><a href="#s2"><i class="bi bi-chevron-right"></i>Datos personales que recopilamos</a></li>
+        <li><a href="#s3"><i class="bi bi-chevron-right"></i>Finalidad y base legal del tratamiento</a></li>
+        <li><a href="#s4"><i class="bi bi-chevron-right"></i>Transferencia y encargados del tratamiento</a></li>
+        <li><a href="#s5"><i class="bi bi-chevron-right"></i>Medidas de seguridad</a></li>
+        <li><a href="#s6"><i class="bi bi-chevron-right"></i>Derechos ARCO</a></li>
+        <li><a href="#s7"><i class="bi bi-chevron-right"></i>Plazo de conservacion</a></li>
+        <li><a href="#s8"><i class="bi bi-chevron-right"></i>Cookies y tecnologias similares</a></li>
+        <li><a href="#s9"><i class="bi bi-chevron-right"></i>Modificaciones a esta politica</a></li>
+        <li><a href="#s10"><i class="bi bi-chevron-right"></i>Contacto y ejercicio de derechos</a></li>
+      </ol>
+    </div>
+
+    <!-- SECTION 1: IDENTITY -->
+    <div class="legal-section" id="s1">
+      <h2><span class="section-number">1</span> Identidad del responsable del tratamiento</h2>
+      <p>
+        El responsable del tratamiento de sus datos personales es:
+      </p>
+      <div class="info-box" style="flex-direction:column;gap:0.5rem;">
+        <div><strong>Razon social:</strong> Dignita Tech S.A.C.</div>
+        <div><strong>Nombre comercial:</strong> restaurante.dignita.tech</div>
+        <div><strong>RUC:</strong> (en tramite ante SUNAT)</div>
+        <div><strong>Domicilio fiscal:</strong> Lima, Peru</div>
+        <div><strong>Correo de contacto:</strong> legal@dignita.tech</div>
+        <div><strong>Actividad:</strong> Desarrollo y provision de software SaaS para gestion de restaurantes</div>
+      </div>
+      <p>
+        Dignita Tech S.A.C. actua como responsable del tratamiento de los datos personales de
+        sus clientes (operadores de restaurantes, usuarios del sistema) en los terminos previstos
+        por la <strong>Ley N.° 29733 — Ley de Proteccion de Datos Personales</strong> y su
+        Reglamento aprobado por Decreto Supremo N.° 003-2013-JUS.
+      </p>
+      <p>
+        Respecto a los datos de los comensales o clientes finales del restaurante que son
+        ingresados en el sistema por el operador, Dignita Tech S.A.C. actua como
+        <strong>encargado del tratamiento</strong> en nombre del operador del restaurante.
+      </p>
+    </div>
+
+    <hr class="legal-divider">
+
+    <!-- SECTION 2: DATA COLLECTED -->
+    <div class="legal-section" id="s2">
+      <h2><span class="section-number">2</span> Datos personales que recopilamos</h2>
+
+      <h3>2.1 Datos de operadores y usuarios del sistema</h3>
+      <p>Cuando usted contrata o utiliza el servicio de restaurante.dignita.tech, recopilamos:</p>
+      <ul>
+        <li><strong>Datos de identidad:</strong> nombre completo, numero de DNI o RUC (cuando aplique)</li>
+        <li><strong>Datos de contacto:</strong> correo electronico, numero de telefono o celular</li>
+        <li><strong>Datos de acceso:</strong> nombre de usuario, contrasena (almacenada con hash bcrypt), rol dentro del sistema</li>
+        <li><strong>Datos del negocio:</strong> nombre del restaurante, RUC del establecimiento, configuracion de impresion</li>
+        <li><strong>Datos de transacciones:</strong> facturas, pedidos, detalle de ventas, metodos de pago utilizados</li>
+        <li><strong>Datos de uso:</strong> registros de sesion, direccion IP, tipo de dispositivo, acciones realizadas en el sistema</li>
+      </ul>
+
+      <h3>2.2 Datos ingresados por el operador (clientes del restaurante)</h3>
+      <p>
+        El operador del restaurante puede ingresar en el sistema datos de sus propios clientes (comensales), tales
+        como nombre, telefono, correo electronico y numero de documento para emision de comprobantes. Dignita Tech
+        S.A.C. solo procesa estos datos para prestar el servicio contratado.
+      </p>
+
+      <h3>2.3 Datos del Libro de Reclamaciones</h3>
+      <p>
+        Cuando un usuario presenta una queja o reclamo mediante nuestro Libro de Reclamaciones electronico,
+        recopilamos: nombre, tipo y numero de documento, direccion, telefono, correo electronico y el contenido
+        del reclamo. Estos datos son tratados en cumplimiento de obligaciones legales.
+      </p>
+
+      <div class="warning-box">
+        <i class="bi bi-exclamation-triangle"></i>
+        <div>No recopilamos datos especiales o sensibles (datos biometricos, informacion de salud,
+        opinion politica, religion u orientacion sexual) en el contexto de nuestro servicio.</div>
+      </div>
+    </div>
+
+    <hr class="legal-divider">
+
+    <!-- SECTION 3: PURPOSE AND LEGAL BASIS -->
+    <div class="legal-section" id="s3">
+      <h2><span class="section-number">3</span> Finalidad y base legal del tratamiento</h2>
+      <p>Tratamos sus datos personales para las siguientes finalidades:</p>
+
+      <table class="processor-table">
+        <thead>
+          <tr>
+            <th>Finalidad</th>
+            <th>Base legal</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Provision del servicio SaaS contratado (gestion de mesas, pedidos, facturacion, cocina)</td>
+            <td>Ejecucion del contrato de servicio (Art. 13.c, Ley 29733)</td>
+          </tr>
+          <tr>
+            <td>Creacion y gestion de cuentas de usuario</td>
+            <td>Ejecucion del contrato</td>
+          </tr>
+          <tr>
+            <td>Emision de comprobantes electronicos (boletas y facturas via OSE autorizado)</td>
+            <td>Obligacion legal SUNAT (Art. 13.d, Ley 29733)</td>
+          </tr>
+          <tr>
+            <td>Atencion de reclamos a traves del Libro de Reclamaciones</td>
+            <td>Obligacion legal INDECOPI — Ley 32495 y Ley 29571</td>
+          </tr>
+          <tr>
+            <td>Envio de comunicaciones del servicio (actualizaciones, alertas de seguridad, soporte)</td>
+            <td>Interes legitimo / ejecucion del contrato</td>
+          </tr>
+          <tr>
+            <td>Asistencia de inteligencia artificial (DalIA) para analisis de ventas e inventario</td>
+            <td>Ejecucion del contrato / consentimiento</td>
+          </tr>
+          <tr>
+            <td>Comunicaciones por WhatsApp Business (notificaciones al personal del restaurante)</td>
+            <td>Consentimiento del usuario (Art. 13.a, Ley 29733)</td>
+          </tr>
+          <tr>
+            <td>Marketing y promociones de nuevas funciones del servicio</td>
+            <td>Consentimiento del usuario (puede revocarse en cualquier momento)</td>
+          </tr>
+          <tr>
+            <td>Facturacion del plan SaaS contratado (Pro / Enterprise)</td>
+            <td>Ejecucion del contrato / obligacion legal</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <hr class="legal-divider">
+
+    <!-- SECTION 4: TRANSFERS AND SUB-PROCESSORS -->
+    <div class="legal-section" id="s4">
+      <h2><span class="section-number">4</span> Transferencia y encargados del tratamiento</h2>
+      <p>
+        Para prestar el servicio, Dignita Tech S.A.C. utiliza los siguientes subencargados del tratamiento.
+        Nos aseguramos de que cada proveedor ofrezca garantias adecuadas de proteccion de datos:
+      </p>
+
+      <table class="processor-table">
+        <thead>
+          <tr>
+            <th>Proveedor</th>
+            <th>Pais / Region</th>
+            <th>Finalidad</th>
+            <th>Garantias</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Supabase</strong> (supabase.com)</td>
+            <td>EE.UU. (AWS us-east-1)</td>
+            <td>Almacenamiento de base de datos PostgreSQL (datos del restaurante, usuarios, facturas)</td>
+            <td>SOC 2 Tipo II, GDPR DPA disponible, encriptacion en reposo y en transito</td>
+          </tr>
+          <tr>
+            <td><strong>Vercel Inc.</strong> (vercel.com)</td>
+            <td>EE.UU. / Global CDN</td>
+            <td>Hosting de la aplicacion web, despliegue de la plataforma SaaS</td>
+            <td>SOC 2 Tipo II, GDPR DPA, datos procesados en servidores bajo Standard Contractual Clauses</td>
+          </tr>
+          <tr>
+            <td><strong>Anthropic, PBC</strong> (anthropic.com)</td>
+            <td>EE.UU.</td>
+            <td>Procesamiento de consultas de IA (DalIA) — analisis de ventas e inventario</td>
+            <td>Politica de privacidad empresarial, datos de API no usados para entrenamiento de modelos</td>
+          </tr>
+          <tr>
+            <td><strong>Meta Platforms / WhatsApp Business</strong></td>
+            <td>EE.UU. / Global</td>
+            <td>Envio de notificaciones y comprobantes electronicos a clientes del restaurante via WhatsApp</td>
+            <td>Meta Business API Terms, sujeto a politica de privacidad de Meta</td>
+          </tr>
+          <tr>
+            <td><strong>NubeFact</strong> (nubefact.com)</td>
+            <td>Peru</td>
+            <td>OSE autorizado por SUNAT para emision de comprobantes electronicos</td>
+            <td>Autorizado por SUNAT, regulado por normas tributarias peruanas</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="info-box">
+        <i class="bi bi-info-circle"></i>
+        <div>
+          La transferencia de datos a proveedores fuera del Peru se realiza en base a garantias contractuales
+          adecuadas. Al contratar nuestro servicio, usted consiente estas transferencias internacionales
+          necesarias para la prestacion del servicio. Si desea mas informacion sobre las garantias aplicables,
+          puede contactarnos en legal@dignita.tech.
+        </div>
+      </div>
+    </div>
+
+    <hr class="legal-divider">
+
+    <!-- SECTION 5: SECURITY -->
+    <div class="legal-section" id="s5">
+      <h2><span class="section-number">5</span> Medidas de seguridad</h2>
+      <p>
+        Dignita Tech S.A.C. implementa medidas tecnicas y organizativas apropiadas para proteger sus
+        datos personales contra el acceso no autorizado, perdida, destruccion o divulgacion accidental:
+      </p>
+      <ul>
+        <li><strong>Cifrado en transito:</strong> Todas las comunicaciones se realizan mediante protocolo HTTPS/TLS 1.2 o superior (certificado SSL).</li>
+        <li><strong>Cifrado en reposo:</strong> Los datos almacenados en Supabase (PostgreSQL) estan cifrados en reposo mediante AES-256.</li>
+        <li><strong>Contrasenas:</strong> Las contrasenas de usuarios se almacenan utilizando hash bcrypt con sal, nunca en texto plano.</li>
+        <li><strong>Control de acceso por roles:</strong> El sistema implementa roles estrictos (administrador, mesero, cocinero, cajero) con acceso minimo necesario.</li>
+        <li><strong>Sesiones seguras:</strong> Las sesiones tienen caducidad de 12 horas y se almacenan en PostgreSQL con identificadores seguros.</li>
+        <li><strong>Backups automaticos:</strong> Copias de seguridad diarias automaticas con retencion de 30 dias en infraestructura Supabase.</li>
+        <li><strong>Rate limiting:</strong> Proteccion contra ataques de fuerza bruta en el sistema de autenticacion.</li>
+        <li><strong>Headers de seguridad:</strong> Implementacion de headers HTTP de seguridad (HSTS, X-Frame-Options, CSP).</li>
+      </ul>
+
+      <h3>5.1 Notificacion de brechas de seguridad</h3>
+      <p>
+        En caso de que se produzca una brecha de seguridad que afecte a sus datos personales y
+        que implique un riesgo para sus derechos y libertades, Dignita Tech S.A.C. le notificara
+        sin dilacion indebida y, en todo caso, dentro de las 72 horas siguientes al conocimiento
+        de la brecha, a traves del correo electronico asociado a su cuenta.
+      </p>
+    </div>
+
+    <hr class="legal-divider">
+
+    <!-- SECTION 6: ARCO RIGHTS -->
+    <div class="legal-section" id="s6">
+      <h2><span class="section-number">6</span> Derechos ARCO</h2>
+      <p>
+        De conformidad con la <strong>Ley N.° 29733 de Proteccion de Datos Personales</strong> y su
+        Reglamento, usted tiene los siguientes derechos sobre sus datos personales:
+      </p>
+
+      <div class="arco-grid">
+        <div class="arco-item">
+          <div class="arco-letter">A</div>
+          <strong>Acceso</strong>
+          <p>Conocer que datos personales suyos tenemos, para que los usamos, su origen y a quien los hemos cedido.</p>
+        </div>
+        <div class="arco-item">
+          <div class="arco-letter">R</div>
+          <strong>Rectificacion</strong>
+          <p>Corregir datos inexactos o incompletos. Puede actualizar la mayoria directamente desde su perfil en el sistema.</p>
+        </div>
+        <div class="arco-item">
+          <div class="arco-letter">C</div>
+          <strong>Cancelacion (Supresion)</strong>
+          <p>Solicitar la eliminacion de sus datos cuando ya no sean necesarios para la finalidad para la que fueron recogidos.</p>
+        </div>
+        <div class="arco-item">
+          <div class="arco-letter">O</div>
+          <strong>Oposicion</strong>
+          <p>Oponerse al tratamiento de sus datos para finalidades especificas, como el marketing directo.</p>
+        </div>
+      </div>
+
+      <h3>Como ejercer sus derechos</h3>
+      <p>
+        Para ejercer cualquiera de estos derechos, envie una solicitud escrita a
+        <strong>legal@dignita.tech</strong> indicando: (i) nombre completo y documento de identidad,
+        (ii) derecho que desea ejercer, (iii) descripcion del dato o tratamiento al que se refiere.
+      </p>
+      <p>
+        Responderemos su solicitud en un plazo maximo de <strong>20 dias habiles</strong> desde su
+        recepcion, conforme al articulo 24 de la Ley 29733. Si la solicitud es compleja o numerosa,
+        podremos prorrogar este plazo en otros 20 dias habiles, notificandole la prorroga y sus razones.
+      </p>
+      <div class="warning-box">
+        <i class="bi bi-exclamation-triangle"></i>
+        <div>
+          Si considera que su solicitud no ha sido atendida adecuadamente, puede presentar una
+          reclamacion ante la <strong>Autoridad Nacional de Proteccion de Datos Personales</strong>
+          (Ministerio de Justicia y Derechos Humanos) o ante <strong>INDECOPI</strong>.
+        </div>
+      </div>
+    </div>
+
+    <hr class="legal-divider">
+
+    <!-- SECTION 7: RETENTION -->
+    <div class="legal-section" id="s7">
+      <h2><span class="section-number">7</span> Plazo de conservacion</h2>
+      <p>Conservamos sus datos personales durante los siguientes periodos:</p>
+      <ul>
+        <li><strong>Datos de cuenta y configuracion del restaurante:</strong> Durante la vigencia del contrato de servicio.</li>
+        <li><strong>Datos de facturacion y registros contables:</strong> 7 anos desde la emision del comprobante (obligacion legal SUNAT, Art. 43 del TUO del Codigo Tributario).</li>
+        <li><strong>Datos de uso y logs:</strong> 90 dias desde su generacion.</li>
+        <li><strong>Datos del Libro de Reclamaciones:</strong> 3 anos desde el cierre del reclamo (obligacion legal INDECOPI).</li>
+        <li><strong>Datos tras cancelacion del servicio:</strong> Sus datos se conservan durante <strong>90 dias calendario</strong> despues del vencimiento o cancelacion del contrato. Durante ese periodo puede exportar su informacion. Transcurrido dicho plazo, los datos son eliminados de nuestros sistemas activos, salvo obligacion legal de mayor plazo.</li>
+      </ul>
+    </div>
+
+    <hr class="legal-divider">
+
+    <!-- SECTION 8: COOKIES -->
+    <div class="legal-section" id="s8">
+      <h2><span class="section-number">8</span> Cookies y tecnologias similares</h2>
+      <p>
+        restaurante.dignita.tech utiliza cookies estrictamente necesarias para el funcionamiento
+        del servicio:
+      </p>
+      <ul>
+        <li><strong>Cookie de sesion (sr.sid):</strong> Almacena el identificador de sesion autenticada. Es esencial para el funcionamiento del sistema. Duracion: 12 horas o hasta el cierre de sesion. No puede desactivarse sin afectar la funcionalidad del servicio.</li>
+      </ul>
+      <p>
+        No utilizamos cookies de seguimiento, publicidad o analitica de terceros en la aplicacion
+        principal. La pagina de inicio (landing) puede utilizar fuentes de Google Fonts, las cuales
+        pueden implicar una transferencia minima de la direccion IP a los servidores de Google para
+        cargar los recursos de tipografia.
+      </p>
+    </div>
+
+    <hr class="legal-divider">
+
+    <!-- SECTION 9: MODIFICATIONS -->
+    <div class="legal-section" id="s9">
+      <h2><span class="section-number">9</span> Modificaciones a esta politica</h2>
+      <p>
+        Dignita Tech S.A.C. se reserva el derecho de modificar la presente Politica de Privacidad
+        para adaptarla a cambios legislativos, jurisprudenciales o en nuestras practicas de tratamiento
+        de datos. Cuando realicemos cambios materiales, le notificaremos a traves del correo electronico
+        asociado a su cuenta y/o mediante un aviso destacado en la plataforma, con al menos
+        <strong>15 dias de anticipacion</strong> a la entrada en vigor de los cambios.
+      </p>
+      <p>
+        La continuacion en el uso del servicio tras la notificacion de cambios implica la aceptacion
+        de la nueva Politica de Privacidad. Si no esta de acuerdo con los cambios, puede cancelar su
+        servicio y solicitar la exportacion de sus datos antes de que los cambios entren en vigor.
+      </p>
+    </div>
+
+    <hr class="legal-divider">
+
+    <!-- SECTION 10: CONTACT -->
+    <div class="legal-section" id="s10">
+      <h2><span class="section-number">10</span> Contacto y ejercicio de derechos</h2>
+      <p>Para cualquier consulta, solicitud ARCO o reclamo relacionado con sus datos personales:</p>
+      <div class="info-box" style="flex-direction:column;gap:0.5rem;">
+        <div><strong>Correo electronico:</strong> legal@dignita.tech</div>
+        <div><strong>Asunto del correo:</strong> "Solicitud ARCO - [nombre completo]"</div>
+        <div><strong>WhatsApp:</strong> +51 999 999 999</div>
+        <div><strong>Plazo de respuesta:</strong> 20 dias habiles</div>
+      </div>
+      <p>
+        Si desea presentar una queja ante la autoridad de supervision competente, puede contactar a:
+      </p>
+      <ul>
+        <li><strong>Autoridad Nacional de Proteccion de Datos Personales</strong> (Ministerio de Justicia y Derechos Humanos del Peru) — <a href="https://www.minjus.gob.pe" target="_blank" rel="noopener">www.minjus.gob.pe</a></li>
+        <li><strong>INDECOPI</strong> — <a href="https://www.indecopi.gob.pe" target="_blank" rel="noopener">www.indecopi.gob.pe</a> / Linea gratuita: 0-800-4-4040</li>
+      </ul>
+    </div>
+
+    <!-- BACK LINKS -->
+    <div class="d-flex gap-3 mt-4 pt-3 border-top" style="border-color:#e2e8f0!important;">
+      <a href="/terminos" style="font-size:0.875rem;color:#6366f1;text-decoration:none;"><i class="bi bi-arrow-right me-1"></i>Terminos de Servicio</a>
+      <a href="/libro-reclamaciones" style="font-size:0.875rem;color:#6366f1;text-decoration:none;"><i class="bi bi-arrow-right me-1"></i>Libro de Reclamaciones</a>
+    </div>
+
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="legal-footer">
+    <div class="container text-center">
+      <span>&copy; <%= new Date().getFullYear() %> restaurante.dignita.tech &mdash; Dignita Tech S.A.C. &nbsp;|&nbsp;</span>
+      <a href="/libro-reclamaciones">Libro de Reclamaciones</a>
+      <span style="color:rgba(255,255,255,0.2);margin:0 0.5rem;">|</span>
+      <a href="/terminos">Terminos de Servicio</a>
+    </div>
+  </footer>
+
+  <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

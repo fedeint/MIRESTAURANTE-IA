@@ -190,10 +190,20 @@ const syncRoutes       = require('./routes/sync');
 const backupsRoutes    = require('./routes/backups');
 const soporteRoutes    = require('./routes/soporte');
 const pagosRoutes      = require('./routes/pagos');
+const legalRoutes      = require('./routes/legal');
 
 // Auth routes (públicas): /login /logout /setup
 app.post('/login', loginLimiter); // rate limit login attempts
 app.use(authRoutes);
+
+// ── Legal routes (PUBLIC — no auth required) ──────────────────────────────
+// Libro de Reclamaciones (Ley 32495, Peru - INDECOPI required)
+app.use('/libro-reclamaciones', legalRoutes);
+app.use('/api/legal', legalRoutes);
+// Politica de Privacidad (Ley 29733, Peru)
+app.get('/privacidad', (req, res) => res.render('legal/privacidad'));
+// Terminos de Servicio
+app.get('/terminos', (req, res) => res.render('legal/terminos'));
 
 // Pagos Izipay (public - no auth needed so landing page can initiate payments)
 app.use('/api/pagos', pagosRoutes);

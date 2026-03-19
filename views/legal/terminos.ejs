@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Terminos de Servicio - restaurante.dignita.tech</title>
+  <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: #f8fafc; color: #1e293b; min-height: 100vh; }
+
+    .legal-header {
+      background: linear-gradient(135deg, #0f0a2e 0%, #1e1b4b 60%, #312e81 100%);
+      padding: 1.25rem 0; border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .legal-header .brand { color: #fff; font-weight: 800; font-size: 1.1rem; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; }
+    .legal-header .brand .accent { color: #22d3ee; }
+    .legal-header .back-link { color: rgba(255,255,255,0.6); font-size: 0.85rem; text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem; transition: color 0.2s; }
+    .legal-header .back-link:hover { color: #22d3ee; }
+
+    .legal-hero {
+      background: linear-gradient(135deg, #0f0a2e 0%, #1e1b4b 100%);
+      padding: 3rem 0 2.5rem; border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .badge-legal { display: inline-flex; align-items: center; gap: 0.4rem; background: rgba(99,102,241,0.15); border: 1px solid rgba(99,102,241,0.3); border-radius: 2rem; padding: 0.3rem 0.9rem; font-size: 0.78rem; font-weight: 600; color: #a5b4fc; margin-bottom: 1rem; }
+    .legal-hero h1 { font-size: 2rem; font-weight: 800; color: #fff; letter-spacing: -0.03em; margin-bottom: 0.5rem; }
+    .legal-hero p { color: rgba(255,255,255,0.6); font-size: 0.95rem; }
+    .update-badge { display: inline-flex; align-items: center; gap: 0.4rem; background: rgba(34,211,238,0.1); border: 1px solid rgba(34,211,238,0.2); border-radius: 0.5rem; padding: 0.35rem 0.75rem; font-size: 0.78rem; font-weight: 600; color: #22d3ee; margin-top: 0.75rem; }
+
+    .legal-content { max-width: 820px; margin: 0 auto; padding: 3rem 1.5rem; }
+
+    .toc-card { background: #fff; border: 1px solid rgba(0,0,0,0.06); border-radius: 1rem; padding: 1.5rem; margin-bottom: 2.5rem; box-shadow: 0 2px 12px rgba(0,0,0,0.04); }
+    .toc-card h4 { font-size: 0.85rem; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 1rem; }
+    .toc-list { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 0.3rem 1rem; }
+    .toc-list li a { font-size: 0.85rem; color: #6366f1; text-decoration: none; display: flex; align-items: center; gap: 0.35rem; padding: 0.2rem 0; }
+    .toc-list li a:hover { text-decoration: underline; color: #4f46e5; }
+
+    .legal-section { margin-bottom: 2.75rem; scroll-margin-top: 2rem; }
+    .section-number { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; background: linear-gradient(135deg,#6366f1,#4f46e5); border-radius: 50%; color: #fff; font-size: 0.78rem; font-weight: 800; flex-shrink: 0; }
+    .legal-section h2 { font-size: 1.2rem; font-weight: 800; color: #1e293b; display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; }
+    .legal-section h3 { font-size: 0.975rem; font-weight: 700; color: #334155; margin: 1.25rem 0 0.625rem; }
+    .legal-section p { font-size: 0.9rem; color: #475569; line-height: 1.75; margin-bottom: 0.75rem; }
+    .legal-section ul, .legal-section ol { font-size: 0.9rem; color: #475569; line-height: 1.75; padding-left: 1.25rem; margin-bottom: 0.75rem; }
+    .legal-section ul li, .legal-section ol li { margin-bottom: 0.35rem; }
+
+    .info-box { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 0.75rem; padding: 1rem 1.125rem; margin: 1rem 0; font-size: 0.875rem; color: #1e3a8a; display: flex; gap: 0.75rem; align-items: flex-start; }
+    .info-box i { color: #3b82f6; flex-shrink: 0; font-size: 1rem; margin-top: 0.1rem; }
+    .warning-box { background: #fffbeb; border: 1px solid #fde68a; border-radius: 0.75rem; padding: 1rem 1.125rem; margin: 1rem 0; font-size: 0.875rem; color: #92400e; display: flex; gap: 0.75rem; align-items: flex-start; }
+    .warning-box i { color: #d97706; flex-shrink: 0; font-size: 1rem; margin-top: 0.1rem; }
+    .success-box { background: #f0fdf4; border: 1px solid #86efac; border-radius: 0.75rem; padding: 1rem 1.125rem; margin: 1rem 0; font-size: 0.875rem; color: #14532d; display: flex; gap: 0.75rem; align-items: flex-start; }
+    .success-box i { color: #22c55e; flex-shrink: 0; font-size: 1rem; margin-top: 0.1rem; }
+
+    /* PRICING TABLE */
+    .pricing-table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.85rem; }
+    .pricing-table th { background: #f1f5f9; padding: 0.625rem 0.875rem; font-weight: 700; color: #374151; text-align: left; border: 1px solid #e2e8f0; }
+    .pricing-table td { padding: 0.625rem 0.875rem; color: #475569; border: 1px solid #e2e8f0; vertical-align: top; }
+    .pricing-table tr:nth-child(even) td { background: #f8fafc; }
+
+    .legal-divider { border: none; border-top: 1px solid #e2e8f0; margin: 2rem 0; }
+
+    .legal-footer { background: #0f0a2e; padding: 1.25rem 0; border-top: 1px solid rgba(255,255,255,0.06); }
+    .legal-footer span { color: rgba(255,255,255,0.4); font-size: 0.82rem; }
+    .legal-footer a { color: rgba(255,255,255,0.5); font-size: 0.82rem; text-decoration: none; }
+    .legal-footer a:hover { color: #22d3ee; }
+
+    @media (max-width: 640px) {
+      .legal-hero h1 { font-size: 1.5rem; }
+      .toc-list { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="legal-header">
+    <div class="container">
+      <div class="d-flex justify-content-between align-items-center">
+        <a href="/landing" class="brand"><i class="bi bi-fire" style="color:#22d3ee;"></i>restaurante<span class="accent">.dignita.tech</span></a>
+        <a href="/landing" class="back-link"><i class="bi bi-arrow-left"></i> Volver al inicio</a>
+      </div>
+    </div>
+  </header>
+
+  <!-- HERO -->
+  <div class="legal-hero">
+    <div class="container">
+      <div class="badge-legal"><i class="bi bi-file-earmark-text"></i> Documento legal</div>
+      <h1>Terminos de Servicio</h1>
+      <p>Dignita Tech S.A.C. — restaurante.dignita.tech</p>
+      <div class="update-badge"><i class="bi bi-calendar3"></i> Ultima actualizacion: 19 de marzo de 2026</div>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div class="legal-content">
+
+    <!-- TABLE OF CONTENTS -->
+    <div class="toc-card">
+      <h4><i class="bi bi-list-ul me-2"></i>Contenido</h4>
+      <ol class="toc-list">
+        <li><a href="#s1"><i class="bi bi-chevron-right"></i>Definiciones</a></li>
+        <li><a href="#s2"><i class="bi bi-chevron-right"></i>Aceptacion de los terminos</a></li>
+        <li><a href="#s3"><i class="bi bi-chevron-right"></i>Descripcion del servicio</a></li>
+        <li><a href="#s4"><i class="bi bi-chevron-right"></i>Planes y precios</a></li>
+        <li><a href="#s5"><i class="bi bi-chevron-right"></i>Garantia de 15 dias</a></li>
+        <li><a href="#s6"><i class="bi bi-chevron-right"></i>Politica de devoluciones</a></li>
+        <li><a href="#s7"><i class="bi bi-chevron-right"></i>Obligaciones del usuario</a></li>
+        <li><a href="#s8"><i class="bi bi-chevron-right"></i>Uso aceptable</a></li>
+        <li><a href="#s9"><i class="bi bi-chevron-right"></i>Propiedad intelectual</a></li>
+        <li><a href="#s10"><i class="bi bi-chevron-right"></i>Limitacion de responsabilidad</a></li>
+        <li><a href="#s11"><i class="bi bi-chevron-right"></i>Suspension y terminacion</a></li>
+        <li><a href="#s12"><i class="bi bi-chevron-right"></i>Modificaciones al servicio</a></li>
+        <li><a href="#s13"><i class="bi bi-chevron-right"></i>Ley aplicable y resolucion de conflictos</a></li>
+        <li><a href="#s14"><i class="bi bi-chevron-right"></i>Contacto</a></li>
+      </ol>
+    </div>
+
+    <!-- INTRO -->
+    <div class="info-box" style="margin-bottom:2rem;">
+      <i class="bi bi-info-circle"></i>
+      <div>
+        Lea atentamente estos Terminos de Servicio antes de utilizar la plataforma restaurante.dignita.tech.
+        Al registrarse, acceder o utilizar el servicio, usted acepta quedar vinculado por estos terminos.
+        Si no esta de acuerdo, no debe utilizar el servicio.
+      </div>
+    </div>
+
+    <!-- SECTION 1: DEFINITIONS -->
+    <div class="legal-section" id="s1">
+      <h2><span class="section-number">1</span> Definiciones</h2>
+      <p>Para los efectos de estos Terminos de Servicio, los siguientes terminos tendran el significado que se les asigna a continuacion:</p>
+      <ul>
+        <li><strong>"Dignita Tech" / "la Empresa" / "nosotros":</strong> Dignita Tech S.A.C., empresa peruana proveedora de la plataforma SaaS restaurante.dignita.tech.</li>
+        <li><strong>"Plataforma" / "Sistema" / "Servicio":</strong> El software de gestion de restaurantes accesible en restaurante.dignita.tech y sus subdominios, incluyendo todas sus funcionalidades (gestion de mesas, pedidos, cocina, facturacion, inventario, asistente DalIA, etc.).</li>
+        <li><strong>"Usuario" / "Cliente":</strong> La persona natural o juridica (operador de restaurante) que contrata y utiliza el Servicio.</li>
+        <li><strong>"Usuario final":</strong> El personal del restaurante (administrador, mesero, cocinero, cajero) que utiliza el Sistema con las credenciales proporcionadas por el Cliente.</li>
+        <li><strong>"Comensal":</strong> El cliente del restaurante cuyos datos pueden ser registrados en el Sistema por el operador para fines de emision de comprobantes.</li>
+        <li><strong>"Plan":</strong> La modalidad de suscripcion elegida por el Cliente (Free, Pro o Enterprise).</li>
+        <li><strong>"Contenido del Cliente":</strong> Todos los datos ingresados por el Cliente en el Sistema (menu, precios, facturas, inventario, clientes, etc.).</li>
+        <li><strong>"DalIA":</strong> El asistente de inteligencia artificial integrado en la plataforma, basado en los modelos de lenguaje de Anthropic.</li>
+      </ul>
+    </div>
+
+    <hr class="legal-divider">
+
+    <!-- SECTION 2: ACCEPTANCE -->
+    <div class="legal-section" id="s2">
+      <h2><span class="section-number">2</span> Aceptacion de los terminos</h2>
+      <p>
+        Al registrarse en la plataforma, hacer clic en "Acepto" o comenzar a utilizar el Servicio, usted declara que:
+      </p>
+      <ul>
+        <li>Ha leido, comprendido y acepta estos Terminos de Servicio en su totalidad.</li>
+        <li>Tiene capacidad legal para celebrar contratos (mayor de edad o con autorizacion de su representante legal).</li>
+        <li>Si actua en nombre de una empresa o persona juridica, tiene facultades suficientes para obligarla.</li>
+        <li>Los datos proporcionados durante el registro son veraces, completos y actualizados.</li>
+      </ul>
+      <p>
+        Estos Terminos de Servicio, junto con nuestra
+        <a href="/privacidad">Politica de Privacidad</a>, constituyen el acuerdo completo entre
+        usted y Dignita Tech S.A.C. respecto al uso del Servicio.
+      </p>
+    </div>
+
+    <hr class="legal-divider">
+
+    <!-- SECTION 3: SERVICE DESCRIPTION -->
+    <div class="legal-section" id="s3">
+      <h2><span class="section-number">3</span> Descripcion del servicio</h2>
+      <p>
+        restaurante.dignita.tech es una plataforma SaaS (Software as a Service) de gestion integral
+        para restaurantes peruanos, que incluye las siguientes funcionalidades principales:
+      </p>
+      <ul>
+        <li>Gestion de mesas y estado de ocupacion en tiempo real</li>
+        <li>Sistema de pedidos con flujo de cocina (mozos, cocina, caja)</li>
+        <li>Panel de cocina con estados y auto-actualizacion</li>
+        <li>Facturacion con impresion termica (boletas y facturas)</li>
+        <li>Emision de comprobantes electronicos a traves de OSE autorizado por SUNAT</li>
+        <li>Gestion de productos, precios, combos y variantes</li>
+        <li>Control de inventario y almacen con alertas de stock</li>
+        <li>Administracion de usuarios por roles (administrador, mesero, cocinero, cajero, almacenero)</li>
+        <li>Historial de ventas, reportes y exportacion a Excel/PDF</li>
+        <li>Asistente de IA DalIA (segun plan contratado)</li>
+        <li>Integracion con WhatsApp Business para notificaciones</li>
+        <li>Modulo de caja y control de cierres diarios</li>
+        <li>Panel de administracion financiera (P&amp;L, gastos, planilla)</li>
+      </ul>
+      <p>
+        El Servicio se presta a traves de internet y es accesible desde cualquier navegador web moderno
+        en computadoras, tablets y telefonos inteligentes, sin necesidad de instalacion de software adicional.
+        Tambien funciona en modo local (red LAN) cuando no hay conexion a internet.
+      </p>
+      <div class="info-box">
+        <i class="bi bi-info-circle"></i>
+        <div>Dignita Tech se reserva el derecho de agregar, modificar o descontinuar funcionalidades del Servicio,
+        notificando al Cliente con al menos 30 dias de anticipacion en caso de cambios sustanciales.</div>
+      </div>
+    </div>
+
+    <hr class="legal-divider">
+
+    <!-- SECTION 4: PLANS AND PRICES -->
+    <div class="legal-section" id="s4">
+      <h2><span class="section-number">4</span> Planes y precios</h2>
+      <p>
+        El Servicio se ofrece bajo los siguientes planes de suscripcion:
+      </p>
+
+      <table class="pricing-table">
+        <thead>
+          <tr>
+            <th>Plan</th>
+            <th>Precio</th>
+            <th>Caracteristicas principales</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Free</strong></td>
+            <td>S/ 0 / mes<br><small style="color:#64748b;">Prueba de 15 dias</small></td>
+            <td>Hasta 2 usuarios, hasta 50 facturas/mes, gestion de mesas basica, panel de cocina, soporte por email</td>
+          </tr>
+          <tr>
+            <td><strong>Pro</strong></td>
+            <td>S/ 1,500 / ano</td>
+            <td>Usuarios ilimitados, facturas ilimitadas, DalIA (2,000,000 tokens/ano), exportacion Excel/PDF, multi-dispositivo LAN, gestion de almacen, redes sociales integradas, soporte prioritario</td>
+          </tr>
+          <tr>
+            <td><strong>Enterprise</strong></td>
+            <td>S/ 3,000 / ano</td>
+            <td>Todo lo del plan Pro + multi-local (hasta 5 sedes), DalIA sin limite de tokens, integracion SUNAT/OSE completa, API publica (webhooks), onboarding presencial, SLA 99.9% uptime, gerente de cuenta dedicado</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>4.1 Periodo de prueba gratuita</h3>
+      <p>
+        Nuevos clientes tienen acceso a una prueba gratuita de <strong>15 dias calendario</strong>
+        con acceso completo a las funcionalidades del sistema. No se requiere tarjeta de credito ni
+        compromiso de pago para iniciar la prueba. Al vencimiento del periodo de prueba, el sistema
+        pasara al plan Free con limitaciones, salvo que el Cliente contrate un plan de pago.
+      </p>
+
+      <h3>4.2 Facturacion y pago</h3>
+      <p>
+        Los planes Pro y Enterprise se facturan de forma anual por adelantado, en moneda nacional peruana
+        (soles, S/). El pago se realiza actualmente mediante coordinacion directa (WhatsApp o email con
+        ventas@dignita.tech). Proximamente estara disponible el pago en linea con tarjeta de credito/debito
+        a traves de Izipay (Visa, Mastercard, American Express).
+      </p>
+      <p>
+        Los precios estan sujetos a variacion. Cualquier cambio de precio aplicara en el siguiente ciclo
+        de renovacion anual, con notificacion previa de al menos 30 dias.
+      </p>
+
+      <h3>4.3 Renovacion</h3>
+      <p>
+        Los planes anuales no se renuevan automaticamente. Dignita Tech notificara al Cliente con
+        30 dias de anticipacion al vencimiento de su suscripcion para coordinar la renovacion.
+      </p>
+    </div>
+
+    <hr class="legal-divider">
+
+    <!-- SECTION 5: GUARANTEE -->
+    <div class="legal-section" id="s5">
+      <h2><span class="section-number">5</span> Garantia de 15 dias habiles</h2>
+
+      <div class="success-box" style="margin-bottom:1.25rem;">
+        <i class="bi bi-shield-check"></i>
+        <div>
+          <strong>Nuestra garantia:</strong> Si el sistema presenta una falla que impide la operacion normal
+          de su restaurante y usted no recibe respuesta de soporte dentro de los 15 dias habiles siguientes
+          a su reporte, Dignita Tech devolvera el 100% del pago realizado, sin cuestionamientos.
+        </div>
+      </div>
+
+      <h3>5.1 Condiciones de la garantia</h3>
+      <p>Para que aplique la garantia de devolucion, deben cumplirse las siguientes condiciones:</p>
+      <ol>
+        <li>El Cliente debe reportar el problema a traves de los canales oficiales de soporte (sistema de tickets en /soporte, WhatsApp o email soporte@dignita.tech).</li>
+        <li>El problema reportado debe constituir una falla del sistema que impida la operacion normal del restaurante (no aplica para consultas de uso, configuracion del usuario, o problemas de conectividad externa).</li>
+        <li>La empresa debe no haber respondido ni iniciado la resolucion del problema dentro de los <strong>15 dias habiles</strong> siguientes al reporte.</li>
+        <li>El Cliente debe solicitar formalmente la devolucion dentro de los 7 dias calendario siguientes al vencimiento del plazo de 15 dias habiles.</li>
+      </ol>
+
+      <h3>5.2 Proceso de devolucion</h3>
+      <p>
+        Una vez verificadas las condiciones de la garantia, Dignita Tech procesara la devolucion dentro
+        de los 10 dias habiles siguientes a la solicitud, a traves del mismo medio de pago utilizado
+        para la contratacion o mediante transferencia bancaria a la cuenta indicada por el Cliente.
+      </p>
+
+      <h3>5.3 Niveles de atencion de soporte</h3>
+      <ul>
+        <li><strong>Critico</strong> (sistema completamente caido): Respuesta en menos de 2 horas habiles.</li>
+        <li><strong>Alto</strong> (funcionalidad principal afectada): Respuesta en menos de 8 horas habiles.</li>
+        <li><strong>Normal</strong> (funcionalidad secundaria afectada, consultas): Respuesta en menos de 24 horas habiles.</li>
+        <li><strong>Bajo</strong> (mejoras, sugerencias): Respuesta en menos de 5 dias habiles.</li>
+      </ul>
+    </div>
+
+    <hr class="legal-divider">
+
+    <!-- SECTION 6: REFUNDS -->
+    <div class="legal-section" id="s6">
+      <h2><span class="section-number">6</span> Politica de devoluciones</h2>
+
+      <h3>6.1 Devolucion por garantia</h3>
+      <p>Aplica segun lo establecido en la Clausula 5 (Garantia de 15 dias habiles).</p>
+
+      <h3>6.2 Cancelacion anticipada</h3>
+      <p>
+        Los planes anuales son pagos adelantados por el periodo completo. En caso de cancelacion
+        anticipada voluntaria del servicio (no por falla del sistema), no se realizan devoluciones
+        proporcionales por el tiempo no utilizado, salvo que:
+      </p>
+      <ul>
+        <li>La cancelacion ocurra dentro de los primeros <strong>30 dias calendario</strong> desde
+            la contratacion y el Cliente no haya emitido mas de 10 comprobantes electronicos con
+            la plataforma, en cuyo caso se evaluara una devolucion proporcional. Solicitar a
+            ventas@dignita.tech.</li>
+        <li>Dignita Tech decida discontinuar permanentemente el servicio, en cuyo caso se
+            devolvera la parte proporcional no utilizada.</li>
+      </ul>
+
+      <h3>6.3 Derecho de retracto</h3>
+      <p>
+        Conforme al articulo 49 de la <strong>Ley 29571 — Codigo de Proteccion y Defensa del Consumidor</strong>,
+        el Cliente tiene derecho a retractarse de la contratacion dentro de los
+        <strong>7 dias calendario</strong> siguientes a la fecha de contratacion, siempre que no haya
+        utilizado el servicio de manera sustancial. Para ejercer este derecho, envie un correo a
+        ventas@dignita.tech con el asunto "Retracto de contratacion".
+      </p>
+    </div>
+
+    <hr class="legal-divider">
+
+    <!-- SECTION 7: USER OBLIGATIONS -->
+    <div class="legal-section" id="s7">
+      <h2><span class="section-number">7</span> Obligaciones del usuario</h2>
+      <p>Al utilizar el Servicio, usted se obliga a:</p>
+      <ul>
+        <li>Proporcionar informacion veraz, completa y actualizada durante el registro y uso del sistema.</li>
+        <li>Mantener la confidencialidad de sus credenciales de acceso (usuario y contrasena). Notificar inmediatamente a Dignita Tech ante cualquier uso no autorizado de su cuenta.</li>
+        <li>No compartir sus credenciales de acceso con personas ajenas a su organizacion.</li>
+        <li>Utilizar el Servicio exclusivamente para la gestion de su(s) establecimiento(s) de restaurant autorizado(s) en el contrato.</li>
+        <li>Cumplir con todas las leyes y regulaciones aplicables al operar su restaurante, incluyendo obligaciones tributarias ante SUNAT, normas sanitarias y laborales.</li>
+        <li>Asegurarse de que los usuarios finales (su personal) conozcan y respeten estos Terminos de Servicio.</li>
+        <li>Mantener sus datos de contacto y facturacion actualizados.</li>
+        <li>Notificar oportunamente cualquier falla, error o comportamiento inesperado del sistema a traves de los canales de soporte.</li>
+      </ul>
+    </div>
+
+    <hr class="legal-divider">
+
+    <!-- SECTION 8: ACCEPTABLE USE -->
+    <div class="legal-section" id="s8">
+      <h2><span class="section-number">8</span> Uso aceptable</h2>
+      <p>Queda estrictamente prohibido:</p>
+      <ul>
+        <li>Utilizar el Servicio para actividades ilegales, fraudulentas o que violen los derechos de terceros.</li>
+        <li>Intentar acceder a cuentas, datos o sistemas de otros clientes de la plataforma.</li>
+        <li>Realizar ingenieria inversa, descompilar, desensamblar o intentar obtener el codigo fuente de la plataforma.</li>
+        <li>Utilizar robots, scrapers, crawlers u otras herramientas automatizadas para acceder al sistema.</li>
+        <li>Introducir virus, malware, ransomware o cualquier codigo maligno en el sistema.</li>
+        <li>Sobrecargar intencionalmente la infraestructura del servicio (ataques de denegacion de servicio).</li>
+        <li>Revender, sublicenciar o proporcionar acceso al sistema a terceros sin autorizacion escrita de Dignita Tech.</li>
+        <li>Falsificar la identidad de Dignita Tech o suplantar a otros usuarios del sistema.</li>
+        <li>Utilizar el asistente DalIA para generar contenido ilegal, ofensivo, discriminatorio o que viole derechos de terceros.</li>
+        <li>Registrar datos de personas en el sistema sin su consentimiento cuando dicho consentimiento sea legalmente requerido.</li>
+      </ul>
+      <div class="warning-box">
+        <i class="bi bi-exclamation-triangle"></i>
+        <div>El incumplimiento de estas normas de uso aceptable puede resultar en la suspension o terminacion inmediata del servicio, sin derecho a devolucion, y puede dar lugar a responsabilidad legal.</div>
+      </div>
+    </div>
+
+    <hr class="legal-divider">
+
+    <!-- SECTION 9: IP -->
+    <div class="legal-section" id="s9">
+      <h2><span class="section-number">9</span> Propiedad intelectual</h2>
+
+      <h3>9.1 Propiedad de Dignita Tech</h3>
+      <p>
+        La plataforma restaurante.dignita.tech, incluyendo su codigo fuente, diseno, arquitectura,
+        algoritmos, bases de datos, documentacion, marcas comerciales, logos, nombres comerciales y
+        cualquier otro elemento del Servicio, es propiedad exclusiva de Dignita Tech S.A.C. y esta
+        protegida por las leyes de propiedad intelectual de Peru y tratados internacionales aplicables,
+        incluyendo el Decreto Legislativo N.° 822 (Ley sobre el Derecho de Autor) y el Decreto
+        Legislativo N.° 1075 (Propiedad Industrial).
+      </p>
+      <p>
+        Ninguna disposicion de estos Terminos transfiere al Cliente ningun derecho de propiedad
+        sobre el Servicio o sus componentes. El Cliente recibe unicamente una licencia de uso
+        limitada, no exclusiva, intransferible y revocable para acceder al Servicio de acuerdo
+        con el plan contratado.
+      </p>
+
+      <h3>9.2 Contenido del Cliente</h3>
+      <p>
+        El Cliente conserva todos los derechos de propiedad sobre el Contenido del Cliente
+        (menu, precios, datos de clientes, facturas, inventario, etc.). Al subir o ingresar
+        Contenido del Cliente en el sistema, el Cliente otorga a Dignita Tech una licencia
+        limitada para procesar, almacenar y gestionar dicho contenido unicamente con el fin
+        de prestar el Servicio contratado.
+      </p>
+      <p>
+        Dignita Tech no reclamara propiedad sobre el Contenido del Cliente y no lo utilizara
+        para fines distintos a la prestacion del Servicio, salvo que la ley lo exija.
+      </p>
+
+      <h3>9.3 Retroalimentacion</h3>
+      <p>
+        Si el Cliente proporciona sugerencias, ideas o comentarios sobre el Servicio
+        ("Retroalimentacion"), Dignita Tech podra utilizar dicha Retroalimentacion sin
+        restriccion ni compensacion para el Cliente.
+      </p>
+    </div>
+
+    <hr class="legal-divider">
+
+    <!-- SECTION 10: LIABILITY LIMITATION -->
+    <div class="legal-section" id="s10">
+      <h2><span class="section-number">10</span> Limitacion de responsabilidad</h2>
+
+      <h3>10.1 Disponibilidad del servicio</h3>
+      <p>
+        Dignita Tech se compromete a mantener el Servicio disponible con una disponibilidad objetivo
+        de <strong>99.5% mensual</strong> para los planes Pro y <strong>99.9%</strong> para el plan
+        Enterprise. Las interrupciones programadas de mantenimiento (notificadas con 24 horas de
+        anticipacion) no computan para el calculo de disponibilidad.
+      </p>
+
+      <h3>10.2 Exclusion de garantias</h3>
+      <p>
+        En la maxima medida permitida por la ley peruana aplicable, el Servicio se provee
+        "tal como esta" y "segun disponibilidad". Dignita Tech no garantiza que el Servicio
+        sea ininterrumpido, libre de errores, completamente seguro o que satisfaga todos los
+        requisitos especificos del Cliente.
+      </p>
+
+      <h3>10.3 Limite de responsabilidad economica</h3>
+      <p>
+        En ningun caso la responsabilidad total de Dignita Tech hacia el Cliente por cualquier
+        reclamacion relacionada con el Servicio excedera el <strong>monto total pagado</strong>
+        por el Cliente en los 12 meses anteriores a la reclamacion.
+      </p>
+
+      <h3>10.4 Exclusiones</h3>
+      <p>Dignita Tech no sera responsable por:</p>
+      <ul>
+        <li>Perdida de ingresos, ganancias o ventas derivadas de la no disponibilidad del Servicio.</li>
+        <li>Errores u omisiones en el Contenido del Cliente ingresado en el sistema.</li>
+        <li>Decisiones comerciales tomadas por el Cliente basadas en los datos o reportes del sistema.</li>
+        <li>Incumplimientos tributarios, laborales o de otro tipo del Cliente.</li>
+        <li>Interrupciones causadas por proveedores externos (internet, electricidad, Supabase, Vercel).</li>
+        <li>Actos de terceros no autorizados (hackers) a pesar de las medidas de seguridad implementadas.</li>
+        <li>Uso indebido del sistema por parte de los usuarios finales del Cliente.</li>
+      </ul>
+      <div class="warning-box">
+        <i class="bi bi-exclamation-triangle"></i>
+        <div>
+          Las limitaciones de responsabilidad establecidas en esta clausula no aplican en casos de
+          dolo, culpa grave o violacion de obligaciones esenciales del contrato por parte de Dignita Tech.
+          Los derechos del consumidor reconocidos por la Ley 29571 no se ven afectados por estas clausulas.
+        </div>
+      </div>
+    </div>
+
+    <hr class="legal-divider">
+
+    <!-- SECTION 11: TERMINATION -->
+    <div class="legal-section" id="s11">
+      <h2><span class="section-number">11</span> Suspension y terminacion</h2>
+
+      <h3>11.1 Suspension por Dignita Tech</h3>
+      <p>Dignita Tech podra suspender el acceso al Servicio de forma inmediata y sin previo aviso en los siguientes casos:</p>
+      <ul>
+        <li>Uso del sistema para actividades ilegales o que violen los terminos de uso aceptable (Clausula 8).</li>
+        <li>Incumplimiento grave de estos Terminos de Servicio.</li>
+        <li>Falta de pago del plan contratado, tras notificacion con 5 dias habiles de gracia.</li>
+        <li>Riesgo inminente de seguridad para la plataforma o para otros clientes.</li>
+      </ul>
+      <p>
+        Para incumplimientos no graves, Dignita Tech notificara al Cliente con al menos
+        <strong>7 dias habiles de anticipacion</strong> antes de proceder a la suspension.
+      </p>
+
+      <h3>11.2 Terminacion por el Cliente</h3>
+      <p>
+        El Cliente puede cancelar su suscripcion en cualquier momento contactando a
+        ventas@dignita.tech. La cancelacion tendra efecto al vencimiento del periodo contratado
+        o, en casos de garantia, segun los terminos de la Clausula 6.
+      </p>
+
+      <h3>11.3 Efectos de la terminacion</h3>
+      <p>
+        Tras la terminacion del contrato, el Cliente tendra acceso a sus datos por un periodo de
+        <strong>90 dias calendario</strong> para descargar y exportar el Contenido del Cliente.
+        Vencido dicho plazo, los datos seran eliminados de los sistemas activos de Dignita Tech,
+        salvo obligacion legal de mayor plazo (ej.: registros tributarios por 7 anos).
+      </p>
+    </div>
+
+    <hr class="legal-divider">
+
+    <!-- SECTION 12: MODIFICATIONS -->
+    <div class="legal-section" id="s12">
+      <h2><span class="section-number">12</span> Modificaciones al servicio y a los terminos</h2>
+      <p>
+        Dignita Tech se reserva el derecho de modificar estos Terminos de Servicio. Las modificaciones
+        sustanciales seran notificadas al Cliente con al menos <strong>30 dias de anticipacion</strong>
+        a su entrada en vigor, a traves del correo electronico registrado y/o mediante aviso destacado
+        en la plataforma.
+      </p>
+      <p>
+        Si el Cliente no esta de acuerdo con las modificaciones, puede cancelar su suscripcion antes
+        de la fecha de entrada en vigor de los cambios. La continuacion del uso del Servicio tras la
+        entrada en vigor de los cambios implica la aceptacion de los nuevos Terminos.
+      </p>
+    </div>
+
+    <hr class="legal-divider">
+
+    <!-- SECTION 13: GOVERNING LAW -->
+    <div class="legal-section" id="s13">
+      <h2><span class="section-number">13</span> Ley aplicable y resolucion de conflictos</h2>
+
+      <h3>13.1 Ley aplicable</h3>
+      <p>
+        Estos Terminos de Servicio se rigen e interpretan de conformidad con las leyes de la
+        Republica del Peru, incluyendo, sin limitacion:
+      </p>
+      <ul>
+        <li>Codigo Civil peruano (contratos)</li>
+        <li>Ley 29571 — Codigo de Proteccion y Defensa del Consumidor</li>
+        <li>Ley 29733 — Ley de Proteccion de Datos Personales</li>
+        <li>Decreto Legislativo 822 — Ley sobre el Derecho de Autor</li>
+        <li>Ley 27291 — Contratos electronicos</li>
+      </ul>
+
+      <h3>13.2 Resolucion de conflictos — Etapa previa</h3>
+      <p>
+        Ante cualquier controversia derivada de estos Terminos, las partes se comprometen a intentar
+        resolverla amigablemente mediante negociacion directa durante un plazo de
+        <strong>30 dias calendario</strong> desde que una parte notifique a la otra la existencia
+        del conflicto por escrito.
+      </p>
+
+      <h3>13.3 INDECOPI</h3>
+      <p>
+        El Cliente-consumidor tiene el derecho de presentar reclamos ante
+        <strong>INDECOPI</strong> (Instituto Nacional de Defensa de la Competencia y de la
+        Proteccion de la Propiedad Intelectual), conforme a la Ley 29571.
+        Libro de Reclamaciones disponible en: <a href="/libro-reclamaciones">/libro-reclamaciones</a>.
+      </p>
+
+      <h3>13.4 Arbitraje</h3>
+      <p>
+        Si la negociacion directa no prospera y el monto en controversia supera las 3 UIT
+        (3 Unidades Impositivas Tributarias), las partes se someten a arbitraje de derecho,
+        administrado por el <strong>Centro de Arbitraje de la Camara de Comercio de Lima</strong>,
+        con sede en Lima, Peru. El tribunal arbitral estara compuesto por un (1) arbitro unico
+        designado de conformidad con el Reglamento de Dicha institucion. El laudo arbitral
+        sera definitivo y vinculante.
+      </p>
+      <p>
+        Para controversias de menor cuantia (hasta 3 UIT), las partes se someten a la
+        jurisdiccion de los juzgados y tribunales de Lima, Peru.
+      </p>
+    </div>
+
+    <hr class="legal-divider">
+
+    <!-- SECTION 14: CONTACT -->
+    <div class="legal-section" id="s14">
+      <h2><span class="section-number">14</span> Contacto</h2>
+      <p>Para cualquier consulta relacionada con estos Terminos de Servicio:</p>
+      <div class="info-box" style="flex-direction:column;gap:0.5rem;">
+        <div><strong>Empresa:</strong> Dignita Tech S.A.C.</div>
+        <div><strong>Correo legal:</strong> legal@dignita.tech</div>
+        <div><strong>Correo comercial:</strong> ventas@dignita.tech</div>
+        <div><strong>Soporte tecnico:</strong> soporte@dignita.tech</div>
+        <div><strong>WhatsApp:</strong> +51 999 999 999</div>
+        <div><strong>Domicilio:</strong> Lima, Peru</div>
+      </div>
+    </div>
+
+    <!-- BACK LINKS -->
+    <div class="d-flex gap-3 mt-4 pt-3 border-top" style="border-color:#e2e8f0!important;">
+      <a href="/privacidad" style="font-size:0.875rem;color:#6366f1;text-decoration:none;"><i class="bi bi-arrow-right me-1"></i>Politica de Privacidad</a>
+      <a href="/libro-reclamaciones" style="font-size:0.875rem;color:#6366f1;text-decoration:none;"><i class="bi bi-arrow-right me-1"></i>Libro de Reclamaciones</a>
+    </div>
+
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="legal-footer">
+    <div class="container text-center">
+      <span>&copy; <%= new Date().getFullYear() %> restaurante.dignita.tech &mdash; Dignita Tech S.A.C. &nbsp;|&nbsp;</span>
+      <a href="/privacidad">Politica de Privacidad</a>
+      <span style="color:rgba(255,255,255,0.2);margin:0 0.5rem;">|</span>
+      <a href="/libro-reclamaciones">Libro de Reclamaciones</a>
+    </div>
+  </footer>
+
+  <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
