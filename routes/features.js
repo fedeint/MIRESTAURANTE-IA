@@ -141,7 +141,7 @@ router.get('/menu', async (req, res) => {
         SELECT p.*, (SELECT COUNT(*) FROM almacen_ingredientes ai
             JOIN receta_items ri ON ri.ingrediente_id=ai.id
             JOIN recetas r ON r.id=ri.receta_id
-            WHERE r.producto_id=p.id AND r.activa=1 AND ai.stock_actual<=0) as ingredientes_agotados
+            WHERE r.producto_id=p.id AND r.activa=true AND ai.stock_actual<=0) as ingredientes_agotados
         FROM productos p WHERE p.id > 0 ORDER BY p.categoria, p.nombre
     `, []);
     const [[config]] = await db.query('SELECT nombre_negocio, logo_src FROM configuracion_impresion LIMIT 1');

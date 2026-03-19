@@ -21,7 +21,7 @@ router.get('/', async (req, res) => {
                 FROM caja_movimientos cm
                 LEFT JOIN metodos_pago mp ON mp.id = cm.metodo_pago_id
                 LEFT JOIN usuarios u ON u.id = cm.usuario_id
-                WHERE cm.caja_id = ? AND cm.anulado = 0
+                WHERE cm.caja_id = ? AND cm.anulado = false
                 ORDER BY cm.created_at DESC
             `, [cajaAbierta.id]);
             movimientos = movs;
@@ -30,7 +30,7 @@ router.get('/', async (req, res) => {
                 SELECT
                     COALESCE(SUM(CASE WHEN tipo='ingreso' THEN monto ELSE 0 END), 0) as ingresos,
                     COALESCE(SUM(CASE WHEN tipo='egreso' THEN monto ELSE 0 END), 0) as egresos
-                FROM caja_movimientos WHERE caja_id=? AND anulado=0
+                FROM caja_movimientos WHERE caja_id=? AND anulado=false
             `, [cajaAbierta.id]);
             totales.ingresos = Number(tots.ingresos);
             totales.egresos = Number(tots.egresos);
@@ -103,7 +103,7 @@ router.post('/cerrar', async (req, res) => {
             SELECT
                 COALESCE(SUM(CASE WHEN tipo='ingreso' THEN monto ELSE 0 END), 0) as ingresos,
                 COALESCE(SUM(CASE WHEN tipo='egreso' THEN monto ELSE 0 END), 0) as egresos
-            FROM caja_movimientos WHERE caja_id=? AND anulado=0
+            FROM caja_movimientos WHERE caja_id=? AND anulado=false
         `, [caja.id]);
 
         const montoSistema = Number(caja.monto_apertura) + Number(tots.ingresos) - Number(tots.egresos);

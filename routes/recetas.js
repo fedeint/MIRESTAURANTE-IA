@@ -10,7 +10,7 @@ router.get('/:productoId', async (req, res) => {
 
         // Receta activa
         const [[receta]] = await db.query(
-            'SELECT * FROM recetas WHERE tenant_id=? AND producto_id=? AND activa=1 ORDER BY version DESC LIMIT 1',
+            'SELECT * FROM recetas WHERE tenant_id=? AND producto_id=? AND activa=true ORDER BY version DESC LIMIT 1',
             [tid, pid]
         );
         if (!receta) return res.json({ receta: null, items: [], costo_total: 0 });
@@ -67,7 +67,7 @@ router.post('/:productoId', async (req, res) => {
         }
 
         // Desactivar receta anterior
-        await db.query('UPDATE recetas SET activa=0 WHERE tenant_id=? AND producto_id=?', [tid, pid]);
+        await db.query('UPDATE recetas SET activa=false WHERE tenant_id=? AND producto_id=?', [tid, pid]);
 
         // Obtener siguiente version
         const [[maxVer]] = await db.query('SELECT COALESCE(MAX(version),0) as v FROM recetas WHERE tenant_id=? AND producto_id=?', [tid, pid]);
@@ -119,7 +119,7 @@ router.post('/descontar-stock', async (req, res) => {
 
         // Buscar receta activa
         const [[receta]] = await db.query(
-            'SELECT id FROM recetas WHERE tenant_id=? AND producto_id=? AND activa=1 LIMIT 1',
+            'SELECT id FROM recetas WHERE tenant_id=? AND producto_id=? AND activa=true LIMIT 1',
             [tid, producto_id]
         );
         if (!receta) return res.json({ descontado: false, motivo: 'Sin receta configurada' });

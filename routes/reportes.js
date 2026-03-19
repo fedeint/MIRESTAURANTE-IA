@@ -19,7 +19,7 @@ router.get('/diario', async (req, res) => {
             const [[tots]] = await db.query(`
                 SELECT COALESCE(SUM(CASE WHEN tipo='ingreso' THEN monto ELSE 0 END),0) as i,
                        COALESCE(SUM(CASE WHEN tipo='egreso' THEN monto ELSE 0 END),0) as e
-                FROM caja_movimientos WHERE caja_id=? AND anulado=0
+                FROM caja_movimientos WHERE caja_id=? AND anulado=false
             `, [caja.id]);
             cajaIngresos = Number(tots.i);
             cajaEgresos = Number(tots.e);

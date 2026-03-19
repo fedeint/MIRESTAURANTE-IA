@@ -14,7 +14,7 @@ async function calcularDisponibilidadProducto(productoId) {
     try {
         // Buscar receta activa
         const [[receta]] = await db.query(
-            'SELECT id FROM recetas WHERE producto_id=? AND activa=1 LIMIT 1', [productoId]
+            'SELECT id FROM recetas WHERE producto_id=? AND activa=true LIMIT 1', [productoId]
         );
         if (!receta) return { disponible: -1, sinReceta: true }; // -1 = sin receta
 
@@ -75,7 +75,7 @@ async function rankingDisponibilidad() {
             SELECT p.id, p.nombre, p.precio_unidad, p.imagen,
                    r.id as receta_id, r.tiempo_preparacion_min
             FROM productos p
-            JOIN recetas r ON r.producto_id = p.id AND r.activa = 1
+            JOIN recetas r ON r.producto_id = p.id AND r.activa = true
             ORDER BY p.nombre
         `);
 

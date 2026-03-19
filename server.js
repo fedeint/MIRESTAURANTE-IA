@@ -278,7 +278,7 @@ app.get('/', requireAuth, async (req, res) => {
         // P4 INFO: Revisar reporte del dia anterior
         if (Number(dashboard.ventasAyer) > 0) {
             try {
-                const [[reporteVisto]] = await db.query("SELECT id FROM admin_tareas WHERE tenant_id=? AND titulo='Revisar cierre de ayer' AND created_at::date = CURRENT_DATE AND completada=1 LIMIT 1", [tid]);
+                const [[reporteVisto]] = await db.query("SELECT id FROM admin_tareas WHERE tenant_id=? AND titulo='Revisar cierre de ayer' AND created_at::date = CURRENT_DATE AND completada=true LIMIT 1", [tid]);
                 if (!reporteVisto) {
                     pendientes.push({ prioridad: 4, color: '#14B8A6', titulo: 'Revisar cierre de ayer', desc: 'Ayer se facturo S/' + dashboard.ventasAyer + ' — revisa el resumen', btn: 'Ver', href: '/ventas', urgente: false });
                 }
@@ -308,7 +308,7 @@ app.get('/', requireAuth, async (req, res) => {
         // Cargar pendientes activos (auto de hoy no completados + manuales no completados)
         try {
             const [tareasActivas] = await db.query(
-                "SELECT * FROM admin_tareas WHERE tenant_id=? AND completada=0 AND (tipo='manual' OR created_at::date = CURRENT_DATE) ORDER BY urgente DESC, created_at ASC",
+                "SELECT * FROM admin_tareas WHERE tenant_id=? AND completada=false AND (tipo='manual' OR created_at::date = CURRENT_DATE) ORDER BY urgente DESC, created_at ASC",
                 [tid]
             );
             dashboard.pendientes = tareasActivas.map(t => ({
@@ -323,7 +323,7 @@ app.get('/', requireAuth, async (req, res) => {
         // Historial de tareas completadas (ultimas 20)
         try {
             const [historial] = await db.query(
-                "SELECT t.*, u.nombre as usuario_nombre FROM admin_tareas t LEFT JOIN usuarios u ON u.id=t.usuario_id WHERE t.tenant_id=? AND t.completada=1 ORDER BY t.completada_at DESC LIMIT 20",
+                "SELECT t.*, u.nombre as usuario_nombre FROM admin_tareas t LEFT JOIN usuarios u ON u.id=t.usuario_id WHERE t.tenant_id=? AND t.completada=true ORDER BY t.completada_at DESC LIMIT 20",
                 [tid]
             );
             dashboard.historialTareas = historial;
