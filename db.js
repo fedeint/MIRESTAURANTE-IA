@@ -21,12 +21,16 @@ if (IS_LOCAL) {
         connectionTimeoutMillis: 5000,
     };
 } else if (process.env.DATABASE_URL) {
-    // Cloud mode with DATABASE_URL (Vercel / Supabase connection string)
+    // Cloud mode with DATABASE_URL (Vercel / Supabase connection string).
+    // IMPORTANT: Vercel serverless functions can spin up many instances in parallel.
+    // A pool size of 50 per instance will exhaust Supabase's connection limit
+    // (typically 60 on the free tier) very quickly, causing connection errors.
+    // Keep the per-instance pool small (2-5) for serverless environments.
     poolConfig = {
         connectionString: process.env.DATABASE_URL,
         ssl: { rejectUnauthorized: false },
-        max: Number(process.env.DB_POOL_SIZE) || 50,
-        idleTimeoutMillis: 30000,
+        max: Number(process.env.DB_POOL_SIZE) || 5,
+        idleTimeoutMillis: 10000,
         connectionTimeoutMillis: 10000,
     };
 } else {
@@ -38,8 +42,8 @@ if (IS_LOCAL) {
         user:     process.env.DB_USER     || 'postgres',
         password: process.env.DB_PASSWORD || '',
         ssl: { rejectUnauthorized: false },
-        max: Number(process.env.DB_POOL_SIZE) || 50,
-        idleTimeoutMillis: 30000,
+        max: Number(process.env.DB_POOL_SIZE) || 5,
+        idleTimeoutMillis: 10000,
         connectionTimeoutMillis: 10000,
     };
 }
