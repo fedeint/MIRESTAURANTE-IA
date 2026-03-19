@@ -141,7 +141,7 @@
                     </div>
                   </div>
                   <div class="mb-3" style="height:4px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden;">
-                    <div style="height:100%;border-radius:4px;background:<%= s.plan==='enterprise'?'#a78bfa':s.plan==='pro'?'#f97316':'#64748b' %>;width:<%= Math.min(100, Math.round((Number(s.total)/Math.max(1,<%= stats.tenantsTotal %>))*100)) %>%"></div>
+                    <div style="height:100%;border-radius:4px;background:<%= s.plan==='enterprise'?'#a78bfa':s.plan==='pro'?'#f97316':'#64748b' %>;width:<%= Math.min(100, Math.round((Number(s.total)/Math.max(1, stats.tenantsTotal))*100)) %>%"></div>
                   </div>
                 <% }); %>
               <% } %>
