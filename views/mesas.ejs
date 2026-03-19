@@ -585,7 +585,6 @@
         overflow: hidden;
         display: flex;
         flex-direction: column;
-        min-height: 0;
       }
       .prod-card:hover {
         box-shadow: 0 6px 20px rgba(0,0,0,0.12);
@@ -648,13 +647,14 @@
         background: linear-gradient(135deg,#f8f9fa,#e9ecef);
       }
 
-      /* Product info */
+      /* Product info - always visible below image */
       .prod-info {
         padding: 0.45rem 0.5rem 0.5rem;
         display: flex;
         flex-direction: column;
         gap: 1px;
-        flex: 1;
+        flex-shrink: 0;
+        min-height: 52px;
       }
       .prod-name {
         font-size: 0.75rem;
