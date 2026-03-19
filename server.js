@@ -146,6 +146,17 @@ app.get('/landing', (req, res) => {
     res.render('landing');
 });
 
+// Diagnóstico temporal (remover después)
+app.get('/api/health', async (req, res) => {
+    const info = { db: false, dbError: null, envHasUrl: !!process.env.DATABASE_URL, envUrlPrefix: (process.env.DATABASE_URL || '').substring(0, 30) + '...', usuarios: 0 };
+    try {
+        const [rows] = await db.query('SELECT COUNT(*) as cnt FROM usuarios');
+        info.db = true;
+        info.usuarios = Number(rows?.[0]?.cnt || 0);
+    } catch(e) { info.dbError = e.message; }
+    res.json(info);
+});
+
 // Ruta principal - Dashboard (requiere login)
 app.get('/', requireAuth, async (req, res) => {
     const rol = String(req.session?.user?.rol || '').toLowerCase();
