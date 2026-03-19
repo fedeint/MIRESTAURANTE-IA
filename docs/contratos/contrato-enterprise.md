@@ -29,6 +29,9 @@
 
 **_______________________________________** (en adelante "el Cliente" o "el Licenciatario"), persona natural / juridica, identificado(a) con DNI / RUC N.° ___________________, con domicilio en _____________________, _______________, Peru; representado(a) por el señor/señora **_______________________________________**, identificado(a) con DNI N.° _______________, en su calidad de __________________________________.
 
+**DECLARACION OBLIGATORIA - RUC VIGENTE:**
+El Cliente declara expresamente contar con Registro Unico de Contribuyente (RUC) vigente expedido por la SUNAT, identificado como RUC N.° ___________________. El Cliente certifica que ha verificado la vigencia de su RUC ante SUNAT y que toda la informacion proporcionada en el presente Contrato es verídica y actualizada. La falta de cumplimiento de esta declaración invalida legalmente el presente Contrato.
+
 ---
 
 Ambas partes, actuando de buena fe y en pleno ejercicio de su capacidad legal, acuerdan celebrar el presente Contrato de Licencia de Software y Servicios Tecnologicos (en adelante "el Contrato"), sujeto a los terminos y condiciones que a continuacion se detallan:
@@ -166,6 +169,7 @@ La contraprestacion economica acordada entre las partes para la Sede Principal e
 |----------|---------|
 | Licencia perpetua del Software (pago unico) | S/ 2,300.00 |
 | Servicio de nube, base de datos y mantenimiento — Año 1 (incluido) | S/ 700.00 |
+| Recargo internacional (aplica solo si Cliente esta fuera de Peru) | USD $30.00 |
 | **TOTAL PRIMER AÑO (pago unico al inicio)** | **S/ 3,000.00** |
 
 A partir del segundo año, el Cliente abonara unicamente el Servicio Anual de Mantenimiento:
@@ -186,7 +190,7 @@ El monto anual de S/ 700.00 (Setecientos con 00/100 Soles) cubre de manera integ
 
 **4.3. Licencias para Sedes Adicionales (mismo titular)**
 
-En caso de que el Cliente desee implementar MiRestconIA en establecimientos adicionales bajo su misma titularidad, se aplicaran los siguientes precios por cada Sede Adicional:
+En caso de que el Cliente desee implementar MiRestconIA en establecimientos adicionales bajo su misma titularidad, debe notificar previamente a dignita.tech indicando el nombre del establecimiento, ubicacion y fecha estimada de inicio. Una vez aprobada la solicitud, se aplicaran los siguientes precios por cada Sede Adicional:
 
 | Concepto | Importe |
 |----------|---------|
@@ -195,7 +199,7 @@ En caso de que el Cliente desee implementar MiRestconIA en establecimientos adic
 | **Total por cada Sede Adicional (primer año)** | **S/ 3,000.00** |
 | Renovacion anual por sede (Año 2 en adelante) | S/ 700.00/año |
 
-Cada Sede Adicional requerira su propio proceso de implementacion, el cual podra acordarse por separado con un descuento aplicable a criterio de dignita.tech.
+Cada Sede Adicional requerira su propio proceso de implementacion, el cual podra acordarse por separado con un descuento aplicable a criterio de dignita.tech. **La licencia de cada Sede Adicional es perpetua de por vida, siendo el Servicio Anual de Mantenimiento (S/ 700.00/año) el unico costo recurrente a partir del segundo año.**
 
 **4.4. Condiciones de Pago**
 
@@ -211,6 +215,10 @@ dignita.tech se reserva el derecho de ajustar el precio del Servicio Anual de Ma
 **4.6. Impuestos**
 
 Los precios indicados en el presente Contrato no incluyen el Impuesto General a las Ventas (IGV) de 18%, salvo que se indique expresamente lo contrario. dignita.tech emitira los comprobantes de pago correspondientes conforme a la normativa tributaria peruana vigente.
+
+**4.6.1. Recargo Internacional**
+
+Para Clientes cuya ubicacion del establecimiento se encuentre fuera de la Republica del Peru, se aplicara un recargo adicional de USD $30.00 (treinta dolares estadounidenses) por concepto de costos administrativos, comisiones internacionales y actualizaciones especializadas. Este recargo se sumara al monto total de la licencia en el primer año y se considerara en la renovacion anual si el Cliente mantiene operaciones fuera del Peru.
 
 **4.7. Costos de Servicios de Terceros**
 
@@ -476,11 +484,11 @@ El soporte tecnico no cubrira:
 
 ---
 
-### DECIMOCUARTA BIS: GARANTIA DE SATISFACCION (15 DIAS)
+### DECIMOCUARTA BIS: GARANTIA DE SATISFACCION Y POLITICA DE DEVOLUCION
 
 **14.3. Periodo de Garantia de Satisfaccion**
 
-Si durante los primeros quince (15) dias calendario posteriores a la firma del Acta de Conformidad de Implementacion (señalada en el Anexo A del presente Contrato), el Cliente reporta una falla critica del Sistema y dignita.tech no proporciona una respuesta satisfactoria o solucion definitiva dentro de dicho plazo, el Cliente tendra derecho a solicitar la devolucion integra del monto pagado por el Servicio Anual de Mantenimiento (S/ 700.00), manteniendo vigente la licencia perpetua del Software.
+Si durante los primeros quince (15) dias habiles posteriores a la firma del Acta de Conformidad de Implementacion (señalada en el Anexo A del presente Contrato), el Cliente reporta una falla critica del Sistema y dignita.tech no proporciona una respuesta satisfactoria o solucion definitiva dentro de dicho plazo, el Cliente tendra derecho a solicitar la devolucion integra del monto pagado por el Servicio Anual de Mantenimiento (S/ 700.00), manteniendo vigente la licencia perpetua del Software.
 
 **14.4. Definicion de Falla Critica**
 
@@ -537,6 +545,43 @@ Si el Cliente tiene derecho a la devolucion conforme a los terminos anteriores, 
 **14.8. Unico Remedio**
 
 La devolucion del monto del Servicio Anual de Mantenimiento conforme a esta clausula constituye el remedio unico y excluyente del Cliente en caso de ejercer esta garantia de satisfaccion. El Cliente renuncia a cualquier otra reclamacion, demanda o accion legal derivada de la falla critica, manteniendo los derechos generales establecidos en el presente Contrato.
+
+---
+
+### DECIMOCUARTA TER: POLITICA DE DEVOLUCION (REEMBOLSOS)
+
+**14.9. Politica de Devoluciones General**
+
+La presente clausula establece la politica de reembolsos para devoluciones de pago solicitadas por el Cliente, independientemente de la causa:
+
+**14.9.1. Reembolsos por Uso del Sistema (15 dias de uso)**
+
+- **Si el sistema ha sido UTILIZADO por 15 dias o mas:** NO se otorga devolucion del monto pagado. El cliente mantiene acceso perpetuo al software en modo local.
+
+- **Si se solicita devolucion DESPUES de 15 dias de uso:** Se aplicara una comision administrativa de USD $15.00 (quince dolares estadounidenses) deducida del monto a devolver. El monto final devuelto sera: (Monto pagado - USD $15.00).
+
+- **Si se solicita devolucion ANTES de 15 dias de uso:** Se devuelve el 100% del monto pagado (incluido Servicio Anual de Mantenimiento), sin deduccion alguna.
+
+**14.9.2. Definicion de "Uso del Sistema"**
+
+Se considera que el Sistema ha sido "utilizado" cuando el Cliente ha:
+- Emitido al menos un comprobante electronico (boleta o factura).
+- Registrado pedidos o movimientos de mesas.
+- Accedido al sistema mas de 3 veces en el periodo.
+- Cargado datos significativos (menu, inventario, usuarios).
+
+El simple acceso o pruebas iniciales sin operaciones reales NO se consideran "uso sustancial".
+
+**14.9.3. Procedimiento para Solicitar Devolucion**
+
+Para solicitar una devolucion, el Cliente debe:
+- Enviar correo a ventas@dignita.tech o legal@dignita.tech indicando la razon de la devolucion.
+- Indicar claramente la fecha de inicio del uso del Sistema.
+- Proporcionar acceso remoto o detalles que permitan a dignita.tech verificar el uso real.
+
+**14.9.4. Plazo de Procesamiento**
+
+Una vez aprobada una devolucion, dignita.tech procesara el reembolso dentro de 10 dias habiles al medio de pago original (transferencia bancaria si fue transferencia, credito si fue tarjeta, etc.).
 
 ---
 
