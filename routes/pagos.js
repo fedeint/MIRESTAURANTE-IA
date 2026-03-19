@@ -117,6 +117,88 @@ router.get('/planes', (req, res) => {
     res.json(Object.values(PLANES));
 });
 
+// ── GET /checkout ─────────────────────────────────────────────────────────────
+// Server-side rendered checkout page with Krypton embedded form
+router.get('/checkout', async (req, res) => {
+    const { planId, email } = req.query;
+
+    if (!planId || !PLANES[planId]) {
+        return res.redirect('/landing#precios');
+    }
+
+    const plan = PLANES[planId];
+
+    if (plan.precio === 0) {
+        return res.redirect('/setup?plan=gratis');
+    }
+
+    const shopId    = (process.env.IZIPAY_SHOP_ID || '').trim();
+    const serverKey = (process.env.IZIPAY_SERVER_KEY || '').trim();
+    const publicKey = (process.env.IZIPAY_PUBLIC_KEY || '').trim();
+
+    if (!shopId || !serverKey) {
+        return res.render('checkout', {
+            error: 'Pasarela de pago no configurada',
+            plan, formToken: null, publicKey: null
+        });
+    }
+
+    try {
+        const orderId = `MIREST-${plan.id.toUpperCase()}-${Date.now()}`;
+
+        const payload = {
+            amount:   plan.precio,
+            currency: plan.moneda,
+            orderId,
+            customer: {
+                email: email || 'cliente@mirestconia.com'
+            },
+            metadata: {
+                plan:    plan.id,
+                periodo: plan.periodo,
+                sistema: 'MiRest con IA'
+            }
+        };
+
+        const basicAuth = Buffer.from(`${shopId}:${serverKey}`).toString('base64');
+
+        const izipayResp = await fetch(
+            'https://api.micuentaweb.pe/api-payment/V4/Charge/CreatePayment',
+            {
+                method:  'POST',
+                headers: {
+                    'Content-Type':  'application/json',
+                    'Authorization': `Basic ${basicAuth}`
+                },
+                body: JSON.stringify(payload)
+            }
+        );
+
+        const data = await izipayResp.json();
+
+        if (!izipayResp.ok || data.status !== 'SUCCESS') {
+            return res.render('checkout', {
+                error: data?.answer?.errorMessage || 'Error al crear sesion de pago',
+                plan, formToken: null, publicKey: null
+            });
+        }
+
+        res.render('checkout', {
+            error: null,
+            plan,
+            formToken: data.answer.formToken,
+            publicKey
+        });
+
+    } catch (err) {
+        console.error('[pagos] checkout error:', err);
+        res.render('checkout', {
+            error: 'Error interno: ' + err.message,
+            plan, formToken: null, publicKey: null
+        });
+    }
+});
+
 // ── POST /api/pagos/crear-sesion ──────────────────────────────────────────────
 router.post('/crear-sesion', async (req, res) => {
     const { planId, email, razonSocial } = req.body;

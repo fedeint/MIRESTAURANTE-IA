@@ -759,15 +759,8 @@
         return;
       }
 
-      // Render Krypton embedded form
-      KR.removeForms().then(function() {
-        container.innerHTML = '<div class="kr-embedded" kr-form-token="' + data.formToken + '"></div>';
-        return KR.setFormConfig({ 'kr-language': 'es-PE' });
-      }).then(function() {
-        console.log('[Izipay] Form rendered OK');
-      }).catch(function(err) {
-        container.innerHTML = '<div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i>Error formulario: ' + err.message + '</div>';
-      });
+      // Redirect to dedicated checkout page with formToken rendered server-side
+      window.location.href = '/api/pagos/checkout?planId=' + planId + '&email=' + encodeURIComponent(email);
     } catch(err) {
       container.innerHTML = '<div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i>Error: ' + err.message + '</div>';
     }
