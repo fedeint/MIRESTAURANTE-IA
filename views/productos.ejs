@@ -230,17 +230,26 @@
             border: 1px solid var(--dg-surface-border);
             border-radius: 18px;
             box-shadow: var(--dg-shadow);
-            overflow: hidden;
+            overflow: visible;
             transition: transform 0.3s cubic-bezier(0.34, 1.4, 0.64, 1), box-shadow 0.3s ease, border-color 0.3s ease;
             display: flex;
             flex-direction: column;
-            position: relative; /* Required for glow ::after and overlay */
+            position: relative;
+        }
+
+        /* Inner wrapper clips image but allows glow to extend */
+        .producto-card-inner {
+            overflow: hidden;
+            border-radius: 18px;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
         }
 
         .producto-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 16px 48px rgba(0,0,0,0.12), 0 4px 16px rgba(249,115,22,0.08);
-            border-color: rgba(249, 115, 22, 0.22);
+            box-shadow: 0 16px 48px rgba(0,0,0,0.12), 0 4px 16px rgba(249,115,22,0.15);
+            border-color: #f97316;
         }
 
         .producto-card.hidden {
@@ -274,7 +283,7 @@
         }
 
         .producto-card:hover::after {
-            opacity: 0.55;
+            opacity: 0.8;
             animation: glowRotate 3s linear infinite;
         }
 
@@ -718,6 +727,7 @@
                  data-nombre="<%= producto.nombre.toLowerCase() %>"
                  data-codigo="<%= (producto.codigo || '').toLowerCase() %>"
                  data-categoria="<%= catAttr %>">
+                <div class="producto-card-inner">
 
                 <!-- Image area with glassmorphism overlay -->
                 <div class="producto-card-image-wrap">
@@ -796,6 +806,7 @@
                         <i class="bi bi-trash"></i>
                     </button>
                 </div>
+                </div><!-- /producto-card-inner -->
             </div>
             <% }); %>
 
