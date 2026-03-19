@@ -78,12 +78,13 @@ router.get('/login', async (req, res) => {
     if (req.session?.user) return res.redirect(defaultRedirectForRole(req.session.user.rol));
 
     // Si no hay usuarios aún, guiar a setup
-    let total = 0;
+    let total = -1;
     try {
       total = await countUsuarios();
-    } catch (_) {
-      // Si la tabla aún no existe, también vamos a setup para mostrar instrucción
-      total = 0;
+    } catch (e) {
+      console.error('countUsuarios error:', e.message);
+      // Si falla la conexión, mostrar login normal (no redirigir a setup)
+      total = -1;
     }
 
     if (total === 0) return res.redirect('/setup');
