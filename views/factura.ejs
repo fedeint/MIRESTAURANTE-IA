@@ -124,6 +124,16 @@
 <body>
     <div class="no-print" style="text-align: center; margin-bottom: 20px;">
         <button onclick="window.print()" class="print-button">Imprimir Factura</button>
+        <!-- Botón WhatsApp: envia el comprobante electronico vinculado a esta factura -->
+        <button type="button" class="print-button" id="btnWhatsApp"
+                style="background: linear-gradient(135deg, #25d366, #128c7e);"
+                onclick="abrirModalWhatsApp()">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor"
+                 viewBox="0 0 16 16" style="margin-right:4px; vertical-align:-2px;">
+                <path d="M13.601 2.326A7.85 7.85 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.9 7.9 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.9 7.9 0 0 0 13.6 2.326zM7.994 14.521a6.6 6.6 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.56 6.56 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592m3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.73.73 0 0 0-.529.247c-.182.198-.691.677-.691 1.654s.71 1.916.81 2.049c.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232"/>
+            </svg>
+            Enviar por WhatsApp
+        </button>
         <!-- Botón Volver: solo se muestra en pantalla completa (no en iframe/modal) -->
         <!-- Relacionado con: routes/facturas.js (embed=1 cuando se abre desde index/ventas) -->
         <% if (!(typeof embed !== 'undefined' && embed)) { %>
@@ -137,6 +147,46 @@
                 · Copias: <strong><%= Number(config.factura_copias || 1) %></strong>
             </div>
         <% } %>
+    </div>
+
+    <!-- Modal WhatsApp (visible en pantalla, oculto al imprimir via .no-print en style) -->
+    <div id="overlayWa" class="no-print" style="display:none; position:fixed; inset:0;
+         background:rgba(0,0,0,.5); z-index:9999; align-items:center; justify-content:center;">
+        <div style="background:#fff; border-radius:1rem; padding:2rem; max-width:400px; width:90%; box-shadow:0 8px 32px rgba(0,0,0,.2);">
+            <h5 style="margin-bottom:1rem; color:#128c7e;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor"
+                     viewBox="0 0 16 16" style="margin-right:6px; vertical-align:-3px;">
+                    <path d="M13.601 2.326A7.85 7.85 0 0 0 7.994 0C3.627 0 .068 3.558.064 7.926c0 1.399.366 2.76 1.057 3.965L0 16l4.204-1.102a7.9 7.9 0 0 0 3.79.965h.004c4.368 0 7.926-3.558 7.93-7.93A7.9 7.9 0 0 0 13.6 2.326zM7.994 14.521a6.6 6.6 0 0 1-3.356-.92l-.24-.144-2.494.654.666-2.433-.156-.251a6.56 6.56 0 0 1-1.007-3.505c0-3.626 2.957-6.584 6.591-6.584a6.56 6.56 0 0 1 4.66 1.931 6.56 6.56 0 0 1 1.928 4.66c-.004 3.639-2.961 6.592-6.592 6.592m3.615-4.934c-.197-.099-1.17-.578-1.353-.646-.182-.065-.315-.099-.445.099-.133.197-.513.646-.627.775-.114.133-.232.148-.43.05-.197-.1-.836-.308-1.592-.985-.59-.525-.985-1.175-1.103-1.372-.114-.198-.011-.304.088-.403.087-.088.197-.232.296-.346.1-.114.133-.198.198-.33.065-.134.034-.248-.015-.347-.05-.099-.445-1.076-.612-1.47-.16-.389-.323-.335-.445-.34-.114-.007-.247-.007-.38-.007a.73.73 0 0 0-.529.247c-.182.198-.691.677-.691 1.654s.71 1.916.81 2.049c.098.133 1.394 2.132 3.383 2.992.47.205.84.326 1.129.418.475.152.904.129 1.246.08.38-.058 1.171-.48 1.338-.943.164-.464.164-.86.114-.943-.049-.084-.182-.133-.38-.232"/>
+                </svg>
+                Enviar comprobante por WhatsApp
+            </h5>
+            <p style="color:#555; font-size:.9rem; margin-bottom:1.2rem;">
+                Se enviara el PDF del comprobante electronico vinculado a la Factura #<%= factura.id %>.
+            </p>
+            <label style="font-weight:600; display:block; margin-bottom:.4rem;">
+                Numero de WhatsApp del cliente
+            </label>
+            <div style="display:flex; align-items:center; gap:.5rem; margin-bottom:1.2rem;">
+                <span style="background:#e9ecef; padding:.5rem .75rem; border-radius:.5rem; font-weight:600; white-space:nowrap;">+51</span>
+                <input type="text" id="waFacturaTelefono" maxlength="9" placeholder="987654321"
+                       style="flex:1; padding:.5rem .75rem; border:1px solid #ced4da; border-radius:.5rem; font-size:1rem;"
+                       value="<%= factura.telefono ? factura.telefono.replace(/\D/g,'').slice(-9) : '' %>">
+            </div>
+            <div id="waMensajeResult" style="margin-bottom:1rem; display:none;"></div>
+            <div style="display:flex; gap:.75rem; justify-content:flex-end;">
+                <button type="button" onclick="cerrarModalWhatsApp()"
+                        style="padding:.5rem 1.25rem; border:1px solid #ced4da; background:#fff;
+                               border-radius:.5rem; cursor:pointer; font-size:.95rem;">
+                    Cancelar
+                </button>
+                <button type="button" id="btnWaFacturaEnviar" onclick="enviarFacturaWhatsApp(<%= factura.id %>)"
+                        style="padding:.5rem 1.5rem; background:linear-gradient(135deg,#25d366,#128c7e);
+                               color:#fff; border:none; border-radius:.5rem; font-weight:600;
+                               cursor:pointer; font-size:.95rem;">
+                    Enviar
+                </button>
+            </div>
+        </div>
     </div>
 
     <div class="factura">
@@ -239,5 +289,72 @@
         });
     </script>
     <% } %>
+
+    <script>
+    // -------------------------------------------------------------------------
+    // WhatsApp modal helpers (factura view)
+    // -------------------------------------------------------------------------
+    function abrirModalWhatsApp() {
+        document.getElementById('overlayWa').style.display = 'flex';
+        document.getElementById('waMensajeResult').style.display = 'none';
+        document.getElementById('waMensajeResult').innerHTML = '';
+    }
+
+    function cerrarModalWhatsApp() {
+        document.getElementById('overlayWa').style.display = 'none';
+    }
+
+    // Close modal when clicking the backdrop
+    document.getElementById('overlayWa').addEventListener('click', function(e) {
+        if (e.target === this) cerrarModalWhatsApp();
+    });
+
+    async function enviarFacturaWhatsApp(facturaId) {
+        const telefonoInput = document.getElementById('waFacturaTelefono');
+        const telefono = (telefonoInput.value || '').replace(/\D/g, '').slice(-9);
+
+        if (!telefono || telefono.length < 7) {
+            mostrarResultadoWa('error', 'Ingresa un numero de WhatsApp valido (9 digitos)');
+            return;
+        }
+
+        const btn = document.getElementById('btnWaFacturaEnviar');
+        btn.disabled = true;
+        btn.textContent = 'Enviando...';
+
+        try {
+            const res = await fetch('/api/sunat/whatsapp-factura/' + facturaId, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ telefono })
+            });
+            const data = await res.json();
+
+            if (data.ok) {
+                mostrarResultadoWa('success', 'Comprobante enviado correctamente a +51' + telefono);
+                setTimeout(cerrarModalWhatsApp, 2500);
+            } else {
+                mostrarResultadoWa('error', data.error || 'No se pudo enviar el comprobante por WhatsApp');
+            }
+        } catch (err) {
+            mostrarResultadoWa('error', 'Error de conexion al enviar por WhatsApp');
+        } finally {
+            btn.disabled = false;
+            btn.textContent = 'Enviar';
+        }
+    }
+
+    function mostrarResultadoWa(tipo, mensaje) {
+        const el = document.getElementById('waMensajeResult');
+        const esError = tipo === 'error';
+        el.style.display = 'block';
+        el.style.padding = '.75rem 1rem';
+        el.style.borderRadius = '.5rem';
+        el.style.background = esError ? '#fff0f0' : '#f0fff4';
+        el.style.color = esError ? '#c0392b' : '#1a7a4a';
+        el.style.border = '1px solid ' + (esError ? '#f5c6cb' : '#b2dfdb');
+        el.textContent = mensaje;
+    }
+    </script>
 </body>
 </html> 

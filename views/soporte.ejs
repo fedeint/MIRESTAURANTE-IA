@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Soporte - dignita.tech</title>
+  <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+  <link rel="stylesheet" href="/css/theme.css">
+  <style>
+    /* ---- Layout ---- */
+    .soporte-wrap {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 1.25rem;
+      height: calc(100vh - 5rem);
+    }
+    @media (max-width: 991.98px) {
+      .soporte-wrap {
+        grid-template-columns: 1fr;
+        height: auto;
+      }
+      .soporte-detail { display: none; }
+      .soporte-detail.open { display: flex !important; }
+    }
+
+    /* ---- Ticket list ---- */
+    .tickets-panel {
+      background: var(--dg-surface, #1e1e2e);
+      border: 1px solid var(--dg-surface-border, rgba(255,255,255,0.07));
+      border-radius: 14px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .tickets-header {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--dg-surface-border, rgba(255,255,255,0.07));
+      flex-shrink: 0;
+    }
+    .tickets-list { overflow-y: auto; flex: 1; }
+
+    .ticket-item {
+      padding: 0.9rem 1.25rem;
+      border-bottom: 1px solid var(--dg-surface-border, rgba(255,255,255,0.05));
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .ticket-item:hover { background: rgba(255,255,255,0.03); }
+    .ticket-item.active { background: rgba(255,107,53,0.08); border-left: 3px solid #FF6B35; }
+    .ticket-item .ticket-asunto {
+      font-weight: 600;
+      font-size: 0.88rem;
+      color: var(--dg-text, #e2e8f0);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .ticket-item .ticket-meta {
+      font-size: 0.76rem;
+      color: var(--dg-text-muted, #94a3b8);
+      margin-top: 3px;
+    }
+
+    /* ---- Status badges ---- */
+    .badge-abierto     { background:rgba(34,197,94,0.14);   color:#4ade80; }
+    .badge-en_progreso { background:rgba(59,130,246,0.14);  color:#60a5fa; }
+    .badge-respondido  { background:rgba(245,158,11,0.14);  color:#fbbf24; }
+    .badge-cerrado     { background:rgba(107,114,128,0.14); color:#9ca3af; }
+
+    /* ---- Priority dots ---- */
+    .pri-urgente { color: #f87171; }
+    .pri-alta    { color: #fb923c; }
+    .pri-normal  { color: #60a5fa; }
+    .pri-baja    { color: #94a3b8; }
+
+    /* ---- Detail panel ---- */
+    .soporte-detail {
+      background: var(--dg-surface, #1e1e2e);
+      border: 1px solid var(--dg-surface-border, rgba(255,255,255,0.07));
+      border-radius: 14px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .detail-header {
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid var(--dg-surface-border, rgba(255,255,255,0.07));
+      flex-shrink: 0;
+    }
+    .detail-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.25rem 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    .detail-footer {
+      flex-shrink: 0;
+      padding: 1rem 1.5rem;
+      border-top: 1px solid var(--dg-surface-border, rgba(255,255,255,0.07));
+    }
+
+    /* ---- Conversation messages ---- */
+    .msg-bubble {
+      max-width: 78%;
+      padding: 0.65rem 0.95rem;
+      border-radius: 12px;
+      font-size: 0.88rem;
+      line-height: 1.55;
+      word-wrap: break-word;
+    }
+    .msg-bubble.user {
+      background: rgba(99,102,241,0.12);
+      border: 1px solid rgba(99,102,241,0.18);
+      color: var(--dg-text, #e2e8f0);
+      border-bottom-left-radius: 4px;
+    }
+    .msg-bubble.soporte {
+      background: rgba(255,107,53,0.1);
+      border: 1px solid rgba(255,107,53,0.18);
+      color: var(--dg-text, #e2e8f0);
+      border-bottom-right-radius: 4px;
+    }
+    .msg-meta {
+      font-size: 0.72rem;
+      color: var(--dg-text-muted, #94a3b8);
+      margin-bottom: 4px;
+    }
+
+    /* ---- First message (description) ---- */
+    .original-desc {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 10px;
+      padding: 0.85rem 1.1rem;
+      font-size: 0.88rem;
+      color: var(--dg-text, #e2e8f0);
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+
+    /* ---- Reply input ---- */
+    .reply-area textarea {
+      background: transparent;
+      border: 1.5px solid var(--dg-surface-border, rgba(255,255,255,0.1));
+      border-radius: 10px;
+      color: var(--dg-text, #e2e8f0);
+      font-size: 0.88rem;
+      resize: none;
+    }
+    .reply-area textarea:focus {
+      border-color: #FF6B35;
+      box-shadow: 0 0 0 3px rgba(255,107,53,0.12);
+      background: transparent;
+    }
+
+    .btn-send {
+      background: linear-gradient(135deg, #FF6B35, #E55A2B);
+      color: #fff;
+      border: none;
+      border-radius: 9px;
+      padding: 0.5rem 1.2rem;
+      font-weight: 600;
+      font-size: 0.88rem;
+    }
+    .btn-send:hover { opacity: 0.88; color: #fff; }
+    .btn-send:disabled { opacity: 0.5; }
+
+    /* ---- New ticket modal ---- */
+    .modal-content {
+      background: var(--dg-surface, #1e1e2e) !important;
+      border: 1px solid var(--dg-surface-border, rgba(255,255,255,0.1));
+      border-radius: 14px;
+    }
+    .modal-header { border-bottom-color: rgba(255,255,255,0.07) !important; }
+    .modal-footer { border-top-color:  rgba(255,255,255,0.07) !important; }
+
+    /* ---- Empty state ---- */
+    .empty-state {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: var(--dg-text-muted, #94a3b8);
+      text-align: center;
+      padding: 2rem;
+    }
+    .empty-state i { font-size: 3rem; opacity: 0.3; margin-bottom: 1rem; }
+
+    /* ---- Filter tab ---- */
+    .filter-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: 7px;
+      padding: 4px 12px;
+      font-size: 0.8rem;
+      color: var(--dg-text-muted, #94a3b8);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .filter-btn.active, .filter-btn:hover {
+      background: rgba(255,107,53,0.1);
+      border-color: rgba(255,107,53,0.2);
+      color: #FF6B35;
+    }
+
+    /* ---- Status changer (admin) ---- */
+    .status-select {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 7px;
+      color: var(--dg-text, #e2e8f0);
+      font-size: 0.82rem;
+      padding: 3px 8px;
+    }
+    .status-select:focus { outline: none; border-color: #FF6B35; }
+
+    /* ---- Mobile back button ---- */
+    #btnMobileBack { display: none; }
+    @media (max-width: 991.98px) { #btnMobileBack { display: inline-flex; } }
+  </style>
+</head>
+<body>
+  <%- include('partials/sidebar') %>
+  <div class="dg-main">
+  <main class="flex-grow-1">
+  <div class="container-fluid px-3 py-4">
+
+    <!-- Page header -->
+    <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+      <div>
+        <h4 class="mb-0 fw-bold" style="color:var(--dg-text,#e2e8f0);">
+          <i class="bi bi-headset me-2" style="color:#FF6B35;"></i>Soporte
+        </h4>
+        <p class="text-muted mb-0" style="font-size:0.85rem;">Crea y gestiona tus tickets de soporte.</p>
+      </div>
+      <button class="btn btn-create" data-bs-toggle="modal" data-bs-target="#modalNuevoTicket"
+              style="background:linear-gradient(135deg,#FF6B35,#E55A2B);color:#fff;border:none;border-radius:10px;padding:0.5rem 1.3rem;font-weight:600;">
+        <i class="bi bi-plus-lg me-1"></i>Nuevo Ticket
+      </button>
+    </div>
+
+    <!-- Main layout -->
+    <div class="soporte-wrap">
+
+      <!-- LEFT: Ticket list -->
+      <div class="tickets-panel">
+        <div class="tickets-header">
+          <!-- Filters -->
+          <div class="d-flex gap-1 flex-wrap">
+            <button class="filter-btn active" data-filter="todos" onclick="filtrarTickets('todos', this)">Todos</button>
+            <button class="filter-btn" data-filter="abierto" onclick="filtrarTickets('abierto', this)">Abiertos</button>
+            <button class="filter-btn" data-filter="en_progreso" onclick="filtrarTickets('en_progreso', this)">En progreso</button>
+            <button class="filter-btn" data-filter="respondido" onclick="filtrarTickets('respondido', this)">Respondidos</button>
+            <button class="filter-btn" data-filter="cerrado" onclick="filtrarTickets('cerrado', this)">Cerrados</button>
+          </div>
+          <div class="mt-2">
+            <input type="text" class="form-control form-control-sm"
+                   id="searchTickets"
+                   placeholder="Buscar tickets..."
+                   style="background:transparent;border-color:rgba(255,255,255,0.1);color:var(--dg-text,#e2e8f0);font-size:0.83rem;"
+                   oninput="filtrarTickets(activeFilter, null)">
+          </div>
+        </div>
+
+        <div class="tickets-list" id="ticketsList">
+          <% if (tickets.length === 0) { %>
+            <div class="text-center py-5 px-3" style="color:var(--dg-text-muted,#94a3b8);">
+              <i class="bi bi-chat-square-text" style="font-size:2.5rem; opacity:0.3;"></i>
+              <p class="mt-3 mb-0" style="font-size:0.88rem;">Sin tickets todavia.</p>
+              <p style="font-size:0.82rem;">Crea uno con el boton de arriba.</p>
+            </div>
+          <% } %>
+
+          <% tickets.forEach(function(t) { %>
+            <% const estadoBadge = 'badge-' + t.estado; %>
+            <% const priClass = 'pri-' + t.prioridad; %>
+            <div class="ticket-item"
+                 data-id="<%= t.id %>"
+                 data-estado="<%= t.estado %>"
+                 data-asunto="<%= (t.asunto || '').toLowerCase() %>"
+                 onclick="abrirTicket(<%= t.id %>)">
+              <div class="d-flex align-items-start justify-content-between gap-2">
+                <div class="ticket-asunto flex-grow-1">
+                  <i class="bi bi-circle-fill me-1 <%= priClass %>" style="font-size:0.5rem; vertical-align:middle;"></i>
+                  <%= t.asunto %>
+                </div>
+                <span class="badge <%= estadoBadge %> rounded-pill px-2 flex-shrink-0" style="font-size:0.7rem;">
+                  <%= t.estado.replace('_', ' ') %>
+                </span>
+              </div>
+              <div class="ticket-meta d-flex align-items-center gap-2 mt-1">
+                <span><i class="bi bi-tag me-1"></i><%= t.categoria %></span>
+                <span>·</span>
+                <% if (isAdminOrSuper && t.usuario_nombre) { %>
+                  <span><i class="bi bi-person me-1"></i><%= t.usuario_nombre %></span>
+                  <% if (isSuperadmin && t.tenant_nombre) { %><span>· <%= t.tenant_nombre %></span><% } %>
+                  <span>·</span>
+                <% } %>
+                <span><i class="bi bi-chat me-1"></i><%= t.respuestas_count || 0 %></span>
+                <span class="ms-auto"><%= new Date(t.created_at).toLocaleDateString('es-PE') %></span>
+              </div>
+            </div>
+          <% }); %>
+        </div>
+      </div>
+
+      <!-- RIGHT: Detail panel -->
+      <div class="soporte-detail" id="soporteDetail">
+        <div class="empty-state" id="emptyDetail">
+          <i class="bi bi-chat-square-dots"></i>
+          <p class="fw-semibold mb-1">Selecciona un ticket</p>
+          <p style="font-size:0.85rem;">Haz clic en un ticket de la izquierda para ver el detalle y responder.</p>
+        </div>
+
+        <div id="ticketDetail" style="display:none; flex-direction:column; height:100%;">
+          <!-- Detail header -->
+          <div class="detail-header">
+            <div class="d-flex align-items-start gap-3">
+              <button id="btnMobileBack" class="btn btn-sm" onclick="cerrarDetalle()"
+                      style="background:rgba(255,255,255,0.07);border-radius:8px;color:var(--dg-text,#e2e8f0);">
+                <i class="bi bi-arrow-left"></i>
+              </button>
+              <div class="flex-grow-1 min-w-0">
+                <h6 class="mb-1 fw-bold" id="detailAsunto" style="color:var(--dg-text,#e2e8f0);"></h6>
+                <div class="d-flex align-items-center gap-2 flex-wrap" style="font-size:0.78rem; color:var(--dg-text-muted,#94a3b8);">
+                  <span id="detailMeta"></span>
+                </div>
+              </div>
+              <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                <span class="badge rounded-pill px-2" id="detailEstadoBadge" style="font-size:0.78rem;"></span>
+                <% if (isAdminOrSuper) { %>
+                  <select class="status-select" id="statusSelect" onchange="cambiarEstado(this.value)" title="Cambiar estado">
+                    <option value="abierto">Abierto</option>
+                    <option value="en_progreso">En progreso</option>
+                    <option value="respondido">Respondido</option>
+                    <option value="cerrado">Cerrado</option>
+                  </select>
+                <% } %>
+              </div>
+            </div>
+          </div>
+
+          <!-- Conversation body -->
+          <div class="detail-body" id="detailBody">
+            <!-- Populated dynamically -->
+          </div>
+
+          <!-- Reply footer -->
+          <div class="detail-footer reply-area">
+            <div class="d-flex gap-2 align-items-end">
+              <textarea class="form-control flex-grow-1" id="replyMsg" rows="2"
+                        placeholder="Escribe tu respuesta..."></textarea>
+              <button class="btn btn-send flex-shrink-0" onclick="enviarRespuesta()" id="btnSend">
+                <i class="bi bi-send-fill me-1"></i>Enviar
+              </button>
+            </div>
+            <% if (isAdminOrSuper) { %>
+              <div class="mt-2" style="font-size:0.78rem; color:var(--dg-text-muted,#94a3b8);">
+                <i class="bi bi-shield-check me-1" style="color:#FF6B35;"></i>
+                Tu respuesta se marcara como soporte.
+              </div>
+            <% } %>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+  </main>
+  </div>
+
+  <!-- Modal: Nuevo Ticket -->
+  <div class="modal fade" id="modalNuevoTicket" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold" style="color:var(--dg-text,#e2e8f0);">
+            <i class="bi bi-plus-circle me-2" style="color:#FF6B35;"></i>Nuevo Ticket de Soporte
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label" style="font-size:0.85rem;color:var(--dg-text,#e2e8f0);">Asunto <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="newAsunto" maxlength="200"
+                   placeholder="Describe brevemente el problema"
+                   style="background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.1);color:var(--dg-text,#e2e8f0);">
+          </div>
+          <div class="row g-3 mb-3">
+            <div class="col-6">
+              <label class="form-label" style="font-size:0.85rem;color:var(--dg-text,#e2e8f0);">Categoria</label>
+              <select class="form-select" id="newCategoria"
+                      style="background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.1);color:var(--dg-text,#e2e8f0);">
+                <% categorias.forEach(function(c) { %>
+                  <option value="<%= c %>"><%= c.charAt(0).toUpperCase() + c.slice(1) %></option>
+                <% }); %>
+              </select>
+            </div>
+            <div class="col-6">
+              <label class="form-label" style="font-size:0.85rem;color:var(--dg-text,#e2e8f0);">Prioridad</label>
+              <select class="form-select" id="newPrioridad"
+                      style="background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.1);color:var(--dg-text,#e2e8f0);">
+                <% prioridades.forEach(function(p) { %>
+                  <option value="<%= p %>" <%= p === 'normal' ? 'selected' : '' %>><%= p.charAt(0).toUpperCase() + p.slice(1) %></option>
+                <% }); %>
+              </select>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" style="font-size:0.85rem;color:var(--dg-text,#e2e8f0);">Descripcion <span class="text-danger">*</span></label>
+            <textarea class="form-control" id="newDescripcion" rows="4"
+                      placeholder="Describe el problema con detalle..."
+                      style="background:rgba(255,255,255,0.04);border-color:rgba(255,255,255,0.1);color:var(--dg-text,#e2e8f0);resize:none;"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-send" onclick="crearTicket()" id="btnCrearTicket">
+            <i class="bi bi-send me-1"></i>Crear Ticket
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/vendor/jquery/jquery.min.js"></script>
+  <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script src="/vendor/sweetalert2/sweetalert2.all.min.js"></script>
+
+  <script>
+    let activeTicketId = null;
+    let activeFilter = 'todos';
+
+    // ---- Filtering ----
+    function filtrarTickets(filtro, btn) {
+      if (btn) {
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        activeFilter = filtro;
+      }
+
+      const search = (document.getElementById('searchTickets').value || '').toLowerCase();
+      const items = document.querySelectorAll('.ticket-item');
+
+      items.forEach(function(item) {
+        const estado = item.dataset.estado;
+        const asunto = item.dataset.asunto || '';
+        const matchFilter = filtro === 'todos' || estado === filtro;
+        const matchSearch = !search || asunto.includes(search);
+        item.style.display = (matchFilter && matchSearch) ? '' : 'none';
+      });
+    }
+
+    // ---- Open ticket detail ----
+    async function abrirTicket(id) {
+      activeTicketId = id;
+
+      // Mark active
+      document.querySelectorAll('.ticket-item').forEach(function(el) {
+        el.classList.toggle('active', Number(el.dataset.id) === id);
+      });
+
+      try {
+        const res = await fetch('/api/soporte/' + id);
+        if (!res.ok) throw new Error('No se pudo cargar el ticket');
+        const data = await res.json();
+
+        renderDetalle(data.ticket, data.respuestas);
+
+        // Mobile: show detail panel
+        document.getElementById('soporteDetail').classList.add('open');
+      } catch (e) {
+        console.error(e);
+        Swal.fire({ icon:'error', title:'Error', text: e.message, confirmButtonColor:'#EF4444' });
+      }
+    }
+
+    function cerrarDetalle() {
+      document.getElementById('soporteDetail').classList.remove('open');
+      activeTicketId = null;
+    }
+
+    // ---- Render detail ----
+    function renderDetalle(ticket, respuestas) {
+      document.getElementById('emptyDetail').style.display = 'none';
+
+      const detail = document.getElementById('ticketDetail');
+      detail.style.display = 'flex';
+
+      document.getElementById('detailAsunto').textContent = ticket.asunto;
+
+      // Meta line
+      const meta = [
+        '#' + ticket.id,
+        ticket.categoria,
+        ticket.prioridad,
+        ticket.usuario_nombre || '',
+        ticket.tenant_nombre ? ('· ' + ticket.tenant_nombre) : '',
+        new Date(ticket.created_at).toLocaleString('es-PE', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' }),
+      ].filter(Boolean).join(' · ');
+      document.getElementById('detailMeta').textContent = meta;
+
+      // Status badge
+      const badge = document.getElementById('detailEstadoBadge');
+      const estadoMap = { abierto:'badge-abierto', en_progreso:'badge-en_progreso', respondido:'badge-respondido', cerrado:'badge-cerrado' };
+      badge.className = 'badge rounded-pill px-2 ' + (estadoMap[ticket.estado] || '');
+      badge.textContent = ticket.estado.replace('_', ' ');
+      badge.style.fontSize = '0.78rem';
+
+      // Status select
+      const sel = document.getElementById('statusSelect');
+      if (sel) sel.value = ticket.estado;
+
+      // Body: original description + replies
+      const body = document.getElementById('detailBody');
+      body.innerHTML = '';
+
+      // Original description
+      const descDiv = document.createElement('div');
+      descDiv.innerHTML = `
+        <div class="msg-meta">
+          <i class="bi bi-person-fill me-1"></i>${escapeHtml(ticket.usuario_nombre || 'Usuario')}
+          <span class="ms-2">${new Date(ticket.created_at).toLocaleString('es-PE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}</span>
+        </div>
+        <div class="msg-bubble user"><div class="original-desc">${escapeHtml(ticket.descripcion)}</div></div>
+      `;
+      body.appendChild(descDiv);
+
+      // Replies
+      respuestas.forEach(function(r) {
+        const row = document.createElement('div');
+        row.className = 'd-flex flex-column ' + (r.es_soporte ? 'align-items-end' : 'align-items-start');
+        row.innerHTML = `
+          <div class="msg-meta ${r.es_soporte ? 'text-end' : ''}">
+            ${r.es_soporte ? '<i class="bi bi-shield-check me-1" style="color:#FF6B35;"></i>Soporte' : '<i class="bi bi-person me-1"></i>' + escapeHtml(r.usuario_nombre || 'Usuario')}
+            <span class="ms-2">${new Date(r.created_at).toLocaleString('es-PE',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}</span>
+          </div>
+          <div class="msg-bubble ${r.es_soporte ? 'soporte' : 'user'}">${escapeHtml(r.mensaje)}</div>
+        `;
+        body.appendChild(row);
+      });
+
+      // Scroll to bottom
+      setTimeout(() => { body.scrollTop = body.scrollHeight; }, 50);
+    }
+
+    // ---- Send reply ----
+    async function enviarRespuesta() {
+      if (!activeTicketId) return;
+
+      const msg = (document.getElementById('replyMsg').value || '').trim();
+      if (!msg) return;
+
+      const btnSend = document.getElementById('btnSend');
+      btnSend.disabled = true;
+
+      try {
+        const res = await fetch('/api/soporte/' + activeTicketId, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mensaje: msg }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Error al enviar');
+
+        document.getElementById('replyMsg').value = '';
+
+        // Reload ticket detail
+        await abrirTicket(activeTicketId);
+
+        // Refresh ticket list item status visually
+        location.reload();
+      } catch (e) {
+        Swal.fire({ icon:'error', title:'Error', text: e.message, confirmButtonColor:'#EF4444' });
+      } finally {
+        btnSend.disabled = false;
+      }
+    }
+
+    // ---- Change status (admin/superadmin) ----
+    async function cambiarEstado(nuevoEstado) {
+      if (!activeTicketId || !nuevoEstado) return;
+
+      try {
+        const res = await fetch('/api/soporte/' + activeTicketId, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ estado: nuevoEstado }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Error');
+
+        // Update badge
+        const badge = document.getElementById('detailEstadoBadge');
+        const estadoMap = { abierto:'badge-abierto', en_progreso:'badge-en_progreso', respondido:'badge-respondido', cerrado:'badge-cerrado' };
+        badge.className = 'badge rounded-pill px-2 ' + (estadoMap[nuevoEstado] || '');
+        badge.textContent = nuevoEstado.replace('_', ' ');
+
+        // Update list item badge
+        const item = document.querySelector('.ticket-item[data-id="' + activeTicketId + '"]');
+        if (item) {
+          item.dataset.estado = nuevoEstado;
+          const itemBadge = item.querySelector('.badge');
+          if (itemBadge) {
+            itemBadge.className = 'badge ' + (estadoMap[nuevoEstado] || '') + ' rounded-pill px-2';
+            itemBadge.style.fontSize = '0.7rem';
+            itemBadge.textContent = nuevoEstado.replace('_', ' ');
+          }
+        }
+      } catch (e) {
+        Swal.fire({ icon:'error', title:'Error', text: e.message, confirmButtonColor:'#EF4444' });
+      }
+    }
+
+    // ---- Create new ticket ----
+    async function crearTicket() {
+      const asunto = (document.getElementById('newAsunto').value || '').trim();
+      const descripcion = (document.getElementById('newDescripcion').value || '').trim();
+      const categoria = document.getElementById('newCategoria').value;
+      const prioridad = document.getElementById('newPrioridad').value;
+
+      if (!asunto) { Swal.fire({ icon:'warning', title:'Asunto requerido', confirmButtonColor:'#FF6B35' }); return; }
+      if (!descripcion) { Swal.fire({ icon:'warning', title:'Descripcion requerida', confirmButtonColor:'#FF6B35' }); return; }
+
+      const btn = document.getElementById('btnCrearTicket');
+      btn.disabled = true;
+
+      try {
+        const res = await fetch('/api/soporte', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ asunto, descripcion, categoria, prioridad }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Error');
+
+        bootstrap.Modal.getInstance(document.getElementById('modalNuevoTicket')).hide();
+
+        await Swal.fire({
+          icon: 'success',
+          title: 'Ticket creado',
+          text: 'Tu ticket #' + data.id + ' fue enviado. Te responderemos pronto.',
+          confirmButtonColor: '#FF6B35',
+          timer: 2000,
+          timerProgressBar: true,
+        });
+        location.reload();
+      } catch (e) {
+        Swal.fire({ icon:'error', title:'Error', text: e.message, confirmButtonColor:'#EF4444' });
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    // ---- Keyboard shortcut: Enter sends reply ----
+    document.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('replyMsg').addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+          e.preventDefault();
+          enviarRespuesta();
+        }
+      });
+    });
+
+    // ---- Utility ----
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;')
+        .replace(/\n/g, '<br>');
+    }
+  </script>
+</body>
+</html>

@@ -223,10 +223,81 @@ async function chatWithClaude(apiKey, systemPrompt, messages) {
         .join('\n');
 }
 
+// ── Token helpers ─────────────────────────────────────────────────────────────
+
+/**
+ * Fetch token quota info for the given tenant.
+ * Returns null if the query fails (fail-open: chat must still work).
+ */
+async function getTokenInfo(tenantId) {
+    try {
+        const [[info]] = await db.query(
+            `SELECT tokens_total, tokens_consumidos
+             FROM tenant_suscripciones
+             WHERE tenant_id = ? AND estado IN ('activa', 'prueba')
+             LIMIT 1`,
+            [tenantId]
+        );
+        return info || null;
+    } catch (_) {
+        // Column might not exist yet or tenant table unavailable — fail open
+        return null;
+    }
+}
+
+/**
+ * Record token consumption after a successful AI call.
+ * Never throws — errors are silently logged so chat is not disrupted.
+ */
+async function recordTokenUsage(tenantId, userId, tokensUsed, modelo) {
+    try {
+        await db.query(
+            `UPDATE tenant_suscripciones
+             SET tokens_consumidos = tokens_consumidos + ?
+             WHERE tenant_id = ?`,
+            [tokensUsed, tenantId]
+        );
+    } catch (e) {
+        console.warn('Token UPDATE failed (non-fatal):', e.message);
+    }
+
+    try {
+        await db.query(
+            `INSERT INTO token_consumo (tenant_id, usuario_id, tipo, tokens_usados, modelo)
+             VALUES (?, ?, 'chat', ?, ?)`,
+            [tenantId, userId || null, tokensUsed, modelo]
+        );
+    } catch (e) {
+        console.warn('Token INSERT failed (non-fatal):', e.message);
+    }
+}
+
+// GET /api/chat/tokens - Token usage status for the current tenant
+router.get('/tokens', async (req, res) => {
+    const tid = req.tenantId || 1;
+    try {
+        const [[info]] = await db.query(
+            `SELECT tokens_total, tokens_consumidos
+             FROM tenant_suscripciones
+             WHERE tenant_id = ?
+             LIMIT 1`,
+            [tid]
+        );
+        const total     = Number(info?.tokens_total    || 2000000);
+        const usado     = Number(info?.tokens_consumidos || 0);
+        const restante  = total - usado;
+        const porcentaje = Math.round((usado / total) * 100);
+        res.json({ total, usado, restante, porcentaje });
+    } catch (e) {
+        // If tenant_suscripciones doesn't have the columns yet, return defaults
+        res.json({ total: 2000000, usado: 0, restante: 2000000, porcentaje: 0 });
+    }
+});
+
 // POST /api/chat - Send message to AI
 // Priority: KIMI_API_KEY > ANTHROPIC_API_KEY
 router.post('/', async (req, res) => {
-    const kimiKey = process.env.KIMI_API_KEY;
+    const kimiKey      = process.env.KIMI_API_KEY;
     const anthropicKey = process.env.ANTHROPIC_API_KEY;
 
     if (!kimiKey && !anthropicKey) {
@@ -238,11 +309,30 @@ router.post('/', async (req, res) => {
         return res.status(400).json({ error: 'Mensaje requerido' });
     }
 
-    try {
-        const contexto = await obtenerContextoNegocio();
-        const systemPrompt = buildSystemPrompt(contexto, rol || '');
-        const messages = buildMessages(historial, mensaje);
+    const tid    = req.tenantId || 1;
+    const userId = req.session?.user?.id || null;
 
+    // ── Token gate ────────────────────────────────────────────────────────────
+    // Fail-open: if tokenInfo is null (query failed / columns missing), allow chat.
+    const tokenInfo = await getTokenInfo(tid);
+    if (tokenInfo !== null) {
+        const remaining = (Number(tokenInfo.tokens_total) || 0) - (Number(tokenInfo.tokens_consumidos) || 0);
+        if (remaining <= 0) {
+            return res.json({
+                respuesta: '⚠️ Tus tokens de IA se han agotado. Contacta a tu administrador para adquirir mas tokens. Tu plan incluia 2,000,000 tokens anuales.',
+                provider: 'blocked',
+                tokensAgotados: true
+            });
+        }
+    }
+    // ─────────────────────────────────────────────────────────────────────────
+
+    try {
+        const contexto    = await obtenerContextoNegocio();
+        const systemPrompt = buildSystemPrompt(contexto, rol || '');
+        const messages    = buildMessages(historial, mensaje);
+
+        const modelo = kimiKey ? 'kimi' : 'claude';
         let respuesta;
         if (kimiKey) {
             respuesta = await chatWithKimi(kimiKey, systemPrompt, messages);
@@ -250,7 +340,30 @@ router.post('/', async (req, res) => {
             respuesta = await chatWithClaude(anthropicKey, systemPrompt, messages);
         }
 
-        res.json({ respuesta, provider: kimiKey ? 'kimi' : 'claude' });
+        // ── Token accounting ─────────────────────────────────────────────────
+        // Rough estimate: ~4 chars per token (industry standard approximation)
+        const promptText  = systemPrompt + messages.map(m => m.content).join(' ') + String(mensaje);
+        const tokensUsed  = Math.ceil((promptText.length + respuesta.length) / 4);
+        await recordTokenUsage(tid, userId, tokensUsed, modelo);
+
+        // ── Low-token warning (< 10% remaining) ──────────────────────────────
+        let advertenciaTokens = false;
+        if (tokenInfo !== null) {
+            const nuevoConsumo = (Number(tokenInfo.tokens_consumidos) || 0) + tokensUsed;
+            const total        = Number(tokenInfo.tokens_total) || 2000000;
+            if (nuevoConsumo >= total * 0.9) {
+                advertenciaTokens = true;
+                respuesta += '\n\n⚠️ *Te quedan menos del 10% de tus tokens de IA. Contacta a tu administrador para renovar tu cuota.*';
+            }
+        }
+        // ─────────────────────────────────────────────────────────────────────
+
+        res.json({
+            respuesta,
+            provider: modelo,
+            tokensUsed,
+            advertenciaTokens
+        });
     } catch (error) {
         console.error('Error en chat IA:', error);
         const msg = error?.message || 'Error al comunicarse con la IA';

@@ -35,9 +35,21 @@ app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
 app.set('etag', 'strong');
 
+// Security headers (helmet)
+const helmet = require('helmet');
+app.use(helmet({
+    contentSecurityPolicy: false, // disabled to allow inline scripts in EJS
+    crossOriginEmbedderPolicy: false
+}));
+
 // Gzip/deflate compression for all responses (must be early, before routes)
 const compression = require('compression');
 app.use(compression());
+
+// Rate limiting - protect login and AI chat from abuse
+const rateLimit = require('express-rate-limit');
+const loginLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, message: { error: 'Demasiados intentos. Intenta en 15 minutos.' } });
+const chatLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 60, message: { error: 'Límite de mensajes IA alcanzado. Intenta en 1 hora.' } });
 
 // Aumentar el límite de tamaño del cuerpo de la petición
 app.use(express.json({ limit: '50mb' }));
@@ -175,9 +187,16 @@ const ttsRoutes = require('./routes/tts');
 const onboardingRoutes = require('./routes/onboarding');
 const superadminRoutes = require('./routes/superadmin');
 const syncRoutes       = require('./routes/sync');
+const backupsRoutes    = require('./routes/backups');
+const soporteRoutes    = require('./routes/soporte');
+const pagosRoutes      = require('./routes/pagos');
 
 // Auth routes (públicas): /login /logout /setup
+app.post('/login', loginLimiter); // rate limit login attempts
 app.use(authRoutes);
+
+// Pagos Izipay (public - no auth needed so landing page can initiate payments)
+app.use('/api/pagos', pagosRoutes);
 
 // Onboarding wizard (admin only, before the main dashboard guard)
 app.use('/onboarding', requireAuth, requireRole('administrador'), onboardingRoutes);
@@ -620,8 +639,8 @@ app.use('/caja', requireRole(['administrador', 'cajero']), cajaRoutes);
 app.use('/api/caja', requireRole(['administrador', 'cajero']), cajaRoutes);
 
 // Chat IA (admin)
-app.use('/chat', requireRole('administrador'), chatRoutes);
-app.use('/api/chat', requireRole('administrador'), chatRoutes);
+app.use('/chat', requireRole('administrador'), chatLimiter, chatRoutes);
+app.use('/api/chat', requireRole('administrador'), chatLimiter, chatRoutes);
 
 // Social media API (admin)
 app.use('/api/social', requireRole('administrador'), socialApiRoutes);
@@ -675,6 +694,22 @@ app.use('/api/reportes', requireAuth, requireRole('administrador'), reportesRout
 // Administracion P&L (admin)
 app.use('/administracion', requireRole('administrador'), administracionRoutes);
 app.use('/api/administracion', requireRole('administrador'), administracionRoutes);
+
+// Backups (admin + superadmin only)
+app.use('/api/backups', requireAuth, requireRole(['administrador', 'superadmin']), backupsRoutes);
+// Backups HTML view
+app.get('/backups', requireAuth, requireRole(['administrador', 'superadmin']), (req, res) => {
+    const svc = require('./services/backup');
+    const tenantId = req.session?.user?.rol === 'superadmin' ? null : (req.tenantId || 1);
+    const isSuperadmin = req.session?.user?.rol === 'superadmin';
+    svc.listarBackups(tenantId, 30)
+        .then(backups => res.render('backups', { backups, isSuperadmin }))
+        .catch(e => { console.error(e); res.render('backups', { backups: [], isSuperadmin }); });
+});
+
+// Soporte (all authenticated users can create tickets; admin/superadmin can manage)
+app.use('/soporte', requireAuth, soporteRoutes);
+app.use('/api/soporte', requireAuth, soporteRoutes);
 
 // Configuración y ventas (admin)
 app.use('/configuracion', requireRole('administrador'), configuracionRoutes);

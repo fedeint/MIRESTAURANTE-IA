@@ -177,7 +177,13 @@
                   class="bi bi-file-earmark-bar-graph"></i><span>Reportes</span></a>
               <a href="/sunat" class="dg-sidebar-link <%= currentPath === '/sunat' ? 'active' : '' %>"><i
                   class="bi bi-building"></i><span>SUNAT</span></a>
+              <a href="/backups" class="dg-sidebar-link <%= currentPath === '/backups' ? 'active' : '' %>"><i
+                  class="bi bi-archive-fill"></i><span>Backups</span></a>
             <% } %>
+
+            <%/* --- Soporte: todos los roles autenticados (excepto superadmin que tiene su propio nav) --- */%>
+            <a href="/soporte" class="dg-sidebar-link <%= currentPath === '/soporte' ? 'active' : '' %>"><i
+                class="bi bi-headset"></i><span>Soporte</span></a>
 
             <% } /* end else (non-superadmin) */ %>
 
@@ -284,7 +290,13 @@
                 title="Reportes"><i class="bi bi-file-earmark-bar-graph"></i></a>
               <a href="/sunat" class="dg-sidebar-icon-item <%= currentPath === '/sunat' ? 'active' : '' %>"
                 title="SUNAT"><i class="bi bi-building"></i></a>
+              <a href="/backups" class="dg-sidebar-icon-item <%= currentPath === '/backups' ? 'active' : '' %>"
+                title="Backups"><i class="bi bi-archive-fill"></i></a>
             <% } %>
+
+            <%/* --- Soporte: todos los roles autenticados --- */%>
+            <a href="/soporte" class="dg-sidebar-icon-item <%= currentPath === '/soporte' ? 'active' : '' %>"
+              title="Soporte"><i class="bi bi-headset"></i></a>
 
             <% } /* end else (non-superadmin icon nav) */ %>
 
