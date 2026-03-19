@@ -141,8 +141,16 @@ router.get('/tenants', async (req, res) => {
        ORDER BY t.created_at DESC`
     );
 
+    // Load available plans
+    let planes = [];
+    try {
+      const [p] = await db.query('SELECT * FROM planes_saas WHERE activo = true ORDER BY precio_anual ASC');
+      planes = p || [];
+    } catch (_) {}
+
     res.render('superadmin/tenants', {
       tenants: tenants || [],
+      planes,
       pageTitle: 'Gestión de Tenants',
       defaultModules: defaultModules(),
     });
@@ -192,6 +200,13 @@ router.get('/billing', async (req, res) => {
     const mrr = safeNum(totales.mrr_activo);
     const ebitda = safeNum(mrr - (totalGastoUSD * 3.8)); // approx PEN conversion
 
+    // Load plans
+    let planes = [];
+    try {
+      const [p] = await db.query('SELECT * FROM planes_saas WHERE activo = true ORDER BY precio_anual ASC');
+      planes = p || [];
+    } catch (_) {}
+
     res.render('superadmin/billing', {
       ingresosPorTenant: ingresosPorTenant || [],
       totales,
@@ -199,6 +214,7 @@ router.get('/billing', async (req, res) => {
       totalGastoUSD: safeNum(totalGastoUSD),
       mrr,
       ebitda,
+      planes,
       pageTitle: 'Billing & Contabilidad',
     });
   } catch (err) {

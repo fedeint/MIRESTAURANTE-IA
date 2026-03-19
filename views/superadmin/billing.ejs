@@ -244,6 +244,45 @@
           </div>
         </div>
 
+      <!-- Paquetes / Planes -->
+      <div class="row mt-4">
+        <div class="col-12">
+          <div class="sa-card p-4">
+            <div class="sa-section-title mb-3"><i class="bi bi-box-seam me-1"></i> PAQUETES DISPONIBLES</div>
+            <div class="row g-3">
+              <% (planes || []).forEach(function(plan) { %>
+              <div class="col-md-4">
+                <div style="background:rgba(255,255,255,0.03);border:1px solid <%= plan.codigo==='enterprise'?'#f97316':'rgba(255,255,255,0.08)' %>;border-radius:14px;padding:1.5rem;text-align:center;">
+                  <% if (plan.codigo === 'enterprise') { %>
+                    <span style="background:#f97316;color:#fff;font-size:0.65rem;font-weight:800;padding:2px 10px;border-radius:100px;position:relative;top:-8px;">RECOMENDADO</span>
+                  <% } %>
+                  <h4 style="color:#fff;font-weight:800;margin-bottom:4px;"><%= plan.nombre %></h4>
+                  <% if (plan.codigo === 'free') { %>
+                    <div style="font-size:2rem;font-weight:800;color:#22c55e;">GRATIS</div>
+                    <div style="color:#64748b;font-size:0.8rem;"><%= plan.dias_prueba %> días de prueba</div>
+                  <% } else if (plan.codigo === 'pro') { %>
+                    <div style="font-size:2rem;font-weight:800;color:#f97316;">S/ <%= Number(plan.precio_anual).toLocaleString() %></div>
+                    <div style="color:#64748b;font-size:0.8rem;">por año (S/ <%= Number(plan.precio_mensual).toFixed(0) %>/mes)</div>
+                  <% } else if (plan.codigo === 'enterprise') { %>
+                    <div style="font-size:2rem;font-weight:800;color:#f97316;">S/ <%= Number(plan.precio_licencia).toLocaleString() %></div>
+                    <div style="color:#64748b;font-size:0.8rem;">licencia perpetua (incluye 1er año)</div>
+                    <div style="color:#94a3b8;font-size:0.75rem;margin-top:2px;">Renovación: S/ <%= Number(plan.precio_anual).toLocaleString() %>/año</div>
+                  <% } %>
+                  <hr style="border-color:rgba(255,255,255,0.08);margin:1rem 0;">
+                  <div style="text-align:left;font-size:0.78rem;color:#94a3b8;">
+                    <div class="mb-1"><i class="bi bi-people me-1" style="color:#f97316;"></i> <%= plan.max_usuarios === 0 ? 'Usuarios ilimitados' : plan.max_usuarios + ' usuarios' %></div>
+                    <div class="mb-1"><i class="bi bi-hdd me-1" style="color:#f97316;"></i> <%= plan.incluye_servidor ? 'Servidor dedicado incluido' : 'Servidor en la nube' %></div>
+                    <div class="mb-1"><i class="bi bi-receipt me-1" style="color:#f97316;"></i> <%= plan.codigo === 'free' ? 'Módulos básicos' : plan.codigo === 'pro' ? 'SUNAT + Delivery + Reservas' : 'Todos los módulos + IA' %></div>
+                  </div>
+                  <p style="color:#64748b;font-size:0.72rem;margin-top:0.75rem;margin-bottom:0;"><%= plan.descripcion %></p>
+                </div>
+              </div>
+              <% }); %>
+            </div>
+          </div>
+        </div>
+      </div>
+
       </div>
     </main>
   </div>
