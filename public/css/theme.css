@@ -210,19 +210,19 @@ h1, h2, h3, h4, h5, h6 {
   }
 
   .dg-sidebar {
-    top: 37px !important;
-    left: 49px !important;
-    height: calc(100vh - 37px - 46px) !important;
+    top: 55px !important;
+    left: 70px !important;
+    height: calc(100vh - 55px - 50px) !important;
     border-radius: 15px 0 0 15px !important;
   }
 
   .dg-main {
-    margin-top: 37px !important;
-    margin-right: 56px !important;
-    margin-bottom: 46px !important;
+    margin-top: 55px !important;
+    margin-right: 55px !important;
+    margin-bottom: 50px !important;
     border-radius: 0 15px 15px 0 !important;
-    height: calc(100vh - 37px - 46px) !important;
-    max-height: calc(100vh - 37px - 46px) !important;
+    height: calc(100vh - 55px - 50px) !important;
+    max-height: calc(100vh - 55px - 50px) !important;
     background: #fff !important;
     overflow-y: auto;
     overflow-x: hidden;
@@ -362,8 +362,8 @@ h1, h2, h3, h4, h5, h6 {
 
 @media (min-width: 992px) {
   .dg-panel {
-    top: 37px !important;
-    height: calc(100vh - 37px - 46px) !important;
+    top: 55px !important;
+    height: calc(100vh - 55px - 50px) !important;
     border-radius: 0 15px 15px 0 !important;
   }
 }
@@ -616,29 +616,29 @@ h1, h2, h3, h4, h5, h6 {
     transition: margin-left 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
-  /* Expanded: sidebar at left:49 + width:260 = 309 */
-  body.sidebar-expanded .dg-main { margin-left: 309px; }
+  /* Expanded: sidebar at left:70 + width:260 = 330 */
+  body.sidebar-expanded .dg-main { margin-left: 330px; }
   body.sidebar-expanded.body-has-panel .dg-main,
-  body.sidebar-expanded .dg-main.has-panel { margin-left: 489px; } /* 309 + 180 panel */
+  body.sidebar-expanded .dg-main.has-panel { margin-left: 510px; } /* 330 + 180 panel */
   body.sidebar-expanded .dg-panel { display: none !important; } /* panel not needed when sidebar is expanded */
 
-  /* Semi: sidebar at left:49 + width:64 = 113 */
-  body.sidebar-semi .dg-main { margin-left: 113px; }
+  /* Semi: sidebar at left:70 + width:64 = 134 */
+  body.sidebar-semi .dg-main { margin-left: 134px; }
   body.sidebar-semi.body-has-panel .dg-main,
-  body.sidebar-semi .dg-main.has-panel { margin-left: 293px; } /* 113 + 180 panel */
-  body.sidebar-semi .dg-panel { left: 113px; } /* 49 + 64 */
+  body.sidebar-semi .dg-main.has-panel { margin-left: 314px; } /* 134 + 180 panel */
+  body.sidebar-semi .dg-panel { left: 134px; } /* 70 + 64 */
 
-  /* Collapsed: sidebar at left:49 + width:64 = 113 */
-  body.sidebar-collapsed .dg-main { margin-left: 113px; }
+  /* Collapsed: sidebar at left:70 + width:64 = 134 */
+  body.sidebar-collapsed .dg-main { margin-left: 134px; }
   body.sidebar-collapsed.body-has-panel .dg-main,
-  body.sidebar-collapsed .dg-main.has-panel { margin-left: 293px; }
-  body.sidebar-collapsed .dg-panel { left: 113px; }
+  body.sidebar-collapsed .dg-main.has-panel { margin-left: 314px; }
+  body.sidebar-collapsed .dg-panel { left: 134px; }
 
   /* Cuando el panel se oculta via JS */
   body.panel-hidden .dg-main { }
-  body.sidebar-expanded.panel-hidden .dg-main { margin-left: 309px !important; }
+  body.sidebar-expanded.panel-hidden .dg-main { margin-left: 330px !important; }
   body.sidebar-semi.panel-hidden .dg-main,
-  body.sidebar-collapsed.panel-hidden .dg-main { margin-left: 113px !important; }
+  body.sidebar-collapsed.panel-hidden .dg-main { margin-left: 134px !important; }
 }
 
 @media (max-width: 991.98px) {
