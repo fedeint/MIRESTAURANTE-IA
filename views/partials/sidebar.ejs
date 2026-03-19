@@ -41,7 +41,7 @@
             body.sidebar-semi.body-has-panel .dg-main,body.sidebar-collapsed.body-has-panel .dg-main{margin-left:314px;}
             body.sidebar-expanded.panel-hidden .dg-main{margin-left:330px!important;}
             body.sidebar-semi.panel-hidden .dg-main,body.sidebar-collapsed.panel-hidden .dg-main{margin-left:134px!important;}
-            .dg-main{margin-top:55px!important;margin-right:55px!important;margin-bottom:50px!important;border-radius:0 15px 15px 0;min-height:calc(100vh - 105px);background:#fff;overflow:hidden;}
+            .dg-main{margin-top:55px!important;margin-right:55px!important;margin-bottom:50px!important;border-radius:0 15px 15px 0!important;height:calc(100vh - 105px)!important;max-height:calc(100vh - 105px)!important;background:#fff!important;overflow-y:auto!important;overflow-x:hidden!important;}
           }
           @media(max-width:991.98px){.dg-sidebar{transform:translateX(-100%);transition:transform .3s ease;}.dg-sidebar.open{transform:translateX(0);}}
         </style>
@@ -734,6 +734,9 @@
               closeSubmenu();
             }
           });
+
+          // Ensure submenu panel always starts closed on page load
+          panel.classList.remove('open');
         })();
         </script>
 

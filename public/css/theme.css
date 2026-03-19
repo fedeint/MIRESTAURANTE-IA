@@ -221,7 +221,8 @@ h1, h2, h3, h4, h5, h6 {
     margin-right: 55px !important;
     margin-bottom: 50px !important;
     border-radius: 0 15px 15px 0 !important;
-    min-height: calc(100vh - 55px - 50px) !important;
+    height: calc(100vh - 55px - 50px) !important;
+    max-height: calc(100vh - 55px - 50px) !important;
     background: #fff !important;
     overflow-y: auto;
     overflow-x: hidden;
