@@ -133,6 +133,27 @@ La licencia Enterprise permite la creacion de usuarios ilimitados en los perfile
 
 El Sistema incluye una modalidad de servidor local que permite la continuidad operativa del restaurante ante interrupciones de conectividad a internet. Los datos generados en modo local se sincronizan automaticamente con la nube al restablecerse la conexion.
 
+**3.6. Servicio de Inteligencia Artificial (DalIA)**
+
+El Plan Enterprise incluye acceso completo al asistente de inteligencia artificial DalIA, personalizado por rol de usuario. El servicio funciona mediante un sistema de tokens (unidades de uso) con los siguientes términos:
+
+- a) **Asignacion Anual:** La licencia Enterprise incluye dos millones (2,000,000) de tokens de inteligencia artificial por año calendario, equivalente a aproximadamente dos mil (2,000) consultas al asistente DalIA.
+
+- b) **Consumo de Tokens:** Los tokens se consumen en las siguientes operaciones: consultas al asistente DalIA conversacional, generacion de insights y reportes del dashboard con analisis inteligente, y sintesis de voz (voice-to-text).
+
+- c) **Monitoreo de Consumo:** El Cliente podra consultar su consumo de tokens en tiempo real desde el panel de administracion en la seccion "Administrador → Gestion de Recursos → Tokens DalIA" (GET /api/chat/tokens).
+
+- d) **Alerta de Limite:** Cuando el consumo alcance el noventa por ciento (90%) del limite anual, el sistema notificara automaticamente al administrador del Cliente mediante el dashboard y correo electronico.
+
+- e) **Desactivacion tras Agotamiento:** Una vez agotados los tokens incluidos en el año, el asistente DalIA dejara de funcionar hasta que se adquieran tokens adicionales. Los demas modulos del Sistema (mesas, pedidos, facturacion, inventario, caja, etc.) continuaran operativo sin restriccion alguna.
+
+- f) **Paquetes Adicionales de Tokens:** El Cliente podra adquirir paquetes adicionales de tokens a los siguientes precios:
+   - 500,000 tokens: S/ 50.00 (cincuenta soles)
+   - 1,000,000 tokens: S/ 80.00 (ochenta soles)
+   - 5,000,000 tokens: S/ 300.00 (trescientos soles)
+
+- g) **No Acumulacion:** Los tokens no utilizados al final del año calendario NO son acumulables y se reinician a cero el 1 de enero del año siguiente. Las recargas adicionales de tokens se consumen durante el mismo año en el que se compran.
+
 ---
 
 ### CUARTA: CONDICIONES ECONOMICAS
@@ -190,6 +211,16 @@ dignita.tech se reserva el derecho de ajustar el precio del Servicio Anual de Ma
 **4.6. Impuestos**
 
 Los precios indicados en el presente Contrato no incluyen el Impuesto General a las Ventas (IGV) de 18%, salvo que se indique expresamente lo contrario. dignita.tech emitira los comprobantes de pago correspondientes conforme a la normativa tributaria peruana vigente.
+
+**4.7. Costos de Servicios de Terceros**
+
+a) **Facturacion Electronica SUNAT:** El servicio de facturacion electronica SUNAT requiere la contratacion por parte del Cliente de un proveedor Operador de Servicios Electronicos (OSE) o Proveedor de Servicios Electronicos (PSE) autorizado por SUNAT (ejemplos: NubeFact, Ubiobio, Elapago, entre otros). El costo de dicho servicio oscila aproximadamente entre S/ 40.00 y S/ 70.00 mensuales y es responsabilidad exclusiva del Cliente. Este costo se factura directamente por el proveedor OSE/PSE elegido y NO es parte de la tarifa de dignita.tech.
+
+b) **Envio de Comprobantes por WhatsApp Business:** El envio de comprobantes (boletas y facturas) a los clientes del restaurante a traves de WhatsApp Business utiliza la infraestructura de Meta Cloud API. El costo de cada mensaje de servicio (mensaje entrante/saliente) es aproximadamente S/ 0.05 por comprobante enviado. Este costo es asumido por dignita.tech como parte del Servicio Anual de Mantenimiento, siempre que el uso sea "razonable", entendiendose como tal un maximo de quinientos (500) mensajes por mes calendario por cada sede. El exceso de mensajes mensual sera facturado al Cliente al costo nominal de S/ 0.05 por mensaje adicional.
+
+c) **Derecho de Ajuste de Limites:** dignita.tech se reserva el derecho de modificar los limites de "uso razonable" para el envio de comprobantes por WhatsApp con previo aviso escrito de treinta (30) dias calendario, en caso de cambios en la politica de precios de Meta o por razone de uso anomalo o abuso del servicio.
+
+d) **Independencia de Servicios:** Los costos de servicios de terceros (OSE, Meta, SUNAT) son independientes de la licencia MiRestconIA y no afectan su operatividad local. El Cliente es responsable de mantener estas integraciones activas y pagadas conforme a sus necesidades operativas.
 
 ---
 
@@ -442,6 +473,70 @@ El soporte tecnico no cubrira:
 - d) La informacion sobre las funcionalidades del Software descrita en el Anexo B es sustancialmente exacta.
 
 **14.2.** Salvo lo expresamente indicado en este Contrato, el Software se proporciona "tal como esta" y "segun disponibilidad". dignita.tech no otorga garantias adicionales, expresas o implicitas, incluyendo garantias de comerciabilidad o adecuacion para un proposito particular.
+
+---
+
+### DECIMOCUARTA BIS: GARANTIA DE SATISFACCION (15 DIAS)
+
+**14.3. Periodo de Garantia de Satisfaccion**
+
+Si durante los primeros quince (15) dias calendario posteriores a la firma del Acta de Conformidad de Implementacion (señalada en el Anexo A del presente Contrato), el Cliente reporta una falla critica del Sistema y dignita.tech no proporciona una respuesta satisfactoria o solucion definitiva dentro de dicho plazo, el Cliente tendra derecho a solicitar la devolucion integra del monto pagado por el Servicio Anual de Mantenimiento (S/ 700.00), manteniendo vigente la licencia perpetua del Software.
+
+**14.4. Definicion de Falla Critica**
+
+Se considera "falla critica" cualquier error o deficiencia tecnica que impida de manera sustancial el funcionamiento normal del Sistema en sus funciones esenciales e indispensables para la operacion del restaurante, incluyendo pero no limitandose a:
+
+- a) Imposibilidad de tomar pedidos desde las mesas.
+- b) Imposibilidad de procesar pagos y generar boletas/facturas electronicas (cuando no se debe a problemas de SUNAT o del OSE).
+- c) Imposibilidad de acceder al sistema de gestion de caja.
+- d) Perdida permanente e irrecuperable de datos operativos del restaurante.
+- e) Indisponibilidad total de la version en la nube por mas de veinticuatro (24) horas continuas (cuando la version local tambien esta afectada).
+
+**14.5. Procedimiento para Ejercer la Garantia**
+
+Para ejercer esta garantia de satisfaccion, el Cliente debera:
+
+- a) Haber reportado formalmente la falla critica mediante el sistema de tickets de soporte, WhatsApp al consultor asignado, o correo electronico a soporte@dignita.tech, especificando la naturaleza del problema con claridad y detalle.
+
+- b) Haber proporcionado acceso remoto al Sistema a dignita.tech para el diagnostico y resolucion del problema, si fuera solicitado.
+
+- c) Haber transcurrido quince (15) dias calendario desde el reporte inicial de la falla sin que dignita.tech haya proporcionado:
+   - i. Una solucion definitiva y verificada que resuelva la falla en su totalidad.
+   - ii. Una respuesta tecnica clara explicando el problema, el tiempo estimado de resolucion y los pasos a seguir.
+
+- d) Que la falla critica no haya sido causada por acciones, omisiones o incumplimientos del Cliente conforme se describe en la clausula 14.6.
+
+**14.6. Exclusiones de la Garantia de Satisfaccion**
+
+La garantia de satisfaccion NO aplica a fallas criticas causadas por:
+
+- a) Mal uso o operacion inadecuada del Sistema por parte del Cliente o su personal, incluyendo pero no limitandose a: configuraciones incorrectas, borrado de datos sin respaldo, operaciones no autorizadas.
+
+- b) Fallas de infraestructura del Cliente, incluyendo: problemas de conectividad a internet, cortes electricos, computadoras o dispositivos incompatibles, configuraciones de red deficientes.
+
+- c) Modificaciones no autorizadas al software, codigo fuente, base de datos o configuraciones criticas por parte del Cliente o terceros.
+
+- d) Problemas causados por servicios de terceros fuera del control de dignita.tech, incluyendo: fallas de SUNAT, fallas del OSE/PSE (NubeFact u otro), fallas de Meta/WhatsApp, fallas de proveedores de internet, servicios de nube externa.
+
+- e) Falta de cumplimiento de obligaciones tributarias o administrativas del Cliente ante las autoridades competentes.
+
+- f) Eventos de fuerza mayor o caso fortuito conforme se define en la clausula Decimoctava.
+
+**14.7. Proceso de Devolucion**
+
+Si el Cliente tiene derecho a la devolucion conforme a los terminos anteriores, dignita.tech procedera a:
+
+- a) Verificar que se cumplen todos los requisitos de la clausula 14.5 y que se descartan las exclusiones de la clausula 14.6.
+
+- b) Procesar la devolucion del monto del Servicio Anual de Mantenimiento (S/ 700.00) dentro de los diez (10) dias habiles siguientes a la solicitud formal de devolucion.
+
+- c) Efectuar la devolucion por el mismo medio de pago utilizado en la compra original (transferencia bancaria si fue transferencia, etc.).
+
+- d) La devolucion de la licencia perpetua del Software NO procedera: el Cliente mantiene el derecho de uso perpetuo del Software de forma gratuita, incluso despues de ejercer la garantia de satisfaccion.
+
+**14.8. Unico Remedio**
+
+La devolucion del monto del Servicio Anual de Mantenimiento conforme a esta clausula constituye el remedio unico y excluyente del Cliente en caso de ejercer esta garantia de satisfaccion. El Cliente renuncia a cualquier otra reclamacion, demanda o accion legal derivada de la falla critica, manteniendo los derechos generales establecidos en el presente Contrato.
 
 ---
 
@@ -1062,9 +1157,32 @@ Para propietarios con mas de un restaurante bajo su titularidad:
 
 ---
 
-## GARANTIA DE SATISFACCION
+## GARANTIA DE SATISFACCION (15 DIAS CALENDARIO)
 
-dignita.tech ofrece una **garantia de satisfaccion de 15 dias habiles** contados desde la firma del Acta de Entrega. Si durante ese periodo el Cliente considera que el sistema no cumple con las funcionalidades descritas en el Anexo B, ambas partes acordaran de buena fe las acciones correctivas o, de ser imposible su subsanacion, dignita.tech devolvera el importe del primer año de mantenimiento (S/ 700.00), manteniendo vigente la licencia perpetua del software.
+dignita.tech ofrece una **garantia de satisfaccion de quince (15) dias calendario** contados desde la firma del Acta de Conformidad de Implementacion (Anexo A).
+
+**Terminos:**
+
+Si durante dicho periodo el Cliente reporta una falla critica del Sistema (conforme se define en la clausula Decimocuarta Bis, numeral 14.4) y dignita.tech no proporciona una solucion definitiva dentro de los 15 dias, el Cliente podra solicitar la devolucion integra del Servicio Anual de Mantenimiento (S/ 700.00).
+
+**¿Que es una falla critica?**
+- Sistema no puede tomar pedidos desde mesas.
+- Sistema no puede procesar pagos o emitir boletas/facturas (por defecto del software, no de SUNAT).
+- No se puede acceder a caja.
+- Perdida de datos operativos del restaurante.
+- Sistema inoperativo por mas de 24 horas continuas.
+
+**Requisitos para solicitar devolucion:**
+1. Reportar el problema por WhatsApp, tickets o email a soporte@dignita.tech.
+2. Proporcionar acceso remoto para que dignita.tech diagnostique.
+3. Haber transcurrido 15 dias sin solucion definitiva.
+4. La falla NO es causada por: mal uso, falla de internet, SUNAT caido, modificaciones no autorizadas.
+
+**Resultado:**
+- Se devuelve S/ 700.00 (monto del servicio anual).
+- Se mantiene vigente la licencia perpetua del software (uso gratuito sin soporte ni nube).
+
+Para detalles adicionales ver clausula Decimocuarta Bis del presente Contrato.
 
 ---
 
