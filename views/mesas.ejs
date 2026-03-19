@@ -620,7 +620,7 @@
       /* Product image */
       .prod-img-wrap {
         width: 100%;
-        aspect-ratio: 4/3;
+        height: 90px;
         overflow: hidden;
         background: #f3f4f6;
         flex-shrink: 0;
@@ -684,13 +684,27 @@
 
       /* Larger text + compact image on tablet/desktop for readability */
       @media (min-width: 768px) {
-        .prod-img-wrap { aspect-ratio: 16/10; }
-        .prod-name { font-size: 0.92rem; -webkit-line-clamp: 2; }
-        .prod-price { font-size: 0.95rem; margin-top: 4px; }
-        .prod-cat-label { font-size: 0.75rem; }
-        .prod-info { padding: 0.6rem 0.7rem 0.7rem; gap: 3px; }
+        .prod-img-wrap { height: 120px; }
+        .prod-name { font-size: 0.88rem; -webkit-line-clamp: 2; }
+        .prod-price { font-size: 0.9rem; margin-top: 2px; }
+        .prod-cat-label { font-size: 0.72rem; }
+        .prod-info { padding: 0.5rem 0.6rem 0.55rem; gap: 2px; }
         .prod-qty-badge { width: 26px; height: 26px; font-size: 0.75rem; top: 7px; right: 7px; }
         .prod-card { border-radius: 14px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
+      }
+
+      /* Disponibilidad badge */
+      .prod-stock {
+        font-size: 0.65rem;
+        font-weight: 700;
+        margin-top: 1px;
+      }
+      .prod-stock.stock-ok { color: #16a34a; }
+      .prod-stock.stock-low { color: #ea580c; }
+      .prod-stock.stock-out { color: #dc2626; }
+      .prod-card.agotado {
+        opacity: 0.5;
+        pointer-events: none;
       }
 
       /* Empty / loading states */

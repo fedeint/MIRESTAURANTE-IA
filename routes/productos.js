@@ -60,6 +60,15 @@ router.get('/carta', async (req, res) => {
             FROM productos
             ORDER BY categoria ASC, nombre ASC
         `);
+
+        // Calcular disponibilidad de cada producto (basado en recetas + stock)
+        for (const p of (productos || [])) {
+            const disp = await calcularDisponibilidadProducto(p.id);
+            p.disponible = disp.disponible;       // -1 = sin receta, 0+ = platos posibles
+            p.sinReceta = disp.sinReceta;
+            p.ingrediente_limitante = disp.ingrediente_limitante || null;
+        }
+
         // Agrupar por categoría
         const grupos = {};
         for (const p of (productos || [])) {

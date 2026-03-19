@@ -554,6 +554,21 @@ $(function() {
         ? `<img class="prod-img" src="${escapeHtml(p.imagen)}" alt="${escapeHtml(p.nombre)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="prod-img-placeholder" style="display:none"><i class="bi bi-egg-fried"></i><span style='font-size:0.65rem;color:#9ca3af'>${escapeHtml(p.nombre.substring(0,20))}</span></div>`
         : `<div class="prod-img-placeholder"><i class="bi bi-egg-fried"></i><span style='font-size:0.65rem;color:#9ca3af'>${escapeHtml(p.nombre.substring(0,20))}</span></div>`;
 
+      // Disponibilidad: -1 = sin receta (ilimitado), 0 = agotado, N = platos disponibles
+      const disp = p.disponible != null ? Number(p.disponible) : -1;
+      const sinReceta = p.sinReceta;
+      let stockHtml = '';
+      if (!sinReceta && disp >= 0) {
+        if (disp === 0) {
+          stockHtml = '<div class="prod-stock stock-out">Agotado</div>';
+        } else if (disp <= 5) {
+          stockHtml = `<div class="prod-stock stock-low">Quedan ${disp}</div>`;
+        } else {
+          stockHtml = `<div class="prod-stock stock-ok">${disp} disponibles</div>`;
+        }
+      }
+      const agotado = !sinReceta && disp === 0;
+
       card.innerHTML = `
         <div class="prod-qty-badge">${qty}</div>
         <div class="prod-img-wrap">${imgHtml}</div>
@@ -561,8 +576,10 @@ $(function() {
           <div class="prod-name">${escapeHtml(p.nombre)}</div>
           <div class="prod-cat-label">${escapeHtml(p.categoria || '')}</div>
           <div class="prod-price">${precioStr}</div>
+          ${stockHtml}
         </div>
       `;
+      if (agotado) card.classList.add('agotado');
 
       card.addEventListener('click', () => onProdCardClick(p));
       grid.appendChild(card);
