@@ -12,7 +12,8 @@
       #canvasPedido { --bs-offcanvas-width: 420px; }
 
       /* Tablet (768px+): wider panel with sidebar layout */
-      @media (min-width: 768px) and (hover: hover) and (pointer: fine) {
+      /* Tablet (768px+): wider panel with sidebar layout */
+      @media (min-width: 768px) {
         #canvasPedido {
           --bs-offcanvas-width: 85vw;
           max-width: 1100px;
@@ -20,15 +21,15 @@
       }
 
       /* Large desktop (1200px+): slightly narrower ratio */
-      @media (min-width: 1200px) and (hover: hover) and (pointer: fine) {
+      @media (min-width: 1200px) {
         #canvasPedido {
           --bs-offcanvas-width: 70vw;
           max-width: 1100px;
         }
       }
 
-      /* Touch/mobile: full viewport width */
-      @media (max-width: 767.98px), (hover: none) and (pointer: coarse){
+      /* Mobile phones: full viewport width */
+      @media (max-width: 767.98px) {
         #canvasPedido{
           --bs-offcanvas-width: 100vw;
           width: 100vw !important;
@@ -537,7 +538,7 @@
       }
 
       /* Show sidebar on desktop (non-touch) */
-      @media (min-width: 768px) and (hover: hover) and (pointer: fine) {
+      @media (min-width: 768px) {
         #categoriasSidebar { display: flex; }
         /* Hide horizontal pills on desktop since sidebar replaces them */
         #categoriasWrap { display: none; }
@@ -556,14 +557,14 @@
       }
 
       /* On desktop the cards can be a bit larger since we have more space */
-      @media (min-width: 768px) and (hover: hover) and (pointer: fine) {
+      @media (min-width: 768px) {
         #productosGrid {
           grid-template-columns: repeat(4, 1fr);
           gap: 0.75rem;
           padding: 0.65rem 1rem;
         }
       }
-      @media (min-width: 1024px) and (hover: hover) and (pointer: fine) {
+      @media (min-width: 1024px) {
         #productosGrid {
           grid-template-columns: repeat(4, 1fr);
         }
@@ -630,7 +631,11 @@
         object-fit: cover;
         display: block;
         transition: transform 0.22s;
+        background: #e5e7eb;
       }
+      /* If image fails to load, hide it and show placeholder bg */
+      .prod-img-wrap { position: relative; }
+      .prod-img[data-failed] { display: none; }
       .prod-card:hover .prod-img { transform: scale(1.05); }
       .prod-img-placeholder {
         width: 100%;
@@ -677,13 +682,15 @@
         margin-top: 3px;
       }
 
-      /* Larger text on desktop cards for readability */
-      @media (min-width: 768px) and (hover: hover) and (pointer: fine) {
-        .prod-name { font-size: 0.82rem; }
-        .prod-price { font-size: 0.85rem; }
-        .prod-cat-label { font-size: 0.7rem; }
-        .prod-info { padding: 0.5rem 0.6rem 0.6rem; gap: 2px; }
-        .prod-qty-badge { width: 24px; height: 24px; font-size: 0.72rem; top: 7px; right: 7px; }
+      /* Larger text + compact image on tablet/desktop for readability */
+      @media (min-width: 768px) {
+        .prod-img-wrap { aspect-ratio: 16/10; }
+        .prod-name { font-size: 0.92rem; -webkit-line-clamp: 2; }
+        .prod-price { font-size: 0.95rem; margin-top: 4px; }
+        .prod-cat-label { font-size: 0.75rem; }
+        .prod-info { padding: 0.6rem 0.7rem 0.7rem; gap: 3px; }
+        .prod-qty-badge { width: 26px; height: 26px; font-size: 0.75rem; top: 7px; right: 7px; }
+        .prod-card { border-radius: 14px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); }
       }
 
       /* Empty / loading states */

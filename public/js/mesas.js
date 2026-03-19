@@ -551,8 +551,8 @@ $(function() {
       card.setAttribute('data-prod-id', String(p.id));
 
       const imgHtml = p.imagen
-        ? `<img class="prod-img" src="${escapeHtml(p.imagen)}" alt="${escapeHtml(p.nombre)}" loading="lazy" onerror="this.parentNode.innerHTML='<div class=\\'prod-img-placeholder\\'><i class=\\'bi bi-image\\'></i></div>'">`
-        : `<div class="prod-img-placeholder"><i class="bi bi-egg-fried"></i></div>`;
+        ? `<img class="prod-img" src="${escapeHtml(p.imagen)}" alt="${escapeHtml(p.nombre)}" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class="prod-img-placeholder" style="display:none"><i class="bi bi-egg-fried"></i><span style='font-size:0.65rem;color:#9ca3af'>${escapeHtml(p.nombre.substring(0,20))}</span></div>`
+        : `<div class="prod-img-placeholder"><i class="bi bi-egg-fried"></i><span style='font-size:0.65rem;color:#9ca3af'>${escapeHtml(p.nombre.substring(0,20))}</span></div>`;
 
       card.innerHTML = `
         <div class="prod-qty-badge">${qty}</div>
