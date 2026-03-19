@@ -621,7 +621,8 @@ app.use('/api/canales', requireAuth, canalesRoutes);
 app.use('/api/tts', requireAuth, ttsRoutes);
 
 // Reportes PDF (admin)
-app.use('/api/reportes', requireRole('administrador'), reportesRoutes);
+app.use('/reportes', requireAuth, requireRole('administrador'), reportesRoutes);
+app.use('/api/reportes', requireAuth, requireRole('administrador'), reportesRoutes);
 
 // Administracion P&L (admin)
 app.use('/administracion', requireRole('administrador'), administracionRoutes);
