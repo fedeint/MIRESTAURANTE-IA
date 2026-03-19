@@ -261,9 +261,9 @@
         .producto-card::after {
             content: '';
             position: absolute;
-            inset: -3px;
-            border-radius: 20px;
-            padding: 3px;
+            inset: -5px;
+            border-radius: 22px;
+            padding: 5px;
             background: conic-gradient(
                 from 0deg,
                 transparent 0deg,
@@ -281,10 +281,11 @@
             transition: opacity 0.4s ease;
             pointer-events: none;
             z-index: 1;
+            filter: blur(1px);
         }
 
         .producto-card:hover::after {
-            opacity: 0.8;
+            opacity: 1;
             animation: glowRotate 3s linear infinite;
         }
 

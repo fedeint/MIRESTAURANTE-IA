@@ -8,12 +8,17 @@
 
         <!-- Precargar fuente de iconos para evitar parpadeo al navegar -->
         <link rel="preload" href="/vendor/bootstrap-icons/fonts/bootstrap-icons.woff2" as="font" type="font/woff2" crossorigin>
+        <!-- Fredoka One para brand MiRest con IA -->
+        <link rel="preload" href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap" as="style" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap" rel="stylesheet">
         <!-- CSS critico inline: evita flash blanco y parpadeo al navegar -->
         <style>
           @font-face{font-display:block;font-family:"bootstrap-icons";src:url("/vendor/bootstrap-icons/fonts/bootstrap-icons.woff2") format("woff2"),url("/vendor/bootstrap-icons/fonts/bootstrap-icons.woff") format("woff");}
           body{background:#FFF8F0;background-image:linear-gradient(135deg,#FFF8F0 0%,#FAFAF7 100%);background-attachment:fixed;margin:0;}
           [data-theme="dark"] body{background:#0f172a;background-image:linear-gradient(135deg,#0f172a 0%,#1e1b4b 50%,#0f172a 100%);}
-          .dg-sidebar{height:100vh;position:fixed;top:0;left:0;z-index:1050;background:#131627;display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;transition:width .25s ease;}
+          @media(min-width:992px){body{padding:30px 40px;}}
+          .dg-sidebar{height:100vh;position:fixed;top:0;left:0;z-index:1050;background:#131627;display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;transition:width .35s cubic-bezier(0.34,1.56,0.64,1);}
+          @media(min-width:992px){.dg-sidebar{top:30px;left:40px;height:calc(100vh - 60px);border-radius:15px 0 0 15px;}}
           .dg-sidebar-expanded{width:260px;padding:16px;}
           .dg-sidebar-collapsed{width:64px;padding:12px 0;align-items:center;}
           .dg-sidebar-link,.dg-sidebar-icon-item,.dg-sidebar-section,.dg-sidebar-header,.dg-sidebar-footer,.dg-sidebar-sep,.dg-brand-text,.dg-brand-icon{visibility:visible;}
@@ -37,6 +42,7 @@
             body.sidebar-semi.body-has-panel .dg-main,body.sidebar-collapsed.body-has-panel .dg-main{margin-left:244px;}
             body.sidebar-expanded.panel-hidden .dg-main{margin-left:260px!important;}
             body.sidebar-semi.panel-hidden .dg-main,body.sidebar-collapsed.panel-hidden .dg-main{margin-left:64px!important;}
+            .dg-main{border-radius:0 15px 15px 0;min-height:calc(100vh - 60px);background:#fff;overflow:hidden;}
           }
           @media(max-width:991.98px){.dg-sidebar{transform:translateX(-100%);transition:transform .3s ease;}.dg-sidebar.open{transform:translateX(0);}}
         </style>
@@ -53,13 +59,22 @@
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             border-left: 1px solid rgba(255,255,255,0.06);
-            transform: translateX(-100%);
+            transform: translateX(-110%);
             opacity: 0;
-            transition: transform 400ms cubic-bezier(0.34, 1.55, 0.64, 1), opacity 240ms ease-out;
+            transition: transform 500ms cubic-bezier(0.34, 1.8, 0.64, 1), opacity 280ms ease-out;
             z-index: 1039;
             padding: 1rem 0;
             pointer-events: none;
             box-shadow: 4px 0 24px rgba(0,0,0,0.18);
+          }
+
+          @media(min-width:992px){
+            .sidebar-submenu-panel {
+              left: 300px; /* 260 + 40 shell offset */
+              top: 30px;
+              height: calc(100vh - 60px);
+              border-radius: 0 15px 15px 0;
+            }
           }
 
           /* When sidebar is collapsed (icons only), panel comes from narrow sidebar width */
@@ -68,10 +83,18 @@
             left: 64px;
           }
 
+          @media(min-width:992px){
+            body.sidebar-semi .sidebar-submenu-panel,
+            body.sidebar-collapsed .sidebar-submenu-panel {
+              left: 104px; /* 64 + 40 shell offset */
+            }
+          }
+
           .sidebar-submenu-panel.open {
             transform: translateX(0);
             opacity: 1;
             pointer-events: all;
+            transition: transform 500ms cubic-bezier(0.34, 1.8, 0.64, 1), opacity 280ms ease-out;
           }
 
           .sidebar-submenu-panel .submenu-title {
@@ -151,10 +174,12 @@
         <!-- Mobile top bar -->
         <div class="dg-mobile-bar d-lg-none">
           <button class="dg-mobile-toggle" id="sidebarToggle" type="button"><i class="bi bi-list"></i></button>
-          <a class="dg-mobile-brand" href="/"><span class="dg-brand-icon"><i class="bi bi-fire"></i></span> dignita<span
-              style="color:#FF6B35;">.tech</span></a>
+          <a class="dg-mobile-brand" href="/"><span class="dg-brand-icon"><i class="bi bi-fire"></i></span> <span style="font-family:'Fredoka One',cursive;">Mi<span style="color:#FF6B35;">Rest</span> con <span style="color:#ff7846;">IA</span></span></a>
         </div>
         <div class="dg-sidebar-overlay d-lg-none" id="sidebarOverlay"></div>
+
+        <!-- Floating shell frame (orange border, desktop only) -->
+        <div class="dg-floating-frame d-none d-lg-block"></div>
 
         <!-- SIDEBAR -->
         <aside class="dg-sidebar" id="sidebar" data-state="expanded">
@@ -163,7 +188,7 @@
           <div class="dg-sidebar-header">
             <a href="/" class="dg-sidebar-brand-link">
               <span class="dg-brand-icon"><i class="bi bi-fire"></i></span>
-              <span class="dg-brand-text">dignita<span style="color:#FF6B35;">.tech</span></span>
+              <span class="dg-brand-text" style="font-family:'Fredoka One',cursive;font-size:20px;"><span style="color:#fff;">Mi</span><span style="color:#f97316;">Rest</span><span style="color:#fff;"> con </span><span style="color:#ff7846;">IA</span></span>
             </a>
             <button class="dg-sidebar-collapse-btn" id="sidebarToggleState" title="Cambiar vista">
               <i class="bi bi-chevron-left" id="toggleIcon"></i>
