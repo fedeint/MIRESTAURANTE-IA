@@ -38,20 +38,24 @@ app.set('views', path.join(__dirname, 'views'));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
-// Sesiones (login)
-// Relacionado con:
-// - routes/auth.js (POST /login, POST /logout)
-// - middleware/auth.js (req.session.user)
-// Nota: para uso local/offline. Si requieres persistir sesiones entre reinicios,
-// se puede cambiar a un store en BD (no incluido aquí para mantener simple).
+// Sesiones persistidas en PostgreSQL (necesario para serverless/Vercel)
+const pgSession = require('connect-pg-simple')(session);
+const { Pool: PgPool } = require('pg');
+const sessionPool = new PgPool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: { rejectUnauthorized: false }
+});
+
 app.use(session({
+    store: new pgSession({ pool: sessionPool, tableName: 'session' }),
     name: 'sr.sid',
-    secret: process.env.SESSION_SECRET || (() => { console.warn('ADVERTENCIA: SESSION_SECRET no configurado en .env, usando valor por defecto inseguro'); return 'dev-only-insecure-default'; })(),
+    secret: process.env.SESSION_SECRET || 'dev-only-insecure-default',
     resave: false,
     saveUninitialized: false,
     cookie: {
         httpOnly: true,
         sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
         maxAge: 1000 * 60 * 60 * 12 // 12 horas
     }
 }));
