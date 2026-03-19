@@ -226,10 +226,12 @@
 
         /* --- Product Card — Glassmorphism Style --- */
         .producto-card {
-            background: var(--dg-surface);
-            border: 1px solid var(--dg-surface-border);
+            background: rgba(255,255,255,0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 2px solid rgba(200,200,210,0.4);
             border-radius: 18px;
-            box-shadow: var(--dg-shadow);
+            box-shadow: 0 4px 24px rgba(0,0,0,0.08);
             overflow: visible;
             transition: transform 0.3s cubic-bezier(0.34, 1.4, 0.64, 1), box-shadow 0.3s ease, border-color 0.3s ease;
             display: flex;
@@ -240,7 +242,7 @@
         /* Inner wrapper clips image but allows glow to extend */
         .producto-card-inner {
             overflow: hidden;
-            border-radius: 18px;
+            border-radius: 16px;
             display: flex;
             flex-direction: column;
             flex: 1;
@@ -248,7 +250,7 @@
 
         .producto-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 16px 48px rgba(0,0,0,0.12), 0 4px 16px rgba(249,115,22,0.15);
+            box-shadow: 0 16px 48px rgba(249,115,22,0.15), 0 4px 16px rgba(0,0,0,0.1);
             border-color: #f97316;
         }
 
@@ -260,9 +262,9 @@
         .producto-card::after {
             content: '';
             position: absolute;
-            inset: -1px;
-            border-radius: 18px;
-            padding: 2px;
+            inset: -3px;
+            border-radius: 20px;
+            padding: 3px;
             background: conic-gradient(
                 from 0deg,
                 transparent 0deg,
@@ -336,67 +338,58 @@
             color: var(--dg-text-muted);
         }
 
-        /* Info overlay gradient over image bottom */
+        /* Info section BELOW the image (not overlay) */
         .producto-card-image-overlay {
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            padding: 0.65rem 0.8rem 0.55rem;
-            background: linear-gradient(to top, rgba(10,12,24,0.82) 0%, rgba(10,12,24,0.4) 60%, transparent 100%);
+            position: relative;
+            padding: 0.7rem 0.85rem 0.4rem;
+            background: rgba(255,255,255,0.7);
+            backdrop-filter: blur(8px);
             display: flex;
-            align-items: flex-end;
+            align-items: center;
             justify-content: space-between;
             gap: 0.4rem;
-            pointer-events: none;
         }
 
         .producto-card-image-overlay .producto-card-name {
             font-size: 0.92rem;
             font-weight: 700;
-            color: #fff;
+            color: #1a1a1a;
             line-height: 1.3;
             flex: 1;
-            text-shadow: 0 1px 4px rgba(0,0,0,0.5);
         }
 
         .producto-card-image-overlay .producto-card-price {
-            font-size: 1rem;
+            font-size: 1.05rem;
             font-weight: 800;
-            color: #fbbf24;
+            color: #f97316;
             white-space: nowrap;
             letter-spacing: -0.02em;
-            text-shadow: 0 1px 4px rgba(0,0,0,0.5);
         }
 
-        /* Badge row inside the overlay */
+        /* Badge row below name/price */
         .producto-card-overlay-badges {
-            position: absolute;
-            top: 0.55rem;
-            left: 0.7rem;
-            right: 0.7rem;
             display: flex;
             gap: 0.3rem;
             flex-wrap: wrap;
-            pointer-events: none;
+            padding: 0 0.85rem 0.5rem;
         }
 
         .overlay-badge {
-            font-size: 0.64rem;
+            font-size: 0.65rem;
             font-weight: 600;
-            padding: 0.18rem 0.5rem;
+            padding: 0.2rem 0.55rem;
             border-radius: 6px;
-            background: rgba(255,255,255,0.15);
+            background: rgba(30,30,40,0.7);
             backdrop-filter: blur(6px);
             -webkit-backdrop-filter: blur(6px);
-            color: #fff;
+            color: #e2e8f0;
             letter-spacing: 0.02em;
-            border: 1px solid rgba(255,255,255,0.12);
+            border: 1px solid rgba(255,255,255,0.1);
         }
 
         .overlay-badge.cat-badge {
-            background: rgba(249,115,22,0.55);
-            border-color: rgba(249,115,22,0.3);
+            background: rgba(60,60,70,0.7);
+            border-color: rgba(255,255,255,0.1);
         }
 
         .overlay-badge.code-badge {
@@ -729,19 +722,8 @@
                  data-categoria="<%= catAttr %>">
                 <div class="producto-card-inner">
 
-                <!-- Image area with glassmorphism overlay -->
+                <!-- Image area -->
                 <div class="producto-card-image-wrap">
-
-                    <!-- Top badges (code + category) -->
-                    <div class="producto-card-overlay-badges">
-                        <% if (producto.codigo) { %>
-                        <span class="overlay-badge code-badge"><%= producto.codigo %></span>
-                        <% } %>
-                        <% if (cat) { %>
-                        <span class="overlay-badge cat-badge"><%= cat.charAt(0).toUpperCase() + cat.slice(1).toLowerCase() %></span>
-                        <% } %>
-                    </div>
-
                     <% if (producto.imagen) { %>
                     <img src="<%= producto.imagen %>"
                          alt="<%= producto.nombre %>"
@@ -752,12 +734,22 @@
                         <span>Sin foto</span>
                     </div>
                     <% } %>
+                </div>
 
-                    <!-- Bottom gradient overlay: name + price -->
-                    <div class="producto-card-image-overlay">
-                        <div class="producto-card-name"><%= producto.nombre %></div>
-                        <div class="producto-card-price">S/ <%= (Number(producto.precio_unidad) || 0).toFixed(2) %></div>
-                    </div>
+                <!-- Name + Price below image -->
+                <div class="producto-card-image-overlay">
+                    <div class="producto-card-name"><%= producto.nombre %></div>
+                    <div class="producto-card-price">S/ <%= (Number(producto.precio_unidad) || 0).toFixed(2) %></div>
+                </div>
+
+                <!-- Badges (code + category) below name -->
+                <div class="producto-card-overlay-badges">
+                    <% if (producto.codigo) { %>
+                    <span class="overlay-badge code-badge"><%= producto.codigo %></span>
+                    <% } %>
+                    <% if (cat) { %>
+                    <span class="overlay-badge cat-badge"><%= cat.charAt(0).toUpperCase() + cat.slice(1).toLowerCase() %></span>
+                    <% } %>
                 </div>
 
                 <!-- Card body: availability + actions -->
