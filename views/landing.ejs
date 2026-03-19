@@ -8,24 +8,13 @@
   <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
-  <!--
-    ═══════════════════════════════════════════════════════════════════════
-    IZIPAY KRYPTON SDK — Activar cuando tengas credenciales reales
-    ─────────────────────────────────────────────────────────────────────
-    1. Reemplaza ~~PLACEHOLDER~~ con tu Public Key de Izipay.
-    2. Descomenta los 2 tags de abajo.
-    3. Configura IZIPAY_PUBLIC_KEY en .env del servidor.
-
-    Docs: https://secure.micuentaweb.pe/doc/es-PE/rest/V4.0/javascript/
-
-    <script src="https://static.micuentaweb.pe/static/js/krypton-client/V4.0/stable/kr-payment-form.min.js"
-            kr-public-key="~~PLACEHOLDER~~"
-            kr-post-url-success="/api/pagos/izipay-success">
-    </script>
-    <link rel="stylesheet"
-          href="https://static.micuentaweb.pe/static/js/krypton-client/V4.0/ext/classic.css">
-    ═══════════════════════════════════════════════════════════════════════
-  -->
+  <!-- Izipay Krypton SDK -->
+  <script src="https://static.micuentaweb.pe/static/js/krypton-client/V4.0/stable/kr-payment-form.min.js"
+          kr-public-key="41576398:testpublickey_6OsnKUaIQfKgaNAjwAjHnr6oNMt1lVch678UfJvShOR8s"
+          kr-post-url-success="/api/pagos/izipay-success">
+  </script>
+  <link rel="stylesheet"
+        href="https://static.micuentaweb.pe/static/js/krypton-client/V4.0/ext/classic.css">
 
   <style>
     *{margin:0;padding:0;box-sizing:border-box;}
@@ -403,37 +392,59 @@
 
       <div class="row g-4 justify-content-center align-items-stretch">
 
-        <!-- FREE -->
-        <div class="col-md-6 col-lg-4">
+        <!-- GRATIS -->
+        <div class="col-6 col-lg">
           <div class="pricing-card">
-            <div class="plan-name">Free</div>
-            <div class="plan-desc">Prueba sin tarjeta</div>
+            <div class="plan-name">Gratis</div>
+            <div class="plan-desc">Prueba sin compromiso</div>
             <div class="plan-price plan-price-free">
               <span class="currency">S/</span>
               <span class="amount">0</span>
-              <span class="period"> · 5 o 15 dias</span>
+              <span class="period"> · 5-15 dias</span>
             </div>
             <hr class="plan-divider">
             <ul class="plan-features">
               <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> 5 dias sin tarjeta</li>
-              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> 15 dias con tarjeta (opcional)</li>
-              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Hasta 2 usuarios</li>
-              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Hasta 50 facturas/mes</li>
-              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Gestion de mesas basica</li>
+              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> 15 dias con tarjeta</li>
+              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Todas las funciones</li>
+              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Sin compromiso</li>
             </ul>
-            <a href="/setup?plan=free" class="btn-plan btn-plan-free">
-              <i class="bi bi-arrow-right-circle me-2"></i>Comenzar ahora
+            <a href="/setup?plan=gratis" class="btn-plan btn-plan-free">
+              <i class="bi bi-arrow-right-circle me-2"></i>Probar gratis
             </a>
-            <p class="pricing-note mt-2">5 dias gratis, sin tarjeta</p>
           </div>
         </div>
 
-        <!-- PRO (highlighted) -->
-        <div class="col-md-6 col-lg-4">
+        <!-- MENSUAL -->
+        <div class="col-6 col-lg">
+          <div class="pricing-card">
+            <div class="plan-name">Mensual</div>
+            <div class="plan-desc">Cancela cuando quieras</div>
+            <div class="plan-price">
+              <span class="currency">S/</span>
+              <span class="amount">150</span>
+              <span class="period"> /mes</span>
+            </div>
+            <hr class="plan-divider">
+            <ul class="plan-features">
+              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Usuarios ilimitados</li>
+              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Facturas ilimitadas</li>
+              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> DalIA asistente IA</li>
+              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Almacen + Cocina</li>
+              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Soporte prioritario</li>
+            </ul>
+            <button class="btn-plan btn-plan-pro" onclick="abrirPagoIzipay('mensual','Mensual','S/ 150 / mes')">
+              <i class="bi bi-credit-card me-2"></i>Suscribirme
+            </button>
+          </div>
+        </div>
+
+        <!-- ANUAL (highlighted) -->
+        <div class="col-6 col-lg">
           <div class="pricing-card destacado">
             <div class="plan-badge-popular"><i class="bi bi-lightning-charge-fill me-1"></i>Mas popular</div>
-            <div class="plan-name">Pro</div>
-            <div class="plan-desc">Para restaurantes en crecimiento</div>
+            <div class="plan-name">Anual</div>
+            <div class="plan-desc">Ahorra S/ 300 al ano</div>
             <div class="plan-price">
               <span class="currency">S/</span>
               <span class="amount">1,500</span>
@@ -441,55 +452,63 @@
             </div>
             <hr class="plan-divider">
             <ul class="plan-features">
-              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Usuarios ilimitados</li>
-              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Facturas ilimitadas</li>
-              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> DalIA (2,000,000 tokens/ano)</li>
-              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Exportacion Excel / PDF</li>
-              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Multi-dispositivo LAN</li>
-              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Gestion de almacen</li>
-              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Redes sociales integradas</li>
-              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Soporte prioritario</li>
+              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Todo lo del Mensual</li>
+              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> 2 meses gratis</li>
+              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> DalIA tokens extendidos</li>
+              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Redes sociales</li>
+              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Soporte 24/7</li>
             </ul>
-            <button class="btn-plan btn-plan-pro" onclick="abrirContacto('Pro','S/ 1,500 / ano')">
-              <i class="bi bi-whatsapp me-2"></i>Contratar Pro
+            <button class="btn-plan btn-plan-pro" onclick="abrirPagoIzipay('anual','Anual','S/ 1,500 / ano')">
+              <i class="bi bi-credit-card me-2"></i>Contratar Anual
             </button>
-            <p class="pricing-note mt-2" style="color:rgba(255,255,255,0.4);">
-              <span class="payment-coming-soon" style="background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.12);color:rgba(255,255,255,0.5);">
-                <i class="bi bi-credit-card"></i> Proximo: pago online con tarjeta
-              </span>
-            </p>
           </div>
         </div>
 
-        <!-- ENTERPRISE -->
-        <div class="col-md-6 col-lg-4">
+        <!-- 2 ANOS -->
+        <div class="col-6 col-lg">
           <div class="pricing-card">
-            <div class="plan-name">Enterprise</div>
-            <div class="plan-desc">Para cadenas y franquicias</div>
+            <div class="plan-name">2 Anos</div>
+            <div class="plan-desc">Incluye almacenamiento</div>
             <div class="plan-price">
               <span class="currency">S/</span>
-              <span class="amount">3,000</span>
-              <span class="period"> /ano</span>
+              <span class="amount">2,500</span>
+              <span class="period"> /2 anos</span>
             </div>
             <hr class="plan-divider">
             <ul class="plan-features">
-              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Todo lo de Pro</li>
-              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Multi-local (hasta 5 sedes)</li>
-              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> DalIA sin limite de tokens</li>
-              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Integracion SUNAT / OSE</li>
-              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> API publica (webhooks)</li>
-              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Onboarding presencial</li>
-              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> SLA 99.9% uptime</li>
-              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Gerente de cuenta dedicado</li>
+              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Todo lo del Anual</li>
+              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Almacenamiento extra</li>
+              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> DalIA sin limite</li>
+              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> SUNAT / OSE</li>
+              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Onboarding personal</li>
             </ul>
-            <button class="btn-plan btn-plan-enterprise" onclick="abrirContacto('Enterprise','S/ 3,000 / ano')">
-              <i class="bi bi-telephone me-2"></i>Contactar ventas
+            <button class="btn-plan btn-plan-enterprise" onclick="abrirPagoIzipay('2anos','2 Anos','S/ 2,500')">
+              <i class="bi bi-credit-card me-2"></i>Contratar 2 Anos
             </button>
-            <p class="pricing-note mt-2">
-              <span class="payment-coming-soon">
-                <i class="bi bi-credit-card"></i> Proximo: pago online con tarjeta
-              </span>
-            </p>
+          </div>
+        </div>
+
+        <!-- DE POR VIDA -->
+        <div class="col-6 col-lg">
+          <div class="pricing-card">
+            <div class="plan-name">De por Vida</div>
+            <div class="plan-desc">Pago unico, para siempre</div>
+            <div class="plan-price">
+              <span class="currency">S/</span>
+              <span class="amount">3,200</span>
+              <span class="period"> unico</span>
+            </div>
+            <hr class="plan-divider">
+            <ul class="plan-features">
+              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Acceso de por vida</li>
+              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Actualizaciones incluidas</li>
+              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Multi-local (5 sedes)</li>
+              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> API + webhooks</li>
+              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Gerente dedicado</li>
+            </ul>
+            <button class="btn-plan btn-plan-enterprise" onclick="abrirPagoIzipay('vida','De por Vida','S/ 3,200')">
+              <i class="bi bi-credit-card me-2"></i>Comprar de por Vida
+            </button>
           </div>
         </div>
 
@@ -501,7 +520,6 @@
           <i class="bi bi-shield-lock me-1"></i>
           Pagos seguros procesados por
           <strong style="color:#6366f1;">Izipay</strong> (izipay.pe) — Visa, Mastercard, American Express.
-          <span style="opacity:.6;">Disponible proximamente.</span>
         </p>
       </div>
 
@@ -684,74 +702,67 @@
     </div>
   </div>
 
-  <!--
-    ═══════════════════════════════════════════════════════════════════════
-    IZIPAY PAYMENT MODAL — Activar cuando tengas credenciales reales
-    ─────────────────────────────────────────────────────────────────────
-    Flujo completo:
-    1. Usuario hace clic en "Contratar Pro"
-    2. JS llama POST /api/pagos/crear-sesion → recibe formToken
-    3. KR.renderElements() inserta el formulario de tarjeta de Krypton
-    4. Usuario paga
-    5. Krypton redirige el navegador a /api/pagos/izipay-success
-    6. Server verifica HMAC → redirige a /setup?plan=pro&pago=ok
-    ─────────────────────────────────────────────────────────────────────
-
-    <div class="modal fade" id="modalIzipay" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content" style="border-radius:1.25rem;border:none;">
-          <div class="modal-header border-0 pb-0">
-            <h5 class="modal-title fw-800">Pago seguro con Izipay</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-          </div>
-          <div class="modal-body p-4">
-            <div id="izipay-plan-info" class="mb-3"></div>
-            <div id="izipay-form-container">
-              <div class="text-center py-4">
-                <div class="spinner-border text-primary" role="status"></div>
-                <div class="mt-2 text-muted small">Cargando formulario de pago...</div>
-              </div>
+  <!-- Izipay Payment Modal -->
+  <div class="modal fade" id="modalIzipay" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content" style="border-radius:1.25rem;border:none;box-shadow:0 32px 80px rgba(0,0,0,0.15);">
+        <div class="modal-header border-0 pb-0" style="padding:1.5rem 2rem 0;">
+          <h5 class="modal-title" style="font-weight:800;"><i class="bi bi-shield-lock me-2" style="color:#6366f1;"></i>Pago seguro</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body" style="padding:1rem 2rem 2rem;">
+          <div id="izipay-plan-info" class="mb-3"></div>
+          <div id="izipay-form-container">
+            <div class="text-center py-4">
+              <div class="spinner-border" style="color:#F97316;" role="status"></div>
+              <div class="mt-2 text-muted small">Cargando formulario de pago...</div>
             </div>
+          </div>
+          <div class="text-center mt-3">
+            <small class="text-muted"><i class="bi bi-lock me-1"></i>Procesado por Izipay — Visa, Mastercard, Amex</small>
           </div>
         </div>
       </div>
     </div>
+  </div>
 
-    <script>
-    // Izipay popup activation script
-    async function abrirPagoIzipay(planId, planNombre, planPrecio) {
-      const modal = new bootstrap.Modal(document.getElementById('modalIzipay'));
-      document.getElementById('izipay-plan-info').innerHTML =
-        '<div class="alert alert-light border"><strong>' + planNombre + '</strong> — ' + planPrecio + '</div>';
-      modal.show();
+  <script>
+  async function abrirPagoIzipay(planId, planNombre, planPrecio) {
+    var container = document.getElementById('izipay-form-container');
+    container.innerHTML = '<div class="text-center py-4"><div class="spinner-border" style="color:#F97316;" role="status"></div><div class="mt-2 text-muted small">Cargando formulario de pago...</div></div>';
+    document.getElementById('izipay-plan-info').innerHTML =
+      '<div style="background:linear-gradient(135deg,rgba(249,115,22,0.08),rgba(249,115,22,0.04));border:1px solid rgba(249,115,22,0.18);border-radius:.875rem;padding:1rem 1.25rem;">' +
+      '<div class="d-flex justify-content-between align-items-center"><div><strong>' + planNombre + '</strong><br><small class="text-muted">MiRest con IA</small></div>' +
+      '<div style="font-size:1.4rem;font-weight:900;color:#F97316;">' + planPrecio + '</div></div></div>';
 
-      try {
-        const email = prompt('Ingresa tu email para continuar:') || 'cliente@restaurante.pe';
-        const resp = await fetch('/api/pagos/crear-sesion', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ planId, email })
-        });
-        const data = await resp.json();
+    var modal = new bootstrap.Modal(document.getElementById('modalIzipay'));
+    modal.show();
 
-        if (data.free) { window.location.href = data.redirect; return; }
-        if (data.placeholder) {
-          document.getElementById('izipay-form-container').innerHTML =
-            '<div class="alert alert-warning">Pago online no configurado aun. Contactanos por WhatsApp.</div>';
-          return;
-        }
+    try {
+      var email = prompt('Ingresa tu email para continuar:');
+      if (!email) { modal.hide(); return; }
 
-        // Render Krypton form with the real formToken
-        KR.setFormConfig({ formToken: data.formToken, 'kr-language': 'es-PE' });
-        await KR.renderElements('#izipay-form-container');
-      } catch(err) {
-        document.getElementById('izipay-form-container').innerHTML =
-          '<div class="alert alert-danger">Error al cargar formulario: ' + err.message + '</div>';
+      var resp = await fetch('/api/pagos/crear-sesion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ planId: planId, email: email })
+      });
+      var data = await resp.json();
+
+      if (data.free) { window.location.href = data.redirect; return; }
+      if (data.error) {
+        container.innerHTML = '<div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i>' + data.error + '</div>';
+        return;
       }
+
+      // Render Krypton embedded form
+      KR.setFormConfig({ formToken: data.formToken, 'kr-language': 'es-PE' });
+      await KR.renderElements('#izipay-form-container');
+    } catch(err) {
+      container.innerHTML = '<div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i>Error: ' + err.message + '</div>';
     }
-    </script>
-    ═══════════════════════════════════════════════════════════════════════
-  -->
+  }
+  </script>
 
   <!-- Bootstrap JS -->
   <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
