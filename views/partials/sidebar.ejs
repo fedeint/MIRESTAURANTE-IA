@@ -40,6 +40,104 @@
           }
           @media(max-width:991.98px){.dg-sidebar{transform:translateX(-100%);transition:transform .3s ease;}.dg-sidebar.open{transform:translateX(0);}}
         </style>
+        <!-- Sliding submenu panel styles -->
+        <style>
+          /* ===== SIDEBAR SLIDE-OUT SUBMENU PANEL ===== */
+          .sidebar-submenu-panel {
+            position: fixed;
+            left: 260px;
+            top: 0;
+            width: 210px;
+            height: 100%;
+            background: rgba(19, 22, 39, 0.98);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-left: 1px solid rgba(255,255,255,0.06);
+            transform: translateX(-100%);
+            opacity: 0;
+            transition: transform 400ms cubic-bezier(0.34, 1.55, 0.64, 1), opacity 240ms ease-out;
+            z-index: 1039;
+            padding: 1rem 0;
+            pointer-events: none;
+            box-shadow: 4px 0 24px rgba(0,0,0,0.18);
+          }
+
+          /* When sidebar is collapsed (icons only), panel comes from narrow sidebar width */
+          body.sidebar-semi .sidebar-submenu-panel,
+          body.sidebar-collapsed .sidebar-submenu-panel {
+            left: 64px;
+          }
+
+          .sidebar-submenu-panel.open {
+            transform: translateX(0);
+            opacity: 1;
+            pointer-events: all;
+          }
+
+          .sidebar-submenu-panel .submenu-title {
+            padding: 0.6rem 1.25rem 0.5rem;
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.09em;
+            color: #f97316;
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
+            margin-bottom: 0.4rem;
+          }
+
+          .sidebar-submenu-panel .submenu-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1.25rem 0.5rem 1.6rem;
+            color: rgba(255,255,255,0.58);
+            font-size: 0.84rem;
+            text-decoration: none;
+            transition: all 0.15s ease;
+            position: relative;
+          }
+
+          .sidebar-submenu-panel .submenu-item::before {
+            content: '';
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.25);
+            transition: background 0.15s;
+          }
+
+          .sidebar-submenu-panel .submenu-item:hover {
+            color: #fff;
+            background: rgba(249,115,22,0.1);
+          }
+
+          .sidebar-submenu-panel .submenu-item:hover::before {
+            background: #f97316;
+          }
+
+          .sidebar-submenu-panel .submenu-item.active-sub {
+            color: #f97316;
+            background: rgba(249,115,22,0.08);
+            font-weight: 600;
+          }
+
+          .sidebar-submenu-panel .submenu-item.active-sub::before {
+            background: #f97316;
+          }
+
+          /* Hide on mobile — mobile has its own nav */
+          @media (max-width: 991.98px) {
+            .sidebar-submenu-panel { display: none !important; }
+          }
+        </style>
+
         <!-- Aplicar estado del sidebar antes de pintar -->
         <script>
           (function(){
@@ -134,15 +232,21 @@
             <%/* --- Almacen: administrador + almacenero --- */%>
             <% if (rol === 'administrador' || rol === 'almacenero') { %>
               <div class="dg-sidebar-section">OPERACIONES</div>
-              <a href="/almacen" class="dg-sidebar-link <%= panelAlmacen ? 'active' : '' %>"><i
-                  class="bi bi-box-seam"></i><span>Almacen</span></a>
+              <a href="/almacen" class="dg-sidebar-link dg-has-submenu <%= panelAlmacen ? 'active' : '' %>"
+                 data-submenu='[{"href":"/almacen/inventario","label":"Inventario"},{"href":"/almacen/entradas","label":"Ingreso diario"},{"href":"/almacen/salidas","label":"Salida insumos"},{"href":"/almacen/que-comprar","label":"Que comprar"},{"href":"/almacen/proveedores","label":"Proveedores"},{"href":"/almacen/historial","label":"Historial"}]'
+                 data-submenu-title="Almacen"
+                 data-submenu-icon="box-seam"><i
+                  class="bi bi-box-seam"></i><span class="nav-label">Almacen</span></a>
             <% } %>
 
             <%/* --- Productos: administrador + mesero + almacenero --- */%>
             <% if (rol === 'administrador' || rol === 'mesero' || rol === 'almacenero') { %>
               <div class="dg-sidebar-section">GESTION</div>
-              <a href="/productos" class="dg-sidebar-link <%= panelProductos ? 'active' : '' %>"><i
-                  class="bi bi-egg-fried"></i><span>Productos</span></a>
+              <a href="/productos" class="dg-sidebar-link dg-has-submenu <%= panelProductos ? 'active' : '' %>"
+                 data-submenu='[{"href":"/productos","label":"Carta completa"},{"href":"/ranking","label":"Ranking disponibilidad"}]'
+                 data-submenu-title="Productos"
+                 data-submenu-icon="egg-fried"><i
+                  class="bi bi-egg-fried"></i><span class="nav-label">Productos</span></a>
             <% } %>
 
             <%/* --- Clientes: solo administrador --- */%>
@@ -160,8 +264,11 @@
             <%/* --- Administracion, Configuracion, Usuarios, Reportes, SUNAT: solo administrador --- */%>
             <% if (rol === 'administrador') { %>
               <div class="dg-sidebar-section">ADMINISTRACION</div>
-              <a href="/administracion" class="dg-sidebar-link <%= panelAdmin ? 'active' : '' %>"><i
-                  class="bi bi-bar-chart-line-fill"></i><span>Administracion</span></a>
+              <a href="/administracion" class="dg-sidebar-link dg-has-submenu <%= panelAdmin ? 'active' : '' %>"
+                 data-submenu='[{"href":"/administracion","label":"P&L / Finanzas"},{"href":"/administracion/planilla","label":"Planilla"},{"href":"/administracion/gastos","label":"Gastos"},{"href":"/sunat","label":"SUNAT"}]'
+                 data-submenu-title="Administracion"
+                 data-submenu-icon="bar-chart-line-fill"><i
+                  class="bi bi-bar-chart-line-fill"></i><span class="nav-label">Administracion</span></a>
 
               <div class="dg-sidebar-section">COMUNICACION</div>
               <a href="/canales" class="dg-sidebar-link <%= currentPath === '/canales' ? 'active' : '' %>"><i
@@ -251,14 +358,21 @@
 
             <%/* --- Almacen: administrador + almacenero --- */%>
             <% if (rol === 'administrador' || rol === 'almacenero') { %>
-              <a href="/almacen" class="dg-sidebar-icon-item <%= panelAlmacen ? 'active' : '' %>" title="Almacen"><i
+              <a href="/almacen" class="dg-sidebar-icon-item dg-has-submenu <%= panelAlmacen ? 'active' : '' %>"
+                title="Almacen"
+                data-submenu='[{"href":"/almacen/inventario","label":"Inventario"},{"href":"/almacen/entradas","label":"Ingreso diario"},{"href":"/almacen/salidas","label":"Salida insumos"},{"href":"/almacen/que-comprar","label":"Que comprar"},{"href":"/almacen/proveedores","label":"Proveedores"},{"href":"/almacen/historial","label":"Historial"}]'
+                data-submenu-title="Almacen"
+                data-submenu-icon="box-seam"><i
                   class="bi bi-box-seam"></i></a>
             <% } %>
 
             <%/* --- Productos: administrador + mesero + almacenero --- */%>
             <% if (rol === 'administrador' || rol === 'mesero' || rol === 'almacenero') { %>
-              <a href="/productos" class="dg-sidebar-icon-item <%= panelProductos ? 'active' : '' %>"
-                title="Productos"><i class="bi bi-egg-fried"></i></a>
+              <a href="/productos" class="dg-sidebar-icon-item dg-has-submenu <%= panelProductos ? 'active' : '' %>"
+                title="Productos"
+                data-submenu='[{"href":"/productos","label":"Carta completa"},{"href":"/ranking","label":"Ranking disponibilidad"}]'
+                data-submenu-title="Productos"
+                data-submenu-icon="egg-fried"><i class="bi bi-egg-fried"></i></a>
             <% } %>
 
             <%/* --- Clientes: solo administrador --- */%>
@@ -533,6 +647,71 @@
             </script>
 
             <%- include('mascota') %>
+
+        <!-- Sliding Submenu Panel (desktop only) -->
+        <div class="sidebar-submenu-panel" id="sidebarSubmenuPanel" role="navigation" aria-label="Subnavegacion">
+          <div class="submenu-title" id="sidebarSubmenuTitle"></div>
+          <div class="submenu-items" id="sidebarSubmenuItems"></div>
+        </div>
+
+        <script>
+        (function() {
+          var panel = document.getElementById('sidebarSubmenuPanel');
+          var panelTitle = document.getElementById('sidebarSubmenuTitle');
+          var panelItems = document.getElementById('sidebarSubmenuItems');
+          if (!panel) return;
+
+          var closeTimer = null;
+          var currentPath = window.location.pathname;
+
+          function openSubmenu(link) {
+            if (window.innerWidth < 992) return;
+            var raw = link.getAttribute('data-submenu');
+            if (!raw) return;
+            var items;
+            try { items = JSON.parse(raw); } catch(e) { return; }
+            var title = link.getAttribute('data-submenu-title') || '';
+            var icon  = link.getAttribute('data-submenu-icon') || 'grid';
+
+            panelTitle.innerHTML = '<i class="bi bi-' + icon + '"></i> ' + title;
+            panelItems.innerHTML = items.map(function(item) {
+              var isActive = currentPath === item.href || currentPath.startsWith(item.href + '/');
+              return '<a href="' + item.href + '" class="submenu-item' + (isActive ? ' active-sub' : '') + '">' + item.label + '</a>';
+            }).join('');
+            panel.classList.add('open');
+          }
+
+          function closeSubmenu() {
+            panel.classList.remove('open');
+          }
+
+          // Attach mouseenter/mouseleave to all submenu-capable links
+          document.querySelectorAll('.dg-has-submenu').forEach(function(link) {
+            link.addEventListener('mouseenter', function() {
+              if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; }
+              openSubmenu(link);
+            });
+            link.addEventListener('mouseleave', function() {
+              closeTimer = setTimeout(closeSubmenu, 120);
+            });
+          });
+
+          // Keep panel open while hovering it
+          panel.addEventListener('mouseenter', function() {
+            if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; }
+          });
+          panel.addEventListener('mouseleave', function() {
+            closeTimer = setTimeout(closeSubmenu, 120);
+          });
+
+          // Close on sidebar toggle (state change) — clean up
+          document.addEventListener('click', function(e) {
+            if (!e.target.closest('.dg-has-submenu') && !e.target.closest('#sidebarSubmenuPanel')) {
+              closeSubmenu();
+            }
+          });
+        })();
+        </script>
 
 <!-- Offline detection + Service Worker -->
 <script>

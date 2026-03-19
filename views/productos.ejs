@@ -224,127 +224,202 @@
             .carta-search-input:focus { width: 200px; }
         }
 
-        /* --- Product Card --- */
+        /* --- Product Card — Glassmorphism Style --- */
         .producto-card {
             background: var(--dg-surface);
             border: 1px solid var(--dg-surface-border);
-            border-radius: var(--dg-radius-lg);
+            border-radius: 18px;
             box-shadow: var(--dg-shadow);
             overflow: hidden;
-            transition: var(--dg-transition);
+            transition: transform 0.3s cubic-bezier(0.34, 1.4, 0.64, 1), box-shadow 0.3s ease, border-color 0.3s ease;
             display: flex;
             flex-direction: column;
+            position: relative; /* Required for glow ::after and overlay */
         }
 
         .producto-card:hover {
-            box-shadow: var(--dg-shadow-lg);
-            transform: translateY(-3px);
-            border-color: rgba(249, 115, 22, 0.18);
+            transform: translateY(-5px);
+            box-shadow: 0 16px 48px rgba(0,0,0,0.12), 0 4px 16px rgba(249,115,22,0.08);
+            border-color: rgba(249, 115, 22, 0.22);
         }
 
         .producto-card.hidden {
             display: none;
         }
 
+        /* === Conic glow border on hover === */
+        .producto-card::after {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: 18px;
+            padding: 2px;
+            background: conic-gradient(
+                from 0deg,
+                transparent 0deg,
+                #dd7bbb 60deg,
+                #d79f1e 120deg,
+                #5a922c 180deg,
+                #4c7894 240deg,
+                #dd7bbb 300deg,
+                transparent 360deg
+            );
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .producto-card:hover::after {
+            opacity: 0.55;
+            animation: glowRotate 3s linear infinite;
+        }
+
+        @keyframes glowRotate {
+            to { filter: hue-rotate(360deg); }
+        }
+
+        /* === Image area === */
+        .producto-card-image-wrap {
+            position: relative;
+            width: 100%;
+            height: 150px;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
         /* Card photo */
         .producto-card-photo {
             width: 100%;
-            height: 140px;
+            height: 150px;
             object-fit: cover;
             display: block;
             background: rgba(249, 115, 22, 0.04);
+            transition: transform 0.4s ease;
+        }
+
+        .producto-card:hover .producto-card-photo {
+            transform: scale(1.04);
         }
 
         .producto-card-photo-placeholder {
             width: 100%;
-            height: 140px;
-            background: linear-gradient(135deg, rgba(249,115,22,0.06) 0%, rgba(249,115,22,0.02) 100%);
+            height: 150px;
+            background: linear-gradient(145deg, rgba(249,115,22,0.07) 0%, rgba(99,102,241,0.05) 100%);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             gap: 0.5rem;
-            color: rgba(249, 115, 22, 0.35);
-            border-bottom: 1px solid var(--dg-surface-border);
+            color: rgba(249, 115, 22, 0.38);
         }
 
         .producto-card-photo-placeholder i {
-            font-size: 2rem;
+            font-size: 2.2rem;
         }
 
         .producto-card-photo-placeholder span {
-            font-size: 0.72rem;
+            font-size: 0.7rem;
             font-weight: 500;
             color: var(--dg-text-muted);
         }
 
-        /* Card body */
-        .producto-card-body {
-            padding: 0.75rem 0.9rem 0.5rem;
-            flex: 1;
+        /* Info overlay gradient over image bottom */
+        .producto-card-image-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 0.65rem 0.8rem 0.55rem;
+            background: linear-gradient(to top, rgba(10,12,24,0.82) 0%, rgba(10,12,24,0.4) 60%, transparent 100%);
             display: flex;
-            flex-direction: column;
-            gap: 0.4rem;
-        }
-
-        .producto-card-top {
-            display: flex;
-            align-items: flex-start;
+            align-items: flex-end;
             justify-content: space-between;
-            gap: 0.5rem;
+            gap: 0.4rem;
+            pointer-events: none;
         }
 
-        .producto-card-name {
-            font-size: 0.95rem;
+        .producto-card-image-overlay .producto-card-name {
+            font-size: 0.92rem;
             font-weight: 700;
-            color: var(--dg-text);
+            color: #fff;
             line-height: 1.3;
             flex: 1;
+            text-shadow: 0 1px 4px rgba(0,0,0,0.5);
         }
 
-        .producto-card-price {
+        .producto-card-image-overlay .producto-card-price {
             font-size: 1rem;
             font-weight: 800;
-            color: #F97316;
+            color: #fbbf24;
             white-space: nowrap;
             letter-spacing: -0.02em;
+            text-shadow: 0 1px 4px rgba(0,0,0,0.5);
         }
 
-        .producto-card-meta {
+        /* Badge row inside the overlay */
+        .producto-card-overlay-badges {
+            position: absolute;
+            top: 0.55rem;
+            left: 0.7rem;
+            right: 0.7rem;
             display: flex;
-            align-items: center;
-            gap: 0.4rem;
+            gap: 0.3rem;
             flex-wrap: wrap;
+            pointer-events: none;
         }
 
-        .producto-card-codigo {
-            font-size: 0.72rem;
-            color: var(--dg-text-muted);
-            background: rgba(0,0,0,0.04);
-            border-radius: 4px;
-            padding: 0.15rem 0.45rem;
-            font-weight: 500;
-            font-family: monospace;
-            letter-spacing: 0.02em;
-        }
-
-        .producto-card-categoria-tag {
-            font-size: 0.7rem;
-            color: #F97316;
-            background: rgba(249, 115, 22, 0.08);
-            border-radius: 4px;
-            padding: 0.15rem 0.45rem;
+        .overlay-badge {
+            font-size: 0.64rem;
             font-weight: 600;
+            padding: 0.18rem 0.5rem;
+            border-radius: 6px;
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            color: #fff;
+            letter-spacing: 0.02em;
+            border: 1px solid rgba(255,255,255,0.12);
         }
 
-        /* Availability badge */
+        .overlay-badge.cat-badge {
+            background: rgba(249,115,22,0.55);
+            border-color: rgba(249,115,22,0.3);
+        }
+
+        .overlay-badge.code-badge {
+            font-family: monospace;
+            background: rgba(0,0,0,0.35);
+            border-color: rgba(255,255,255,0.1);
+        }
+
+        /* Availability badge inside image area */
+        .overlay-availability {
+            position: absolute;
+            bottom: 2.6rem;
+            left: 0.7rem;
+            pointer-events: none;
+        }
+
+        /* Card body — now slimmer, just actions */
+        .producto-card-body {
+            padding: 0.55rem 0.85rem 0.3rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+
+        /* Availability badge (below image, in card body) */
         .disponibilidad-badge {
             display: inline-flex;
             align-items: center;
-            gap: 0.35rem;
-            font-size: 0.85rem;
+            gap: 0.3rem;
+            font-size: 0.75rem;
             font-weight: 700;
-            padding: 0.4rem 0.85rem;
+            padding: 0.28rem 0.7rem;
             border-radius: 100px;
         }
 
@@ -369,7 +444,7 @@
         }
 
         .disponibilidad-badge i {
-            font-size: 0.85rem;
+            font-size: 0.78rem;
         }
 
         /* Card footer actions */
@@ -377,25 +452,26 @@
             display: flex;
             align-items: center;
             justify-content: flex-end;
-            gap: 0.4rem;
-            padding: 0.5rem 0.9rem 0.65rem;
+            gap: 0.35rem;
+            padding: 0.4rem 0.8rem 0.6rem;
             border-top: 1px solid var(--dg-surface-border);
-            margin-top: 0.15rem;
+            background: rgba(0,0,0,0.018);
+            margin-top: auto;
         }
 
         .card-action-btn {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 38px;
-            height: 38px;
-            border-radius: 10px;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
             border: 1px solid var(--dg-surface-border);
             background: var(--dg-surface);
             color: var(--dg-text-secondary);
             cursor: pointer;
             transition: var(--dg-transition-fast);
-            font-size: 1.05rem;
+            font-size: 0.9rem;
         }
 
         .card-action-btn:hover {
@@ -420,6 +496,12 @@
             border-color: rgba(249, 115, 22, 0.3);
             color: #F97316;
         }
+
+        /* Remove the old top/name row since it moved into overlay */
+        .producto-card-top { display: none; }
+        .producto-card-name { display: none; }
+        .producto-card-price { display: none; }
+        .producto-card-meta { display: none; }
 
         /* --- Empty state --- */
         .carta-empty {
@@ -637,39 +719,44 @@
                  data-codigo="<%= (producto.codigo || '').toLowerCase() %>"
                  data-categoria="<%= catAttr %>">
 
-                <!-- Photo -->
-                <% if (producto.imagen) { %>
-                <img src="<%= producto.imagen %>"
-                     alt="<%= producto.nombre %>"
-                     class="producto-card-photo">
-                <% } else { %>
-                <div class="producto-card-photo-placeholder">
-                    <i class="bi bi-egg-fried"></i>
-                    <span>Sin foto</span>
-                </div>
-                <% } %>
+                <!-- Image area with glassmorphism overlay -->
+                <div class="producto-card-image-wrap">
 
-                <!-- Card body -->
-                <div class="producto-card-body">
-                    <div class="producto-card-top">
+                    <!-- Top badges (code + category) -->
+                    <div class="producto-card-overlay-badges">
+                        <% if (producto.codigo) { %>
+                        <span class="overlay-badge code-badge"><%= producto.codigo %></span>
+                        <% } %>
+                        <% if (cat) { %>
+                        <span class="overlay-badge cat-badge"><%= cat.charAt(0).toUpperCase() + cat.slice(1).toLowerCase() %></span>
+                        <% } %>
+                    </div>
+
+                    <% if (producto.imagen) { %>
+                    <img src="<%= producto.imagen %>"
+                         alt="<%= producto.nombre %>"
+                         class="producto-card-photo">
+                    <% } else { %>
+                    <div class="producto-card-photo-placeholder">
+                        <i class="bi bi-egg-fried"></i>
+                        <span>Sin foto</span>
+                    </div>
+                    <% } %>
+
+                    <!-- Bottom gradient overlay: name + price -->
+                    <div class="producto-card-image-overlay">
                         <div class="producto-card-name"><%= producto.nombre %></div>
                         <div class="producto-card-price">S/ <%= (Number(producto.precio_unidad) || 0).toFixed(2) %></div>
                     </div>
+                </div>
 
-                    <div class="producto-card-meta">
-                        <% if (producto.codigo) { %>
-                        <span class="producto-card-codigo"><%= producto.codigo %></span>
-                        <% } %>
-                        <% if (cat) { %>
-                        <span class="producto-card-categoria-tag"><%= cat.charAt(0).toUpperCase() + cat.slice(1).toLowerCase() %></span>
-                        <% } %>
-                    </div>
-
+                <!-- Card body: availability + actions -->
+                <div class="producto-card-body">
                     <!-- Availability badge -->
                     <div>
                         <% if (producto.sinReceta) { %>
                         <span class="disponibilidad-badge disponible-sin-receta">
-                            <i class="bi bi-dash-circle"></i> Sin receta configurada
+                            <i class="bi bi-dash-circle"></i> Sin receta
                         </span>
                         <% } else if (producto.disponible === 0) { %>
                         <span class="disponibilidad-badge disponible-agotado" title="Limitante: <%= producto.ingrediente_limitante %>">
@@ -677,7 +764,7 @@
                         </span>
                         <% } else if (producto.disponible <= 5) { %>
                         <span class="disponibilidad-badge disponible-bajo" title="Bajo stock - Limitante: <%= producto.ingrediente_limitante %>">
-                            <i class="bi bi-exclamation-triangle-fill"></i> <%= producto.disponible %> unidades
+                            <i class="bi bi-exclamation-triangle-fill"></i> <%= producto.disponible %> uds.
                         </span>
                         <% } else { %>
                         <span class="disponibilidad-badge disponible-ok">
