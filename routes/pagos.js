@@ -196,7 +196,10 @@ router.post('/crear-sesion', async (req, res) => {
 
     } catch (err) {
         console.error('[pagos] crear-sesion error:', err);
-        res.status(500).json({ error: 'Error interno al crear sesion de pago' });
+        res.status(500).json({
+            error: 'Error interno al crear sesion de pago',
+            details: err.message
+        });
     }
 });
 

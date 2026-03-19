@@ -751,7 +751,11 @@
 
       if (data.free) { window.location.href = data.redirect; return; }
       if (data.error) {
-        container.innerHTML = '<div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i>' + data.error + '</div>';
+        container.innerHTML = '<div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i>' + data.error + (data.details ? '<br><small>' + data.details + '</small>' : '') + '</div>';
+        return;
+      }
+      if (!data.formToken) {
+        container.innerHTML = '<div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i>No se recibio token de pago.<br><small>' + JSON.stringify(data) + '</small></div>';
         return;
       }
 
