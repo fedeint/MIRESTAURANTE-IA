@@ -9,12 +9,45 @@ router.get('/', async (req, res) => {
     try {
         const [productos] = await db.query('SELECT * FROM productos ORDER BY nombre');
 
-        // Calcular disponibilidad de cada producto
+        // Calcular disponibilidad en batch (1-2 queries en vez de 2*N)
+        const [recetas] = await db.query(
+            `SELECT r.id as receta_id, r.producto_id,
+                    ri.cantidad, ai.stock_actual, ai.nombre as ingrediente_nombre
+             FROM recetas r
+             JOIN receta_items ri ON ri.receta_id = r.id
+             JOIN almacen_ingredientes ai ON ai.id = ri.ingrediente_id
+             WHERE r.activa = true`
+        );
+
+        // Agrupar por producto_id
+        const dispMap = new Map();
+        for (const row of recetas) {
+            if (!dispMap.has(row.producto_id)) {
+                dispMap.set(row.producto_id, { items: [], hasReceta: true });
+            }
+            dispMap.get(row.producto_id).items.push(row);
+        }
+
         for (const prod of productos) {
-            const disp = await calcularDisponibilidadProducto(prod.id);
-            prod.disponible = disp.disponible;
-            prod.sinReceta = disp.sinReceta;
-            prod.ingrediente_limitante = disp.ingrediente_limitante;
+            const info = dispMap.get(prod.id);
+            if (!info || info.items.length === 0) {
+                prod.disponible = -1;
+                prod.sinReceta = true;
+                prod.ingrediente_limitante = null;
+                continue;
+            }
+            let minPlatos = Infinity;
+            let limitante = null;
+            for (const item of info.items) {
+                const platosConEste = Math.floor(Number(item.stock_actual) / (Number(item.cantidad) || 1));
+                if (platosConEste < minPlatos) {
+                    minPlatos = platosConEste;
+                    limitante = item.ingrediente_nombre;
+                }
+            }
+            prod.disponible = minPlatos === Infinity ? 0 : minPlatos;
+            prod.sinReceta = false;
+            prod.ingrediente_limitante = limitante;
         }
 
         res.render('productos', { productos: productos || [] });
