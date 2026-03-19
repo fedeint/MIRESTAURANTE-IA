@@ -223,7 +223,8 @@ h1, h2, h3, h4, h5, h6 {
     border-radius: 0 15px 15px 0 !important;
     min-height: calc(100vh - 55px - 50px) !important;
     background: #fff !important;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
   }
 }
 
