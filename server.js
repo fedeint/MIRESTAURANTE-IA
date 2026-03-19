@@ -33,6 +33,11 @@ createRequiredDirectories();
 // Configuración
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
+app.set('etag', 'strong');
+
+// Gzip/deflate compression for all responses (must be early, before routes)
+const compression = require('compression');
+app.use(compression());
 
 // Aumentar el límite de tamaño del cuerpo de la petición
 app.use(express.json({ limit: '50mb' }));
@@ -75,19 +80,24 @@ app.use((req, res, next) => {
     next();
 });
 
-// Configuración de archivos estáticos
-app.use('/static', express.static(path.join(__dirname, 'public')));
-app.use(express.static(path.join(__dirname, 'public')));
+// Configuración de archivos estáticos con cache headers
+// Public assets: 7-day cache (CSS/JS/images - cambiar nombre de archivo para invalidar)
+const staticOptions = { maxAge: '7d', etag: true, lastModified: true };
+// Vendor assets: 30-day cache + immutable (versionados por npm, nunca cambian sin cambiar versión)
+const vendorOptions = { maxAge: '30d', etag: true, lastModified: true, immutable: true };
+
+app.use('/static', express.static(path.join(__dirname, 'public'), staticOptions));
+app.use(express.static(path.join(__dirname, 'public'), staticOptions));
 
 // Vendor assets (para funcionar OFFLINE incluso empaquetado con pkg)
 // Nota: estos paths deben existir en node_modules y estar incluidos en package.json -> pkg.assets
-app.use('/vendor/bootstrap', express.static(path.join(__dirname, 'node_modules', 'bootstrap', 'dist')));
-app.use('/vendor/jquery', express.static(path.join(__dirname, 'node_modules', 'jquery', 'dist')));
-app.use('/vendor/sweetalert2', express.static(path.join(__dirname, 'node_modules', 'sweetalert2', 'dist')));
-app.use('/vendor/select2', express.static(path.join(__dirname, 'node_modules', 'select2', 'dist')));
-app.use('/vendor/select2-bootstrap-5-theme', express.static(path.join(__dirname, 'node_modules', 'select2-bootstrap-5-theme', 'dist')));
+app.use('/vendor/bootstrap', express.static(path.join(__dirname, 'node_modules', 'bootstrap', 'dist'), vendorOptions));
+app.use('/vendor/jquery', express.static(path.join(__dirname, 'node_modules', 'jquery', 'dist'), vendorOptions));
+app.use('/vendor/sweetalert2', express.static(path.join(__dirname, 'node_modules', 'sweetalert2', 'dist'), vendorOptions));
+app.use('/vendor/select2', express.static(path.join(__dirname, 'node_modules', 'select2', 'dist'), vendorOptions));
+app.use('/vendor/select2-bootstrap-5-theme', express.static(path.join(__dirname, 'node_modules', 'select2-bootstrap-5-theme', 'dist'), vendorOptions));
 // bootstrap-icons usa fuentes (woff/woff2) -> servir carpeta font completa
-app.use('/vendor/bootstrap-icons', express.static(path.join(__dirname, 'node_modules', 'bootstrap-icons', 'font')));
+app.use('/vendor/bootstrap-icons', express.static(path.join(__dirname, 'node_modules', 'bootstrap-icons', 'font'), vendorOptions));
 
 // HTTPS redirect en produccion
 if (process.env.NODE_ENV === 'production') {
@@ -168,7 +178,41 @@ app.get('/api/health', async (req, res) => {
 app.get('/', requireAuth, async (req, res) => {
     const rol = String(req.session?.user?.rol || '').toLowerCase();
     if (rol === 'cocinero') return res.redirect('/cocina');
-    if (rol === 'mesero') return res.redirect('/mesas');
+
+    // ---- MESERO dashboard ----
+    if (rol === 'mesero') {
+        const meseroData = {
+            userName: req.session?.user?.nombre || req.session?.user?.usuario || 'Mesero',
+            mesasTotal: 0, mesasOcupadas: 0, pedidosHoy: 0
+        };
+        try {
+            const [[mt]] = await db.query("SELECT COUNT(*) as t FROM mesas");
+            meseroData.mesasTotal = Number(mt.t);
+            const [[mo]] = await db.query("SELECT COUNT(*) as t FROM mesas WHERE estado='ocupada'");
+            meseroData.mesasOcupadas = Number(mo.t);
+            const [[ph]] = await db.query("SELECT COUNT(*) as t FROM pedidos WHERE estado NOT IN ('cerrado','cancelado') AND created_at::date = CURRENT_DATE");
+            meseroData.pedidosHoy = Number(ph.t);
+        } catch(e) { console.error('Mesero dashboard error:', e.message); }
+        return res.render('dashboard-mesero', { meseroData });
+    }
+
+    // ---- ALMACENERO dashboard ----
+    if (rol === 'almacenero') {
+        const almacenData = {
+            userName: req.session?.user?.nombre || req.session?.user?.usuario || 'Almacenero',
+            ingredientesTotal: 0, alertasStock: 0, lotesPorVencer: 0
+        };
+        try {
+            const tid = req.tenantId || 1;
+            const [[it]] = await db.query("SELECT COUNT(*) as t FROM almacen_ingredientes WHERE tenant_id=? AND activo=true", [tid]);
+            almacenData.ingredientesTotal = Number(it.t);
+            const [[al]] = await db.query("SELECT COUNT(*) as t FROM almacen_ingredientes WHERE tenant_id=? AND activo=true AND stock_actual <= stock_minimo", [tid]);
+            almacenData.alertasStock = Number(al.t);
+            const [[lv]] = await db.query("SELECT COUNT(*) as t FROM almacen_lotes WHERE tenant_id=? AND estado='disponible' AND fecha_vencimiento <= CURRENT_DATE + INTERVAL '7 days'", [tid]);
+            almacenData.lotesPorVencer = Number(lv.t);
+        } catch(e) { console.error('Almacenero dashboard error:', e.message); }
+        return res.render('dashboard-almacenero', { almacenData });
+    }
 
     // ---- CAJERO dashboard ----
     if (rol === 'cajero') {
@@ -485,7 +529,7 @@ app.delete('/api/tareas/:id', requireAuth, async (req, res) => {
 });
 
 // Facturacion rapida (la vista original index.ejs)
-app.get('/facturacion', requireRole(['mesero', 'administrador']), (req, res) => {
+app.get('/facturacion', requireRole(['mesero', 'administrador', 'cajero']), (req, res) => {
     res.render('index');
 });
 
@@ -495,16 +539,16 @@ app.use('/usuarios', requireRole('administrador'), usuariosRoutes);
 app.use('/api/usuarios', requireRole('administrador'), usuariosRoutes);
 
 // Productos
-app.use('/productos', requireRole('administrador'), productosRoutes); // panel admin
-app.use('/api/productos', requireRole(['mesero', 'administrador']), productosRoutes); // búsqueda/armado pedido
+app.use('/productos', requireRole(['administrador', 'almacenero']), productosRoutes); // panel admin + almacenero
+app.use('/api/productos', requireRole(['mesero', 'administrador', 'almacenero']), productosRoutes); // búsqueda/armado pedido
 
 // Clientes
 app.use('/clientes', requireRole('administrador'), clientesRoutes);
 app.use('/api/clientes', requireRole(['mesero', 'administrador']), clientesRoutes);
 
-// Facturas (impresión/creación). Mesero necesita imprimir desde Mesas.
-app.use('/facturas', requireRole('administrador'), facturasRoutes);
-app.use('/api/facturas', requireRole(['mesero', 'administrador']), facturasRoutes);
+// Facturas (impresión/creación). Mesero y cajero necesitan imprimir/gestionar.
+app.use('/facturas', requireRole(['administrador', 'cajero', 'mesero']), facturasRoutes);
+app.use('/api/facturas', requireRole(['mesero', 'administrador', 'cajero']), facturasRoutes);
 
 // Mesas (mesero/admin)
 app.use('/mesas', requireRole(['mesero', 'administrador']), requireCajaAbierta, mesasRoutes);
@@ -517,11 +561,11 @@ app.use('/api/mesas', requireRole(['mesero', 'administrador']), mesasRoutes);
 app.use('/cocina', requireRole(['cocinero', 'mesero', 'administrador']), requireCajaAbierta, cocinaRoutes);
 app.use('/api/cocina', requireRole(['cocinero', 'mesero', 'administrador']), requireCajaAbierta, cocinaRoutes);
 
-// Almacen (admin)
-app.use('/almacen', requireRole('administrador'), almacenRoutes);
+// Almacen (admin + almacenero)
+app.use('/almacen', requireRole(['administrador', 'almacenero']), almacenRoutes);
 
-// Recetas API (admin)
-app.use('/api/recetas', requireRole('administrador'), recetasRoutes);
+// Recetas API (admin + almacenero)
+app.use('/api/recetas', requireRole(['administrador', 'almacenero']), recetasRoutes);
 
 // SUNAT (admin)
 app.use('/sunat', requireRole('administrador'), sunatRoutes);

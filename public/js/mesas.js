@@ -395,10 +395,49 @@ $(function() {
     }
   }
 
-  // Render de pills de categoría
+  // Helper: set active category and sync both pill bar and sidebar
+  function setCatalogoCategoria(cat) {
+    catalogoFiltroCategoria = cat;
+
+    // Sync mobile pills
+    const wrap = document.getElementById('categoriasWrap');
+    if (wrap) {
+      wrap.querySelectorAll('.cat-pill').forEach(b => b.classList.remove('active'));
+      const target = wrap.querySelector(`.cat-pill[data-cat="${CSS.escape(cat)}"]`);
+      // 'todos' pill covers both 'todos' and 'todos-all'
+      const todosEl = wrap.querySelector('.cat-pill[data-cat="todos"]');
+      if (cat === 'todos' || cat === 'todos-all') {
+        if (todosEl) todosEl.classList.add('active');
+      } else if (target) {
+        target.classList.add('active');
+      }
+    }
+
+    // Sync sidebar
+    const sidebar = document.getElementById('categoriasSidebar');
+    if (sidebar) {
+      sidebar.querySelectorAll('.sidebar-cat-item').forEach(b => b.classList.remove('active'));
+      if (cat === 'todos' || cat === 'todos-all') {
+        // On 'todos-all' activate the "Todos" item; on 'todos' activate the featured one
+        const featured = sidebar.querySelector('.sidebar-cat-item.sidebar-featured');
+        const todosAll = sidebar.querySelector('.sidebar-cat-item[data-cat="todos-all"]');
+        if (cat === 'todos' && featured) featured.classList.add('active');
+        if (cat === 'todos-all' && todosAll) todosAll.classList.add('active');
+        // Treat both as "show all" in filter
+        catalogoFiltroCategoria = 'todos';
+      } else {
+        const sideTarget = sidebar.querySelector(`.sidebar-cat-item[data-cat="${CSS.escape(cat)}"]`);
+        if (sideTarget) sideTarget.classList.add('active');
+      }
+    }
+
+    renderCatalogoGrid();
+  }
+
+  // Render de pills de categoría (mobile bar + desktop sidebar)
   function renderCategoriaPills() {
     const wrap = document.getElementById('categoriasWrap');
-    if (!wrap) return;
+    const sidebar = document.getElementById('categoriasSidebar');
 
     // Obtener categorías únicas en orden, primero las del enum solicitado
     const ordenPref = ['Platos de fondo','Sopas y Entradas','Bebidas','Postres','Extras'];
@@ -416,25 +455,54 @@ $(function() {
       return a.localeCompare(b);
     });
 
-    // Mantener el primer pill "Todos" (ya en el HTML) y agregar el resto
-    // Eliminar pills dinámicos anteriores
-    wrap.querySelectorAll('.cat-pill[data-dynamic]').forEach(el => el.remove());
+    // ---- MOBILE PILLS ----
+    if (wrap) {
+      // Remove previously injected dynamic pills
+      wrap.querySelectorAll('.cat-pill[data-dynamic]').forEach(el => el.remove());
 
-    cats.forEach(cat => {
-      const btn = document.createElement('button');
-      btn.className = 'cat-pill';
-      btn.setAttribute('data-cat', cat);
-      btn.setAttribute('data-dynamic', '1');
-      const icono = iconoCategoria(cat);
-      btn.innerHTML = `<i class="bi bi-${icono}"></i> ${escapeHtml(cat)}`;
-      btn.addEventListener('click', () => {
-        catalogoFiltroCategoria = cat;
-        wrap.querySelectorAll('.cat-pill').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        renderCatalogoGrid();
+      cats.forEach(cat => {
+        const btn = document.createElement('button');
+        btn.className = 'cat-pill';
+        btn.setAttribute('data-cat', cat);
+        btn.setAttribute('data-dynamic', '1');
+        const icono = iconoCategoria(cat);
+        btn.innerHTML = `<i class="bi bi-${icono}"></i> ${escapeHtml(cat)}`;
+        btn.addEventListener('click', () => setCatalogoCategoria(cat));
+        wrap.appendChild(btn);
       });
-      wrap.appendChild(btn);
-    });
+    }
+
+    // ---- DESKTOP SIDEBAR ----
+    if (sidebar) {
+      // Remove previously injected dynamic sidebar items
+      sidebar.querySelectorAll('.sidebar-cat-item[data-dynamic]').forEach(el => el.remove());
+
+      // Hook up the static "Frecuentes" (todos) button
+      const featuredBtn = sidebar.querySelector('.sidebar-cat-item.sidebar-featured[data-cat="todos"]');
+      if (featuredBtn && !featuredBtn.dataset.hooked) {
+        featuredBtn.dataset.hooked = '1';
+        featuredBtn.addEventListener('click', () => setCatalogoCategoria('todos'));
+      }
+
+      // Hook up the static "Todos" (todos-all) button
+      const todosAllBtn = sidebar.querySelector('.sidebar-cat-item[data-cat="todos-all"]');
+      if (todosAllBtn && !todosAllBtn.dataset.hooked) {
+        todosAllBtn.dataset.hooked = '1';
+        todosAllBtn.addEventListener('click', () => setCatalogoCategoria('todos-all'));
+      }
+
+      // Find the insertion point: after the static "Todos" item
+      cats.forEach(cat => {
+        const icono = iconoCategoria(cat);
+        const item = document.createElement('button');
+        item.className = 'sidebar-cat-item';
+        item.setAttribute('data-cat', cat);
+        item.setAttribute('data-dynamic', '1');
+        item.innerHTML = `<i class="bi bi-${icono}"></i><span>${escapeHtml(cat)}</span>`;
+        item.addEventListener('click', () => setCatalogoCategoria(cat));
+        sidebar.appendChild(item);
+      });
+    }
   }
 
   function iconoCategoria(cat) {
@@ -709,12 +777,9 @@ $(function() {
     if (tabBtn) tabBtn.click();
   });
 
-  // Category pill "Todos"
-  document.querySelector('.cat-pill[data-cat="todos"]')?.addEventListener('click', function() {
-    catalogoFiltroCategoria = 'todos';
-    document.querySelectorAll('#categoriasWrap .cat-pill').forEach(b => b.classList.remove('active'));
-    this.classList.add('active');
-    renderCatalogoGrid();
+  // Category pill "Todos" (static HTML element — delegate to shared helper)
+  document.querySelector('#categoriasWrap .cat-pill[data-cat="todos"]')?.addEventListener('click', function() {
+    setCatalogoCategoria('todos');
   });
 
   // Search input

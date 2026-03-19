@@ -73,34 +73,77 @@
 
           <!-- ======= ESTADO 1: EXPANDIDO (iconos + texto + submodulos inline) ======= -->
           <nav class="dg-nav-state dg-nav-expanded" id="navExpanded">
-            <% if (rol==='administrador' ) { %>
+
+            <%/* --- Asistente IA: solo administrador --- */%>
+            <% if (rol === 'administrador') { %>
               <a href="/chat" class="dg-sidebar-link <%= currentPath === '/chat' ? 'active-glow' : '' %>"><i
                   class="bi bi-stars"></i><span>Asistente IA</span></a>
+            <% } %>
 
-              <div class="dg-sidebar-section">MENU PRINCIPAL</div>
-              <a href="/" class="dg-sidebar-link <%= currentPath === '/' ? 'active' : '' %>"><i
-                  class="bi bi-columns-gap"></i><span>Inicio</span></a>
+            <div class="dg-sidebar-section">MENU PRINCIPAL</div>
+
+            <%/* --- Inicio (Dashboard): todos los roles --- */%>
+            <a href="/" class="dg-sidebar-link <%= currentPath === '/' ? 'active' : '' %>"><i
+                class="bi bi-columns-gap"></i><span>Inicio</span></a>
+
+            <%/* --- Caja: administrador + cajero --- */%>
+            <% if (rol === 'administrador' || rol === 'cajero') { %>
               <a href="/caja" class="dg-sidebar-link <%= currentPath === '/caja' ? 'active' : '' %>"><i
                   class="bi bi-wallet2"></i><span>Caja</span></a>
+            <% } %>
+
+            <%/* --- Facturacion: administrador + cajero + mesero --- */%>
+            <% if (rol === 'administrador' || rol === 'cajero' || rol === 'mesero') { %>
               <a href="/facturacion" class="dg-sidebar-link <%= currentPath === '/facturacion' ? 'active' : '' %>"><i
                   class="bi bi-receipt-cutoff"></i><span>Facturacion</span></a>
+            <% } %>
+
+            <%/* --- Mesas: administrador + mesero --- */%>
+            <% if (rol === 'administrador' || rol === 'mesero') { %>
               <a href="/mesas" class="dg-sidebar-link <%= currentPath === '/mesas' ? 'active' : '' %>"><i
                   class="bi bi-grid-3x3-gap-fill"></i><span>Mesas</span></a>
+            <% } %>
+
+            <%/* --- Cocina: administrador + mesero + cocinero --- */%>
+            <% if (rol === 'administrador' || rol === 'mesero' || rol === 'cocinero') { %>
               <a href="/cocina" class="dg-sidebar-link <%= currentPath === '/cocina' ? 'active' : '' %>"><i
                   class="bi bi-fire"></i><span>Cocina</span></a>
+            <% } %>
+
+            <%/* --- Ventas: solo administrador --- */%>
+            <% if (rol === 'administrador') { %>
               <a href="/ventas" class="dg-sidebar-link <%= currentPath === '/ventas' ? 'active' : '' %>"><i
                   class="bi bi-graph-up-arrow"></i><span>Ventas</span></a>
+            <% } %>
 
+            <%/* --- Almacen: administrador + almacenero --- */%>
+            <% if (rol === 'administrador' || rol === 'almacenero') { %>
               <div class="dg-sidebar-section">OPERACIONES</div>
               <a href="/almacen" class="dg-sidebar-link <%= panelAlmacen ? 'active' : '' %>"><i
                   class="bi bi-box-seam"></i><span>Almacen</span></a>
+            <% } %>
 
+            <%/* --- Productos: administrador + mesero + almacenero --- */%>
+            <% if (rol === 'administrador' || rol === 'mesero' || rol === 'almacenero') { %>
               <div class="dg-sidebar-section">GESTION</div>
               <a href="/productos" class="dg-sidebar-link <%= panelProductos ? 'active' : '' %>"><i
                   class="bi bi-egg-fried"></i><span>Productos</span></a>
+            <% } %>
+
+            <%/* --- Clientes: solo administrador --- */%>
+            <% if (rol === 'administrador') { %>
               <a href="/clientes" class="dg-sidebar-link <%= currentPath === '/clientes' ? 'active' : '' %>"><i
                   class="bi bi-people-fill"></i><span>Clientes</span></a>
+            <% } %>
 
+            <%/* --- Recetas: administrador + almacenero --- */%>
+            <% if (rol === 'administrador' || rol === 'almacenero') { %>
+              <a href="/api/recetas" class="dg-sidebar-link <%= currentPath.startsWith('/recetas') ? 'active' : '' %>"><i
+                  class="bi bi-journal-text"></i><span>Recetas</span></a>
+            <% } %>
+
+            <%/* --- Administracion, Configuracion, Usuarios, Reportes, SUNAT: solo administrador --- */%>
+            <% if (rol === 'administrador') { %>
               <div class="dg-sidebar-section">ADMINISTRACION</div>
               <a href="/administracion" class="dg-sidebar-link <%= panelAdmin ? 'active' : '' %>"><i
                   class="bi bi-bar-chart-line-fill"></i><span>Administracion</span></a>
@@ -115,46 +158,89 @@
               <a href="/configuracion"
                 class="dg-sidebar-link <%= currentPath === '/configuracion' ? 'active' : '' %>"><i
                   class="bi bi-gear-fill"></i><span>Configuracion</span></a>
-              <% } %>
-                <% if (rol==='mesero' ) { %>
-                  <a href="/mesas" class="dg-sidebar-link <%= currentPath === '/mesas' ? 'active' : '' %>"><i
-                      class="bi bi-grid-3x3-gap-fill"></i><span>Mesas</span></a>
-                  <a href="/cocina" class="dg-sidebar-link <%= currentPath === '/cocina' ? 'active' : '' %>"><i
-                      class="bi bi-fire"></i><span>Cocina</span></a>
-                  <% } %>
-                    <% if (rol==='cocinero' ) { %>
-                      <a href="/cocina" class="dg-sidebar-link <%= currentPath === '/cocina' ? 'active' : '' %>"><i
-                          class="bi bi-fire"></i><span>Cocina</span></a>
-                      <% } %>
+              <a href="/api/reportes" class="dg-sidebar-link <%= currentPath.startsWith('/reportes') ? 'active' : '' %>"><i
+                  class="bi bi-file-earmark-bar-graph"></i><span>Reportes</span></a>
+              <a href="/sunat" class="dg-sidebar-link <%= currentPath === '/sunat' ? 'active' : '' %>"><i
+                  class="bi bi-building"></i><span>SUNAT</span></a>
+            <% } %>
+
           </nav>
 
           <!-- ======= ESTADO 2 y 3: ICONOS (semi + colapsado total) ======= -->
           <nav class="dg-nav-state dg-nav-icons" id="navIcons" style="display:none;">
-            <% if (rol==='administrador' ) { %>
+
+            <%/* --- Asistente IA: solo administrador --- */%>
+            <% if (rol === 'administrador') { %>
               <a href="/chat" class="dg-sidebar-icon-item <%= currentPath === '/chat' ? 'active-glow' : '' %>"
                 title="Asistente IA"><i class="bi bi-stars"></i></a>
-              <div class="dg-sidebar-sep"></div>
-              <a href="/" class="dg-sidebar-icon-item <%= currentPath === '/' ? 'active' : '' %>" title="Inicio"><i
-                  class="bi bi-columns-gap"></i></a>
+            <% } %>
+
+            <div class="dg-sidebar-sep"></div>
+
+            <%/* --- Inicio: todos los roles --- */%>
+            <a href="/" class="dg-sidebar-icon-item <%= currentPath === '/' ? 'active' : '' %>" title="Inicio"><i
+                class="bi bi-columns-gap"></i></a>
+
+            <%/* --- Caja: administrador + cajero --- */%>
+            <% if (rol === 'administrador' || rol === 'cajero') { %>
               <a href="/caja" class="dg-sidebar-icon-item <%= currentPath === '/caja' ? 'active' : '' %>"
                 title="Caja"><i class="bi bi-wallet2"></i></a>
+            <% } %>
+
+            <%/* --- Facturacion: administrador + cajero + mesero --- */%>
+            <% if (rol === 'administrador' || rol === 'cajero' || rol === 'mesero') { %>
               <a href="/facturacion" class="dg-sidebar-icon-item <%= currentPath === '/facturacion' ? 'active' : '' %>"
                 title="Facturacion"><i class="bi bi-receipt-cutoff"></i></a>
+            <% } %>
+
+            <%/* --- Mesas: administrador + mesero --- */%>
+            <% if (rol === 'administrador' || rol === 'mesero') { %>
               <a href="/mesas" class="dg-sidebar-icon-item <%= currentPath === '/mesas' ? 'active' : '' %>"
                 title="Mesas"><i class="bi bi-grid-3x3-gap-fill"></i></a>
+            <% } %>
+
+            <%/* --- Cocina: administrador + mesero + cocinero --- */%>
+            <% if (rol === 'administrador' || rol === 'mesero' || rol === 'cocinero') { %>
               <a href="/cocina" class="dg-sidebar-icon-item <%= currentPath === '/cocina' ? 'active' : '' %>"
                 title="Cocina"><i class="bi bi-fire"></i></a>
+            <% } %>
+
+            <%/* --- Ventas: solo administrador --- */%>
+            <% if (rol === 'administrador') { %>
               <a href="/ventas" class="dg-sidebar-icon-item <%= currentPath === '/ventas' ? 'active' : '' %>"
                 title="Ventas"><i class="bi bi-graph-up-arrow"></i></a>
-              <div class="dg-sidebar-sep"></div>
+            <% } %>
+
+            <div class="dg-sidebar-sep"></div>
+
+            <%/* --- Almacen: administrador + almacenero --- */%>
+            <% if (rol === 'administrador' || rol === 'almacenero') { %>
               <a href="/almacen" class="dg-sidebar-icon-item <%= panelAlmacen ? 'active' : '' %>" title="Almacen"><i
                   class="bi bi-box-seam"></i></a>
+            <% } %>
+
+            <%/* --- Productos: administrador + mesero + almacenero --- */%>
+            <% if (rol === 'administrador' || rol === 'mesero' || rol === 'almacenero') { %>
               <a href="/productos" class="dg-sidebar-icon-item <%= panelProductos ? 'active' : '' %>"
                 title="Productos"><i class="bi bi-egg-fried"></i></a>
+            <% } %>
+
+            <%/* --- Clientes: solo administrador --- */%>
+            <% if (rol === 'administrador') { %>
               <a href="/clientes" class="dg-sidebar-icon-item <%= currentPath === '/clientes' ? 'active' : '' %>"
                 title="Clientes"><i class="bi bi-people-fill"></i></a>
+            <% } %>
+
+            <%/* --- Recetas: administrador + almacenero --- */%>
+            <% if (rol === 'administrador' || rol === 'almacenero') { %>
+              <a href="/api/recetas" class="dg-sidebar-icon-item <%= currentPath.startsWith('/recetas') ? 'active' : '' %>"
+                title="Recetas"><i class="bi bi-journal-text"></i></a>
+            <% } %>
+
+            <%/* --- Administracion, Sistema: solo administrador --- */%>
+            <% if (rol === 'administrador') { %>
               <div class="dg-sidebar-sep"></div>
-              <a href="/administracion" class="dg-sidebar-icon-item <%= panelAdmin ? 'active' : '' %>" title="Admin"><i
+              <a href="/administracion" class="dg-sidebar-icon-item <%= panelAdmin ? 'active' : '' %>" title="Administracion"><i
                   class="bi bi-bar-chart-line-fill"></i></a>
               <a href="/canales" class="dg-sidebar-icon-item <%= currentPath === '/canales' ? 'active' : '' %>"
                 title="Canales"><i class="bi bi-chat-dots-fill"></i></a>
@@ -164,17 +250,12 @@
               <a href="/configuracion"
                 class="dg-sidebar-icon-item <%= currentPath === '/configuracion' ? 'active' : '' %>" title="Config"><i
                   class="bi bi-gear-fill"></i></a>
-              <% } %>
-                <% if (rol==='mesero' ) { %>
-                  <a href="/mesas" class="dg-sidebar-icon-item <%= currentPath === '/mesas' ? 'active' : '' %>"
-                    title="Mesas"><i class="bi bi-grid-3x3-gap-fill"></i></a>
-                  <a href="/cocina" class="dg-sidebar-icon-item <%= currentPath === '/cocina' ? 'active' : '' %>"
-                    title="Cocina"><i class="bi bi-fire"></i></a>
-                  <% } %>
-                    <% if (rol==='cocinero' ) { %>
-                      <a href="/cocina" class="dg-sidebar-icon-item <%= currentPath === '/cocina' ? 'active' : '' %>"
-                        title="Cocina"><i class="bi bi-fire"></i></a>
-                      <% } %>
+              <a href="/api/reportes" class="dg-sidebar-icon-item <%= currentPath.startsWith('/reportes') ? 'active' : '' %>"
+                title="Reportes"><i class="bi bi-file-earmark-bar-graph"></i></a>
+              <a href="/sunat" class="dg-sidebar-icon-item <%= currentPath === '/sunat' ? 'active' : '' %>"
+                title="SUNAT"><i class="bi bi-building"></i></a>
+            <% } %>
+
           </nav>
 
           <!-- User footer -->

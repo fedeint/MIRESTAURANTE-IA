@@ -68,6 +68,8 @@ function defaultRedirectForRole(rol) {
   const r = String(rol || '').toLowerCase();
   if (r === 'cocinero') return '/cocina';
   if (r === 'mesero') return '/mesas';
+  if (r === 'cajero') return '/';
+  if (r === 'almacenero') return '/almacen';
   return '/';
 }
 
