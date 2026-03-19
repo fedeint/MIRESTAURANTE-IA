@@ -335,7 +335,7 @@ async function obtenerContextoNegocio() {
 
     try {
         // Users
-        const [usuarios] = await db.query('SELECT usuario, rol FROM usuarios WHERE activo = 1');
+        const [usuarios] = await db.query('SELECT usuario, rol FROM usuarios WHERE activo = true');
         if (usuarios.length > 0) {
             partes.push('USUARIOS ACTIVOS: ' + usuarios.map(u => `${u.usuario} (${u.rol})`).join(', '));
         }

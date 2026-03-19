@@ -37,8 +37,8 @@ router.get('/', async (req, res) => {
             totales.efectivo_actual = Number(cajaAbierta.monto_apertura) + totales.ingresos - totales.egresos;
         }
 
-        const [turnos] = await db.query('SELECT * FROM turnos WHERE tenant_id=? AND activo=1', [tid]);
-        const [metodos] = await db.query('SELECT * FROM metodos_pago WHERE tenant_id=? AND activo=1', [tid]);
+        const [turnos] = await db.query('SELECT * FROM turnos WHERE tenant_id=? AND activo=true', [tid]);
+        const [metodos] = await db.query('SELECT * FROM metodos_pago WHERE tenant_id=? AND activo=true', [tid]);
 
         res.render('caja', { cajaAbierta, movimientos, totales, turnos, metodos });
     } catch (e) {

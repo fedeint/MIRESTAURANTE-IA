@@ -64,7 +64,7 @@ router.get('/diario', async (req, res) => {
         // 6. Alertas stock
         const [alertas] = await db.query(`
             SELECT nombre, stock_actual, stock_minimo, unidad_medida
-            FROM almacen_ingredientes WHERE tenant_id=? AND activo=1 AND stock_actual <= stock_minimo
+            FROM almacen_ingredientes WHERE tenant_id=? AND activo=true AND stock_actual <= stock_minimo
         `, [tid]);
 
         // 7. COGS total dia

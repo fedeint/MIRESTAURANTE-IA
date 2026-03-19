@@ -59,7 +59,7 @@ function sanitizePermisos(arr) {
 
 async function countAdminsExcept(userIdToExclude = null) {
   const params = [];
-  let where = `WHERE rol = 'administrador' AND activo = 1`;
+  let where = `WHERE rol = 'administrador' AND activo = true`;
   if (userIdToExclude != null) {
     where += ' AND id <> ?';
     params.push(userIdToExclude);

@@ -8,10 +8,10 @@ const { rankingDisponibilidad } = require('../services/disponibilidad');
 router.get('/', async (req, res) => {
     try {
         const tid = req.tenantId || 1;
-        const [[totalIngr]] = await db.query('SELECT COUNT(*) as t FROM almacen_ingredientes WHERE tenant_id=? AND activo=1', [tid]);
-        const [[alertas]] = await db.query('SELECT COUNT(*) as t FROM almacen_ingredientes WHERE tenant_id=? AND activo=1 AND stock_actual <= stock_minimo', [tid]);
-        const [[valorInv]] = await db.query('SELECT COALESCE(SUM(stock_actual * costo_unitario),0) as v FROM almacen_ingredientes WHERE tenant_id=? AND activo=1', [tid]);
-        const [categorias] = await db.query('SELECT * FROM almacen_categorias WHERE tenant_id=? AND activo=1 ORDER BY orden', [tid]);
+        const [[totalIngr]] = await db.query('SELECT COUNT(*) as t FROM almacen_ingredientes WHERE tenant_id=? AND activo=true', [tid]);
+        const [[alertas]] = await db.query('SELECT COUNT(*) as t FROM almacen_ingredientes WHERE tenant_id=? AND activo=true AND stock_actual <= stock_minimo', [tid]);
+        const [[valorInv]] = await db.query('SELECT COALESCE(SUM(stock_actual * costo_unitario),0) as v FROM almacen_ingredientes WHERE tenant_id=? AND activo=true', [tid]);
+        const [categorias] = await db.query('SELECT * FROM almacen_categorias WHERE tenant_id=? AND activo=true ORDER BY orden', [tid]);
 
         res.render('almacen/dashboard', {
             stats: {
@@ -46,10 +46,10 @@ router.get('/inventario', async (req, res) => {
             ) last_mov ON last_mov.ingrediente_id = i.id
             LEFT JOIN almacen_movimientos ult ON ult.id = last_mov.max_id
             LEFT JOIN usuarios u_ult ON u_ult.id = ult.usuario_id
-            WHERE i.tenant_id = ? AND i.activo = 1
+            WHERE i.tenant_id = ? AND i.activo = true
             ORDER BY c.orden, i.nombre
         `, [tid]);
-        const [categorias] = await db.query('SELECT * FROM almacen_categorias WHERE tenant_id=? AND activo=1 ORDER BY orden', [tid]);
+        const [categorias] = await db.query('SELECT * FROM almacen_categorias WHERE tenant_id=? AND activo=true ORDER BY orden', [tid]);
         // Ranking de platos disponibles
         let rankingPlatos = [];
         try { rankingPlatos = await rankingDisponibilidad(); } catch(e) {}
@@ -66,7 +66,7 @@ router.get('/api/ingredientes', async (req, res) => {
     try {
         const tid = req.tenantId || 1;
         const [ingredientes] = await db.query(
-            'SELECT id, nombre, unidad_medida, costo_unitario, stock_actual FROM almacen_ingredientes WHERE tenant_id=? AND activo=1 ORDER BY nombre',
+            'SELECT id, nombre, unidad_medida, costo_unitario, stock_actual FROM almacen_ingredientes WHERE tenant_id=? AND activo=true ORDER BY nombre',
             [tid]
         );
         res.json(ingredientes);
@@ -235,7 +235,7 @@ router.get('/api/alertas', async (req, res) => {
             SELECT i.*, c.nombre as categoria_nombre
             FROM almacen_ingredientes i
             LEFT JOIN almacen_categorias c ON c.id = i.categoria_id
-            WHERE i.tenant_id = ? AND i.activo = 1 AND i.stock_actual <= i.stock_minimo
+            WHERE i.tenant_id = ? AND i.activo = true AND i.stock_actual <= i.stock_minimo
             ORDER BY (i.stock_actual / NULLIF(i.stock_minimo, 0)) ASC
         `, [tid]);
         res.json(alertas);
@@ -252,14 +252,14 @@ router.get('/proveedores', async (req, res) => {
 
 router.get('/entradas', async (req, res) => {
     const tid = req.tenantId || 1;
-    const [ingredientes] = await db.query('SELECT id, codigo, nombre, unidad_medida, stock_actual, costo_unitario FROM almacen_ingredientes WHERE tenant_id=? AND activo=1 ORDER BY nombre', [tid]);
+    const [ingredientes] = await db.query('SELECT id, codigo, nombre, unidad_medida, stock_actual, costo_unitario FROM almacen_ingredientes WHERE tenant_id=? AND activo=true ORDER BY nombre', [tid]);
     const [proveedores] = await db.query('SELECT id, nombre FROM proveedores WHERE tenant_id=? AND deleted_at IS NULL ORDER BY nombre', [tid]);
     res.render('almacen/entradas', { ingredientes, proveedores });
 });
 router.get('/salidas', async (req, res) => {
   try {
     const tid = req.tenantId || 1;
-    const [ingredientes] = await db.query('SELECT id, codigo, nombre, unidad_medida, stock_actual FROM almacen_ingredientes WHERE tenant_id=? AND activo=1 ORDER BY nombre', [tid]);
+    const [ingredientes] = await db.query('SELECT id, codigo, nombre, unidad_medida, stock_actual FROM almacen_ingredientes WHERE tenant_id=? AND activo=true ORDER BY nombre', [tid]);
     const hoy = new Date().toISOString().split('T')[0];
 
     // Caja abierta hoy (quien abrio, a que hora)
@@ -386,7 +386,7 @@ router.get('/que-comprar', async (req, res) => {
                    ai.costo_unitario, p.nombre as proveedor_nombre
             FROM almacen_ingredientes ai
             LEFT JOIN proveedores p ON p.id = ai.proveedor_id
-            WHERE ai.tenant_id=? AND ai.activo=1 AND ai.stock_actual <= ai.stock_minimo
+            WHERE ai.tenant_id=? AND ai.activo=true AND ai.stock_actual <= ai.stock_minimo
         `, [tid]);
 
         const diaSemana = ['Domingo','Lunes','Martes','Miercoles','Jueves','Viernes','Sabado'][hoy.getDay()];

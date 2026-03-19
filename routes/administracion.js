@@ -131,7 +131,7 @@ router.get('/planilla', async (req, res) => {
         const anio = Number(req.query.anio) || new Date().getFullYear();
         const personal_filtro = req.query.personal_id || '';
 
-        const [personal] = await db.query('SELECT * FROM personal WHERE tenant_id=? AND activo=1 ORDER BY nombre', [tid]);
+        const [personal] = await db.query('SELECT * FROM personal WHERE tenant_id=? AND activo=true ORDER BY nombre', [tid]);
 
         // Historial de pagos del mes seleccionado
         let queryHistorial = `

@@ -195,7 +195,7 @@ app.get('/', requireAuth, async (req, res) => {
         const [tp] = await db.query("SELECT p.nombre, SUM(df.cantidad) as qty FROM detalle_factura df JOIN productos p ON p.id=df.producto_id JOIN facturas f ON f.id=df.factura_id WHERE f.fecha::date = CURRENT_DATE GROUP BY df.producto_id, p.nombre ORDER BY qty DESC LIMIT 5");
         dashboard.topProductos = tp || [];
 
-        const [[al]] = await db.query("SELECT COUNT(*) as t FROM almacen_ingredientes WHERE tenant_id=? AND activo=1 AND stock_actual <= stock_minimo", [tid]);
+        const [[al]] = await db.query("SELECT COUNT(*) as t FROM almacen_ingredientes WHERE tenant_id=? AND activo=true AND stock_actual <= stock_minimo", [tid]);
         dashboard.alertas = al.t;
 
         // Caja abierta?
@@ -206,7 +206,7 @@ app.get('/', requireAuth, async (req, res) => {
 
         // Personal sin pago hoy
         try {
-            const [[pTotal]] = await db.query("SELECT COUNT(*) as t FROM personal WHERE tenant_id=? AND activo=1", [tid]);
+            const [[pTotal]] = await db.query("SELECT COUNT(*) as t FROM personal WHERE tenant_id=? AND activo=true", [tid]);
             dashboard.personalTotal = pTotal.t;
             const [[pPagados]] = await db.query("SELECT COUNT(DISTINCT personal_id) as t FROM planilla_pagos WHERE tenant_id=? AND fecha::date = CURRENT_DATE", [tid]);
             dashboard.personalSinPago = Math.max(0, pTotal.t - pPagados.t);
@@ -214,7 +214,7 @@ app.get('/', requireAuth, async (req, res) => {
 
         // Meseros activos y ratio mesas/mesero
         try {
-            const [[meseros]] = await db.query("SELECT COUNT(*) as t FROM usuarios WHERE rol='mesero' AND activo=1");
+            const [[meseros]] = await db.query("SELECT COUNT(*) as t FROM usuarios WHERE rol='mesero' AND activo=true");
             dashboard.meserosActivos = meseros.t;
             dashboard.ratioMesasPorMesero = meseros.t > 0 ? Math.round(dashboard.mesasTotal / meseros.t) : 0;
         } catch(_) {}
@@ -237,7 +237,7 @@ app.get('/', requireAuth, async (req, res) => {
         // P1 CRITICO: Ingredientes en 0 = platos que no se pueden preparar
         let platosAgotados = 0;
         try {
-            const [[pa]] = await db.query("SELECT COUNT(*) as t FROM almacen_ingredientes WHERE tenant_id=? AND activo=1 AND stock_actual <= 0", [tid]);
+            const [[pa]] = await db.query("SELECT COUNT(*) as t FROM almacen_ingredientes WHERE tenant_id=? AND activo=true AND stock_actual <= 0", [tid]);
             platosAgotados = pa.t;
         } catch(_) {}
         if (platosAgotados > 0) {
