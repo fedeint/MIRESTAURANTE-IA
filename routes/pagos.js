@@ -287,7 +287,7 @@ router.post('/crear-sesion', async (req, res) => {
 
 // ── POST /api/pagos/izipay-success ────────────────────────────────────────────
 router.post('/izipay-success', async (req, res) => {
-    const hmacKey = process.env.IZIPAY_HMAC_KEY;
+    const hmacKey = (process.env.IZIPAY_HMAC_KEY || '').trim();
 
     if (!hmacKey) {
         return res.redirect('/setup?plan=gratis&pago=ok&demo=1');
@@ -327,7 +327,7 @@ router.post('/izipay-success', async (req, res) => {
 
 // ── POST /api/pagos/izipay-webhook ────────────────────────────────────────────
 router.post('/izipay-webhook', async (req, res) => {
-    const hmacKey = process.env.IZIPAY_HMAC_KEY;
+    const hmacKey = (process.env.IZIPAY_HMAC_KEY || '').trim();
 
     if (!hmacKey) {
         return res.json({ status: 'ignored', reason: 'HMAC key not configured' });
