@@ -525,6 +525,7 @@
 <!-- Offline detection + Service Worker -->
 <script>
   window.__USER_ROLE__ = '<%= (typeof user !== "undefined" && user && user.rol) ? user.rol : "" %>';
+  window.__APP_MODO__  = '<%= process.env.MODO || "cloud" %>';
 </script>
 <script src="/js/offline-ui.js"></script>
 <script>

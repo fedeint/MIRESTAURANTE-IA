@@ -24,7 +24,12 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "build": "pkg . --public --target node18-win-x64"
+    "build": "pkg . --public --target node18-win-x64",
+    "local": "MODO=local node -r dotenv/config server.js dotenv_config_path=.env.local",
+    "setup:local": "bash scripts/setup-local.sh",
+    "sync:to-cloud": "node scripts/sync-to-cloud.js",
+    "sync:from-cloud": "node scripts/sync-from-cloud.js",
+    "sync:from-cloud:full": "node scripts/sync-from-cloud.js --full"
   },
   "dependencies": {
     "@andresaya/edge-tts": "^1.8.0",

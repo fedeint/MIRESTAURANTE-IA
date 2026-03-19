@@ -47,12 +47,21 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.set('trust proxy', 1);
 
 // Sesiones persistidas en PostgreSQL (necesario para serverless/Vercel)
+// En modo local no se usa SSL y se apunta a la base local.
 const pgSession = require('connect-pg-simple')(session);
 const { Pool: PgPool } = require('pg');
-const sessionPool = new PgPool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false }
-});
+const IS_LOCAL_MODE = (process.env.MODO || 'cloud').toLowerCase() === 'local';
+const sessionPoolConfig = IS_LOCAL_MODE
+    ? {
+        connectionString: process.env.DATABASE_URL || 'postgresql://localhost:5432/dignita_local',
+        // No SSL for local
+        max: 5,
+    }
+    : {
+        connectionString: process.env.DATABASE_URL,
+        ssl: { rejectUnauthorized: false },
+    };
+const sessionPool = new PgPool(sessionPoolConfig);
 
 app.use(session({
     store: new pgSession({ pool: sessionPool, tableName: 'session' }),
@@ -63,7 +72,8 @@ app.use(session({
     cookie: {
         httpOnly: true,
         sameSite: 'lax',
-        secure: process.env.NODE_ENV === 'production',
+        // In local mode we run plain HTTP on the LAN — never set secure=true there
+        secure: process.env.NODE_ENV === 'production' && !IS_LOCAL_MODE,
         maxAge: 1000 * 60 * 60 * 12 // 12 horas
     }
 }));
@@ -107,8 +117,8 @@ app.use('/vendor/select2-bootstrap-5-theme', express.static(path.join(__dirname,
 // bootstrap-icons usa fuentes (woff/woff2) -> servir carpeta font completa
 app.use('/vendor/bootstrap-icons', express.static(path.join(__dirname, 'node_modules', 'bootstrap-icons', 'font'), vendorOptions));
 
-// HTTPS redirect en produccion
-if (process.env.NODE_ENV === 'production') {
+// HTTPS redirect en produccion (solo en la nube, nunca en modo local LAN)
+if (process.env.NODE_ENV === 'production' && !IS_LOCAL_MODE) {
     app.use((req, res, next) => {
         if (req.headers['x-forwarded-proto'] !== 'https') {
             return res.redirect(301, `https://${req.headers.host}${req.url}`);
@@ -164,6 +174,7 @@ const featuresRoutes = require('./routes/features');
 const ttsRoutes = require('./routes/tts');
 const onboardingRoutes = require('./routes/onboarding');
 const superadminRoutes = require('./routes/superadmin');
+const syncRoutes       = require('./routes/sync');
 
 // Auth routes (públicas): /login /logout /setup
 app.use(authRoutes);
@@ -175,6 +186,9 @@ app.use('/onboarding', requireAuth, requireRole('administrador'), onboardingRout
 app.get('/landing', (req, res) => {
     res.render('landing');
 });
+
+// Sync routes (status + manual trigger - admin only in local mode)
+app.use('/api/sync', requireAuth, requireRole('administrador'), syncRoutes);
 
 // Diagnóstico temporal (remover después)
 app.get('/api/health', async (req, res) => {

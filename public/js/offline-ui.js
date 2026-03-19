@@ -1,6 +1,8 @@
 // Offline/Online detection with role-specific messages
+// Also shows a persistent LOCAL MODE banner when MODO=local
 (function() {
-  const role = window.__USER_ROLE__ || '';
+  const role      = window.__USER_ROLE__ || '';
+  const isLocal   = window.__APP_MODO__  === 'local';
 
   const messages = {
     mesero: { offline: '📡 Sin conexión. Los pedidos se guardan localmente.', online: '✅ Conexión restaurada. Sincronizando...' },
@@ -95,6 +97,41 @@
   `;
   document.head.appendChild(style);
 
+  // ── Local Mode persistent banner ──────────────────────────────────────────
+  if (isLocal) {
+    const localBanner = document.createElement('div');
+    localBanner.id = 'localModeBanner';
+    localBanner.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 9997;
+      padding: 6px 20px;
+      text-align: center;
+      font-size: 0.78rem;
+      font-weight: 600;
+      background: linear-gradient(135deg, #1d4ed8, #1e40af);
+      color: #fff;
+      letter-spacing: 0.01em;
+      box-shadow: 0 2px 8px rgba(30,64,175,0.3);
+    `;
+    localBanner.innerHTML =
+      'Modo Local — Los datos se guardan en este servidor &nbsp;|&nbsp; ' +
+      '<a href="/api/sync/status" target="_blank" ' +
+      'style="color:#bfdbfe;text-decoration:underline;font-weight:700;">Ver estado de sync</a>';
+    document.body.prepend(localBanner);
+
+    // Push all fixed-position elements down so they don't overlap the banner
+    const bannerHeight = 30; // px — approximate
+    const style2 = document.createElement('style');
+    style2.textContent = `
+      #offlineBanner { top: ${bannerHeight}px !important; }
+    `;
+    document.head.appendChild(style2);
+  }
+
+  // ── Network online/offline listeners ──────────────────────────────────────
   // Listen for online/offline events
   window.addEventListener('offline', showOffline);
   window.addEventListener('online', showOnline);

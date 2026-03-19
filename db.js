@@ -1,26 +1,48 @@
 require('dotenv').config();
 const { Pool } = require('pg');
 
-// Parse DATABASE_URL if provided, otherwise use individual env vars
-const poolConfig = process.env.DATABASE_URL
-    ? {
+// ── Mode detection ────────────────────────────────────────────────────────────
+// MODO=local  → local PostgreSQL (no SSL, restaurant's Mac/laptop)
+// MODO=cloud  → Supabase (default, used on Vercel and when internet is available)
+const MODO = (process.env.MODO || 'cloud').toLowerCase();
+const IS_LOCAL = MODO === 'local';
+
+// ── Pool configuration ────────────────────────────────────────────────────────
+let poolConfig;
+
+if (IS_LOCAL) {
+    // Local mode: connect to local PostgreSQL — no SSL, lower pool size,
+    // faster timeouts so the app fails quickly if pg is not running.
+    poolConfig = {
+        connectionString: process.env.DATABASE_URL || 'postgresql://localhost:5432/dignita_local',
+        // No SSL for local connections
+        max: Number(process.env.DB_POOL_SIZE) || 20,
+        idleTimeoutMillis: 30000,
+        connectionTimeoutMillis: 5000,
+    };
+} else if (process.env.DATABASE_URL) {
+    // Cloud mode with DATABASE_URL (Vercel / Supabase connection string)
+    poolConfig = {
         connectionString: process.env.DATABASE_URL,
         ssl: { rejectUnauthorized: false },
         max: Number(process.env.DB_POOL_SIZE) || 50,
         idleTimeoutMillis: 30000,
-        connectionTimeoutMillis: 10000
-    }
-    : {
-        host: process.env.DB_HOST || 'db.vfltsjcktxgmqbrzwthn.supabase.co',
-        port: Number(process.env.DB_PORT) || 5432,
+        connectionTimeoutMillis: 10000,
+    };
+} else {
+    // Cloud mode with individual env vars (legacy / manual Supabase setup)
+    poolConfig = {
+        host:     process.env.DB_HOST     || 'db.vfltsjcktxgmqbrzwthn.supabase.co',
+        port:     Number(process.env.DB_PORT) || 5432,
         database: process.env.DB_DATABASE || 'postgres',
-        user: process.env.DB_USER || 'postgres',
+        user:     process.env.DB_USER     || 'postgres',
         password: process.env.DB_PASSWORD || '',
         ssl: { rejectUnauthorized: false },
         max: Number(process.env.DB_POOL_SIZE) || 50,
         idleTimeoutMillis: 30000,
-        connectionTimeoutMillis: 10000
+        connectionTimeoutMillis: 10000,
     };
+}
 
 const pgPool = new Pool(poolConfig);
 
@@ -192,12 +214,21 @@ async function ensureSchema() {
 // Verify connection on startup
 pgPool.connect()
     .then(client => {
-        console.log('Conexión exitosa a PostgreSQL (Supabase)');
+        const modeLabel = IS_LOCAL ? 'LOCAL (postgresql://localhost/dignita_local)' : 'Supabase (nube)';
+        console.log(`Conexion exitosa a PostgreSQL - modo: ${modeLabel}`);
         client.release();
         ensureSchema();
     })
     .catch(err => {
         console.error('Error al conectar a la base de datos PostgreSQL:', err.message || err);
+        if (IS_LOCAL) {
+            console.error('Asegurate de que PostgreSQL este corriendo localmente.');
+            console.error('Inicia con: brew services start postgresql@15');
+        }
     });
+
+// Expose current mode for other modules (e.g. routes/sync.js)
+pgPool.MODO      = MODO;
+pgPool.IS_LOCAL  = IS_LOCAL;
 
 module.exports = pgPool;
