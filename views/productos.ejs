@@ -513,9 +513,10 @@
 
         /* Remove the old top/name row since it moved into overlay */
         .producto-card-top { display: none; }
-        .producto-card-name { display: none; }
-        .producto-card-price { display: none; }
         .producto-card-meta { display: none; }
+        /* Ensure name+price INSIDE overlay are always visible */
+        .producto-card-image-overlay .producto-card-name { display: block !important; }
+        .producto-card-image-overlay .producto-card-price { display: block !important; }
 
         /* --- Empty state --- */
         .carta-empty {
