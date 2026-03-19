@@ -135,8 +135,8 @@ router.post('/crear-sesion', async (req, res) => {
         return res.json({ free: true, redirect: '/setup?plan=gratis' });
     }
 
-    const shopId    = process.env.IZIPAY_SHOP_ID;
-    const serverKey = process.env.IZIPAY_SERVER_KEY;
+    const shopId    = (process.env.IZIPAY_SHOP_ID || '').trim();
+    const serverKey = (process.env.IZIPAY_SERVER_KEY || '').trim();
 
     if (!shopId || !serverKey) {
         console.warn('[pagos] Izipay credentials not configured');
