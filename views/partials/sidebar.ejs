@@ -166,7 +166,7 @@
             var s=parseInt(localStorage.getItem('dg-sidebar-state'))||1;
             var cls=s===1?'sidebar-expanded':s===2?'sidebar-semi':'sidebar-collapsed';
             document.body.classList.add(cls);
-            if(document.getElementById('sidebarPanel'))document.body.classList.add('body-has-panel');
+            if(document.getElementById('sidebarPanel') && s!==1)document.body.classList.add('body-has-panel');
           })();
         </script>
 
@@ -555,9 +555,11 @@
 
                 function updatePanel() {
                   var panelHidden = localStorage.getItem('dg-panel-hidden') === '1';
-                  if (panel) panel.style.display = panelHidden ? 'none' : '';
+                  // Panel only visible in semi/collapsed states, never in expanded
+                  var showPanel = panel && !panelHidden && state !== 1;
+                  if (panel) panel.style.display = showPanel ? '' : 'none';
                   if (mainEl) {
-                    if (panel && !panelHidden) {
+                    if (showPanel) {
                       mainEl.classList.add('has-panel');
                       document.body.classList.add('body-has-panel');
                       document.body.classList.remove('panel-hidden');
@@ -690,6 +692,8 @@
 
           function openSubmenu(link) {
             if (window.innerWidth < 992) return;
+            // Don't show hover submenu when sidebar is expanded (links already visible)
+            if (document.body.classList.contains('sidebar-expanded')) return;
             var raw = link.getAttribute('data-submenu');
             if (!raw) return;
             var items;

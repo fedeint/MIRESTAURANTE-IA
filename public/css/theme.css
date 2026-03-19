@@ -620,7 +620,7 @@ h1, h2, h3, h4, h5, h6 {
   body.sidebar-expanded .dg-main { margin-left: 330px; }
   body.sidebar-expanded.body-has-panel .dg-main,
   body.sidebar-expanded .dg-main.has-panel { margin-left: 510px; } /* 330 + 180 panel */
-  body.sidebar-expanded .dg-panel { left: 330px; } /* 70 + 260 */
+  body.sidebar-expanded .dg-panel { display: none !important; } /* panel not needed when sidebar is expanded */
 
   /* Semi: sidebar at left:70 + width:64 = 134 */
   body.sidebar-semi .dg-main { margin-left: 134px; }
