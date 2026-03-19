@@ -760,12 +760,16 @@
       }
 
       // Render Krypton embedded form
-      container.innerHTML = '<div class="kr-embedded" kr-form-token="' + data.formToken + '"></div>';
-      KR.setFormConfig({ 'kr-language': 'es-PE' });
-      KR.addForm('#izipay-form-container').then(function(result) {
-        console.log('[Izipay] Form rendered OK');
+      container.innerHTML = '';
+      KR.setFormConfig({
+        formToken: data.formToken,
+        'kr-language': 'es-PE'
+      }).then(function() {
+        return KR.addForm('#izipay-form-container');
+      }).then(function(result) {
+        console.log('[Izipay] Form rendered OK', result);
       }).catch(function(err) {
-        container.innerHTML = '<div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i>Error al renderizar formulario: ' + err.message + '</div>';
+        container.innerHTML = '<div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i>Error formulario: ' + err.message + '</div>';
       });
     } catch(err) {
       container.innerHTML = '<div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i>Error: ' + err.message + '</div>';
