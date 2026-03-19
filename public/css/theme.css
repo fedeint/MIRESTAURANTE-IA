@@ -197,22 +197,31 @@ h1, h2, h3, h4, h5, h6 {
 .dg-sidebar::-webkit-scrollbar { display: none; }
 
 /* ===== FLOATING SHELL (desktop) ===== */
+/*
+  Design specs (MacBook Pro 16" - 1728x1117):
+  Orange frame: x:46 y:34 w:1629 h:1040 cornerRadius:15 stroke:outside 3px
+  Sidebar: x:70 y:95 → 24px right of frame, 61px below frame top
+  Using viewport-relative units for responsiveness
+*/
 @media (min-width: 992px) {
   body {
-    padding: 30px 40px !important;
+    padding: 0 !important;
     margin: 0 !important;
   }
 
   .dg-sidebar {
-    top: 30px !important;
-    left: 40px !important;
-    height: calc(100vh - 60px) !important;
+    top: 55px !important;
+    left: 70px !important;
+    height: calc(100vh - 55px - 50px) !important;
     border-radius: 15px 0 0 15px !important;
   }
 
   .dg-main {
+    margin-top: 55px !important;
+    margin-right: 55px !important;
+    margin-bottom: 50px !important;
     border-radius: 0 15px 15px 0 !important;
-    min-height: calc(100vh - 60px) !important;
+    min-height: calc(100vh - 55px - 50px) !important;
     background: #fff !important;
     overflow: hidden;
   }
@@ -221,15 +230,15 @@ h1, h2, h3, h4, h5, h6 {
 /* Floating shell frame - orange border */
 .dg-floating-frame {
   position: fixed;
-  top: 27px;
-  left: 37px;
-  right: 37px;
-  bottom: 27px;
+  top: 34px;
+  left: 46px;
+  right: 53px;
+  bottom: 43px;
   border: 3px solid #ff9145;
-  border-radius: 18px;
+  border-radius: 15px;
   pointer-events: none;
   z-index: 9999;
-  box-shadow: 0 0 40px rgba(255, 145, 69, 0.12), inset 0 0 30px rgba(255, 145, 69, 0.03);
+  filter: blur(0.5px);
 }
 
 /* Expanded state (260px with text) */
@@ -351,8 +360,8 @@ h1, h2, h3, h4, h5, h6 {
 
 @media (min-width: 992px) {
   .dg-panel {
-    top: 30px !important;
-    height: calc(100vh - 60px) !important;
+    top: 55px !important;
+    height: calc(100vh - 55px - 50px) !important;
     border-radius: 0 15px 15px 0 !important;
   }
 }
@@ -603,34 +612,31 @@ h1, h2, h3, h4, h5, h6 {
 @media (min-width: 992px) {
   .dg-main {
     transition: margin-left 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-    border-radius: 0 15px 15px 0;
-    min-height: calc(100vh - 60px);
-    background: #fff;
   }
 
-  /* Expanded: sidebar 260 */
-  body.sidebar-expanded .dg-main { margin-left: 260px; }
+  /* Expanded: sidebar at left:70 + width:260 = 330 */
+  body.sidebar-expanded .dg-main { margin-left: 330px; }
   body.sidebar-expanded.body-has-panel .dg-main,
-  body.sidebar-expanded .dg-main.has-panel { margin-left: 440px; }
-  body.sidebar-expanded .dg-panel { left: 300px; } /* 260 + 40 shell */
+  body.sidebar-expanded .dg-main.has-panel { margin-left: 510px; } /* 330 + 180 panel */
+  body.sidebar-expanded .dg-panel { left: 330px; } /* 70 + 260 */
 
-  /* Semi: sidebar 64 */
-  body.sidebar-semi .dg-main { margin-left: 64px; }
+  /* Semi: sidebar at left:70 + width:64 = 134 */
+  body.sidebar-semi .dg-main { margin-left: 134px; }
   body.sidebar-semi.body-has-panel .dg-main,
-  body.sidebar-semi .dg-main.has-panel { margin-left: 244px; }
-  body.sidebar-semi .dg-panel { left: 104px; } /* 64 + 40 shell */
+  body.sidebar-semi .dg-main.has-panel { margin-left: 314px; } /* 134 + 180 panel */
+  body.sidebar-semi .dg-panel { left: 134px; } /* 70 + 64 */
 
-  /* Collapsed: sidebar 64 */
-  body.sidebar-collapsed .dg-main { margin-left: 64px; }
+  /* Collapsed: sidebar at left:70 + width:64 = 134 */
+  body.sidebar-collapsed .dg-main { margin-left: 134px; }
   body.sidebar-collapsed.body-has-panel .dg-main,
-  body.sidebar-collapsed .dg-main.has-panel { margin-left: 244px; }
-  body.sidebar-collapsed .dg-panel { left: 104px; } /* 64 + 40 shell */
+  body.sidebar-collapsed .dg-main.has-panel { margin-left: 314px; }
+  body.sidebar-collapsed .dg-panel { left: 134px; }
 
-  /* Cuando el panel se oculta via JS, remover body-has-panel */
-  body.panel-hidden .dg-main { /* margin-left ya manejado por sidebar state */ }
-  body.sidebar-expanded.panel-hidden .dg-main { margin-left: 260px !important; }
+  /* Cuando el panel se oculta via JS */
+  body.panel-hidden .dg-main { }
+  body.sidebar-expanded.panel-hidden .dg-main { margin-left: 330px !important; }
   body.sidebar-semi.panel-hidden .dg-main,
-  body.sidebar-collapsed.panel-hidden .dg-main { margin-left: 64px !important; }
+  body.sidebar-collapsed.panel-hidden .dg-main { margin-left: 134px !important; }
 }
 
 @media (max-width: 991.98px) {
