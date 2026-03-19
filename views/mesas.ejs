@@ -313,6 +313,289 @@
         background: rgba(0,0,0,0.06);
         margin: 0.5rem 0 0.6rem;
       }
+
+      /* =============================================
+         CATALOGO VISUAL DE PRODUCTOS (offcanvas)
+         ============================================= */
+
+      /* --- Layout raiz del offcanvas --- */
+      #canvasPedido .offcanvas-body {
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      /* Tabs principales: "Agregar" | "Pedido" */
+      #tabsCanvasPedido {
+        display: flex;
+        border-bottom: 1px solid rgba(0,0,0,0.08);
+        background: #fff;
+        flex-shrink: 0;
+      }
+      .canvas-tab-btn {
+        flex: 1;
+        border: none;
+        background: transparent;
+        padding: 0.7rem 0.5rem;
+        font-size: 0.82rem;
+        font-weight: 600;
+        color: var(--dg-text-secondary);
+        cursor: pointer;
+        border-bottom: 2.5px solid transparent;
+        transition: color 0.18s, border-color 0.18s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+      }
+      .canvas-tab-btn.active {
+        color: var(--dg-primary);
+        border-bottom-color: var(--dg-primary);
+      }
+      .canvas-tab-btn i { font-size: 0.95rem; }
+
+      /* Panels (only active visible) */
+      .canvas-panel {
+        display: none;
+        flex: 1;
+        min-height: 0;
+        flex-direction: column;
+      }
+      .canvas-panel.active { display: flex; }
+
+      /* ---- PANEL AGREGAR PRODUCTOS ---- */
+
+      /* Search bar */
+      #catalogoSearchWrap {
+        padding: 0.65rem 0.75rem 0;
+        flex-shrink: 0;
+      }
+      #catalogoSearch {
+        width: 100%;
+        border: 1.5px solid rgba(0,0,0,0.1);
+        border-radius: 10px;
+        padding: 0.5rem 0.75rem 0.5rem 2.3rem;
+        font-size: 0.85rem;
+        background: #f8f9fa url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='%236B7280' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.099zm-5.242 1.156a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z'/%3E%3C/svg%3E") no-repeat 0.7rem center;
+        outline: none;
+        transition: border-color 0.15s;
+      }
+      #catalogoSearch:focus { border-color: var(--dg-primary); background-color: #fff; }
+
+      /* Category pills */
+      #categoriasWrap {
+        padding: 0.55rem 0.75rem 0.4rem;
+        display: flex;
+        gap: 0.4rem;
+        overflow-x: auto;
+        flex-shrink: 0;
+        scrollbar-width: none;
+      }
+      #categoriasWrap::-webkit-scrollbar { display: none; }
+      .cat-pill {
+        white-space: nowrap;
+        border: 1.5px solid rgba(0,0,0,0.12);
+        border-radius: 100px;
+        padding: 0.28rem 0.75rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        background: transparent;
+        color: var(--dg-text-secondary);
+        cursor: pointer;
+        transition: all 0.15s;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+      .cat-pill i { font-size: 0.8rem; }
+      .cat-pill:hover { border-color: var(--dg-primary); color: var(--dg-primary); }
+      .cat-pill.active {
+        background: var(--dg-primary);
+        border-color: var(--dg-primary);
+        color: #fff;
+      }
+
+      /* Product grid scroll area */
+      #productosGrid {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        padding: 0.5rem 0.75rem 0.5rem;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.6rem;
+        align-content: start;
+      }
+      @media (max-width: 575.98px) {
+        #productosGrid { grid-template-columns: repeat(2, 1fr); }
+      }
+
+      /* Product card */
+      .prod-card {
+        border: 2px solid transparent;
+        border-radius: 12px;
+        background: #fff;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        cursor: pointer;
+        transition: all 0.18s cubic-bezier(0.4,0,0.2,1);
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+      }
+      .prod-card:hover {
+        box-shadow: 0 6px 20px rgba(0,0,0,0.12);
+        transform: translateY(-2px);
+      }
+      .prod-card.selected {
+        border-color: #16a34a;
+        box-shadow: 0 4px 16px rgba(22,163,74,0.22);
+      }
+
+      /* Quantity badge */
+      .prod-qty-badge {
+        position: absolute;
+        top: 6px;
+        right: 6px;
+        background: #16a34a;
+        color: #fff;
+        font-size: 0.68rem;
+        font-weight: 800;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 2;
+        line-height: 1;
+        box-shadow: 0 2px 6px rgba(22,163,74,0.4);
+      }
+      .prod-card.selected .prod-qty-badge { display: flex; }
+
+      /* Product image */
+      .prod-img-wrap {
+        width: 100%;
+        aspect-ratio: 4/3;
+        overflow: hidden;
+        background: #f3f4f6;
+        flex-shrink: 0;
+      }
+      .prod-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        transition: transform 0.22s;
+      }
+      .prod-card:hover .prod-img { transform: scale(1.05); }
+      .prod-img-placeholder {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--dg-text-muted);
+        font-size: 1.8rem;
+        background: linear-gradient(135deg,#f8f9fa,#e9ecef);
+      }
+
+      /* Product info */
+      .prod-info {
+        padding: 0.45rem 0.5rem 0.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+        flex: 1;
+      }
+      .prod-name {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: #1a1a1a;
+        line-height: 1.25;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+      .prod-cat-label {
+        font-size: 0.65rem;
+        font-weight: 500;
+        color: var(--dg-text-muted);
+        margin-top: 1px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .prod-price {
+        font-size: 0.78rem;
+        font-weight: 800;
+        color: var(--dg-primary);
+        margin-top: 3px;
+      }
+
+      /* Empty / loading states */
+      #catalogoEmptyState {
+        grid-column: 1 / -1;
+        text-align: center;
+        padding: 2rem 1rem;
+        color: var(--dg-text-muted);
+        font-size: 0.85rem;
+        display: none;
+      }
+      #catalogoEmptyState i { font-size: 2.2rem; margin-bottom: 0.5rem; display: block; }
+
+      /* ---- Sticky bottom bar (products added) ---- */
+      #catalogoBottomBar {
+        flex-shrink: 0;
+        display: none;
+        background: #fff;
+        border-top: 1px solid rgba(0,0,0,0.08);
+        padding: 0.6rem 0.75rem;
+        gap: 0.6rem;
+        align-items: center;
+      }
+      #catalogoBottomBar.visible { display: flex; }
+      #catalogoBottomBarInfo {
+        flex: 1;
+        font-size: 0.78rem;
+        color: var(--dg-text-secondary);
+        line-height: 1.3;
+      }
+      #catalogoBottomBarInfo strong { color: #1a1a1a; }
+      #btnContinuarOrden {
+        white-space: nowrap;
+        font-size: 0.8rem;
+        font-weight: 700;
+        padding: 0.45rem 0.9rem;
+        border-radius: 10px;
+        background: var(--dg-primary);
+        border: none;
+        color: #fff;
+        cursor: pointer;
+        flex-shrink: 0;
+        transition: background 0.15s;
+      }
+      #btnContinuarOrden:hover { background: var(--dg-primary-dark); }
+
+      /* ---- PANEL PEDIDO ACTUAL ---- */
+      #panelPedido {
+        overflow: hidden;
+      }
+      #panelPedidoInner {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+        padding: 0 0.75rem;
+      }
+      #panelPedidoActions {
+        flex-shrink: 0;
+        padding: 0.6rem 0.75rem 0.75rem;
+        border-top: 1px solid rgba(0,0,0,0.07);
+      }
     </style>
  </head>
 <body>
@@ -411,8 +694,11 @@
 
     <!-- Offcanvas Pedido -->
     <div class="offcanvas offcanvas-end" tabindex="-1" id="canvasPedido">
-        <div class="offcanvas-header">
-            <h5 class="offcanvas-title">Pedido mesa <span id="pedidoMesa"></span></h5>
+        <div class="offcanvas-header" style="padding-bottom:0.5rem;">
+            <h5 class="offcanvas-title" style="font-size:0.95rem;font-weight:700;">
+                <i class="bi bi-grid-1x2 me-1 text-warning"></i>
+                Mesa <span id="pedidoMesa"></span>
+            </h5>
             <div class="d-flex align-items-center gap-2">
                 <button type="button" id="btnMoverMesaHeader" class="btn btn-outline-secondary btn-sm" data-bs-toggle="tooltip" title="Mover a otra mesa">
                     <i class="bi bi-arrow-left-right"></i>
@@ -420,48 +706,105 @@
                 <button type="button" class="btn-close" data-bs-dismiss="offcanvas"></button>
             </div>
         </div>
-        <div class="offcanvas-body d-flex flex-column">
-            <div class="mb-2">
-                <div class="input-group">
-                    <span class="input-group-text"><i class="bi bi-search"></i></span>
-                    <input id="buscarProductoMesa" class="form-control" placeholder="Buscar producto...">
-                </div>
-                <div id="resultadosProductoMesa" class="list-group"></div>
-            </div>
-            <div class="d-flex justify-content-end mb-2">
-                <button id="btnLimpiarRechazadosHeader" class="btn btn-outline-danger btn-sm me-2">
-                    <i class="bi bi-eraser"></i> Limpiar rechazados
+
+        <div class="offcanvas-body">
+
+            <!-- Tab switcher: Agregar / Pedido -->
+            <div id="tabsCanvasPedido">
+                <button class="canvas-tab-btn active" data-tab="agregar">
+                    <i class="bi bi-plus-circle"></i> Agregar
                 </button>
-                <button id="btnLiberarMesaHeader" class="btn btn-outline-secondary btn-sm"><i class="bi bi-unlock"></i> Liberar mesa</button>
+                <button class="canvas-tab-btn" data-tab="pedido" id="tabBtnPedido">
+                    <i class="bi bi-receipt"></i> Pedido
+                    <span id="pedidoItemsBadge" class="badge rounded-pill ms-1" style="background:var(--dg-primary);font-size:0.65rem;display:none;"></span>
+                </button>
             </div>
-            <div class="table-responsive flex-grow-1">
-                <table class="table table-sm">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Producto</th>
-                            <th class="text-end">Cant</th>
-                            <th class="text-end">Precio</th>
-                            <th class="text-end">Subt</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody id="tbodyItems"></tbody>
-                </table>
-            </div>
-            <div class="mt-auto">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <strong>Total:</strong>
-                    <span id="totalPedido" class="fw-bold">$0</span>
+
+            <!-- ========== PANEL: AGREGAR PRODUCTOS ========== -->
+            <div class="canvas-panel active" id="panelAgregar">
+
+                <!-- Search -->
+                <div id="catalogoSearchWrap">
+                    <input id="catalogoSearch" type="search" placeholder="Buscar productos..." autocomplete="off">
                 </div>
-                <div class="d-grid gap-2">
-                        <button id="btnMoverMesa" class="btn btn-outline-secondary"><i class="bi bi-arrow-left-right me-1"></i>Mover a mesa</button>
-                    <button id="btnEnviarCocina" class="btn btn-warning"><i class="bi bi-send me-1"></i>Enviar a cocina</button>
-                    <button id="btnFacturarPedido" class="btn btn-success"><i class="bi bi-cash-coin me-1"></i>Facturar todo</button>
-                    <button id="btnDividirCuenta" class="btn btn-outline-info"><i class="bi bi-scissors me-1"></i>Dividir cuenta</button>
+
+                <!-- Category pills -->
+                <div id="categoriasWrap">
+                    <button class="cat-pill active" data-cat="todos">
+                        <i class="bi bi-star-fill" style="color:inherit;"></i> Todos
+                    </button>
+                    <!-- JS inserts additional pills dynamically -->
                 </div>
-            </div>
-        </div>
-    </div>
+
+                <!-- Product grid -->
+                <div id="productosGrid">
+                    <!-- Loading skeleton shown before data loads -->
+                    <div id="catalogoEmptyState">
+                        <i class="bi bi-box-seam"></i>
+                        Sin resultados para esta búsqueda.
+                    </div>
+                </div>
+
+                <!-- Sticky bottom bar (shown when items are queued) -->
+                <div id="catalogoBottomBar">
+                    <div id="catalogoBottomBarInfo">
+                        <strong id="catalogoBottomCount">0</strong> productos&nbsp;&middot;&nbsp;Total: <strong id="catalogoBottomTotal">S/ 0.00</strong>
+                    </div>
+                    <button id="btnContinuarOrden">
+                        Continuar con la orden <i class="bi bi-arrow-right ms-1"></i>
+                    </button>
+                </div>
+
+            </div><!-- /panelAgregar -->
+
+            <!-- ========== PANEL: PEDIDO ACTUAL ========== -->
+            <div class="canvas-panel" id="panelPedido">
+
+                <!-- Utility actions row -->
+                <div class="d-flex justify-content-end gap-2 px-3 pt-2 pb-1 flex-shrink-0">
+                    <button id="btnLimpiarRechazadosHeader" class="btn btn-outline-danger btn-sm" style="font-size:0.75rem;">
+                        <i class="bi bi-eraser"></i> Limpiar rechazados
+                    </button>
+                    <button id="btnLiberarMesaHeader" class="btn btn-outline-secondary btn-sm" style="font-size:0.75rem;">
+                        <i class="bi bi-unlock"></i> Liberar
+                    </button>
+                </div>
+
+                <!-- Items table -->
+                <div id="panelPedidoInner">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Producto</th>
+                                    <th class="text-end">Cant</th>
+                                    <th class="text-end">Precio</th>
+                                    <th class="text-end">Subt</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbodyItems"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Action buttons -->
+                <div id="panelPedidoActions">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <strong style="font-size:0.85rem;">Total:</strong>
+                        <span id="totalPedido" class="fw-bold" style="font-size:0.95rem;color:var(--dg-primary);">$0</span>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button id="btnMoverMesa" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left-right me-1"></i>Mover a mesa</button>
+                        <button id="btnEnviarCocina" class="btn btn-warning btn-sm"><i class="bi bi-send me-1"></i>Enviar a cocina</button>
+                        <button id="btnFacturarPedido" class="btn btn-success btn-sm"><i class="bi bi-cash-coin me-1"></i>Facturar todo</button>
+                        <button id="btnDividirCuenta" class="btn btn-outline-info btn-sm"><i class="bi bi-scissors me-1"></i>Dividir cuenta</button>
+                    </div>
+                </div>
+            </div><!-- /panelPedido -->
+
+        </div><!-- /offcanvas-body -->
+    </div><!-- /canvasPedido -->
 
     </main>
     <%- include('partials/footer') %>

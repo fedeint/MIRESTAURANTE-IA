@@ -330,6 +330,17 @@ $(function() {
       imprimeServidor = !!data.imprime_servidor;
       $('#pedidoMesa').text(mesaNumero);
       await cargarPedido(pedidoActual.id);
+
+      // Reset catalog selection and ensure "Agregar" tab is active
+      catalogoSeleccion.clear();
+      actualizarBottomBar();
+      // Switch to Agregar tab on open
+      const tabAgregar = document.querySelector('.canvas-tab-btn[data-tab="agregar"]');
+      if (tabAgregar) tabAgregar.click();
+
+      // Load catalog lazily (only once)
+      cargarCarta();
+
       canvas.show();
     }catch(err){
       Swal.fire({icon:'error', title: err.message});
@@ -342,35 +353,385 @@ $(function() {
     if(!resp.ok) throw new Error(data.error||'Error al cargar pedido');
     items = data.items || [];
     renderItems();
+    // Refresh the pedido items badge in the tab
+    actualizarBottomBar();
   }
 
-  // Buscar productos
-  let to;
-  $('#buscarProductoMesa').on('input', function(){
-    clearTimeout(to);
-    const q = this.value.trim();
-    if(q.length < 2){ $('#resultadosProductoMesa').empty(); return; }
-    to = setTimeout(async () => {
-      const resp = await fetch(`/api/productos/buscar?q=${encodeURIComponent(q)}`);
-      const productos = await resp.json();
-      const list = $('#resultadosProductoMesa');
-      list.empty();
-      productos.forEach(p => {
-        const item = $(`
-          <a href="#" class="list-group-item list-group-item-action">
-            <div><strong>${p.codigo}</strong> - ${p.nombre}</div>
-            <div class="small text-muted">KG: $${p.precio_kg} | UND: $${p.precio_unidad} | LB: $${p.precio_libra}</div>
-          </a>`);
-        item.on('click', e => {
-          e.preventDefault();
-          $('#resultadosProductoMesa').empty();
-          $('#buscarProductoMesa').val('');
-          seleccionarProducto(p);
-        });
-        list.append(item);
+  // ==========================================================
+  // CATALOGO VISUAL DE PRODUCTOS
+  // Relacionado con: views/mesas.ejs (#panelAgregar, #productosGrid)
+  //                  routes/productos.js (GET /api/productos/carta)
+  // ==========================================================
+
+  // Catálogo state
+  let catalogoProductos = []; // todos los productos cargados
+  let catalogoFiltroCategoria = 'todos'; // categoria activa
+  let catalogoFiltroTexto = ''; // texto de búsqueda
+  // Map<productoId, cantidad> — cantidades seleccionadas en la sesión de "agregar"
+  // Se resetea al abrir un nuevo pedido o al hacer "Continuar"
+  const catalogoSeleccion = new Map();
+
+  // Limpiar selección del catálogo (al abrir pedido nuevo o cerrar offcanvas)
+  function catalogoResetSeleccion() {
+    catalogoSeleccion.clear();
+    renderCatalogoGrid();
+    actualizarBottomBar();
+  }
+
+  // Cargar la carta completa (una vez por sesión, lazy)
+  let catalogoCargado = false;
+  async function cargarCarta() {
+    if (catalogoCargado) return;
+    try {
+      const resp = await fetch('/api/productos/carta');
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || 'Error');
+      catalogoProductos = Array.isArray(data.productos) ? data.productos : [];
+      catalogoCargado = true;
+      renderCategoriaPills();
+      renderCatalogoGrid();
+    } catch (e) {
+      console.error('Error al cargar carta:', e);
+    }
+  }
+
+  // Render de pills de categoría
+  function renderCategoriaPills() {
+    const wrap = document.getElementById('categoriasWrap');
+    if (!wrap) return;
+
+    // Obtener categorías únicas en orden, primero las del enum solicitado
+    const ordenPref = ['Platos de fondo','Sopas y Entradas','Bebidas','Postres','Extras'];
+    const catSet = new Set();
+    catalogoProductos.forEach(p => {
+      const c = String(p.categoria || 'Sin categoría').trim();
+      catSet.add(c);
+    });
+    const cats = [...catSet].sort((a, b) => {
+      const ia = ordenPref.indexOf(a);
+      const ib = ordenPref.indexOf(b);
+      if (ia !== -1 && ib !== -1) return ia - ib;
+      if (ia !== -1) return -1;
+      if (ib !== -1) return 1;
+      return a.localeCompare(b);
+    });
+
+    // Mantener el primer pill "Todos" (ya en el HTML) y agregar el resto
+    // Eliminar pills dinámicos anteriores
+    wrap.querySelectorAll('.cat-pill[data-dynamic]').forEach(el => el.remove());
+
+    cats.forEach(cat => {
+      const btn = document.createElement('button');
+      btn.className = 'cat-pill';
+      btn.setAttribute('data-cat', cat);
+      btn.setAttribute('data-dynamic', '1');
+      const icono = iconoCategoria(cat);
+      btn.innerHTML = `<i class="bi bi-${icono}"></i> ${escapeHtml(cat)}`;
+      btn.addEventListener('click', () => {
+        catalogoFiltroCategoria = cat;
+        wrap.querySelectorAll('.cat-pill').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        renderCatalogoGrid();
       });
-    }, 250);
+      wrap.appendChild(btn);
+    });
+  }
+
+  function iconoCategoria(cat) {
+    const c = String(cat || '').toLowerCase();
+    if (c.includes('plato') || c.includes('fondo')) return 'egg-fried';
+    if (c.includes('sopa') || c.includes('entrada')) return 'bowl-hot';
+    if (c.includes('bebida')) return 'cup-straw';
+    if (c.includes('postre')) return 'cake2';
+    if (c.includes('extra')) return 'plus-circle';
+    return 'tag';
+  }
+
+  // Render de la grilla de productos
+  function renderCatalogoGrid() {
+    const grid = document.getElementById('productosGrid');
+    const empty = document.getElementById('catalogoEmptyState');
+    if (!grid) return;
+
+    const texto = catalogoFiltroTexto.toLowerCase().trim();
+    const filtrados = catalogoProductos.filter(p => {
+      const matchCat = catalogoFiltroCategoria === 'todos' ||
+        String(p.categoria || 'Sin categoría').trim() === catalogoFiltroCategoria;
+      const matchTexto = !texto ||
+        String(p.nombre || '').toLowerCase().includes(texto) ||
+        String(p.codigo || '').toLowerCase().includes(texto);
+      return matchCat && matchTexto;
+    });
+
+    // Limpiar solo las tarjetas (no el empty state)
+    grid.querySelectorAll('.prod-card').forEach(el => el.remove());
+
+    if (filtrados.length === 0) {
+      if (empty) empty.style.display = 'block';
+      return;
+    }
+    if (empty) empty.style.display = 'none';
+
+    filtrados.forEach(p => {
+      const qty = catalogoSeleccion.get(p.id) || 0;
+      const selected = qty > 0;
+      const precio = Number(p.precio_unidad || 0);
+      const precioStr = `S/ ${precio.toFixed(2)}`;
+
+      const card = document.createElement('div');
+      card.className = 'prod-card' + (selected ? ' selected' : '');
+      card.setAttribute('data-prod-id', String(p.id));
+
+      const imgHtml = p.imagen
+        ? `<img class="prod-img" src="${escapeHtml(p.imagen)}" alt="${escapeHtml(p.nombre)}" loading="lazy" onerror="this.parentNode.innerHTML='<div class=\\'prod-img-placeholder\\'><i class=\\'bi bi-image\\'></i></div>'">`
+        : `<div class="prod-img-placeholder"><i class="bi bi-egg-fried"></i></div>`;
+
+      card.innerHTML = `
+        <div class="prod-qty-badge">${qty}</div>
+        <div class="prod-img-wrap">${imgHtml}</div>
+        <div class="prod-info">
+          <div class="prod-name">${escapeHtml(p.nombre)}</div>
+          <div class="prod-cat-label">${escapeHtml(p.categoria || '')}</div>
+          <div class="prod-price">${precioStr}</div>
+        </div>
+      `;
+
+      card.addEventListener('click', () => onProdCardClick(p));
+      grid.appendChild(card);
+    });
+  }
+
+  // Click en tarjeta de producto: si ya tiene cantidad → incrementar inmediatamente,
+  // si no → lanzar modal de configuración (hijos, nota, etc.)
+  async function onProdCardClick(p) {
+    const existente = catalogoSeleccion.get(p.id) || 0;
+    if (existente > 0) {
+      // Incrementar directo sin confirmación
+      catalogoSeleccion.set(p.id, existente + 1);
+      actualizarBottomBar();
+      actualizarCardQty(p.id);
+      return;
+    }
+    // Primera vez: lanzar el flujo completo de selección
+    await catalogoAgregarProducto(p);
+  }
+
+  // Agrega un producto al pedido usando el flujo existente (hijos, nota, cantidad)
+  async function catalogoAgregarProducto(p) {
+    // Reutiliza toda la lógica de seleccionarProducto pero guarda en selección local
+    // primero, y luego confirma al hacer "Continuar"
+    await runWithOffcanvasHidden(async () => {
+      let hijosItems = [];
+      let hijosProductos = [];
+      try {
+        const r = await fetch(`/api/productos/${encodeURIComponent(p.id)}/hijos-items`);
+        if (r.ok) { const d = await r.json(); hijosItems = Array.isArray(d) ? d : []; }
+      } catch (_) {}
+      if (!hijosItems.length) {
+        try {
+          const r2 = await fetch(`/api/productos/${encodeURIComponent(p.id)}/hijos`);
+          if (r2.ok) { const d2 = await r2.json(); hijosProductos = Array.isArray(d2) ? d2 : []; }
+        } catch (_) {}
+      }
+
+      let cantidad = 1;
+      let notaFinal = '';
+      const tieneHijos = hijosItems.length > 0 || hijosProductos.length > 0;
+
+      if (!tieneHijos) {
+        const cantRes = await Swal.fire({
+          title: `Cantidad para ${p.nombre}`,
+          input: 'number',
+          inputValue: 1,
+          inputAttributes: { step: '0.1', min: '0.1' },
+          showCancelButton: true,
+          didOpen: () => {
+            const inp = document.querySelector('.swal2-input');
+            if (inp) ['keydown','keyup','keypress','paste','copy','cut','contextmenu'].forEach(evt => inp.addEventListener(evt, e => e.stopPropagation()));
+          }
+        });
+        if (!cantRes.value) return;
+
+        const notaRes = await Swal.fire({
+          title: 'Nota para cocina (opcional)',
+          input: 'text',
+          inputPlaceholder: 'Ej: sin cebolla, sin queso...',
+          showCancelButton: true,
+          didOpen: () => {
+            const inp = document.querySelector('.swal2-input');
+            if (inp) ['keydown','keyup','keypress','paste','copy','cut','contextmenu'].forEach(evt => inp.addEventListener(evt, e => e.stopPropagation()));
+          }
+        });
+        cantidad = Number(cantRes.value);
+        notaFinal = (notaRes.value || '').trim();
+      } else {
+        const listaHijos = hijosItems.length > 0
+          ? hijosItems.map(it => ({ key: `i_${it.id}`, label: String(it.nombre || '').trim() }))
+          : hijosProductos.map(pr => ({ key: `p_${pr.id}`, label: String(pr.nombre || '').trim() }));
+
+        const hijosHtml = listaHijos.map(h => {
+          const key = String(h.key);
+          const checkboxId = `phH_${key.replace(/[^a-zA-Z0-9_]/g,'_')}`;
+          return `<div class="form-check"><input class="form-check-input ph-hijo" type="checkbox" value="${escapeHtml(key)}" id="${checkboxId}"><label class="form-check-label" for="${checkboxId}">${escapeHtml(h.label)}</label></div>`;
+        }).join('');
+
+        const result = await Swal.fire({
+          title: `Montar ${escapeHtml(p.nombre)}`,
+          html: `
+            <div class="text-start">
+              <div class="small text-muted mb-2">Selecciona los <strong>hijos</strong> (opcional) y escribe la <strong>observación</strong>.</div>
+              <label class="form-label small mb-1">Cantidad</label>
+              <input id="phCantidad" type="number" class="form-control mb-2" value="1" step="0.1" min="0.1" />
+              <label class="form-label small mb-1">Hijos</label>
+              <div class="border rounded p-2 mb-2" style="max-height:220px;overflow:auto;">${hijosHtml}</div>
+              <label class="form-label small mb-1">Observación (opcional)</label>
+              <input id="phObs" type="text" class="form-control" placeholder="Ej: Poco arroz" />
+            </div>`,
+          showCancelButton: true,
+          confirmButtonText: 'Agregar al pedido',
+          cancelButtonText: 'Cancelar',
+          focusConfirm: false,
+          didOpen: () => {
+            ['phCantidad','phObs'].forEach(id => {
+              const el = document.getElementById(id);
+              if (!el) return;
+              ['keydown','keyup','keypress','paste','copy','cut','contextmenu'].forEach(evt => el.addEventListener(evt, e => e.stopPropagation()));
+            });
+            const qty = document.getElementById('phCantidad');
+            if (qty) setTimeout(() => { try { qty.focus(); qty.select(); } catch(_) {} }, 0);
+          },
+          preConfirm: () => {
+            const qty = Number(document.getElementById('phCantidad')?.value || 0);
+            if (!Number.isFinite(qty) || qty <= 0) { Swal.showValidationMessage('La cantidad debe ser mayor a 0'); return false; }
+            const obs = (document.getElementById('phObs')?.value || '').trim();
+            const hijosSel = Array.from(document.querySelectorAll('.ph-hijo:checked')).map(ch => String(ch.value || '').trim()).filter(Boolean);
+            return { qty, obs, hijosSel };
+          }
+        });
+
+        if (!result.isConfirmed) return;
+        cantidad = Number(result.value.qty);
+        const obs = String(result.value.obs || '').trim();
+        const hijosSel = Array.isArray(result.value.hijosSel) ? result.value.hijosSel : [];
+        const mapLabel = new Map(listaHijos.map(h => [String(h.key), String(h.label || '').trim()]));
+        const nombresSel = hijosSel.map(k => mapLabel.get(String(k)) || '').filter(Boolean);
+        const parts = [...nombresSel];
+        if (obs) parts.push(`Obs. ${obs}`);
+        notaFinal = parts.join(' / ');
+      }
+
+      // Enviar directamente al backend (igual que seleccionarProducto)
+      const precio = p.precio_unidad;
+      const body = { producto_id: p.id, cantidad: Number(cantidad), unidad: 'UND', precio: Number(precio), nota: notaFinal || '' };
+      const resp = await fetch(`/api/mesas/pedidos/${pedidoActual.id}/items`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const data = await resp.json();
+      if (!resp.ok) return Swal.fire({ icon: 'error', title: data.error || 'Error al agregar' });
+
+      await cargarPedido(pedidoActual.id);
+
+      // Actualizar selección local para reflejar en la grilla
+      const prev = catalogoSeleccion.get(p.id) || 0;
+      catalogoSeleccion.set(p.id, prev + cantidad);
+      actualizarCardQty(p.id);
+      actualizarBottomBar();
+    });
+  }
+
+  // Actualiza badge de cantidad en la tarjeta de un producto sin re-renderizar todo
+  function actualizarCardQty(productoId) {
+    const card = document.querySelector(`.prod-card[data-prod-id="${productoId}"]`);
+    if (!card) return;
+    const qty = catalogoSeleccion.get(productoId) || 0;
+    const badge = card.querySelector('.prod-qty-badge');
+    if (badge) badge.textContent = qty;
+    if (qty > 0) {
+      card.classList.add('selected');
+    } else {
+      card.classList.remove('selected');
+    }
+  }
+
+  // Barra inferior: X productos · Total S/ XX.XX
+  function actualizarBottomBar() {
+    const bar = document.getElementById('catalogoBottomBar');
+    const countEl = document.getElementById('catalogoBottomCount');
+    const totalEl = document.getElementById('catalogoBottomTotal');
+    const itemsBadge = document.getElementById('pedidoItemsBadge');
+
+    let totalCant = 0;
+    let totalPrecio = 0;
+    catalogoSeleccion.forEach((qty, prodId) => {
+      if (qty <= 0) return;
+      totalCant += qty;
+      const prod = catalogoProductos.find(p => p.id === prodId);
+      if (prod) totalPrecio += Number(prod.precio_unidad || 0) * qty;
+    });
+
+    if (totalCant > 0) {
+      if (bar) bar.classList.add('visible');
+      if (countEl) countEl.textContent = totalCant;
+      if (totalEl) totalEl.textContent = `S/ ${totalPrecio.toFixed(2)}`;
+    } else {
+      if (bar) bar.classList.remove('visible');
+    }
+
+    // Badge en tab "Pedido"
+    const pedidoCount = items.length;
+    if (itemsBadge) {
+      if (pedidoCount > 0) {
+        itemsBadge.textContent = pedidoCount;
+        itemsBadge.style.display = 'inline-block';
+      } else {
+        itemsBadge.style.display = 'none';
+      }
+    }
+  }
+
+  // Switch entre tabs
+  document.querySelectorAll('.canvas-tab-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const tab = this.getAttribute('data-tab');
+      document.querySelectorAll('.canvas-tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.canvas-panel').forEach(p => p.classList.remove('active'));
+      this.classList.add('active');
+      const panel = document.getElementById(tab === 'agregar' ? 'panelAgregar' : 'panelPedido');
+      if (panel) panel.classList.add('active');
+    });
   });
+
+  // Botón "Continuar con la orden" → cambiar a tab pedido
+  document.getElementById('btnContinuarOrden')?.addEventListener('click', function() {
+    const tabBtn = document.querySelector('.canvas-tab-btn[data-tab="pedido"]');
+    if (tabBtn) tabBtn.click();
+  });
+
+  // Category pill "Todos"
+  document.querySelector('.cat-pill[data-cat="todos"]')?.addEventListener('click', function() {
+    catalogoFiltroCategoria = 'todos';
+    document.querySelectorAll('#categoriasWrap .cat-pill').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+    renderCatalogoGrid();
+  });
+
+  // Search input
+  let searchTimeout;
+  document.getElementById('catalogoSearch')?.addEventListener('input', function() {
+    clearTimeout(searchTimeout);
+    const val = this.value;
+    searchTimeout = setTimeout(() => {
+      catalogoFiltroTexto = val;
+      renderCatalogoGrid();
+    }, 200);
+  });
+
+  // Keep legacy selector working (used by seleccionarProducto for direct adds from search)
+  // The old #buscarProductoMesa no longer exists in HTML, but we keep the variable
+  // initialized to avoid JS errors from any residual references.
+  let to; // legacy timeout var (kept for compatibility)
 
   // Selección rápida: UND por defecto + nota para cocina (oculta offcanvas durante todo el flujo)
   async function seleccionarProducto(p){
@@ -534,8 +895,6 @@ $(function() {
       const data = await resp.json();
       if(!resp.ok) return Swal.fire({icon:'error', title: data.error||'Error al agregar'});
       await cargarPedido(pedidoActual.id);
-      // limpiar y enfocar el buscador para el siguiente producto
-      $('#buscarProductoMesa').val('').focus();
     });
   }
 

@@ -48,6 +48,32 @@ router.get('/buscar', async (req, res) => {
     }
 });
 
+// GET /productos/carta - Retorna TODOS los productos agrupados por categoria
+// Usado por el catálogo visual de mesas (views/mesas.ejs + public/js/mesas.js)
+// Relacionado con: public/js/mesas.js (función cargarCarta)
+router.get('/carta', async (req, res) => {
+    try {
+        const [productos] = await db.query(`
+            SELECT id, codigo, nombre, precio_unidad, precio_kg, precio_libra,
+                   COALESCE(categoria, 'Sin categoría') AS categoria,
+                   imagen
+            FROM productos
+            ORDER BY categoria ASC, nombre ASC
+        `);
+        // Agrupar por categoría
+        const grupos = {};
+        for (const p of (productos || [])) {
+            const cat = String(p.categoria || 'Sin categoría').trim();
+            if (!grupos[cat]) grupos[cat] = [];
+            grupos[cat].push(p);
+        }
+        res.json({ productos: productos || [], grupos });
+    } catch (error) {
+        console.error('Error al obtener carta:', error);
+        res.status(500).json({ error: 'Error al obtener carta de productos' });
+    }
+});
+
 // ============================
 // Productos Hijos (Padre -> Hijos)
 // Ejemplo: "CORRIENTE - Goulash de cerdo / Crema / Obs. Poco arroz"
