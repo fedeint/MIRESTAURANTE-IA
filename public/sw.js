@@ -1,58 +1,73 @@
 const CACHE_NAME = 'dignita-v1';
 const STATIC_ASSETS = [
-  '/',
-  '/css/theme.css',
   '/vendor/bootstrap/css/bootstrap.min.css',
   '/vendor/bootstrap/js/bootstrap.bundle.min.js',
-  '/vendor/bootstrap-icons/bootstrap-icons.css',
   '/vendor/jquery/jquery.min.js',
   '/vendor/sweetalert2/sweetalert2.all.min.js',
-  '/manifest.json'
+  '/vendor/bootstrap-icons/bootstrap-icons.css',
+  '/css/theme.css',
+  '/js/offline-ui.js',
 ];
 
-// Install: cache static assets
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_ASSETS))
+    caches.open(CACHE_NAME)
+      .then(cache => cache.addAll(STATIC_ASSETS))
+      .then(() => self.skipWaiting())
   );
-  self.skipWaiting();
 });
 
-// Activate: clean old caches
 self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys =>
       Promise.all(keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k)))
-    )
+    ).then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
-// Fetch: network first, fallback to cache
 self.addEventListener('fetch', event => {
-  // Skip non-GET and API requests
-  if (event.request.method !== 'GET') return;
-  if (event.request.url.includes('/api/')) return;
+  const url = new URL(event.request.url);
 
-  event.respondWith(
-    fetch(event.request)
-      .then(response => {
-        // Cache successful responses
-        if (response.ok) {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
-        }
-        return response;
-      })
-      .catch(() => {
-        // Offline: serve from cache
-        return caches.match(event.request).then(cached => {
-          return cached || new Response('<h1>Sin conexion</h1><p>Reconecta a internet para continuar.</p>', {
-            headers: { 'Content-Type': 'text/html' }
-          });
+  // Skip non-GET requests
+  if (event.request.method !== 'GET') return;
+
+  // Vendor/static assets: Cache First
+  if (url.pathname.startsWith('/vendor/') || url.pathname.startsWith('/static/') ||
+      url.pathname.startsWith('/css/') || url.pathname.match(/\.(js|css|woff2?|png|jpg|svg|ico)$/)) {
+    event.respondWith(
+      caches.match(event.request).then(cached => {
+        return cached || fetch(event.request).then(response => {
+          if (response.ok) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+          }
+          return response;
         });
       })
-  );
+    );
+    return;
+  }
+
+  // HTML pages and API: Network First with cache fallback
+  if (event.request.headers.get('accept')?.includes('text/html') ||
+      url.pathname.startsWith('/api/')) {
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
+          if (response.ok && event.request.headers.get('accept')?.includes('text/html')) {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+          }
+          return response;
+        })
+        .catch(() => {
+          return caches.match(event.request).then(cached => {
+            return cached || caches.match('/offline');
+          });
+        })
+    );
+    return;
+  }
 });
 
 // Sync: queue offline transactions

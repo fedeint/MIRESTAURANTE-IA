@@ -80,6 +80,14 @@ app.use((req, res, next) => {
     next();
 });
 
+// Service Worker must not be cached by browsers/CDN
+// Must be declared BEFORE the generic static middleware so the headers take effect first
+app.get('/sw.js', (req, res, next) => {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Service-Worker-Allowed', '/');
+    next();
+});
+
 // Configuración de archivos estáticos con cache headers
 // Public assets: 7-day cache (CSS/JS/images - cambiar nombre de archivo para invalidar)
 const staticOptions = { maxAge: '7d', etag: true, lastModified: true };
