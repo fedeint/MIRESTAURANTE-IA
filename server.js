@@ -38,6 +38,9 @@ app.set('views', path.join(__dirname, 'views'));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
+// Trust proxy (Vercel runs behind a reverse proxy)
+app.set('trust proxy', 1);
+
 // Sesiones persistidas en PostgreSQL (necesario para serverless/Vercel)
 const pgSession = require('connect-pg-simple')(session);
 const { Pool: PgPool } = require('pg');
