@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestion de Tenants - dignita.tech</title>
+  <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+  <link rel="stylesheet" href="/css/theme.css">
+  <style>
+    body { background: #0f172a; }
+    .dg-main { background: #0f172a; }
+    .sa-card { background: #1e2235; border: 1px solid rgba(255,255,255,0.07); border-radius: 16px; color: #e2e8f0; }
+    .sa-section-title { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: #64748b; }
+    .sa-table th { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #64748b; border-bottom: 1px solid rgba(255,255,255,0.06); padding: 10px 12px; }
+    .sa-table td { font-size: 0.83rem; color: #cbd5e1; padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: middle; }
+    .sa-table tr:hover td { background: rgba(255,255,255,0.03); }
+    .sa-badge-activo { background: rgba(34,197,94,0.15); color: #22c55e; border-radius: 20px; padding: 3px 12px; font-size: 0.72rem; font-weight: 700; }
+    .sa-badge-inactivo { background: rgba(239,68,68,0.15); color: #ef4444; border-radius: 20px; padding: 3px 12px; font-size: 0.72rem; font-weight: 700; }
+    .sa-badge-plan { background: rgba(249,115,22,0.12); color: #f97316; border-radius: 20px; padding: 3px 10px; font-size: 0.72rem; font-weight: 700; }
+    .sa-badge-plan.plan-enterprise { background: rgba(167,139,250,0.12); color: #a78bfa; }
+    .sa-badge-plan.plan-free { background: rgba(100,116,139,0.12); color: #94a3b8; }
+    .form-control, .form-select { background: #0f172a; border: 1px solid rgba(255,255,255,0.1); color: #e2e8f0; border-radius: 8px; }
+    .form-control:focus, .form-select:focus { background: #0f172a; color: #e2e8f0; border-color: #f97316; box-shadow: 0 0 0 3px rgba(249,115,22,0.15); }
+    .form-label { font-size: 0.78rem; font-weight: 600; color: #94a3b8; }
+    .modal-content { background: #1e2235; border: 1px solid rgba(255,255,255,0.08); color: #e2e8f0; }
+    .modal-header { border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .modal-footer { border-top: 1px solid rgba(255,255,255,0.06); }
+    .btn-close { filter: invert(1) brightness(0.6); }
+    .module-toggle { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: rgba(255,255,255,0.03); border-radius: 8px; margin-bottom: 6px; }
+    .module-toggle label { font-size: 0.82rem; color: #94a3b8; cursor: pointer; margin: 0; }
+    .form-check-input:checked { background-color: #f97316; border-color: #f97316; }
+    .search-box { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 8px 14px; color: #e2e8f0; font-size: 0.85rem; }
+    .search-box:focus { outline: none; border-color: #f97316; }
+    .search-box::placeholder { color: #64748b; }
+    .action-btn { width: 30px; height: 30px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.8rem; cursor: pointer; border: none; }
+    .action-btn-edit { background: rgba(99,102,241,0.12); color: #818cf8; }
+    .action-btn-module { background: rgba(249,115,22,0.12); color: #f97316; }
+    .action-btn-toggle { background: rgba(239,68,68,0.12); color: #ef4444; }
+    .action-btn-toggle.is-active { background: rgba(34,197,94,0.12); color: #22c55e; }
+  </style>
+</head>
+<body>
+  <%- include('../partials/sidebar') %>
+  <div class="dg-main">
+    <main class="flex-grow-1">
+      <div class="container-fluid" style="max-width:1300px;padding:1.5rem 1.5rem 3rem;">
+
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <div class="sa-section-title mb-1">SUPERADMIN</div>
+            <h3 class="fw-bold mb-0" style="color:#fff;font-family:'DM Sans',sans-serif;">
+              <i class="bi bi-building me-2" style="color:#f97316;"></i>Gestion de Tenants
+            </h3>
+          </div>
+          <div class="d-flex gap-2">
+            <a href="/superadmin" class="btn btn-sm" style="background:rgba(255,255,255,0.05);color:#94a3b8;border:1px solid rgba(255,255,255,0.08);border-radius:10px;">
+              <i class="bi bi-arrow-left me-1"></i>Dashboard
+            </a>
+            <button class="btn btn-sm" onclick="openCreateModal()" style="background:#f97316;color:#fff;border-radius:10px;font-weight:600;">
+              <i class="bi bi-plus-lg me-1"></i>Nuevo Tenant
+            </button>
+          </div>
+        </div>
+
+        <!-- Stats row -->
+        <div class="row g-3 mb-4">
+          <div class="col-6 col-md-3">
+            <div class="sa-card p-3 text-center">
+              <div style="font-size:1.8rem;font-weight:800;color:#fff;"><%= tenants.length %></div>
+              <div style="font-size:0.72rem;color:#64748b;font-weight:600;text-transform:uppercase;">Total</div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="sa-card p-3 text-center">
+              <div style="font-size:1.8rem;font-weight:800;color:#22c55e;"><%= tenants.filter(t=>t.activo).length %></div>
+              <div style="font-size:0.72rem;color:#64748b;font-weight:600;text-transform:uppercase;">Activos</div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="sa-card p-3 text-center">
+              <div style="font-size:1.8rem;font-weight:800;color:#f97316;"><%= tenants.filter(t=>t.plan==='pro').length %></div>
+              <div style="font-size:0.72rem;color:#64748b;font-weight:600;text-transform:uppercase;">Plan Pro</div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="sa-card p-3 text-center">
+              <div style="font-size:1.8rem;font-weight:800;color:#a78bfa;"><%= tenants.filter(t=>t.plan==='enterprise').length %></div>
+              <div style="font-size:0.72rem;color:#64748b;font-weight:600;text-transform:uppercase;">Enterprise</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Search + Table -->
+        <div class="sa-card p-0">
+          <div class="p-3 d-flex justify-content-between align-items-center" style="border-bottom:1px solid rgba(255,255,255,0.06);">
+            <div class="sa-section-title mb-0">Todos los Tenants</div>
+            <input type="text" class="search-box" id="searchInput" placeholder="Buscar por nombre o subdominio..." style="width:280px;" oninput="filterTable(this.value)">
+          </div>
+          <div class="table-responsive">
+            <table class="sa-table w-100" id="tenantsTable">
+              <thead>
+                <tr>
+                  <th>Restaurante</th>
+                  <th>Plan</th>
+                  <th>Estado</th>
+                  <th>Usuarios</th>
+                  <th>MRR</th>
+                  <th>Modulos</th>
+                  <th>Creado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="tenantsBody">
+                <% if (!tenants || tenants.length === 0) { %>
+                  <tr><td colspan="8" class="text-center" style="color:#64748b;padding:3rem;">Sin tenants. Crea el primero.</td></tr>
+                <% } else { %>
+                  <% tenants.forEach(function(t) {
+                    let modulos = {};
+                    try { modulos = typeof t.modulos_habilitados === 'string' ? JSON.parse(t.modulos_habilitados) : (t.modulos_habilitados || {}); } catch(e) {}
+                    const modulosActivos = Object.values(modulos).filter(Boolean).length;
+                    const modulosTotal = Object.keys(modulos).length || 10;
+                  %>
+                    <tr data-name="<%= (t.nombre||'').toLowerCase() %>" data-sub="<%= (t.subdominio||'').toLowerCase() %>">
+                      <td>
+                        <div style="font-weight:600;color:#e2e8f0;"><%= t.nombre %></div>
+                        <div style="font-size:0.7rem;color:#64748b;"><%= t.subdominio %>.dignita.tech</div>
+                        <% if (t.email_admin) { %><div style="font-size:0.7rem;color:#475569;"><%= t.email_admin %></div><% } %>
+                      </td>
+                      <td>
+                        <span class="sa-badge-plan plan-<%= t.plan %>"><%= (t.plan||'free').toUpperCase() %></span>
+                        <% if (t.suscripcion_estado === 'prueba') { %>
+                          <span style="font-size:0.7rem;color:#fbbf24;display:block;margin-top:2px;">Prueba</span>
+                        <% } %>
+                      </td>
+                      <td>
+                        <% if (t.activo) { %>
+                          <span class="sa-badge-activo">Activo</span>
+                        <% } else { %>
+                          <span class="sa-badge-inactivo">Inactivo</span>
+                        <% } %>
+                      </td>
+                      <td style="text-align:center;"><%= t.usuarios_count || 0 %></td>
+                      <td>
+                        <% if (Number(t.precio_mensual) > 0) { %>
+                          <span style="color:#22c55e;font-weight:600;">S/ <%= Number(t.precio_mensual).toFixed(2) %></span>
+                        <% } else { %>
+                          <span style="color:#64748b;">-</span>
+                        <% } %>
+                      </td>
+                      <td>
+                        <span style="font-size:0.75rem;color:#94a3b8;"><%= modulosActivos %>/<%= modulosTotal %></span>
+                      </td>
+                      <td style="color:#64748b;font-size:0.75rem;">
+                        <%= t.created_at ? new Date(t.created_at).toLocaleDateString('es-PE') : '-' %>
+                      </td>
+                      <td>
+                        <div class="d-flex gap-1">
+                          <button class="action-btn action-btn-edit" onclick="openEditModal(<%= JSON.stringify(t).replace(/"/g,'&quot;') %>)" title="Editar">
+                            <i class="bi bi-pencil"></i>
+                          </button>
+                          <button class="action-btn action-btn-module" onclick="openModulesModal(<%= t.id %>, '<%= t.nombre %>', <%= JSON.stringify(modulos).replace(/"/g,'&quot;') %>)" title="Modulos">
+                            <i class="bi bi-grid"></i>
+                          </button>
+                          <button class="action-btn action-btn-toggle <%= t.activo ? 'is-active' : '' %>" onclick="toggleTenant(<%= t.id %>, this)" title="<%= t.activo ? 'Desactivar' : 'Activar' %>">
+                            <i class="bi bi-<%= t.activo ? 'pause-circle' : 'play-circle' %>"></i>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  <% }); %>
+                <% } %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal: Create Tenant -->
+  <div class="modal fade" id="createModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold"><i class="bi bi-building-add me-2" style="color:#f97316;"></i>Nuevo Tenant</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Nombre del Restaurante *</label>
+              <input type="text" class="form-control" id="c_nombre" placeholder="El Marinerito Picante">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Subdominio *</label>
+              <div class="input-group">
+                <input type="text" class="form-control" id="c_subdominio" placeholder="elmarineritopicante">
+                <span class="input-group-text" style="background:#0f172a;color:#64748b;border-color:rgba(255,255,255,0.1);">.dignita.tech</span>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Email Admin *</label>
+              <input type="email" class="form-control" id="c_email" placeholder="admin@restaurante.com">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Plan</label>
+              <select class="form-select" id="c_plan">
+                <option value="free">Free</option>
+                <option value="pro" selected>Pro</option>
+                <option value="enterprise">Enterprise</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label">Precio Mensual (S/)</label>
+              <input type="number" class="form-control" id="c_precio" placeholder="199.00" min="0" step="0.01">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Telefono</label>
+              <input type="text" class="form-control" id="c_telefono" placeholder="+51 999 000 000">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">RUC</label>
+              <input type="text" class="form-control" id="c_ruc" placeholder="20xxxxxxxxx">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-sm" style="background:rgba(255,255,255,0.05);color:#94a3b8;border-radius:8px;" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-sm" onclick="createTenant()" style="background:#f97316;color:#fff;border-radius:8px;font-weight:600;">
+            <i class="bi bi-check-lg me-1"></i>Crear Tenant
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Edit Tenant -->
+  <div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold"><i class="bi bi-pencil-square me-2" style="color:#818cf8;"></i>Editar Tenant</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="e_id">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Nombre del Restaurante</label>
+              <input type="text" class="form-control" id="e_nombre">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Email Admin</label>
+              <input type="email" class="form-control" id="e_email">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Plan</label>
+              <select class="form-select" id="e_plan">
+                <option value="free">Free</option>
+                <option value="pro">Pro</option>
+                <option value="enterprise">Enterprise</option>
+              </select>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Precio Mensual (S/)</label>
+              <input type="number" class="form-control" id="e_precio" min="0" step="0.01">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">Telefono</label>
+              <input type="text" class="form-control" id="e_telefono">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">RUC</label>
+              <input type="text" class="form-control" id="e_ruc">
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-sm" style="background:rgba(255,255,255,0.05);color:#94a3b8;border-radius:8px;" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-sm" onclick="saveTenant()" style="background:#818cf8;color:#fff;border-radius:8px;font-weight:600;">
+            <i class="bi bi-check-lg me-1"></i>Guardar Cambios
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Modules -->
+  <div class="modal fade" id="modulesModal" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold"><i class="bi bi-grid me-2" style="color:#f97316;"></i>Modulos: <span id="moduleTenantName"></span></h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body" id="modulesBody">
+          <!-- Populated by JS -->
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-sm" style="background:rgba(255,255,255,0.05);color:#94a3b8;border-radius:8px;" data-bs-dismiss="modal">Cancelar</button>
+          <button type="button" class="btn btn-sm" onclick="saveModules()" style="background:#f97316;color:#fff;border-radius:8px;font-weight:600;">
+            <i class="bi bi-check-lg me-1"></i>Guardar Modulos
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script>
+    const moduleLabels = {
+      mesas: { label: 'Mesas y Pedidos', icon: 'bi-grid-3x3-gap-fill' },
+      cocina: { label: 'Pantalla de Cocina', icon: 'bi-fire' },
+      almacen: { label: 'Almacen / Inventario', icon: 'bi-box-seam' },
+      sunat: { label: 'SUNAT / Facturacion electronica', icon: 'bi-building' },
+      delivery: { label: 'Delivery y Para llevar', icon: 'bi-bicycle' },
+      reservas: { label: 'Reservas', icon: 'bi-calendar-check' },
+      facturacion: { label: 'Facturacion rapida', icon: 'bi-receipt-cutoff' },
+      caja: { label: 'Caja y Turnos', icon: 'bi-wallet2' },
+      reportes: { label: 'Reportes y Analitica', icon: 'bi-bar-chart-line-fill' },
+      chat_ia: { label: 'Asistente IA (DalIA)', icon: 'bi-stars' },
+    };
+
+    let currentModuleTenantId = null;
+
+    function openCreateModal() {
+      document.getElementById('c_nombre').value = '';
+      document.getElementById('c_subdominio').value = '';
+      document.getElementById('c_email').value = '';
+      document.getElementById('c_plan').value = 'pro';
+      document.getElementById('c_precio').value = '';
+      document.getElementById('c_telefono').value = '';
+      document.getElementById('c_ruc').value = '';
+      new bootstrap.Modal(document.getElementById('createModal')).show();
+    }
+
+    function openEditModal(t) {
+      document.getElementById('e_id').value = t.id;
+      document.getElementById('e_nombre').value = t.nombre || '';
+      document.getElementById('e_email').value = t.email_admin || '';
+      document.getElementById('e_plan').value = t.plan || 'free';
+      document.getElementById('e_precio').value = t.precio_mensual || '';
+      document.getElementById('e_telefono').value = t.telefono || '';
+      document.getElementById('e_ruc').value = t.ruc || '';
+      new bootstrap.Modal(document.getElementById('editModal')).show();
+    }
+
+    function openModulesModal(tenantId, tenantName, modulos) {
+      currentModuleTenantId = tenantId;
+      document.getElementById('moduleTenantName').textContent = tenantName;
+      const body = document.getElementById('modulesBody');
+      body.innerHTML = '';
+      Object.entries(moduleLabels).forEach(([key, info]) => {
+        const checked = modulos[key] === true || modulos[key] === 'true';
+        body.innerHTML += `
+          <div class="module-toggle">
+            <label for="mod_${key}" class="d-flex align-items-center gap-2">
+              <i class="bi ${info.icon}" style="color:#f97316;width:18px;text-align:center;"></i>
+              ${info.label}
+            </label>
+            <div class="form-check form-switch mb-0">
+              <input class="form-check-input" type="checkbox" id="mod_${key}" data-key="${key}" ${checked ? 'checked' : ''} style="width:36px;height:20px;">
+            </div>
+          </div>`;
+      });
+      new bootstrap.Modal(document.getElementById('modulesModal')).show();
+    }
+
+    async function createTenant() {
+      const data = {
+        nombre: document.getElementById('c_nombre').value.trim(),
+        subdominio: document.getElementById('c_subdominio').value.trim(),
+        email_admin: document.getElementById('c_email').value.trim(),
+        plan: document.getElementById('c_plan').value,
+        precio_mensual: document.getElementById('c_precio').value,
+        telefono: document.getElementById('c_telefono').value.trim(),
+        ruc: document.getElementById('c_ruc').value.trim(),
+      };
+      if (!data.nombre || !data.subdominio || !data.email_admin) {
+        return alert('Nombre, subdominio y email son requeridos');
+      }
+      try {
+        const res = await fetch('/api/superadmin/tenants', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+        const json = await res.json();
+        if (!res.ok) return alert('Error: ' + (json.error || 'desconocido'));
+        location.reload();
+      } catch (e) { alert('Error de red: ' + e.message); }
+    }
+
+    async function saveTenant() {
+      const id = document.getElementById('e_id').value;
+      const data = {
+        nombre: document.getElementById('e_nombre').value.trim(),
+        email_admin: document.getElementById('e_email').value.trim(),
+        plan: document.getElementById('e_plan').value,
+        precio_mensual: document.getElementById('e_precio').value,
+        telefono: document.getElementById('e_telefono').value.trim(),
+        ruc: document.getElementById('e_ruc').value.trim(),
+      };
+      try {
+        const res = await fetch('/api/superadmin/tenants/' + id, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+        const json = await res.json();
+        if (!res.ok) return alert('Error: ' + (json.error || 'desconocido'));
+        location.reload();
+      } catch (e) { alert('Error de red: ' + e.message); }
+    }
+
+    async function toggleTenant(id, btn) {
+      const isActive = btn.classList.contains('is-active');
+      const conf = confirm(isActive ? 'Desactivar este tenant? Los usuarios no podran acceder.' : 'Activar este tenant?');
+      if (!conf) return;
+      try {
+        const res = await fetch('/api/superadmin/tenants/' + id + '/toggle', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+        const json = await res.json();
+        if (!res.ok) return alert('Error: ' + (json.error || 'desconocido'));
+        location.reload();
+      } catch (e) { alert('Error de red: ' + e.message); }
+    }
+
+    async function saveModules() {
+      const checks = document.querySelectorAll('#modulesBody [data-key]');
+      const modulos = {};
+      checks.forEach(c => { modulos[c.dataset.key] = c.checked; });
+      try {
+        const res = await fetch('/api/superadmin/tenants/' + currentModuleTenantId + '/modules', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ modulos })
+        });
+        const json = await res.json();
+        if (!res.ok) return alert('Error: ' + (json.error || 'desconocido'));
+        location.reload();
+      } catch (e) { alert('Error de red: ' + e.message); }
+    }
+
+    function filterTable(q) {
+      const rows = document.querySelectorAll('#tenantsBody tr[data-name]');
+      const term = q.toLowerCase();
+      rows.forEach(function(row) {
+        const name = row.getAttribute('data-name') || '';
+        const sub = row.getAttribute('data-sub') || '';
+        row.style.display = (name.includes(term) || sub.includes(term)) ? '' : 'none';
+      });
+    }
+
+    // Auto-fill subdominio from nombre
+    document.getElementById('c_nombre').addEventListener('input', function() {
+      const sub = document.getElementById('c_subdominio');
+      if (!sub.dataset.manual) {
+        sub.value = this.value.toLowerCase().replace(/[^a-z0-9]/g, '');
+      }
+    });
+    document.getElementById('c_subdominio').addEventListener('input', function() {
+      this.dataset.manual = '1';
+      this.value = this.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
+    });
+  </script>
+</body>
+</html>

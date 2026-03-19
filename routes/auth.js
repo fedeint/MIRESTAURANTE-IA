@@ -66,6 +66,7 @@ function clearAttempts(usuario, ip) { delete loginAttempts[attemptKey(usuario, i
 
 function defaultRedirectForRole(rol) {
   const r = String(rol || '').toLowerCase();
+  if (r === 'superadmin') return '/superadmin';
   if (r === 'cocinero') return '/cocina';
   if (r === 'mesero') return '/mesas';
   if (r === 'cajero') return '/';

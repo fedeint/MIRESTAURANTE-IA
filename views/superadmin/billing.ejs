@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Billing & Contabilidad - dignita.tech</title>
+  <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+  <link rel="stylesheet" href="/css/theme.css">
+  <style>
+    body { background: #0f172a; }
+    .dg-main { background: #0f172a; }
+    .sa-card { background: #1e2235; border: 1px solid rgba(255,255,255,0.07); border-radius: 16px; color: #e2e8f0; }
+    .sa-section-title { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: #64748b; }
+    .sa-kpi-value { font-size: 2rem; font-weight: 800; color: #fff; line-height: 1; }
+    .sa-kpi-label { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: #64748b; margin-top: 4px; }
+    .sa-kpi-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; }
+    .sa-table th { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #64748b; border-bottom: 1px solid rgba(255,255,255,0.06); padding: 10px 14px; }
+    .sa-table td { font-size: 0.83rem; color: #cbd5e1; padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: middle; }
+    .sa-table tr:last-child td { border-bottom: none; }
+    .sa-table tr:hover td { background: rgba(255,255,255,0.03); }
+    .sa-badge-activa { background: rgba(34,197,94,0.15); color: #22c55e; border-radius: 20px; padding: 2px 10px; font-size: 0.7rem; font-weight: 700; }
+    .sa-badge-prueba { background: rgba(251,191,36,0.15); color: #fbbf24; border-radius: 20px; padding: 2px 10px; font-size: 0.7rem; font-weight: 700; }
+    .sa-badge-vencida { background: rgba(239,68,68,0.15); color: #ef4444; border-radius: 20px; padding: 2px 10px; font-size: 0.7rem; font-weight: 700; }
+    .sa-badge-plan-pro { background: rgba(249,115,22,0.12); color: #f97316; border-radius: 20px; padding: 2px 10px; font-size: 0.7rem; font-weight: 700; }
+    .sa-badge-plan-enterprise { background: rgba(167,139,250,0.12); color: #a78bfa; border-radius: 20px; padding: 2px 10px; font-size: 0.7rem; font-weight: 700; }
+    .sa-badge-plan-free { background: rgba(100,116,139,0.12); color: #94a3b8; border-radius: 20px; padding: 2px 10px; font-size: 0.7rem; font-weight: 700; }
+    .pl-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 0.85rem; }
+    .pl-row:last-child { border-bottom: none; }
+    .pl-total-row { display: flex; justify-content: space-between; padding: 14px 0 0; font-size: 1rem; font-weight: 700; border-top: 1px solid rgba(255,255,255,0.1); margin-top: 8px; }
+    .gasto-fijo { color: #ef4444; }
+    .gasto-variable { color: #f59e0b; }
+    .ingreso-pos { color: #22c55e; }
+    .ingreso-neg { color: #ef4444; }
+  </style>
+</head>
+<body>
+  <%- include('../partials/sidebar') %>
+  <div class="dg-main">
+    <main class="flex-grow-1">
+      <div class="container-fluid" style="max-width:1200px;padding:1.5rem 1.5rem 3rem;">
+
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <div class="sa-section-title mb-1">SUPERADMIN</div>
+            <h3 class="fw-bold mb-0" style="color:#fff;font-family:'DM Sans',sans-serif;">
+              <i class="bi bi-cash-stack me-2" style="color:#f97316;"></i>Billing & Contabilidad
+            </h3>
+          </div>
+          <div class="d-flex gap-2">
+            <a href="/superadmin" class="btn btn-sm" style="background:rgba(255,255,255,0.05);color:#94a3b8;border:1px solid rgba(255,255,255,0.08);border-radius:10px;">
+              <i class="bi bi-arrow-left me-1"></i>Dashboard
+            </a>
+            <a href="/superadmin/tenants" class="btn btn-sm" style="background:rgba(255,255,255,0.05);color:#94a3b8;border:1px solid rgba(255,255,255,0.08);border-radius:10px;">
+              <i class="bi bi-building me-1"></i>Tenants
+            </a>
+          </div>
+        </div>
+
+        <!-- KPIs -->
+        <div class="row g-3 mb-4">
+          <div class="col-6 col-lg-3">
+            <div class="sa-card p-4">
+              <div class="d-flex justify-content-between align-items-start">
+                <div>
+                  <div class="sa-kpi-value">S/ <%= Number(mrr).toLocaleString('es-PE', {minimumFractionDigits:2,maximumFractionDigits:2}) %></div>
+                  <div class="sa-kpi-label">MRR (Activo)</div>
+                </div>
+                <div class="sa-kpi-icon" style="background:rgba(34,197,94,0.1);color:#22c55e;">
+                  <i class="bi bi-graph-up-arrow"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-6 col-lg-3">
+            <div class="sa-card p-4">
+              <div class="d-flex justify-content-between align-items-start">
+                <div>
+                  <div class="sa-kpi-value">$ <%= totalGastoUSD.toFixed(0) %></div>
+                  <div class="sa-kpi-label">Gasto Mensual (USD)</div>
+                </div>
+                <div class="sa-kpi-icon" style="background:rgba(239,68,68,0.1);color:#ef4444;">
+                  <i class="bi bi-arrow-down-circle"></i>
+                </div>
+              </div>
+              <div class="mt-2" style="font-size:0.72rem;color:#64748b;">~ S/ <%= (totalGastoUSD * 3.8).toFixed(0) %></div>
+            </div>
+          </div>
+          <div class="col-6 col-lg-3">
+            <div class="sa-card p-4">
+              <div class="d-flex justify-content-between align-items-start">
+                <div>
+                  <div class="sa-kpi-value <%= ebitda >= 0 ? 'ingreso-pos' : 'ingreso-neg' %>">S/ <%= Number(ebitda).toLocaleString('es-PE', {minimumFractionDigits:0,maximumFractionDigits:0}) %></div>
+                  <div class="sa-kpi-label">EBITDA Mensual</div>
+                </div>
+                <div class="sa-kpi-icon" style="background:rgba(99,102,241,0.1);color:#818cf8;">
+                  <i class="bi bi-bar-chart-fill"></i>
+                </div>
+              </div>
+              <div class="mt-2" style="font-size:0.72rem;color:#64748b;">Ingresos - Gastos operativos</div>
+            </div>
+          </div>
+          <div class="col-6 col-lg-3">
+            <div class="sa-card p-4">
+              <div class="d-flex justify-content-between align-items-start">
+                <div>
+                  <div class="sa-kpi-value"><%= Number(totales.subs_activas) %></div>
+                  <div class="sa-kpi-label">Suscripciones Activas</div>
+                </div>
+                <div class="sa-kpi-icon" style="background:rgba(249,115,22,0.1);color:#f97316;">
+                  <i class="bi bi-check-circle-fill"></i>
+                </div>
+              </div>
+              <div class="mt-2" style="font-size:0.72rem;color:#64748b;"><%= Number(totales.subs_prueba) %> en prueba &middot; <%= Number(totales.subs_vencidas) %> vencidas</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row g-3">
+
+          <!-- P&L Simple -->
+          <div class="col-lg-5">
+            <div class="sa-card p-4">
+              <div class="sa-section-title mb-3">Estado de Resultados (Mensual)</div>
+
+              <!-- Ingresos -->
+              <div style="font-size:0.78rem;font-weight:700;color:#22c55e;margin-bottom:8px;">INGRESOS</div>
+              <div class="pl-row">
+                <span style="color:#94a3b8;">MRR suscripciones activas</span>
+                <span class="ingreso-pos fw-600">+ S/ <%= Number(mrr).toLocaleString('es-PE', {minimumFractionDigits:2}) %></span>
+              </div>
+              <% if (Number(totales.mrr_prueba) > 0) { %>
+              <div class="pl-row">
+                <span style="color:#94a3b8;">Planes en prueba (pendiente)</span>
+                <span style="color:#fbbf24;">S/ <%= Number(totales.mrr_prueba).toLocaleString('es-PE', {minimumFractionDigits:2}) %></span>
+              </div>
+              <% } %>
+
+              <!-- Gastos -->
+              <div style="font-size:0.78rem;font-weight:700;color:#ef4444;margin-top:20px;margin-bottom:8px;">GASTOS OPERATIVOS</div>
+              <% gastosSaas.forEach(function(g) { %>
+                <div class="pl-row">
+                  <span style="color:#94a3b8;"><%= g.concepto %></span>
+                  <span class="<%= g.tipo === 'fijo' ? 'gasto-fijo' : 'gasto-variable' %>">- $ <%= g.monto.toFixed(2) %> USD</span>
+                </div>
+              <% }); %>
+
+              <!-- Totales -->
+              <div class="pl-total-row">
+                <span style="color:#fff;">EBITDA Estimado</span>
+                <span style="color:<%= ebitda >= 0 ? '#22c55e' : '#ef4444' %>;">S/ <%= Number(ebitda).toLocaleString('es-PE', {minimumFractionDigits:2}) %></span>
+              </div>
+              <div style="font-size:0.68rem;color:#475569;margin-top:8px;">* Gastos en USD convertidos a PEN al tipo de cambio referencial S/3.80</div>
+            </div>
+          </div>
+
+          <!-- Ingresos por Tenant -->
+          <div class="col-lg-7">
+            <div class="sa-card p-0">
+              <div class="p-4 pb-0">
+                <div class="sa-section-title mb-1">Ingresos por Tenant</div>
+              </div>
+              <div class="table-responsive">
+                <table class="sa-table w-100">
+                  <thead>
+                    <tr>
+                      <th>Restaurante</th>
+                      <th>Plan</th>
+                      <th>Estado Sub.</th>
+                      <th>MRR</th>
+                      <th>Inicio</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% if (!ingresosPorTenant || ingresosPorTenant.length === 0) { %>
+                      <tr><td colspan="5" class="text-center" style="color:#64748b;padding:2rem;">Sin suscripciones registradas</td></tr>
+                    <% } else { %>
+                      <% ingresosPorTenant.forEach(function(s) { %>
+                        <tr>
+                          <td>
+                            <div style="font-weight:600;color:#e2e8f0;"><%= s.nombre %></div>
+                            <div style="font-size:0.7rem;color:#64748b;"><%= s.subdominio %></div>
+                          </td>
+                          <td>
+                            <span class="sa-badge-plan-<%= s.plan %>"><%= (s.plan||'free').toUpperCase() %></span>
+                          </td>
+                          <td>
+                            <% if (s.estado === 'activa') { %><span class="sa-badge-activa">Activa</span>
+                            <% } else if (s.estado === 'prueba') { %><span class="sa-badge-prueba">Prueba</span>
+                            <% } else { %><span class="sa-badge-vencida"><%= s.estado %></span><% } %>
+                          </td>
+                          <td>
+                            <% if (Number(s.precio_mensual) > 0) { %>
+                              <span style="color:#22c55e;font-weight:700;">S/ <%= Number(s.precio_mensual).toFixed(2) %></span>
+                            <% } else { %>
+                              <span style="color:#64748b;">S/ 0.00</span>
+                            <% } %>
+                          </td>
+                          <td style="color:#64748b;font-size:0.75rem;">
+                            <%= s.fecha_inicio ? new Date(s.fecha_inicio).toLocaleDateString('es-PE') : '-' %>
+                          </td>
+                        </tr>
+                      <% }); %>
+                    <% } %>
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <td colspan="3" style="font-weight:700;color:#fff;padding:12px 14px;border-top:1px solid rgba(255,255,255,0.1);">TOTAL MRR</td>
+                      <td style="font-weight:800;color:#22c55e;font-size:1rem;padding:12px 14px;border-top:1px solid rgba(255,255,255,0.1);">
+                        S/ <%= Number(mrr).toLocaleString('es-PE', {minimumFractionDigits:2}) %>
+                      </td>
+                      <td style="border-top:1px solid rgba(255,255,255,0.1);"></td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+
+            <!-- Costos por servicio -->
+            <div class="sa-card p-4 mt-3">
+              <div class="sa-section-title mb-3">Desglose de Gastos SaaS</div>
+              <div class="row g-2">
+                <% gastosSaas.forEach(function(g) { %>
+                  <div class="col-md-6">
+                    <div style="background:rgba(255,255,255,0.03);border-radius:10px;padding:10px 14px;border:1px solid rgba(255,255,255,0.05);">
+                      <div style="font-size:0.78rem;font-weight:600;color:#e2e8f0;"><%= g.concepto %></div>
+                      <div class="d-flex justify-content-between align-items-center mt-1">
+                        <span style="font-size:0.7rem;color:<%= g.tipo==='fijo'?'#ef4444':'#f59e0b' %>;">
+                          <i class="bi bi-circle-fill" style="font-size:0.4rem;margin-right:4px;"></i><%= g.tipo %>
+                        </span>
+                        <span style="font-size:0.85rem;font-weight:700;color:#fff;">$ <%= g.monto.toFixed(2) %><span style="font-size:0.65rem;color:#64748b;"> USD/<%= g.frecuencia %></span></span>
+                      </div>
+                    </div>
+                  </div>
+                <% }); %>
+              </div>
+              <div class="d-flex justify-content-between align-items-center mt-3 pt-3" style="border-top:1px solid rgba(255,255,255,0.06);">
+                <span style="font-size:0.78rem;color:#94a3b8;font-weight:600;">TOTAL GASTOS</span>
+                <span style="font-size:1.1rem;font-weight:800;color:#ef4444;">$ <%= totalGastoUSD.toFixed(2) %> USD / mes</span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+  <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

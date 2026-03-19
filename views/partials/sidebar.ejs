@@ -1,9 +1,10 @@
 <% const u=(typeof user !=='undefined' && user) ? user : null; %>
   <% const rol=u ? String(u.rol || '' ).toLowerCase() : '' ; %>
     <% const currentPath=(typeof reqPath !=='undefined' ) ? reqPath : '' ; %>
-      <% const panelAlmacen=currentPath.startsWith('/almacen'); const panelProductos=currentPath==='/productos' ||
-        currentPath==='/ranking' ; const panelAdmin=currentPath.startsWith('/administracion') || currentPath==='/sunat'
-        ; const hasSubmodule=panelAlmacen || panelProductos || panelAdmin; %>
+      <% const isSuperadmin = rol === 'superadmin'; %>
+      <% const panelAlmacen=!isSuperadmin && currentPath.startsWith('/almacen'); const panelProductos=!isSuperadmin && (currentPath==='/productos' ||
+        currentPath==='/ranking') ; const panelAdmin=!isSuperadmin && (currentPath.startsWith('/administracion') || currentPath==='/sunat')
+        ; const panelSuperadmin=isSuperadmin && currentPath.startsWith('/superadmin'); const hasSubmodule=panelAlmacen || panelProductos || panelAdmin || panelSuperadmin; %>
 
         <!-- Precargar fuente de iconos para evitar parpadeo al navegar -->
         <link rel="preload" href="/vendor/bootstrap-icons/fonts/bootstrap-icons.woff2" as="font" type="font/woff2" crossorigin>
@@ -73,6 +74,20 @@
 
           <!-- ======= ESTADO 1: EXPANDIDO (iconos + texto + submodulos inline) ======= -->
           <nav class="dg-nav-state dg-nav-expanded" id="navExpanded">
+
+            <%/* --- SUPERADMIN nav (completely separate from tenant menu) --- */%>
+            <% if (isSuperadmin) { %>
+              <div class="dg-sidebar-section">SUPERADMIN</div>
+              <a href="/superadmin" class="dg-sidebar-link <%= currentPath === '/superadmin' ? 'active' : '' %>" style="<%= currentPath === '/superadmin' ? '' : 'color:#f97316;' %>">
+                <i class="bi bi-shield-fill-check" style="color:#f97316;"></i><span>Dashboard SaaS</span>
+              </a>
+              <a href="/superadmin/tenants" class="dg-sidebar-link <%= currentPath.startsWith('/superadmin/tenants') ? 'active' : '' %>">
+                <i class="bi bi-building"></i><span>Tenants</span>
+              </a>
+              <a href="/superadmin/billing" class="dg-sidebar-link <%= currentPath.startsWith('/superadmin/billing') ? 'active' : '' %>">
+                <i class="bi bi-cash-stack"></i><span>Billing & P&L</span>
+              </a>
+            <% } else { %>
 
             <%/* --- Asistente IA: solo administrador --- */%>
             <% if (rol === 'administrador') { %>
@@ -164,10 +179,25 @@
                   class="bi bi-building"></i><span>SUNAT</span></a>
             <% } %>
 
+            <% } /* end else (non-superadmin) */ %>
+
           </nav>
 
           <!-- ======= ESTADO 2 y 3: ICONOS (semi + colapsado total) ======= -->
           <nav class="dg-nav-state dg-nav-icons" id="navIcons" style="display:none;">
+
+            <%/* --- SUPERADMIN icon nav --- */%>
+            <% if (isSuperadmin) { %>
+              <a href="/superadmin" class="dg-sidebar-icon-item <%= currentPath === '/superadmin' ? 'active' : '' %>" title="Dashboard SaaS" style="color:#f97316;">
+                <i class="bi bi-shield-fill-check"></i>
+              </a>
+              <a href="/superadmin/tenants" class="dg-sidebar-icon-item <%= currentPath.startsWith('/superadmin/tenants') ? 'active' : '' %>" title="Tenants">
+                <i class="bi bi-building"></i>
+              </a>
+              <a href="/superadmin/billing" class="dg-sidebar-icon-item <%= currentPath.startsWith('/superadmin/billing') ? 'active' : '' %>" title="Billing">
+                <i class="bi bi-cash-stack"></i>
+              </a>
+            <% } else { %>
 
             <%/* --- Asistente IA: solo administrador --- */%>
             <% if (rol === 'administrador') { %>
@@ -256,6 +286,8 @@
                 title="SUNAT"><i class="bi bi-building"></i></a>
             <% } %>
 
+            <% } /* end else (non-superadmin icon nav) */ %>
+
           </nav>
 
           <!-- User footer -->
@@ -281,6 +313,12 @@
         <!-- PANEL DESPLEGABLE (solo en estado 2: semi-colapsado + modulo con submodulos) -->
         <% if (hasSubmodule) { %>
           <div class="dg-panel" id="sidebarPanel" style="display:none;">
+            <% if (panelSuperadmin) { %>
+              <div class="dg-panel-title"><i class="bi bi-shield-fill-check" style="color:#f97316;"></i> Superadmin</div>
+              <a href="/superadmin" class="dg-panel-item <%= currentPath==='/superadmin' ? 'active' : '' %>"><span class="dg-panel-dot"></span>Dashboard SaaS</a>
+              <a href="/superadmin/tenants" class="dg-panel-item <%= currentPath.startsWith('/superadmin/tenants') ? 'active' : '' %>"><span class="dg-panel-dot"></span>Tenants</a>
+              <a href="/superadmin/billing" class="dg-panel-item <%= currentPath.startsWith('/superadmin/billing') ? 'active' : '' %>"><span class="dg-panel-dot"></span>Billing & P&L</a>
+            <% } %>
             <% if (panelAlmacen) { %>
               <div class="dg-panel-title"><i class="bi bi-box-seam"></i> Almacen</div>
               <a href="/almacen/inventario"
