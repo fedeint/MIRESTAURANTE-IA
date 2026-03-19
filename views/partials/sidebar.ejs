@@ -694,6 +694,9 @@
             if (window.innerWidth < 992) return;
             // Don't show hover submenu when sidebar is expanded (links already visible)
             if (document.body.classList.contains('sidebar-expanded')) return;
+            // Don't show hover submenu when the fixed dg-panel is already visible
+            var fixedPanel = document.getElementById('sidebarPanel');
+            if (fixedPanel && fixedPanel.style.display !== 'none') return;
             var raw = link.getAttribute('data-submenu');
             if (!raw) return;
             var items;
