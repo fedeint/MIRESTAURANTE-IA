@@ -57,6 +57,9 @@ async function getMesaIdByItem(connection, itemId) {
 // - auto_listo_comanda: al enviar desde Mesas el item pasa directo a "listo".
 // - imprime_servidor: la comanda se imprime en el servidor (no en el navegador del celular).
 async function getEnvioCocinaConfig(executor) {
+    // NOTE: executor may be a wrapped pg PoolClient (from db.getConnection()) or the pool itself.
+    // When called inside a transaction the same client must be used so queries join that transaction.
+    // We use db (pool) as fallback so standalone calls outside a transaction still work.
     const q = executor && typeof executor.query === 'function' ? executor : db;
     try {
         const [rows] = await q.query(
@@ -65,21 +68,34 @@ async function getEnvioCocinaConfig(executor) {
              LIMIT 1`
         );
         return {
-            auto_listo_comanda: Number(rows?.[0]?.cocina_auto_listo_comanda || 0) === 1,
-            imprime_servidor: Number(rows?.[0]?.cocina_imprime_servidor || 0) === 1,
+            // PostgreSQL returns booleans as JS true/false; coerce either way.
+            auto_listo_comanda: rows?.[0]?.cocina_auto_listo_comanda === true || Number(rows?.[0]?.cocina_auto_listo_comanda || 0) === 1,
+            imprime_servidor: rows?.[0]?.cocina_imprime_servidor === true || Number(rows?.[0]?.cocina_imprime_servidor || 0) === 1,
             impresora_comandas: String(rows?.[0]?.impresora_comandas || '').trim() || null
         };
     } catch (e) {
-        // Compatibilidad con instalaciones donde aún no existe alguna columna nueva.
-        if (String(e?.code || '') === 'ER_BAD_FIELD_ERROR' || String(e?.code || '') === '42703') {
-            const [rows] = await q.query('SELECT cocina_auto_listo_comanda FROM configuracion_impresion LIMIT 1');
-            return {
-                auto_listo_comanda: Number(rows?.[0]?.cocina_auto_listo_comanda || 0) === 1,
-                imprime_servidor: false,
-                impresora_comandas: null
-            };
+        // Compatibilidad con instalaciones donde aún no existen columnas nuevas.
+        // PostgreSQL error code 42703 = column does not exist; MySQL = ER_BAD_FIELD_ERROR.
+        const code = String(e?.code || '');
+        if (code === 'ER_BAD_FIELD_ERROR' || code === '42703') {
+            try {
+                const [rows] = await q.query('SELECT cocina_auto_listo_comanda FROM configuracion_impresion LIMIT 1');
+                return {
+                    auto_listo_comanda: rows?.[0]?.cocina_auto_listo_comanda === true || Number(rows?.[0]?.cocina_auto_listo_comanda || 0) === 1,
+                    imprime_servidor: false,
+                    impresora_comandas: null
+                };
+            } catch (e2) {
+                // Column cocina_auto_listo_comanda also missing — table might be empty/missing columns.
+                // Return safe defaults so the kitchen flow is never blocked by a config table issue.
+                console.error('[getEnvioCocinaConfig] Could not read configuracion_impresion, using defaults:', e2.message);
+                return { auto_listo_comanda: false, imprime_servidor: false, impresora_comandas: null };
+            }
         }
-        throw e;
+        // For any other error (e.g. table does not exist at all) return safe defaults too,
+        // so the kitchen send flow is never hard-blocked by a missing config table.
+        console.error('[getEnvioCocinaConfig] Unexpected error, using defaults:', e.message);
+        return { auto_listo_comanda: false, imprime_servidor: false, impresora_comandas: null };
     }
 }
 
@@ -138,12 +154,62 @@ async function imprimirTextoEnServidor(texto, impresoraNombre) {
     }
 }
 
+// GET /mesas/meseros - API: lista de meseros activos para dropdown de asignación
+// IMPORTANTE: esta ruta debe ir ANTES de las rutas con parámetro /:mesaId para que
+// Express no confunda "meseros" con un id dinámico.
+router.get('/meseros', async (req, res) => {
+    try {
+        const [meseros] = await db.query(
+            "SELECT id, nombre, usuario FROM usuarios WHERE rol='mesero' AND activo=true ORDER BY nombre"
+        );
+        res.json(meseros);
+    } catch (error) {
+        console.error('Error al listar meseros:', error);
+        res.status(500).json({ error: 'Error al listar meseros' });
+    }
+});
+
+// POST /mesas/:id/asignar-mesero - API: asignar o desasignar mesero a una mesa
+// - Si mesero_id es null/vacío => desasigna (SET NULL)
+// - Si mesero_id tiene valor => busca nombre en usuarios y actualiza ambas columnas
+// Relacionado con: views/mesas.ejs (botón Asignar, solo admin) y public/js/mesas.js
+router.post('/:id/asignar-mesero', async (req, res) => {
+    try {
+        const mesaId = req.params.id;
+        const { mesero_id } = req.body || {};
+
+        if (mesero_id) {
+            const [[mesero]] = await db.query(
+                'SELECT nombre, usuario FROM usuarios WHERE id=? LIMIT 1',
+                [mesero_id]
+            );
+            if (!mesero) return res.status(404).json({ error: 'Mesero no encontrado' });
+            const nombreMesero = String(mesero.nombre || mesero.usuario || '').trim();
+            await db.query(
+                'UPDATE mesas SET mesero_asignado_id=?, mesero_asignado_nombre=? WHERE id=?',
+                [mesero_id, nombreMesero, mesaId]
+            );
+        } else {
+            await db.query(
+                'UPDATE mesas SET mesero_asignado_id=NULL, mesero_asignado_nombre=NULL WHERE id=?',
+                [mesaId]
+            );
+        }
+        res.json({ ok: true });
+    } catch (error) {
+        console.error('Error al asignar mesero:', error);
+        res.status(500).json({ error: 'Error al asignar mesero' });
+    }
+});
+
 // GET /mesas - Página de gestión de mesas
 router.get('/', async (req, res) => {
     try {
-        // Trae el listado de mesas y si tienen pedidos abiertos (para mostrar estado)
+        // Trae el listado de mesas con asignación de mesero y estado actualizado
         const [mesas] = await db.query(`
             SELECT m.*,
+            m.mesero_asignado_id,
+            m.mesero_asignado_nombre,
             (
                 -- Conteo de pedidos realmente activos (con al menos 1 item activo).
                 -- Evita bloquear mesas solo por abrir comanda vacía.
@@ -178,20 +244,24 @@ router.get('/', async (req, res) => {
             ORDER BY m.numero
         `);
 
-        res.render('mesas', { mesas: mesas || [] });
+        const currentUserId = req.session?.user?.id || null;
+        const currentUserRol = req.session?.user?.rol || '';
+        res.render('mesas', { mesas: mesas || [], currentUserId, currentUserRol });
     } catch (error) {
         console.error('Error al cargar mesas:', error);
-        res.status(500).render('error', { 
+        res.status(500).render('error', {
             error: { message: 'Error al cargar mesas', stack: error.stack }
         });
     }
 });
 
-// GET /mesas/listar - API: lista de mesas con estado actual
+// GET /mesas/listar - API: lista de mesas con estado actual y asignación de mesero
 router.get('/listar', async (req, res) => {
     try {
         const [mesas] = await db.query(`
             SELECT m.*,
+            m.mesero_asignado_id,
+            m.mesero_asignado_nombre,
             (
                 -- Conteo de pedidos realmente activos (con al menos 1 item activo).
                 -- Evita bloquear mesas solo por abrir comanda vacía.
@@ -787,7 +857,7 @@ router.put('/items/:itemId/enviar', async (req, res) => {
                     const prodId = itemData[0].producto_id;
                     const cantVendida = Number(itemData[0].cantidad) || 1;
                     const [recetaRows] = await connection.query(
-                        'SELECT id FROM recetas WHERE producto_id=? AND activa=1 LIMIT 1', [prodId]
+                        'SELECT id FROM recetas WHERE producto_id=? AND activa=true LIMIT 1', [prodId]
                     );
                     console.log('[ALMACEN] Producto:', prodId, 'Recetas encontradas:', recetaRows.length);
                     if (recetaRows.length > 0) {
@@ -840,8 +910,8 @@ router.put('/items/:itemId/enviar', async (req, res) => {
             throw err;
         }
     } catch (error) {
-        console.error('Error al enviar item:', error);
-        res.status(500).json({ error: 'Error al enviar item' });
+        console.error('Error al enviar item a cocina:', error.message, error.stack);
+        res.status(500).json({ error: 'Error al enviar item', detail: error.message });
     }
 });
 

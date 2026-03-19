@@ -10,6 +10,8 @@ $(function() {
   // Rol actual (inyectado desde views/mesas.ejs)
   // Relacionado con: views/mesas.ejs (window.__USER_ROLE__) y server.js (protección de rutas)
   const userRole = String(window.__USER_ROLE__ || '').toLowerCase(); // administrador | mesero
+  // ID del usuario actual (para destacar "mis mesas" en rol mesero)
+  const userId = window.__USER_ID__ || null;
 
   // ===== Pago mixto (varios medios) =====
   // Relacionado con:
@@ -1227,7 +1229,11 @@ $(function() {
         printWindow = window.open('about:blank', '_blank');
       }
       for(const it of pendientes){
-        await fetch(`/api/mesas/items/${it.id}/enviar`, { method:'PUT' });
+        const resp = await fetch(`/api/mesas/items/${it.id}/enviar`, { method:'PUT' });
+        if (!resp.ok) {
+          const errData = await resp.json().catch(() => ({}));
+          throw new Error(errData.error || `Error ${resp.status} al enviar item ${it.id}`);
+        }
       }
 
       // Modo cocina sin dispositivo:
@@ -1262,7 +1268,8 @@ $(function() {
         title: autoListoComanda ? 'Comanda impresa y pedido en Listos' : 'Enviado a cocina'
       });
     }catch(err){
-      Swal.fire({icon:'error', title:'No se pudo enviar a cocina'});
+      console.error('[enviarCocina] Error:', err);
+      Swal.fire({icon:'error', title:'No se pudo enviar a cocina', text: err?.message || ''});
     }
   });
 

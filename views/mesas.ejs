@@ -334,6 +334,42 @@
         margin: 0.5rem 0 0.6rem;
       }
 
+      /* ---- Mesero asignado badge ---- */
+      .mc-mesero {
+        font-size: 0.7rem;
+        font-weight: 600;
+        color: #6366f1;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        margin-bottom: 0.4rem;
+      }
+      .mc-mesero i { font-size: 0.75rem; }
+      .mc-sin-asignar { color: #94a3b8; }
+      .mc-mesero-mio {
+        color: #16a34a;
+        background: rgba(22,163,74,0.08);
+        padding: 2px 8px;
+        border-radius: 100px;
+      }
+
+      /* ---- Highlight for waiter's own assigned tables ---- */
+      .mesa-card.mc-mesa-mia {
+        border-color: rgba(22,163,74,0.55) !important;
+        box-shadow: 0 2px 16px rgba(22,163,74,0.18) !important;
+      }
+      .mesa-card.mc-mesa-mia::before {
+        background: #16a34a !important;
+        width: 5px;
+      }
+
+      /* ---- Filter bar for mesero ---- */
+      #filtroMeseroBar .btn.active {
+        background: var(--dg-primary);
+        border-color: var(--dg-primary);
+        color: #fff;
+      }
+
       /* =============================================
          CATALOGO VISUAL DE PRODUCTOS (offcanvas)
          ============================================= */
@@ -780,16 +816,30 @@
             <button id="btnNuevaMesa" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>Nueva mesa</button>
         </div>
 
+        <%/* ---- Barra de filtro para mesero: Todas / Mis mesas ---- */%>
+        <% if (currentUserRol === 'mesero') { %>
+        <div class="mb-3 d-flex gap-2" id="filtroMeseroBar">
+            <button class="btn btn-sm btn-outline-secondary active" data-filter="todas">
+                <i class="bi bi-grid me-1"></i>Todas las mesas
+            </button>
+            <button class="btn btn-sm btn-outline-success" data-filter="mias">
+                <i class="bi bi-person-check me-1"></i>Mis mesas
+            </button>
+        </div>
+        <% } %>
+
         <div class="row g-3" id="gridMesas">
             <% mesas.forEach(m => { %>
                 <div class="col-6 col-md-4 col-lg-3">
                     <div
-                        class="card mesa-card position-relative"
+                        class="card mesa-card position-relative<% if (currentUserRol === 'mesero' && m.mesero_asignado_id && String(m.mesero_asignado_id) === String(currentUserId)) { %> mc-mesa-mia<% } %>"
                         data-mesa-id="<%= m.id %>"
                         data-mesa-numero="<%= m.numero %>"
                         data-mesa-descripcion="<%= m.descripcion || '' %>"
                         data-mesa-estado="<%= m.estado %>"
                         data-mesa-pedidos-abiertos="<%= m.pedidos_abiertos || 0 %>"
+                        data-mesa-mesero-id="<%= m.mesero_asignado_id || '' %>"
+                        data-mesa-mesero-nombre="<%= m.mesero_asignado_nombre || '' %>"
                     >
                         <div class="card-body">
 
@@ -804,6 +854,19 @@
 
                             <%/* ---- Description ---- */%>
                             <p class="mc-desc"><%= m.descripcion || '&nbsp;' %></p>
+
+                            <%/* ---- Mesero asignado badge ---- */%>
+                            <% if (m.mesero_asignado_nombre) { %>
+                                <div class="mc-mesero<% if (currentUserRol === 'mesero' && String(m.mesero_asignado_id) === String(currentUserId)) { %> mc-mesero-mio<% } %>">
+                                    <i class="bi bi-person-fill"></i>
+                                    <%= m.mesero_asignado_nombre %>
+                                </div>
+                            <% } else { %>
+                                <div class="mc-mesero mc-sin-asignar">
+                                    <i class="bi bi-person-dash"></i>
+                                    Sin asignar
+                                </div>
+                            <% } %>
 
                             <%/* ---- Time elapsed (only for ocupada) ---- */%>
                             <% if (m.estado === 'ocupada') { %>
@@ -854,6 +917,15 @@
                                         <span class="mc-btn-text">Eliminar</span>
                                     </button>
                                 </div>
+
+                                <%/* Row 4: Asignar mesero (solo admin) */%>
+                                <% if (currentUserRol === 'administrador') { %>
+                                <button class="btn mc-btn btnAsignarMesero"
+                                        style="border-color:rgba(99,102,241,0.3)!important;color:#6366f1!important;background:rgba(99,102,241,0.05)!important;width:100%;">
+                                    <i class="bi bi-person-gear"></i>
+                                    <span class="mc-btn-text">Asignar mesero</span>
+                                </button>
+                                <% } %>
 
                             </div><%/* /mc-actions */%>
 
@@ -1020,6 +1092,8 @@
       // - Mesero: al facturar NO debe poder crear nuevos clientes (requisito solicitado)
       // Relacionado con: public/js/mesas.js (selección de cliente) y middleware/auth.js (res.locals.user)
       window.__USER_ROLE__ = <%- JSON.stringify((typeof user !== 'undefined' && user && user.rol) ? user.rol : '') %>;
+      // ID del usuario actual para que el frontend detecte "mis mesas" (mesero)
+      window.__USER_ID__ = <%- JSON.stringify((typeof currentUserId !== 'undefined' && currentUserId) ? Number(currentUserId) : null) %>;
     </script>
     <script src="/js/mesas.js"></script>
     <script>
