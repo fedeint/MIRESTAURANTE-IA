@@ -109,7 +109,61 @@ No se necesitan tablas nuevas.
   ```
 - Esto ya se ejecuta al final, no requiere confirmación adicional
 
-### 4. Vista Mesas (views/mesas.ejs, public/js/mesas.js)
+### 4. Dashboard Mesero — Mesas asignadas como prioridad (views/dashboard-mesero.ejs, server.js)
+
+**Concepto:** El mesero puede atender cualquier mesa, pero sus mesas asignadas son su PRIORIDAD y deben verse destacadas al iniciar sesion.
+
+**Nuevos datos en la ruta `GET /` (mesero):**
+- `mesasAsignadas`: array de mesas asignadas al mesero logueado
+  ```sql
+  SELECT id, numero, descripcion, estado FROM mesas
+  WHERE mesero_asignado_id = ? ORDER BY numero
+  ```
+- `mesasAsignadasCount`: cantidad de mesas asignadas
+- `itemsListos`: cantidad de items en estado 'listo' en sus mesas asignadas (pendientes de entregar)
+  ```sql
+  SELECT COUNT(*) as t FROM pedido_items pi
+  JOIN pedidos p ON p.id = pi.pedido_id
+  WHERE p.mesa_id IN (SELECT id FROM mesas WHERE mesero_asignado_id = ?)
+    AND pi.estado = 'listo'
+  ```
+
+**Nueva seccion "Mis mesas" (prioridad visual, arriba de los KPIs):**
+
+Si hay mesas asignadas:
+- Titulo: "Mis mesas asignadas" con badge del total
+- Grid de cards compactas, una por mesa asignada
+- Cada card muestra:
+  - Numero de mesa (grande, prominente)
+  - Estado: libre (verde), ocupada (naranja), con pedidos listos (badge pulsante rojo)
+  - Click directo abre la mesa en `/mesas?mesa=N`
+- Las mesas con items "listo" (listos para entregar) tienen indicador visual especial:
+  - Badge "Listo para entregar" con animacion pulse
+  - Borde naranja (#FF6B35) en la card
+
+Si no hay mesas asignadas:
+- Card informativa: "No tienes mesas asignadas para este turno. Puedes atender cualquier mesa disponible."
+- Boton "Ver todas las mesas" → `/mesas`
+
+**KPI adicional:** Reemplazar o agregar un 4to KPI:
+- "Mis mesas": muestra `mesasAsignadasCount` con icono de estrella
+- Diferenciado visualmente del total general de mesas
+
+**Actualizar DalIA greeting:**
+- Si tiene mesas asignadas: "Tienes **N** mesas asignadas como prioridad. N estan ocupadas."
+- Si tiene items listos: "Hay **N** pedidos listos para entregar en tus mesas!"
+- Si no tiene asignaciones: Mensaje actual (mesas ocupadas generales)
+
+**Acceso rapido actualizado:**
+- Agregar boton "Mis mesas" que filtra `/mesas?filtro=mis` (solo sus mesas asignadas)
+- Mantener "Ir a Mesas" (todas) y "Ver Cocina"
+
+**Importante:**
+- El mesero NO esta limitado a sus mesas asignadas — puede atender cualquiera
+- La asignacion es solo para PRIORIZAR visualmente que mesas debe atender primero
+- Si no hay caja abierta o no hay asignaciones, el dashboard funciona como antes (sin la seccion "Mis mesas")
+
+### 5. Vista Mesas (views/mesas.ejs, public/js/mesas.js)
 
 **Arreglar botón "Asignar mesero":**
 - Ya está programado en frontend (SweetAlert + dropdown + POST)
@@ -117,7 +171,7 @@ No se necesitan tablas nuevas.
 - El botón permite reasignación individual rápida sin ir a Caja
 - Accesible solo para rol administrador y cajero
 
-### 5. Vista Usuarios (views/usuarios.ejs)
+### 6. Vista Usuarios (views/usuarios.ejs)
 
 **Solo lectura — mostrar mesas asignadas:**
 - En la card/fila de cada usuario con rol='mesero'
@@ -126,7 +180,7 @@ No se necesitan tablas nuevas.
 - No se edita desde aquí (se edita desde Caja o Mesas)
 - Query: `SELECT numero FROM mesas WHERE mesero_asignado_id = ?`
 
-### 6. Endpoint de datos para ranking (routes/caja.js)
+### 7. Endpoint de datos para ranking (routes/caja.js)
 
 **Nuevo:** `GET /api/caja/ranking-meseros?periodo=hoy|semana|mes|todo`
 
@@ -154,20 +208,31 @@ Response:
 
 ## Flujo de usuario completo
 
-1. Cajero/Admin abre caja → ve sección de asignación → checkea mesas por mesero → Abrir Caja
+### Flujo Admin/Cajero:
+1. Cajero/Admin abre caja → ve seccion de asignacion → checkea mesas por mesero → Abrir Caja
 2. Durante el turno: ve cards de meseros con sus mesas y productos en la vista Caja
 3. Si necesita reasignar: click "Editar" → modal → cambia checkboxes → Guardar
-4. También puede reasignar mesa individual desde vista Mesas → botón "Asignar mesero"
-5. Ve ranking del día en tiempo real en Caja
+4. Tambien puede reasignar mesa individual desde vista Mesas → boton "Asignar mesero"
+5. Ve ranking del dia en tiempo real en Caja
 6. Puede ver historial completo con filtros de periodo
 7. Al cerrar caja: asignaciones se borran, datos de ranking quedan en historial
 
+### Flujo Mesero:
+1. Mesero inicia sesion → ve dashboard con seccion "Mis mesas asignadas" destacada
+2. Ve sus mesas prioritarias con estado visual (libre/ocupada/listo para entregar)
+3. Click en cualquier mesa asignada → abre directamente esa mesa en `/mesas`
+4. Badge pulsante indica mesas con pedidos listos para entregar → atencion inmediata
+5. Puede acceder a "Ver todas las mesas" para atender mesas no asignadas tambien
+6. El mesero NO esta restringido: puede atender cualquier mesa, la asignacion es solo prioridad visual
+
 ## Archivos a modificar
 
-- `routes/caja.js` — nuevos endpoints y lógica de asignación
-- `views/caja.ejs` — sección meseros, ranking, modal editar, formulario apertura
+- `routes/caja.js` — nuevos endpoints y logica de asignacion
+- `views/caja.ejs` — seccion meseros, ranking, modal editar, formulario apertura
 - `routes/mesas.js` — verificar endpoint asignar-mesero funcione
-- `public/js/mesas.js` — verificar handler botón asignar
+- `public/js/mesas.js` — verificar handler boton asignar
 - `views/usuarios.ejs` — mostrar mesas asignadas (solo lectura)
 - `routes/usuarios.js` — incluir mesas asignadas en query
-- `database.sql` — aplicar migración mesero_asignado
+- `views/dashboard-mesero.ejs` — seccion "Mis mesas asignadas" con prioridad visual
+- `server.js` — ruta mesero: query mesas asignadas + items listos por entregar
+- `database.sql` — aplicar migracion mesero_asignado
