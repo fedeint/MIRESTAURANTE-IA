@@ -189,6 +189,12 @@ router.post('/login', async (req, res) => {
       );
     } catch (_) {}
 
+    // Check for suspicious login (new country)
+    try {
+        const { checkSuspiciousLogin } = require('../lib/loginGuard');
+        await checkSuspiciousLogin(req.tenantId || 1, u.id, u.usuario, req.geo?.country, req.geo?.ip);
+    } catch (_) {}
+
     res.redirect(defaultRedirectForRole(u.rol));
   } catch (e) {
     console.error('Error login:', e);

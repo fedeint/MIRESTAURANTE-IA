@@ -11,9 +11,11 @@ const QRCode = require('qrcode');
 // Configuración de multer para memoria
 const upload = multer({
     storage: multer.memoryStorage(),
+    limits: { fileSize: 5 * 1024 * 1024 },
     fileFilter: function (req, file, cb) {
-        if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/)) {
-            return cb(new Error('Solo se permiten imágenes'));
+        const allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+        if (!allowed.includes(file.mimetype)) {
+            return cb(new Error('Solo se permiten imágenes (JPEG, PNG, GIF, WebP)'));
         }
         cb(null, true);
     }

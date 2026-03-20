@@ -200,6 +200,11 @@ router.post('/', async (req, res) => {
       'INSERT INTO usuarios (usuario, nombre, password_hash, rol, activo, permisos) VALUES (?, ?, ?, ?, ?, ?) RETURNING id',
       [usuario, nombre || null, hash, rol, activo, permisosJson]
     );
+    // Audit log: user created
+    try {
+      const { auditLog } = require('../lib/audit');
+      await auditLog(req, 'CREATE', 'usuario', result.insertId, null, { usuario, rol });
+    } catch (_) {}
     res.status(201).json({ id: result.insertId });
   } catch (e) {
     console.error('Error crear usuario:', e);
@@ -246,6 +251,11 @@ router.put('/:id(\\d+)', async (req, res) => {
         [usuario, nombre || null, rol, activo, id]
       );
     }
+    // Audit log: user updated (includes status changes)
+    try {
+      const { auditLog } = require('../lib/audit');
+      await auditLog(req, 'UPDATE', 'usuario_status', id, { activo: Number(current.activo), rol: current.rol }, { activo, rol, usuario });
+    } catch (_) {}
     res.json({ message: 'Usuario actualizado' });
   } catch (e) {
     console.error('Error actualizar usuario:', e);
@@ -267,6 +277,11 @@ router.put('/:id(\\d+)/password', async (req, res) => {
     const hash = await bc.hash(password, 10);
     const [result] = await db.query('UPDATE usuarios SET password_hash = ? WHERE id = ?', [hash, id]);
     if ((result?.affectedRows || 0) === 0) return res.status(404).json({ error: 'Usuario no encontrado' });
+    // Audit log: password changed
+    try {
+      const { auditLog } = require('../lib/audit');
+      await auditLog(req, 'UPDATE', 'usuario_password', id, null, { changed_by: req.session?.user?.usuario });
+    } catch (_) {}
     res.json({ message: 'Contrasena actualizada' });
   } catch (e) {
     console.error('Error cambiar password:', e);

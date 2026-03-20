@@ -110,6 +110,10 @@ app.use(session({
     }
 }));
 
+// Request ID middleware for tracing
+const { attachRequestId } = require('./middleware/requestId');
+app.use(attachRequestId);
+
 // Geo context middleware (reads Vercel headers + fallback to req.ip)
 app.use(attachGeoContext);
 

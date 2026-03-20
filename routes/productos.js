@@ -418,7 +418,19 @@ router.get('/plantilla', async (req, res) => {
 });
 
 const multer = require('multer');
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 5*1024*1024 } });
+const upload = multer({
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 5 * 1024 * 1024 },
+    fileFilter: function (req, file, cb) {
+        const allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'application/vnd.ms-excel'];
+        if (!allowed.includes(file.mimetype)) {
+            return cb(new Error('Tipo de archivo no permitido'));
+        }
+        cb(null, true);
+    }
+});
 
 router.post('/importar', upload.single('archivo'), async (req, res) => {
     try {
