@@ -172,6 +172,54 @@ router.post('/movimiento', async (req, res) => {
     }
 });
 
+// GET /api/caja/ranking-meseros
+router.get('/ranking-meseros', async (req, res) => {
+  try {
+    const tid = req.tenantId || 1;
+    const periodo = req.query.periodo || 'hoy';
+
+    let dateFilter = '';
+    if (periodo === 'hoy') {
+      dateFilter = `AND DATE(p.created_at) = CURRENT_DATE`;
+    } else if (periodo === 'semana') {
+      dateFilter = `AND p.created_at >= CURRENT_DATE - INTERVAL '7 days'`;
+    } else if (periodo === 'mes') {
+      dateFilter = `AND p.created_at >= CURRENT_DATE - INTERVAL '30 days'`;
+    }
+
+    const [ranking] = await db.query(`
+      SELECT
+        m.mesero_asignado_id as mesero_id,
+        COALESCE(m.mesero_asignado_nombre, u.nombre) as nombre,
+        COUNT(DISTINCT p.mesa_id) as mesas_atendidas,
+        COALESCE(SUM(pi.cantidad), 0) as productos_servidos
+      FROM pedidos p
+      JOIN mesas m ON m.id = p.mesa_id
+      JOIN pedido_items pi ON pi.pedido_id = p.id
+      LEFT JOIN usuarios u ON u.id = m.mesero_asignado_id
+      WHERE m.mesero_asignado_id IS NOT NULL
+        AND m.tenant_id = ?
+        AND pi.estado NOT IN ('cancelado', 'rechazado')
+        ${dateFilter}
+      GROUP BY m.mesero_asignado_id, nombre
+      ORDER BY productos_servidos DESC
+    `, [tid]);
+
+    const rankingConPromedio = ranking.map(r => ({
+      ...r,
+      productos_servidos: Number(r.productos_servidos),
+      promedio_por_mesa: r.mesas_atendidas > 0
+        ? Math.round((Number(r.productos_servidos) / r.mesas_atendidas) * 10) / 10
+        : 0
+    }));
+
+    res.json({ ranking: rankingConPromedio, periodo });
+  } catch (err) {
+    console.error('Error ranking meseros:', err);
+    res.status(500).json({ error: 'Error al obtener ranking' });
+  }
+});
+
 // Reasignar mesas a meseros (caja abierta)
 router.post('/reasignar-mesas', async (req, res) => {
   try {
