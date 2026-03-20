@@ -79,6 +79,20 @@ router.post('/abrir', async (req, res) => {
             [tid, result.insertId, monto_apertura || 0, uid]
         );
 
+        // Asignar mesas a meseros
+        const asignaciones = req.body.asignaciones;
+        if (asignaciones && Array.isArray(asignaciones) && asignaciones.length > 0) {
+          await db.query(`UPDATE mesas SET mesero_asignado_id = NULL, mesero_asignado_nombre = NULL WHERE tenant_id = ?`, [tid]);
+          for (const a of asignaciones) {
+            if (!a.mesa_id || !a.mesero_id) continue;
+            const [[mesero]] = await db.query(`SELECT id, nombre FROM usuarios WHERE id = ? AND activo = 1`, [a.mesero_id]);
+            if (mesero) {
+              await db.query(`UPDATE mesas SET mesero_asignado_id = ?, mesero_asignado_nombre = ? WHERE id = ? AND tenant_id = ?`,
+                [mesero.id, mesero.nombre, a.mesa_id, tid]);
+            }
+          }
+        }
+
         registrarAudit({ tenantId: tid, usuarioId: uid, accion: 'INSERT', modulo: 'caja', tabla: 'cajas', registroId: result.insertId, ip: req.ip });
         res.status(201).json({ caja_id: result.insertId, message: 'Caja abierta' });
     } catch (e) {
