@@ -1,30 +1,31 @@
-# Firma Electr&oacute;nica de Contratos Enterprise - Spec
+# Firma Electronica de Contratos Enterprise - Spec
 
 **Fecha:** 2026-03-20
-**Estado:** Aprobado
+**Estado:** Aprobado (rev. 2)
 **Autor:** Leonidas Yauricasa / Claude
 
 ---
 
 ## Resumen
 
-Flujo completo de firma electr&oacute;nica integrado en MiRestconIA. El superadmin genera un contrato Enterprise, el sistema lo guarda en BD, genera un link &uacute;nico p&uacute;blico y lo env&iacute;a por email (Gmail SMTP) al cliente. El cliente abre el link sin necesidad de login, revisa el contrato PDF, firma con signature_pad en un canvas, y el sistema incrusta la firma en el PDF, guarda el audit trail y env&iacute;a el PDF firmado a ambas partes.
+Flujo completo de firma electronica integrado en MiRestconIA. El superadmin genera un contrato Enterprise, el sistema lo guarda en BD, genera un link unico publico y lo envia por email (Gmail SMTP) al cliente. El cliente abre el link sin necesidad de login, revisa el contrato PDF, firma con signature_pad en un canvas, y el sistema incrusta la firma en el PDF, guarda el audit trail y envia el PDF firmado a ambas partes.
 
-Legalmente v&aacute;lido en Per&uacute; bajo Firma Electr&oacute;nica Simple (Ley 27269).
+Legalmente valido en Peru bajo Firma Electronica Simple (Ley 27269).
 
 ---
 
-## Decisiones de dise&ntilde;o
+## Decisiones de diseno
 
-| Decisi&oacute;n | Elecci&oacute;n | Motivo |
+| Decision | Eleccion | Motivo |
 |----------|-----------|--------|
 | Almacenamiento | PostgreSQL (BYTEA) | Sin dependencia de filesystem, respaldable con BD |
 | Email | Nodemailer + Gmail SMTP (Google Workspace) | leonidas.yauri@dignita.tech ya existe |
-| Firma dignita.tech | Pre-cargada como PNG (`public/uploads/firma-dignita.png`) | Ya proporcionada por el usuario |
-| Firma del cliente | Solo el cliente firma | Firma de dignita.tech ya incrustada |
-| Link de firma | UUID v4 sin autenticaci&oacute;n | Ruta p&uacute;blica `/firmar/:token` |
-| Validez legal | Firma Electr&oacute;nica Simple (FES) | Suficiente para contratos B2B privados en Per&uacute; |
-| PDF manipulation | pdf-lib | Para incrustar firma PNG en PDF existente post-generaci&oacute;n |
+| Firma dignita.tech | Pre-cargada como PNG (`public/uploads/firma-dignita.png`) | Incrustada durante generacion PDFKit |
+| Firma del cliente | Solo el cliente firma | Firma de dignita.tech ya incrustada en el PDF |
+| Link de firma | UUID v4 (gen_random_uuid de PostgreSQL) | Ruta publica `/firmar/:token` |
+| Validez legal | Firma Electronica Simple (FES) | Suficiente para contratos B2B privados en Peru |
+| PDF manipulation | pdf-lib | Para incrustar firma PNG del cliente en PDF post-generacion |
+| Rutas publicas | Archivo separado `routes/firmar.js` | Evita herencia de middleware superadmin |
 
 ---
 
@@ -33,8 +34,9 @@ Legalmente v&aacute;lido en Per&uacute; bajo Firma Electr&oacute;nica Simple (Le
 ```sql
 CREATE TABLE contratos (
     id SERIAL PRIMARY KEY,
+    tenant_id INTEGER NOT NULL DEFAULT 1,
     token UUID NOT NULL UNIQUE DEFAULT gen_random_uuid(),
-    nro_contrato VARCHAR(30) NOT NULL,
+    nro_contrato VARCHAR(30) NOT NULL UNIQUE,
     nombre_cliente VARCHAR(200) NOT NULL,
     razon_social VARCHAR(200),
     dni VARCHAR(8) NOT NULL,
@@ -47,20 +49,76 @@ CREATE TABLE contratos (
     cargo_representante VARCHAR(100),
     dni_representante VARCHAR(8),
     pdf_original BYTEA NOT NULL,
+    pdf_hash VARCHAR(64) NOT NULL,
     pdf_firmado BYTEA,
     firma_png BYTEA,
     estado VARCHAR(20) NOT NULL DEFAULT 'pendiente'
         CHECK (estado IN ('pendiente', 'firmado', 'expirado')),
+    token_expires_at TIMESTAMP WITH TIME ZONE DEFAULT NOW() + INTERVAL '30 days',
     firmado_ip VARCHAR(45),
     firmado_user_agent TEXT,
     firmado_at TIMESTAMP WITH TIME ZONE,
+    email_enviado_at TIMESTAMP WITH TIME ZONE,
     created_by INTEGER,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 CREATE INDEX idx_contratos_token ON contratos(token);
 CREATE INDEX idx_contratos_estado ON contratos(estado);
+CREATE INDEX idx_contratos_tenant ON contratos(tenant_id);
+
+CREATE SEQUENCE contratos_nro_seq START 1;
 ```
+
+Cambios vs. rev. 1:
+- Agregado `tenant_id` (multi-tenant)
+- Agregado `pdf_hash` VARCHAR(64) — SHA-256 del PDF original para integridad
+- Agregado `token_expires_at` — expiracion a 30 dias
+- Agregado `email_enviado_at` — tracking de envio
+- `nro_contrato` ahora es UNIQUE + generado con sequence (sin colisiones)
+- Token generado por PostgreSQL (gen_random_uuid), no npm uuid
+
+---
+
+## Arquitectura de rutas
+
+**CRITICO:** Las rutas publicas de firma van en un archivo separado `routes/firmar.js`, montado SIN middleware de auth en `server.js`. Esto evita heredar `requireAuth + requireRole('superadmin')` del mount de contratos.
+
+```
+server.js:
+  app.use('/firmar', firmaLimiter, firmarRoutes);           // PUBLICA
+  app.use('/contratos', requireAuth, requireRole('superadmin'), contratosRoutes);  // PROTEGIDA
+  app.use('/api/contratos', requireAuth, requireRole('superadmin'), contratosRoutes);
+```
+
+---
+
+## Seguridad
+
+### Rate limiting (rutas publicas)
+
+```js
+const firmaLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,   // 15 minutos
+    max: 15,                     // 15 requests por IP
+    message: { error: 'Demasiados intentos. Intenta en 15 minutos.' }
+});
+```
+
+Adicionalmente, el POST `/firmar/:token/submit` tendra un limiter mas estricto (max: 5 por 15 min).
+
+### Validacion de payload
+
+El POST submit valida:
+- signature base64 tiene prefijo `data:image/png;base64,`
+- Tamano maximo de firma: 500KB
+- Contrato existe, estado == 'pendiente', token_expires_at > NOW()
+
+### Integridad del documento
+
+- `pdf_hash` = SHA-256 del pdf_original, calculado al generar
+- El hash se verifica antes de incrustar la firma del cliente
+- El texto legal aceptado por el cliente se incrusta en el PDF firmado
 
 ---
 
@@ -68,59 +126,68 @@ CREATE INDEX idx_contratos_estado ON contratos(estado);
 
 ### 1. Superadmin genera contrato
 
-**Ruta:** POST `/api/contratos/generar`
+**Ruta:** POST `/api/contratos/generar` (routes/contratos.js)
 **Auth:** requireAuth + requireRole('superadmin')
 
 1. Recibe datos del formulario (nombre, DNI, RUC, email, etc.)
-2. Genera PDF con PDFKit (contrato Enterprise completo + firma dignita.tech pre-cargada + secci&oacute;n de costos de terceros SUNAT/WhatsApp)
-3. Captura el PDF como Buffer
-4. Genera UUID token
-5. Genera nro_contrato: `CTR-YYYYMMDD-XXXX`
-6. Inserta registro en tabla `contratos` con pdf_original, estado='pendiente'
-7. Si el cliente tiene email: env&iacute;a correo con link `/firmar/:token`
-8. Responde con JSON: `{ token, link, nro_contrato, email_enviado: true/false }`
+2. Genera PDF con PDFKit a un Buffer (NO pipe a res):
+   - Contrato Enterprise completo
+   - Firma dignita.tech pre-cargada (firma-dignita.png incrustada con PDFKit)
+   - Seccion de costos de terceros SUNAT/WhatsApp
+3. Calcula SHA-256 del buffer PDF
+4. Genera nro_contrato con sequence: `CTR-YYYYMMDD-{nextval}`
+5. INSERT en tabla `contratos` con RETURNING id, token, nro_contrato
+6. Si el cliente tiene email: envia correo con link `/firmar/:token`
+7. Responde con JSON: `{ id, token, link, nro_contrato, email_enviado: true/false }`
+
+**Cambio vs. comportamiento actual:** La ruta actual retorna descarga de PDF. La nueva retorna JSON. Se mantiene una ruta GET `/api/contratos/:id/descargar/original` para descargar el PDF.
 
 ### 2. Superadmin copia link
 
 **Vista:** `/contratos` actualizada con:
-- Formulario de generaci&oacute;n (ya existe)
+- Formulario de generacion (ya existe)
 - Tabla de contratos enviados con columnas: Nro, Cliente, Estado, Fecha, Acciones
-- Bot&oacute;n "Copiar link" para enviar por WhatsApp
-- Bot&oacute;n "Reenviar email"
-- Bot&oacute;n "Descargar PDF" (original o firmado)
+- Boton "Copiar link" para enviar por WhatsApp
+- Boton "Reenviar email"
+- Boton "Descargar PDF" (original o firmado)
 
-### 3. Cliente abre link p&uacute;blico
+### 3. Cliente abre link publico
 
-**Ruta:** GET `/firmar/:token`
-**Auth:** NINGUNA (ruta p&uacute;blica)
+**Ruta:** GET `/firmar/:token` (routes/firmar.js)
+**Auth:** NINGUNA (ruta publica, rate limited)
 
 1. Busca contrato por token en BD
-2. Si no existe o estado != 'pendiente': muestra p&aacute;gina de error/expirado
-3. Si existe: renderiza `views/firmar.ejs`
+2. Valida: existe, estado == 'pendiente', token_expires_at > NOW()
+3. Si no valido: muestra pagina de error/expirado
+4. Si valido: renderiza `views/firmar.ejs`
 
 ### 4. Vista de firma (`views/firmar.ejs`)
 
-P&aacute;gina p&uacute;blica sin sidebar, con branding dignita.tech:
+Pagina publica sin sidebar, con branding dignita.tech:
 - Header con logo y datos del contrato (Nro, cliente, fecha)
 - PDF embebido en iframe (servido desde `/firmar/:token/pdf`)
 - Canvas de signature_pad para dibujar firma
-- Bot&oacute;n "Limpiar firma"
-- Bot&oacute;n "Aceptar y Firmar Contrato"
-- Texto legal: "Al firmar, declaro haber le&iacute;do y aceptado todos los t&eacute;rminos..."
-- Responsive (funciona en m&oacute;vil)
+- Boton "Limpiar firma"
+- Boton "Aceptar y Firmar Contrato"
+- Texto legal: "Al firmar, declaro haber leido y aceptado todos los terminos del presente Contrato de Licencia de Software y Servicios Tecnologicos..."
+- Responsive (funciona en movil)
 
 ### 5. Cliente firma
 
-**Ruta:** POST `/firmar/:token/submit`
-**Auth:** NINGUNA (ruta p&uacute;blica)
+**Ruta:** POST `/firmar/:token/submit` (routes/firmar.js)
+**Auth:** NINGUNA (rate limited, max 5 por 15 min)
 
 1. Recibe `{ signature: dataURL (base64 PNG) }`
-2. Valida que contrato existe y estado == 'pendiente'
-3. Carga pdf_original desde BD
+2. Valida:
+   - Prefijo `data:image/png;base64,`
+   - Tamano < 500KB
+   - Contrato existe, estado == 'pendiente', token_expires_at > NOW()
+3. Verifica pdf_hash contra SHA-256 del pdf_original (integridad)
 4. Usa pdf-lib para:
-   - Cargar el PDF
-   - Incrustar firma PNG del cliente en la secci&oacute;n de firmas (lado derecho "POR EL CLIENTE")
-   - A&ntilde;adir texto: "Firmado electr&oacute;nicamente el DD/MM/YYYY HH:MM - IP: X.X.X.X"
+   - Cargar el PDF original
+   - Incrustar firma PNG del cliente en la seccion de firmas (lado derecho "POR EL CLIENTE")
+   - Anadir texto: "Firmado electronicamente el DD/MM/YYYY HH:MM - IP: X.X.X.X"
+   - Incrustar texto legal aceptado
 5. Guarda en BD:
    - pdf_firmado = PDF con firma incrustada
    - firma_png = imagen de la firma
@@ -128,83 +195,96 @@ P&aacute;gina p&uacute;blica sin sidebar, con branding dignita.tech:
    - firmado_ip = req.ip
    - firmado_user_agent = req.headers['user-agent']
    - firmado_at = NOW()
-6. Env&iacute;a PDF firmado por email a:
+6. Envia PDF firmado por email a:
    - Cliente (si tiene email)
    - leonidas.yauri@dignita.tech (copia para dignita.tech)
-7. Renderiza p&aacute;gina de confirmaci&oacute;n
+7. Renderiza pagina de confirmacion
+
+Email send puede fallar — el contrato se marca como firmado independientemente. Se registra email_enviado_at solo si el envio fue exitoso.
 
 ### 6. Ruta para servir PDF
 
-**Ruta:** GET `/firmar/:token/pdf`
-**Auth:** NINGUNA
+**Ruta:** GET `/firmar/:token/pdf` (routes/firmar.js)
+**Auth:** NINGUNA (rate limited)
 
 Sirve el pdf_original como inline PDF para el iframe de la vista de firma.
 
 ---
 
-## Rutas nuevas (resumen)
+## Rutas (resumen final)
 
-| M&eacute;todo | Ruta | Auth | Descripci&oacute;n |
-|--------|------|------|-------------|
-| POST | `/api/contratos/generar` | superadmin | Genera contrato, guarda en BD, env&iacute;a email |
-| GET | `/api/contratos/lista` | superadmin | Lista contratos con estado |
-| POST | `/api/contratos/:id/reenviar` | superadmin | Reenv&iacute;a email al cliente |
-| GET | `/api/contratos/:id/descargar/:tipo` | superadmin | Descarga PDF original o firmado |
-| GET | `/firmar/:token` | P&Uacute;BLICA | Vista de firma para el cliente |
-| GET | `/firmar/:token/pdf` | P&Uacute;BLICA | Sirve PDF para iframe |
-| POST | `/firmar/:token/submit` | P&Uacute;BLICA | Procesa firma del cliente |
+### routes/contratos.js (PROTEGIDAS — superadmin)
+
+| Metodo | Ruta | Descripcion |
+|--------|------|-------------|
+| GET | `/contratos` | Vista con formulario + tabla de contratos |
+| POST | `/api/contratos/generar` | Genera contrato, guarda en BD, envia email, retorna JSON |
+| GET | `/api/contratos/lista` | Lista contratos con estado (para tabla) |
+| POST | `/api/contratos/:id/reenviar` | Reenvia email al cliente |
+| GET | `/api/contratos/:id/descargar/:tipo` | Descarga PDF original o firmado |
+
+### routes/firmar.js (PUBLICAS — rate limited)
+
+| Metodo | Ruta | Descripcion |
+|--------|------|-------------|
+| GET | `/firmar/:token` | Vista de firma para el cliente |
+| GET | `/firmar/:token/pdf` | Sirve PDF para iframe |
+| POST | `/firmar/:token/submit` | Procesa firma del cliente |
 
 ---
 
 ## Dependencias nuevas (npm)
 
-| Paquete | Versi&oacute;n | Uso |
-|---------|---------|-----|
-| `pdf-lib` | ^1.17.1 | Incrustar firma PNG en PDF existente |
-| `nodemailer` | ^6.9.x | Enviar emails via Gmail SMTP |
-| `uuid` | ^9.0.x | Generar tokens &uacute;nicos para links |
+| Paquete | Uso |
+|---------|-----|
+| `pdf-lib` | Incrustar firma PNG del cliente en PDF existente |
+| `nodemailer` | Enviar emails via Gmail SMTP |
+
+**Eliminado:** `uuid` — usamos gen_random_uuid() de PostgreSQL.
 
 **Frontend (CDN):**
 - `signature_pad` v4 via CDN en `firmar.ejs`
 
 ---
 
-## Configuraci&oacute;n SMTP (.env)
+## Configuracion SMTP (.env)
 
 ```
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=leonidas.yauri@dignita.tech
-SMTP_PASS=xxxx-xxxx-xxxx-xxxx  # Contrase&ntilde;a de aplicaci&oacute;n Google
+SMTP_PASS=xxxx-xxxx-xxxx-xxxx
 SMTP_FROM="dignita.tech <leonidas.yauri@dignita.tech>"
 ```
 
 ---
 
-## Audit trail (validez legal Per&uacute;)
+## Audit trail (validez legal Peru)
 
 Cada firma registra:
-- **IP** del firmante
-- **Timestamp** (servidor, UTC)
-- **User-Agent** (navegador)
-- **Token UUID** que fue enviado al email del cliente (prueba de identidad)
+- **IP** del firmante (req.ip)
+- **Timestamp** (servidor, UTC, guardado en firmado_at)
+- **User-Agent** (navegador del firmante)
+- **Token UUID** enviado al email del cliente (prueba de identidad)
 - **firma_png** (imagen de la firma)
-- **Hash impl&iacute;cito**: el PDF firmado en BYTEA es la evidencia
+- **pdf_hash** (SHA-256 del PDF original — prueba de integridad)
+- **Texto legal** incrustado en el PDF firmado (lo que el cliente acepto)
 
-Esto cumple con los requisitos de Firma Electr&oacute;nica Simple (FES) bajo la Ley 27269 del Per&uacute;, suficiente para contratos entre partes privadas.
+Cumple requisitos de Firma Electronica Simple (FES) bajo Ley 27269.
 
 ---
 
 ## Archivos a crear/modificar
 
-| Archivo | Acci&oacute;n |
+| Archivo | Accion |
 |---------|--------|
-| `migrations/011_contratos.js` | CREATE TABLE contratos |
-| `routes/contratos.js` | Extender con rutas de firma, lista, reenv&iacute;o |
-| `views/contratos.ejs` | Agregar tabla de contratos enviados |
-| `views/firmar.ejs` | NUEVA - vista p&uacute;blica de firma |
-| `server.js` | Agregar rutas p&uacute;blicas `/firmar` |
-| `lib/mailer.js` | NUEVO - configuraci&oacute;n nodemailer |
+| `migrations/011_contratos.js` | CREATE TABLE + sequence |
+| `routes/contratos.js` | Refactorizar: PDF a buffer, guardar en BD, retornar JSON, lista, reenvio, descarga |
+| `routes/firmar.js` | NUEVO — rutas publicas de firma |
+| `views/contratos.ejs` | Actualizar: resultado JSON + tabla de contratos enviados |
+| `views/firmar.ejs` | NUEVA — vista publica de firma |
+| `server.js` | Montar `/firmar` como ruta publica con rate limiter |
+| `lib/mailer.js` | NUEVO — configuracion nodemailer |
 | `public/uploads/firma-dignita.png` | Ya copiada |
 | `.env` | Agregar variables SMTP |
 
@@ -212,7 +292,6 @@ Esto cumple con los requisitos de Firma Electr&oacute;nica Simple (FES) bajo la 
 
 ## Fuera de alcance
 
-- Firma criptogr&aacute;fica PKCS7 (no necesaria para FES)
-- Expiraci&oacute;n autom&aacute;tica de contratos (se puede agregar despu&eacute;s)
-- M&uacute;ltiples firmantes
+- Firma criptografica PKCS7 (no necesaria para FES)
+- Multiples firmantes
 - Historial de versiones del contrato
