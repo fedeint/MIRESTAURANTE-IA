@@ -270,7 +270,7 @@
                  data-submenu='[{"href":"/productos","label":"Carta completa"},{"href":"/ranking","label":"Ranking disponibilidad"}]'
                  data-submenu-title="Productos"
                  data-submenu-icon="egg-fried"><i
-                  class="bi bi-basket2-fill"></i><span class="nav-label">Productos</span></a>
+                  class="bi bi-egg-fried"></i><span class="nav-label">Productos</span></a>
             <% } %>
 
             <%/* --- Clientes: solo administrador --- */%>
@@ -296,6 +296,8 @@
                   class="bi bi-gear-fill"></i><span>Configuracion</span></a>
               <a href="/api/reportes" class="dg-sidebar-link <%= currentPath.startsWith('/reportes') ? 'active' : '' %>"><i
                   class="bi bi-file-earmark-bar-graph"></i><span>Reportes</span></a>
+              <a href="/sunat" class="dg-sidebar-link <%= currentPath === '/sunat' ? 'active' : '' %>"><i
+                  class="bi bi-building"></i><span>SUNAT</span></a>
             <% } %>
 
             <%/* --- Soporte: todos los roles autenticados (excepto superadmin que tiene su propio nav) --- */%>
@@ -382,7 +384,7 @@
                 title="Productos"
                 data-submenu='[{"href":"/productos","label":"Carta completa"},{"href":"/ranking","label":"Ranking disponibilidad"}]'
                 data-submenu-title="Productos"
-                data-submenu-icon="egg-fried"><i class="bi bi-basket2-fill"></i></a>
+                data-submenu-icon="egg-fried"><i class="bi bi-egg-fried"></i></a>
             <% } %>
 
             <%/* --- Clientes: solo administrador --- */%>
@@ -404,6 +406,8 @@
                   class="bi bi-gear-fill"></i></a>
               <a href="/api/reportes" class="dg-sidebar-icon-item <%= currentPath.startsWith('/reportes') ? 'active' : '' %>"
                 title="Reportes"><i class="bi bi-file-earmark-bar-graph"></i></a>
+              <a href="/sunat" class="dg-sidebar-icon-item <%= currentPath === '/sunat' ? 'active' : '' %>"
+                title="SUNAT"><i class="bi bi-building"></i></a>
             <% } %>
 
             <%/* --- Soporte: todos los roles autenticados --- */%>
@@ -465,7 +469,7 @@
                   class="dg-panel-dot"></span>Historial</a>
               <% } %>
                 <% if (panelProductos) { %>
-                  <div class="dg-panel-title"><i class="bi bi-basket2-fill"></i> Productos</div>
+                  <div class="dg-panel-title"><i class="bi bi-egg-fried"></i> Productos</div>
                   <a href="/productos" class="dg-panel-item <%= currentPath==='/productos' ? 'active' : '' %>"><span
                       class="dg-panel-dot"></span>Carta</a>
                   <a href="/ranking" class="dg-panel-item <%= currentPath==='/ranking' ? 'active' : '' %>"><span
