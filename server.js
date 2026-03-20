@@ -747,8 +747,8 @@ app.use((err, req, res, next) => {
     } else {
         res.status(500).render('error', {
             error: {
-                message: 'Error interno del servidor',
-                stack: process.env.NODE_ENV === 'development' ? err.stack : ''
+                message: err.message || 'Error interno del servidor',
+                stack: err.stack || ''
             }
         });
     }

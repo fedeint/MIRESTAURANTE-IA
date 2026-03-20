@@ -1,7 +1,7 @@
 <%
-  /* Limelight Quick Nav - acceso rápido a secciones principales
-     Incluir con: <%- include('partials/limelight-nav') %>
-     Requiere: /css/limelight-nav.css en el <head>
+  /* Limelight Quick Nav - acceso rapido a secciones principales
+     Incluir con: include('partials/limelight-nav')
+     Requiere: /css/limelight-nav.css en el head
   */
   const rl = (typeof reqPath !== 'undefined') ? reqPath : '';
   const ur = (typeof user !== 'undefined' && user) ? String(user.rol || '').toLowerCase() : '';
