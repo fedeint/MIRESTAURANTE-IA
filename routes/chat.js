@@ -4,7 +4,11 @@ const db = require('../db');
 
 // GET /chat - Render chat view
 router.get('/', (req, res) => {
-    res.render('chat');
+    const u = req.session.user || {};
+    res.render('chat', {
+        userRol: u.rol || 'administrador',
+        userName: u.nombre || u.usuario || 'Usuario'
+    });
 });
 
 // System prompt builder
@@ -304,7 +308,9 @@ router.post('/', async (req, res) => {
         return res.status(500).json({ error: 'Configura KIMI_API_KEY o ANTHROPIC_API_KEY en .env' });
     }
 
-    const { mensaje, historial, rol } = req.body;
+    const { mensaje, historial } = req.body;
+    // Use session role (secure) — ignore client-sent rol
+    const rol = req.session?.user?.rol || req.body.rol || '';
     if (!mensaje || !String(mensaje).trim()) {
         return res.status(400).json({ error: 'Mensaje requerido' });
     }

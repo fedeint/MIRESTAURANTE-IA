@@ -41,6 +41,29 @@
                                     <% }); %>
                                 </select>
                             </div>
+                        <!-- Asignar mesas a meseros -->
+                        <% if (meseros && meseros.length > 0 && mesasAll && mesasAll.length > 0) { %>
+                        <hr>
+                        <h6 class="mb-3"><i class="bi bi-people me-2"></i>Asignar mesas a meseros</h6>
+                        <div class="asignacion-mesas-container">
+                          <% meseros.forEach(function(mesero) { %>
+                          <div class="mb-3 p-2 rounded" style="background: rgba(0,0,0,0.02); border: 1px solid #eee;">
+                            <div class="fw-bold small mb-2"><i class="bi bi-person me-1"></i><%= mesero.nombre || mesero.usuario %></div>
+                            <div class="d-flex flex-wrap gap-1">
+                              <% mesasAll.forEach(function(mesa) { %>
+                              <label class="btn btn-sm btn-outline-secondary mesa-check-label" style="font-size: 0.75rem; padding: 2px 8px;">
+                                <input type="checkbox" class="mesa-asign-check d-none"
+                                  data-mesa-id="<%= mesa.id %>"
+                                  data-mesero-id="<%= mesero.id %>"
+                                  data-mesa-numero="<%= mesa.numero %>">
+                                <%= mesa.numero %>
+                              </label>
+                              <% }); %>
+                            </div>
+                          </div>
+                          <% }); %>
+                        </div>
+                        <% } %>
                             <button type="submit" class="btn btn-success w-100">
                                 <i class="bi bi-unlock me-1"></i> Abrir Caja
                             </button>
@@ -49,6 +72,29 @@
                 </div>
             </div>
         </div>
+
+        <script>
+        document.querySelectorAll('.mesa-asign-check').forEach(function(cb) {
+          cb.addEventListener('change', function() {
+            if (this.checked) {
+              var mesaId = this.dataset.mesaId;
+              var self = this;
+              document.querySelectorAll('.mesa-asign-check[data-mesa-id="' + mesaId + '"]').forEach(function(other) {
+                if (other !== self) {
+                  other.checked = false;
+                  other.closest('.mesa-check-label').classList.remove('btn-primary');
+                  other.closest('.mesa-check-label').classList.add('btn-outline-secondary');
+                }
+              });
+              this.closest('.mesa-check-label').classList.remove('btn-outline-secondary');
+              this.closest('.mesa-check-label').classList.add('btn-primary');
+            } else {
+              this.closest('.mesa-check-label').classList.remove('btn-primary');
+              this.closest('.mesa-check-label').classList.add('btn-outline-secondary');
+            }
+          });
+        });
+        </script>
 
         <% } else { %>
         <!-- ==================== CAJA ABIERTA ==================== -->
@@ -110,6 +156,71 @@
                 <i class="bi bi-lock me-1"></i> Cerrar caja
             </button>
         </div>
+
+        <!-- Meseros en turno -->
+        <%
+          var meserosConMesas = [];
+          if (meseros && mesasAll) {
+            meseros.forEach(function(m) {
+              var misMesas = mesasAll.filter(function(mesa) { return mesa.mesero_asignado_id === m.id; });
+              if (misMesas.length > 0) {
+                var prodData = productosPorMesero ? productosPorMesero.find(function(p) { return p.mesero_id === m.id; }) : null;
+                meserosConMesas.push({
+                  id: m.id,
+                  nombre: m.nombre || m.usuario,
+                  mesas: misMesas,
+                  productos: prodData ? Number(prodData.productos) : 0
+                });
+              }
+            });
+            meserosConMesas.sort(function(a, b) { return b.productos - a.productos; });
+          }
+        %>
+        <% if (meserosConMesas.length > 0) { %>
+        <div class="card shadow-sm mb-4">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h5 class="mb-0"><i class="bi bi-people me-2"></i>Meseros en turno</h5>
+              <button class="btn btn-sm btn-outline-primary" id="btnEditarAsignaciones">
+                <i class="bi bi-pencil me-1"></i>Editar
+              </button>
+            </div>
+            <div class="row g-2 mb-3">
+              <% meserosConMesas.forEach(function(mc) { %>
+              <div class="col-md-4 col-sm-6">
+                <div class="p-3 rounded" style="background: #f8f9fa; border: 1px solid #e9ecef;">
+                  <div class="fw-bold"><i class="bi bi-person-badge me-1"></i><%= mc.nombre %></div>
+                  <div class="text-muted small mt-1">
+                    <% mc.mesas.forEach(function(mesa) { %>
+                      <span class="badge bg-light text-dark border me-1">Mesa <%= mesa.numero %></span>
+                    <% }); %>
+                  </div>
+                  <div class="mt-2">
+                    <span class="badge bg-primary"><%= mc.productos %> productos</span>
+                  </div>
+                </div>
+              </div>
+              <% }); %>
+            </div>
+            <h6 class="mt-3"><i class="bi bi-trophy me-2"></i>Ranking del dia</h6>
+            <div class="table-responsive">
+              <table class="table table-sm table-hover mb-0">
+                <thead><tr><th>#</th><th>Mesero</th><th>Mesas</th><th>Productos</th></tr></thead>
+                <tbody>
+                  <% meserosConMesas.forEach(function(mc, idx) { %>
+                  <tr><td><%= idx + 1 %></td><td><%= mc.nombre %></td><td><%= mc.mesas.length %></td><td><strong><%= mc.productos %></strong></td></tr>
+                  <% }); %>
+                </tbody>
+              </table>
+            </div>
+            <div class="text-end mt-2">
+              <button class="btn btn-sm btn-link text-decoration-none" id="btnVerHistorialRanking">
+                <i class="bi bi-clock-history me-1"></i>Ver historial completo
+              </button>
+            </div>
+          </div>
+        </div>
+        <% } %>
 
         <!-- Tabla de movimientos -->
         <div class="card shadow-sm">
@@ -328,6 +439,68 @@
             </div>
         </div>
 
+        <!-- Modal Editar Asignaciones -->
+        <div class="modal fade" id="modalEditarAsignaciones" tabindex="-1">
+          <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-pencil me-2"></i>Editar asignaciones de mesas</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body">
+                <% meseros.forEach(function(mesero) { %>
+                <div class="mb-3 p-2 rounded" style="background: rgba(0,0,0,0.02); border: 1px solid #eee;">
+                  <div class="fw-bold small mb-2"><i class="bi bi-person me-1"></i><%= mesero.nombre || mesero.usuario %></div>
+                  <div class="d-flex flex-wrap gap-1">
+                    <% mesasAll.forEach(function(mesa) { %>
+                    <label class="btn btn-sm <%= mesa.mesero_asignado_id === mesero.id ? 'btn-primary' : 'btn-outline-secondary' %> edit-mesa-check-label" style="font-size: 0.75rem; padding: 2px 8px;">
+                      <input type="checkbox" class="edit-mesa-check d-none"
+                        data-mesa-id="<%= mesa.id %>"
+                        data-mesero-id="<%= mesero.id %>"
+                        <%= mesa.mesero_asignado_id === mesero.id ? 'checked' : '' %>>
+                      <%= mesa.numero %>
+                    </label>
+                    <% }); %>
+                  </div>
+                </div>
+                <% }); %>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btnGuardarAsignaciones"><i class="bi bi-check-lg me-1"></i>Guardar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal Historial Ranking -->
+        <div class="modal fade" id="modalHistorialRanking" tabindex="-1">
+          <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-trophy me-2"></i>Historial de Meseros</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body">
+                <div class="btn-group mb-3" role="group">
+                  <button class="btn btn-sm btn-primary ranking-periodo" data-periodo="hoy">Hoy</button>
+                  <button class="btn btn-sm btn-outline-secondary ranking-periodo" data-periodo="semana">Semana</button>
+                  <button class="btn btn-sm btn-outline-secondary ranking-periodo" data-periodo="mes">Mes</button>
+                  <button class="btn btn-sm btn-outline-secondary ranking-periodo" data-periodo="todo">Todo</button>
+                </div>
+                <div class="table-responsive">
+                  <table class="table table-sm table-hover">
+                    <thead><tr><th>#</th><th>Mesero</th><th>Mesas</th><th>Productos</th><th>Prom/mesa</th></tr></thead>
+                    <tbody id="historialRankingBody">
+                      <tr><td colspan="5" class="text-center text-muted">Cargando...</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <% } %>
 
     </div><!-- container -->
@@ -364,10 +537,14 @@
                 if (!confirm.isConfirmed) return;
 
                 try {
+                    var asignaciones = [];
+                    document.querySelectorAll('.mesa-asign-check:checked').forEach(function(cb) {
+                      asignaciones.push({ mesa_id: parseInt(cb.dataset.mesaId), mesero_id: parseInt(cb.dataset.meseroId) });
+                    });
                     const res = await fetch('/api/caja/abrir', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ monto_apertura: parseFloat(monto), turno_id: parseInt(turno_id) })
+                        body: JSON.stringify({ monto_apertura: parseFloat(monto), turno_id: parseInt(turno_id), asignaciones: asignaciones })
                     });
                     const data = await res.json();
                     if (res.ok) {
@@ -551,6 +728,92 @@
                 }
             });
         }
+
+        // === Meseros: Editar asignaciones ===
+        document.getElementById('btnEditarAsignaciones')?.addEventListener('click', function() {
+          new bootstrap.Modal(document.getElementById('modalEditarAsignaciones')).show();
+        });
+
+        document.querySelectorAll('.edit-mesa-check').forEach(function(cb) {
+          cb.addEventListener('change', function() {
+            if (this.checked) {
+              var mesaId = this.dataset.mesaId;
+              var self = this;
+              document.querySelectorAll('.edit-mesa-check[data-mesa-id="' + mesaId + '"]').forEach(function(other) {
+                if (other !== self) {
+                  other.checked = false;
+                  other.closest('.edit-mesa-check-label').classList.remove('btn-primary');
+                  other.closest('.edit-mesa-check-label').classList.add('btn-outline-secondary');
+                }
+              });
+              this.closest('.edit-mesa-check-label').classList.remove('btn-outline-secondary');
+              this.closest('.edit-mesa-check-label').classList.add('btn-primary');
+            } else {
+              this.closest('.edit-mesa-check-label').classList.remove('btn-primary');
+              this.closest('.edit-mesa-check-label').classList.add('btn-outline-secondary');
+            }
+          });
+        });
+
+        document.getElementById('btnGuardarAsignaciones')?.addEventListener('click', async function() {
+          var asignaciones = [];
+          document.querySelectorAll('.edit-mesa-check:checked').forEach(function(cb) {
+            asignaciones.push({ mesa_id: parseInt(cb.dataset.mesaId), mesero_id: parseInt(cb.dataset.meseroId) });
+          });
+          try {
+            var resp = await fetch('/api/caja/reasignar-mesas', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ asignaciones: asignaciones })
+            });
+            var data = await resp.json();
+            if (resp.ok) {
+              Swal.fire({ icon: 'success', title: 'Asignaciones actualizadas', timer: 1500, showConfirmButton: false });
+              setTimeout(function() { location.reload(); }, 1500);
+            } else {
+              Swal.fire({ icon: 'error', title: 'Error', text: data.error });
+            }
+          } catch (err) {
+            Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo guardar' });
+          }
+        });
+
+        // === Historial ranking ===
+        document.getElementById('btnVerHistorialRanking')?.addEventListener('click', function() {
+          new bootstrap.Modal(document.getElementById('modalHistorialRanking')).show();
+          cargarRanking('hoy');
+        });
+
+        document.querySelectorAll('.ranking-periodo').forEach(function(btn) {
+          btn.addEventListener('click', function() {
+            document.querySelectorAll('.ranking-periodo').forEach(function(b) {
+              b.classList.remove('btn-primary');
+              b.classList.add('btn-outline-secondary');
+            });
+            this.classList.remove('btn-outline-secondary');
+            this.classList.add('btn-primary');
+            cargarRanking(this.dataset.periodo);
+          });
+        });
+
+        async function cargarRanking(periodo) {
+          var tbody = document.getElementById('historialRankingBody');
+          tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Cargando...</td></tr>';
+          try {
+            var resp = await fetch('/api/caja/ranking-meseros?periodo=' + periodo);
+            var data = await resp.json();
+            if (data.ranking && data.ranking.length > 0) {
+              tbody.innerHTML = data.ranking.map(function(r, i) {
+                return '<tr><td>' + (i+1) + '</td><td>' + r.nombre + '</td><td>' + r.mesas_atendidas + '</td><td><strong>' + r.productos_servidos + '</strong></td><td>' + r.promedio_por_mesa + '</td></tr>';
+              }).join('');
+            } else {
+              tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Sin datos para este periodo</td></tr>';
+            }
+          } catch (err) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger">Error al cargar</td></tr>';
+          }
+        }
+
     })();
     </script>
 </body>

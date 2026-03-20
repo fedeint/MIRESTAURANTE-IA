@@ -123,26 +123,30 @@
             30% { transform: translateY(-6px); }
         }
 
+        /* ─── Input area moderno ─── */
         .chat-input-area {
             flex-shrink: 0;
             padding-top: 0.75rem;
         }
 
         .chat-input-wrap {
-            display: flex;
-            gap: 0.5rem;
             background: var(--dg-surface);
             backdrop-filter: blur(16px);
             border: 1.5px solid var(--dg-surface-border);
-            border-radius: 1rem;
-            padding: 0.5rem 0.5rem 0.5rem 1rem;
-            transition: border-color 0.2s;
+            border-radius: 1.5rem;
+            padding: 0.5rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
             box-shadow: var(--dg-shadow-sm);
         }
 
         .chat-input-wrap:focus-within {
             border-color: var(--dg-primary-light);
             box-shadow: 0 0 0 3px var(--dg-primary-glow);
+        }
+
+        .chat-input-wrap.recording {
+            border-color: rgba(239, 68, 68, 0.5);
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
         }
 
         .chat-input {
@@ -156,21 +160,62 @@
             resize: none;
             max-height: 120px;
             line-height: 1.5;
+            width: 100%;
+            padding: 0.4rem 0.5rem;
         }
 
         .chat-input::placeholder { color: var(--dg-text-muted); }
 
+        .chat-input-bottom {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.25rem 0.25rem 0;
+        }
+
+        .chat-input-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .chat-action-btn {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            border: none;
+            background: transparent;
+            color: var(--dg-text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.05rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            flex-shrink: 0;
+        }
+
+        .chat-action-btn:hover {
+            background: rgba(99,102,241,0.08);
+            color: var(--dg-primary);
+        }
+
+        .chat-action-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
         .chat-send-btn {
-            width: 42px;
-            height: 42px;
-            border-radius: 0.75rem;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
             border: none;
             background: linear-gradient(135deg, #6366f1, #4f46e5);
             color: #fff;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.1rem;
+            font-size: 1rem;
             cursor: pointer;
             transition: all 0.2s;
             flex-shrink: 0;
@@ -188,6 +233,89 @@
             transform: none;
         }
 
+        .chat-send-btn.mic-mode {
+            background: transparent;
+            color: var(--dg-text-muted);
+            box-shadow: none;
+        }
+
+        .chat-send-btn.mic-mode:hover {
+            background: rgba(99,102,241,0.08);
+            color: var(--dg-primary);
+        }
+
+        .chat-send-btn.stop-mode {
+            background: transparent;
+            color: #ef4444;
+            box-shadow: none;
+        }
+
+        .chat-send-btn.stop-mode:hover {
+            background: rgba(239,68,68,0.08);
+        }
+
+        /* ─── Recording visualizer ─── */
+        .voice-recorder {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            padding: 0.75rem 0.5rem;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .voice-recorder.active {
+            display: flex;
+        }
+
+        .voice-recorder-timer {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .voice-recorder-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ef4444;
+            animation: pulseDot 1s ease-in-out infinite;
+        }
+
+        @keyframes pulseDot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(0.8); }
+        }
+
+        .voice-recorder-time {
+            font-family: 'SF Mono', 'Fira Code', monospace;
+            font-size: 0.85rem;
+            color: var(--dg-text-secondary);
+        }
+
+        .voice-visualizer {
+            width: 100%;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2px;
+            padding: 0 1rem;
+        }
+
+        .voice-bar {
+            width: 2.5px;
+            border-radius: 2px;
+            background: linear-gradient(to top, rgba(99,102,241,0.4), rgba(99,102,241,0.8));
+            transition: height 0.1s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        /* ─── Suggestions ─── */
         .chat-suggestions {
             display: flex;
             flex-wrap: wrap;
@@ -214,11 +342,129 @@
             color: var(--dg-primary);
         }
 
-        /* Markdown-like formatting in AI messages */
+        /* ─── Historial panel ─── */
+        .chat-history-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 1px solid var(--dg-surface-border);
+            background: var(--dg-surface);
+            color: var(--dg-text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .chat-history-btn:hover {
+            background: rgba(99,102,241,0.06);
+            border-color: var(--dg-primary-light);
+            color: var(--dg-primary);
+        }
+
+        .chat-history-panel {
+            position: fixed;
+            top: 0;
+            right: -360px;
+            width: 340px;
+            max-width: 90vw;
+            height: 100vh;
+            background: var(--dg-surface);
+            border-left: 1px solid var(--dg-surface-border);
+            z-index: 1050;
+            transition: right 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            box-shadow: -4px 0 24px rgba(0,0,0,0.15);
+        }
+
+        .chat-history-panel.open {
+            right: 0;
+        }
+
+        .chat-history-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 1049;
+            display: none;
+        }
+
+        .chat-history-overlay.open {
+            display: block;
+        }
+
+        .chat-history-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid var(--dg-surface-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+
+        .chat-history-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0.75rem;
+        }
+
+        .chat-history-item {
+            padding: 0.75rem;
+            border-radius: 0.75rem;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-bottom: 0.25rem;
+        }
+
+        .chat-history-item:hover {
+            background: rgba(99,102,241,0.06);
+        }
+
+        .chat-history-item-q {
+            font-size: 0.85rem;
+            color: var(--dg-text);
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .chat-history-item-date {
+            font-size: 0.7rem;
+            color: var(--dg-text-muted);
+            margin-top: 0.15rem;
+        }
+
+        .chat-history-empty {
+            text-align: center;
+            padding: 2rem 1rem;
+            color: var(--dg-text-muted);
+            font-size: 0.85rem;
+        }
+
+        .chat-history-actions {
+            padding: 0.75rem 1.25rem;
+            border-top: 1px solid var(--dg-surface-border);
+            flex-shrink: 0;
+        }
+
+        /* Markdown formatting in AI messages */
         .chat-msg-ai p { margin: 0 0 0.5rem 0; }
         .chat-msg-ai p:last-child { margin-bottom: 0; }
         .chat-msg-ai ul, .chat-msg-ai ol { margin: 0.25rem 0; padding-left: 1.25rem; }
         .chat-msg-ai li { margin-bottom: 0.2rem; }
+
+        /* Divider between action buttons */
+        .chat-action-divider {
+            width: 1.5px;
+            height: 20px;
+            margin: 0 0.15rem;
+            background: linear-gradient(to bottom, transparent, var(--dg-surface-border), transparent);
+            border-radius: 1px;
+        }
     </style>
 </head>
 <body>
@@ -235,37 +481,25 @@
                         </div>
                         <div>
                             <h5 class="mb-0 fw-bold">Asistente IA</h5>
-                            <div class="text-muted small">Pregunta cualquier cosa sobre tu negocio</div>
+                            <div class="text-muted small">Hola <%= typeof userName !== 'undefined' ? userName : 'Usuario' %> &middot; Pregunta cualquier cosa sobre tu negocio</div>
                         </div>
-                        <div class="ms-auto">
+                        <div class="ms-auto d-flex align-items-center gap-2">
                             <span class="badge" style="background:rgba(16,185,129,0.1);color:#059669;border:1px solid rgba(16,185,129,0.2);">
                                 <i class="bi bi-circle-fill me-1" style="font-size:0.5rem;"></i>En linea
                             </span>
+                            <button class="chat-history-btn" id="historyToggle" title="Historial de preguntas">
+                                <i class="bi bi-clock-history"></i>
+                            </button>
                         </div>
                     </div>
                 </div>
 
-                <!-- Role selector (shown first) -->
-                <div id="roleSelector" class="text-center py-4">
-                    <div class="chat-msg chat-msg-ai d-inline-block text-start mb-3" style="max-width:100%;">
-                        <strong>Hola! Soy DIGNITA AI</strong>, tu asistente inteligente.<br>
-                        Creado por <strong>Leonidas Yauri</strong>, CEO de <strong>dignita.tech</strong><br><br>
-                        Antes de empezar, selecciona tu puesto:
-                    </div>
-                    <div class="d-flex flex-wrap justify-content-center gap-2 mt-3">
-                        <button class="btn btn-outline-primary role-btn" data-role="administrador"><i class="bi bi-shield-fill me-1"></i>Administrador</button>
-                        <button class="btn btn-outline-primary role-btn" data-role="mesero"><i class="bi bi-person-badge me-1"></i>Mesero</button>
-                        <button class="btn btn-outline-primary role-btn" data-role="cocinero"><i class="bi bi-fire me-1"></i>Cocinero</button>
-                        <button class="btn btn-outline-primary role-btn" data-role="cajero"><i class="bi bi-cash-stack me-1"></i>Cajero</button>
-                    </div>
+                <!-- Messages -->
+                <div class="chat-messages" id="chatMessages">
                 </div>
 
-                <!-- Messages (hidden until role selected) -->
-                <div class="chat-messages" id="chatMessages" style="display:none;">
-                </div>
-
-                <!-- Suggestions (hidden until role selected) -->
-                <div id="suggestionsWrap" style="display:none;">
+                <!-- Suggestions -->
+                <div id="suggestionsWrap">
                     <div class="chat-suggestions" id="chatSuggestions">
                         <a class="chat-suggestion" data-q="Como van las ventas de hoy?"><i class="bi bi-graph-up me-1"></i>Ventas de hoy</a>
                         <a class="chat-suggestion" data-q="Cuales son los productos mas vendidos?"><i class="bi bi-trophy me-1"></i>Mas vendidos</a>
@@ -276,21 +510,37 @@
 
                 <!-- Input -->
                 <div class="chat-input-area">
-                    <div class="chat-input-wrap">
-                        <textarea class="chat-input" id="chatInput" rows="1" placeholder="Escribe o habla tu pregunta..." maxlength="2000"></textarea>
-                        <button class="chat-voice-btn" id="voiceBtn" type="button" title="Hablar" style="width:42px;height:42px;border-radius:0.75rem;border:1.5px solid #e2e8f0;background:transparent;color:#64748b;display:flex;align-items:center;justify-content:center;font-size:1.1rem;cursor:pointer;transition:all .2s;flex-shrink:0;">
-                            <i class="bi bi-mic-fill"></i>
-                        </button>
-                        <button class="chat-send-btn" id="chatSend" type="button" title="Enviar">
-                            <i class="bi bi-send-fill"></i>
-                        </button>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center mt-1">
-                        <div class="form-check form-switch" style="font-size:0.72rem;">
-                            <input class="form-check-input" type="checkbox" id="voiceAutoRead" checked style="transform:scale(0.8);">
-                            <label class="form-check-label text-muted" for="voiceAutoRead">Leer respuestas en voz alta</label>
+                    <div class="chat-input-wrap" id="inputWrap">
+                        <!-- Recording visualizer (hidden by default) -->
+                        <div class="voice-recorder" id="voiceRecorder">
+                            <div class="voice-recorder-timer">
+                                <div class="voice-recorder-dot"></div>
+                                <span class="voice-recorder-time" id="recorderTime">00:00</span>
+                            </div>
+                            <div class="voice-visualizer" id="voiceVisualizer"></div>
                         </div>
-                    <div class="text-center mt-2">
+
+                        <!-- Text input (hidden while recording) -->
+                        <div id="textInputArea">
+                            <textarea class="chat-input" id="chatInput" rows="1" placeholder="Escribe o habla tu pregunta..." maxlength="2000"></textarea>
+                        </div>
+
+                        <!-- Bottom actions -->
+                        <div class="chat-input-bottom">
+                            <div class="chat-input-actions" id="inputActions">
+                                <div class="form-check form-switch" style="font-size:0.72rem;margin:0;">
+                                    <input class="form-check-input" type="checkbox" id="voiceAutoRead" checked style="transform:scale(0.8);">
+                                    <label class="form-check-label text-muted" for="voiceAutoRead">Leer en voz alta</label>
+                                </div>
+                            </div>
+
+                            <!-- Send / Mic / Stop button -->
+                            <button class="chat-send-btn mic-mode" id="mainActionBtn" type="button" title="Grabar audio">
+                                <i class="bi bi-mic-fill" id="mainActionIcon"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="text-center mt-1">
                         <span class="text-muted" id="chatProvider" style="font-size:0.72rem;">Powered by Kimi AI (Moonshot) &middot; Los datos se consultan en tiempo real de tu base de datos</span>
                     </div>
                 </div>
@@ -299,56 +549,147 @@
     </main>
     </div>
 
+    <!-- History panel -->
+    <div class="chat-history-overlay" id="historyOverlay"></div>
+    <div class="chat-history-panel" id="historyPanel">
+        <div class="chat-history-header">
+            <h6 class="mb-0 fw-bold"><i class="bi bi-clock-history me-2"></i>Historial</h6>
+            <button class="chat-action-btn" id="historyClose" title="Cerrar">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+        <div class="chat-history-list" id="historyList">
+            <div class="chat-history-empty" id="historyEmpty">
+                <i class="bi bi-chat-dots" style="font-size:2rem;display:block;margin-bottom:0.5rem;opacity:0.4;"></i>
+                Aun no tienes preguntas en el historial
+            </div>
+        </div>
+        <div class="chat-history-actions">
+            <button class="btn btn-sm btn-outline-danger w-100" id="historyClear" style="border-radius:0.75rem;">
+                <i class="bi bi-trash3 me-1"></i>Limpiar historial
+            </button>
+        </div>
+    </div>
+
     <script src="/vendor/jquery/jquery.min.js"></script>
     <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
     <script>
     (function() {
-        const messagesEl = document.getElementById('chatMessages');
-        const inputEl = document.getElementById('chatInput');
-        const sendBtn = document.getElementById('chatSend');
-        const suggestionsEl = document.getElementById('chatSuggestions');
-        const roleSelectorEl = document.getElementById('roleSelector');
-        const suggestionsWrap = document.getElementById('suggestionsWrap');
-        let historial = [];
-        let sending = false;
-        let userRol = localStorage.getItem('dg-chat-rol') || '';
+        // ─── User role from session (no need to ask) ───
+        var userRol = '<%= typeof userRol !== "undefined" ? userRol : "administrador" %>';
+        var userName = '<%= typeof userName !== "undefined" ? userName : "Usuario" %>';
 
-        // Role selection
-        document.querySelectorAll('.role-btn').forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                userRol = this.getAttribute('data-role');
-                localStorage.setItem('dg-chat-rol', userRol);
-                activateChat();
-            });
-        });
+        var messagesEl = document.getElementById('chatMessages');
+        var inputEl = document.getElementById('chatInput');
+        var mainBtn = document.getElementById('mainActionBtn');
+        var mainIcon = document.getElementById('mainActionIcon');
+        var suggestionsEl = document.getElementById('chatSuggestions');
+        var suggestionsWrap = document.getElementById('suggestionsWrap');
+        var inputWrap = document.getElementById('inputWrap');
+        var textInputArea = document.getElementById('textInputArea');
+        var inputActions = document.getElementById('inputActions');
+        var historial = [];
+        var sending = false;
 
-        function activateChat() {
-            roleSelectorEl.style.display = 'none';
-            messagesEl.style.display = 'flex';
-            suggestionsWrap.style.display = 'block';
-            // Welcome message based on role
-            var roleName = userRol.charAt(0).toUpperCase() + userRol.slice(1);
-            addMessage('assistant', '**Bienvenido, ' + roleName + '!** Soy DIGNITA AI, creado por **Leonidas Yauri**, CEO de dignita.tech.\n\nEstoy aqui para ayudarte a usar el sistema y gestionar el restaurante. Preguntame lo que necesites sobre tu puesto o el negocio.\n\n¿En que puedo ayudarte?');
-            inputEl.focus();
+        // ─── Chat history (localStorage) ───
+        var HISTORY_KEY = 'dg-chat-history';
+
+        function getHistory() {
+            try { return JSON.parse(localStorage.getItem(HISTORY_KEY)) || []; }
+            catch { return []; }
         }
 
-        // Auto-activate if role was previously selected
-        if (userRol) { activateChat(); }
+        function saveToHistory(question, answer) {
+            var h = getHistory();
+            h.unshift({
+                q: question.substring(0, 200),
+                a: answer.substring(0, 300),
+                ts: Date.now()
+            });
+            // Keep last 50
+            if (h.length > 50) h = h.slice(0, 50);
+            localStorage.setItem(HISTORY_KEY, JSON.stringify(h));
+            renderHistory();
+        }
 
+        function renderHistory() {
+            var list = document.getElementById('historyList');
+            var empty = document.getElementById('historyEmpty');
+            var h = getHistory();
+
+            // Remove old items (keep empty placeholder)
+            list.querySelectorAll('.chat-history-item').forEach(function(el) { el.remove(); });
+
+            if (h.length === 0) {
+                empty.style.display = 'block';
+                return;
+            }
+
+            empty.style.display = 'none';
+
+            h.forEach(function(item) {
+                var div = document.createElement('div');
+                div.className = 'chat-history-item';
+                var date = new Date(item.ts);
+                var dateStr = date.toLocaleDateString('es-PE', { day: '2-digit', month: 'short' }) + ' ' + date.toLocaleTimeString('es-PE', { hour: '2-digit', minute: '2-digit' });
+                div.innerHTML = '<div class="chat-history-item-q">' + escapeHtml(item.q) + '</div><div class="chat-history-item-date">' + dateStr + '</div>';
+                div.addEventListener('click', function() {
+                    sendMessage(item.q);
+                    closeHistory();
+                });
+                list.appendChild(div);
+            });
+        }
+
+        // History panel toggle
+        var historyToggle = document.getElementById('historyToggle');
+        var historyPanel = document.getElementById('historyPanel');
+        var historyOverlay = document.getElementById('historyOverlay');
+        var historyClose = document.getElementById('historyClose');
+        var historyClear = document.getElementById('historyClear');
+
+        function openHistory() {
+            historyPanel.classList.add('open');
+            historyOverlay.classList.add('open');
+            renderHistory();
+        }
+
+        function closeHistory() {
+            historyPanel.classList.remove('open');
+            historyOverlay.classList.remove('open');
+        }
+
+        historyToggle.addEventListener('click', openHistory);
+        historyOverlay.addEventListener('click', closeHistory);
+        historyClose.addEventListener('click', closeHistory);
+        historyClear.addEventListener('click', function() {
+            localStorage.removeItem(HISTORY_KEY);
+            renderHistory();
+        });
+
+        // ─── Welcome message (auto, no role selector) ───
+        var roleName = userRol.charAt(0).toUpperCase() + userRol.slice(1);
+        addMessage('assistant', '**Bienvenido, ' + userName + '!** Soy DIGNITA AI, creado por **Leonidas Yauri**, CEO de dignita.tech.\n\nEstoy aqui para ayudarte como **' + roleName + '** a gestionar el restaurante. Preguntame lo que necesites.\n\n¿En que puedo ayudarte?');
+        inputEl.focus();
+
+        // ─── Message helpers ───
         function scrollBottom() {
             messagesEl.scrollTop = messagesEl.scrollHeight;
         }
 
         function addMessage(role, content, isError) {
-            const div = document.createElement('div');
+            var div = document.createElement('div');
             div.className = 'chat-msg ' + (isError ? 'chat-msg-error' : (role === 'user' ? 'chat-msg-user' : 'chat-msg-ai'));
             div.innerHTML = role === 'user' ? escapeHtml(content) : formatAI(content);
             messagesEl.appendChild(div);
             scrollBottom();
+
+            // Auto-read AI responses
+            if (role === 'assistant' && !isError) leerEnVozAlta(content);
         }
 
         function showTyping() {
-            const div = document.createElement('div');
+            var div = document.createElement('div');
             div.className = 'chat-typing';
             div.id = 'typingIndicator';
             div.innerHTML = '<div class="chat-typing-dot"></div><div class="chat-typing-dot"></div><div class="chat-typing-dot"></div>';
@@ -357,50 +698,43 @@
         }
 
         function hideTyping() {
-            const el = document.getElementById('typingIndicator');
+            var el = document.getElementById('typingIndicator');
             if (el) el.remove();
         }
 
         function escapeHtml(s) {
-            const d = document.createElement('div');
+            var d = document.createElement('div');
             d.textContent = s;
             return d.innerHTML;
         }
 
         function formatAI(text) {
-            // Basic markdown-like formatting
-            let html = escapeHtml(text);
-            // Bold
+            var html = escapeHtml(text);
             html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-            // Inline code
             html = html.replace(/`(.*?)`/g, '<code>$1</code>');
-            // Line breaks to paragraphs
             html = html.replace(/\n\n/g, '</p><p>');
             html = html.replace(/\n- /g, '</p><ul><li>');
             html = html.replace(/\n(\d+)\. /g, '</p><ol><li>');
-            // Simple line breaks
             html = html.replace(/\n/g, '<br>');
             html = '<p>' + html + '</p>';
             return html;
         }
 
+        // ─── Send message ───
         async function sendMessage(text) {
             if (sending || !text.trim()) return;
             sending = true;
-            sendBtn.disabled = true;
+            updateMainButton();
 
-            // Hide suggestions
             if (suggestionsEl) suggestionsEl.style.display = 'none';
 
-            // Add user message
             addMessage('user', text);
             historial.push({ role: 'user', content: text });
 
-            // Show typing
             showTyping();
 
             try {
-                const resp = await fetch('/api/chat', {
+                var resp = await fetch('/api/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -412,13 +746,15 @@
 
                 hideTyping();
 
-                const data = await resp.json();
+                var data = await resp.json();
                 if (!resp.ok) throw new Error(data.error || 'Error del servidor');
 
                 addMessage('assistant', data.respuesta);
                 historial.push({ role: 'assistant', content: data.respuesta });
 
-                // Update provider badge
+                // Save to history
+                saveToHistory(text, data.respuesta);
+
                 var prov = document.getElementById('chatProvider');
                 if (prov && data.provider) {
                     var name = data.provider === 'kimi' ? 'Kimi AI (Moonshot)' : 'Claude AI (Anthropic)';
@@ -430,94 +766,259 @@
             }
 
             sending = false;
-            sendBtn.disabled = false;
+            updateMainButton();
             inputEl.focus();
         }
 
-        // Send on click
-        sendBtn.addEventListener('click', function() {
-            const text = inputEl.value.trim();
+        // ─── Dynamic main button (mic / send / stop) ───
+        function updateMainButton() {
+            var hasContent = inputEl.value.trim() !== '';
+
+            if (sending) {
+                mainBtn.className = 'chat-send-btn';
+                mainBtn.disabled = true;
+                mainIcon.className = 'bi bi-hourglass-split';
+                mainBtn.title = 'Enviando...';
+                return;
+            }
+
+            if (isRecording) {
+                mainBtn.className = 'chat-send-btn stop-mode';
+                mainBtn.disabled = false;
+                mainIcon.className = 'bi bi-stop-circle-fill';
+                mainBtn.title = 'Detener grabacion';
+                return;
+            }
+
+            if (hasContent) {
+                mainBtn.className = 'chat-send-btn';
+                mainBtn.disabled = false;
+                mainIcon.className = 'bi bi-arrow-up';
+                mainBtn.title = 'Enviar mensaje';
+            } else {
+                mainBtn.className = 'chat-send-btn mic-mode';
+                mainBtn.disabled = false;
+                mainIcon.className = 'bi bi-mic-fill';
+                mainBtn.title = 'Grabar audio';
+            }
+        }
+
+        // Main button click handler
+        mainBtn.addEventListener('click', function() {
+            if (isRecording) {
+                stopRecording();
+                return;
+            }
+
+            var text = inputEl.value.trim();
             if (text) {
                 inputEl.value = '';
                 inputEl.style.height = 'auto';
+                updateMainButton();
                 sendMessage(text);
+            } else {
+                startRecording();
             }
         });
 
-        // Send on Enter (Shift+Enter for newline)
-        inputEl.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                sendBtn.click();
-            }
-        });
-
-        // Auto-resize textarea
+        // Update button on input change
         inputEl.addEventListener('input', function() {
             this.style.height = 'auto';
             this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+            updateMainButton();
+        });
+
+        // Send on Enter
+        inputEl.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                mainBtn.click();
+            }
         });
 
         // Suggestions
         document.querySelectorAll('.chat-suggestion').forEach(function(btn) {
             btn.addEventListener('click', function(e) {
                 e.preventDefault();
-                const q = this.getAttribute('data-q');
+                var q = this.getAttribute('data-q');
                 if (q) sendMessage(q);
             });
         });
 
-        inputEl.focus();
-
-        // ========= VOZ (Web Speech API) =========
-        var voiceBtn = document.getElementById('voiceBtn');
-        var voiceAutoRead = document.getElementById('voiceAutoRead');
+        // ─── Voice Recording with visualizer ───
         var SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        var isListening = false;
+        var isRecording = false;
+        var recordingTimer = null;
+        var recordingSeconds = 0;
+        var analyserInterval = null;
+        var audioContext = null;
+        var analyser = null;
+        var mediaStream = null;
+        var voiceRecorderEl = document.getElementById('voiceRecorder');
+        var recorderTimeEl = document.getElementById('recorderTime');
+        var visualizerEl = document.getElementById('voiceVisualizer');
 
-        if (SpeechRecognition && voiceBtn) {
+        // Build visualizer bars
+        var NUM_BARS = 40;
+        for (var i = 0; i < NUM_BARS; i++) {
+            var bar = document.createElement('div');
+            bar.className = 'voice-bar';
+            bar.style.height = '4px';
+            visualizerEl.appendChild(bar);
+        }
+
+        function formatTime(sec) {
+            var m = Math.floor(sec / 60);
+            var s = sec % 60;
+            return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+        }
+
+        function startRecording() {
+            if (!SpeechRecognition) {
+                addMessage('error', 'Tu navegador no soporta grabacion de voz. Usa Chrome o Edge.', true);
+                return;
+            }
+
+            isRecording = true;
+            recordingSeconds = 0;
+            recorderTimeEl.textContent = '00:00';
+
+            // Show recorder, hide text input
+            voiceRecorderEl.classList.add('active');
+            textInputArea.style.display = 'none';
+            inputActions.style.visibility = 'hidden';
+            inputWrap.classList.add('recording');
+            updateMainButton();
+
+            // Timer
+            recordingTimer = setInterval(function() {
+                recordingSeconds++;
+                recorderTimeEl.textContent = formatTime(recordingSeconds);
+            }, 1000);
+
+            // Audio context for visualizer
+            navigator.mediaDevices.getUserMedia({ audio: true }).then(function(stream) {
+                mediaStream = stream;
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                var source = audioContext.createMediaStreamSource(stream);
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 128;
+                source.connect(analyser);
+
+                var bufferLength = analyser.frequencyBinCount;
+                var dataArray = new Uint8Array(bufferLength);
+                var bars = visualizerEl.querySelectorAll('.voice-bar');
+
+                analyserInterval = setInterval(function() {
+                    analyser.getByteFrequencyData(dataArray);
+                    for (var j = 0; j < bars.length; j++) {
+                        var idx = Math.floor(j * bufferLength / bars.length);
+                        var val = dataArray[idx] || 0;
+                        var height = Math.max(4, (val / 255) * 36);
+                        bars[j].style.height = height + 'px';
+                    }
+                }, 50);
+            }).catch(function() {
+                // Microphone denied — fall back to random bars
+                analyserInterval = setInterval(function() {
+                    var bars = visualizerEl.querySelectorAll('.voice-bar');
+                    for (var j = 0; j < bars.length; j++) {
+                        bars[j].style.height = Math.max(4, Math.random() * 36) + 'px';
+                    }
+                }, 100);
+            });
+
+            // Start speech recognition
             var recognition = new SpeechRecognition();
             recognition.lang = 'es-PE';
             recognition.interimResults = false;
             recognition.maxAlternatives = 1;
+            recognition.continuous = true;
 
-            voiceBtn.addEventListener('click', function() {
-                if (isListening) {
-                    recognition.stop();
-                    return;
-                }
-                recognition.start();
-                isListening = true;
-                voiceBtn.style.background = 'linear-gradient(135deg,#ef4444,#dc2626)';
-                voiceBtn.style.color = '#fff';
-                voiceBtn.style.border = 'none';
-                voiceBtn.innerHTML = '<i class="bi bi-mic-fill"></i>';
-            });
+            window._activeRecognition = recognition;
+            window._recognizedText = '';
 
             recognition.onresult = function(event) {
-                var transcript = event.results[0][0].transcript;
-                inputEl.value = transcript;
-                sendBtn.click();
-            };
-
-            recognition.onend = function() {
-                isListening = false;
-                voiceBtn.style.background = 'transparent';
-                voiceBtn.style.color = '#64748b';
-                voiceBtn.style.border = '1.5px solid #e2e8f0';
+                var last = event.results[event.results.length - 1];
+                if (last.isFinal) {
+                    window._recognizedText += (window._recognizedText ? ' ' : '') + last[0].transcript;
+                }
             };
 
             recognition.onerror = function() {
-                isListening = false;
-                voiceBtn.style.background = 'transparent';
-                voiceBtn.style.color = '#64748b';
-                voiceBtn.style.border = '1.5px solid #e2e8f0';
+                stopRecording();
             };
-        } else if (voiceBtn) {
-            voiceBtn.style.display = 'none';
+
+            recognition.onend = function() {
+                // If still recording, it timed out - finalize
+                if (isRecording) {
+                    stopRecording();
+                }
+            };
+
+            recognition.start();
         }
 
-        // Text-to-Speech para respuestas
+        function stopRecording() {
+            isRecording = false;
+
+            // Stop timer
+            if (recordingTimer) {
+                clearInterval(recordingTimer);
+                recordingTimer = null;
+            }
+
+            // Stop visualizer
+            if (analyserInterval) {
+                clearInterval(analyserInterval);
+                analyserInterval = null;
+            }
+
+            // Stop audio context
+            if (mediaStream) {
+                mediaStream.getTracks().forEach(function(t) { t.stop(); });
+                mediaStream = null;
+            }
+            if (audioContext) {
+                audioContext.close();
+                audioContext = null;
+            }
+
+            // Stop speech recognition
+            if (window._activeRecognition) {
+                window._activeRecognition.stop();
+            }
+
+            // Reset visualizer bars
+            visualizerEl.querySelectorAll('.voice-bar').forEach(function(b) {
+                b.style.height = '4px';
+            });
+
+            // Hide recorder, show text input
+            voiceRecorderEl.classList.remove('active');
+            textInputArea.style.display = 'block';
+            inputActions.style.visibility = 'visible';
+            inputWrap.classList.remove('recording');
+            updateMainButton();
+
+            // Send recognized text
+            var text = (window._recognizedText || '').trim();
+            window._recognizedText = '';
+            window._activeRecognition = null;
+
+            if (text) {
+                sendMessage(text);
+            }
+        }
+
+        // Hide mic button if unsupported
+        if (!SpeechRecognition) {
+            // Button will show but show error on click (handled in startRecording)
+        }
+
+        // ─── Text-to-Speech ───
+        var voiceAutoRead = document.getElementById('voiceAutoRead');
+
         function leerEnVozAlta(texto) {
             if (!voiceAutoRead || !voiceAutoRead.checked) return;
             if (!window.speechSynthesis) return;
@@ -528,12 +1029,8 @@
             window.speechSynthesis.speak(utt);
         }
 
-        // Hook into addMessage to auto-read AI responses
-        var _origAddMessage = addMessage;
-        addMessage = function(role, content, isError) {
-            _origAddMessage(role, content, isError);
-            if (role === 'assistant' && !isError) leerEnVozAlta(content);
-        };
+        // Initialize button state
+        updateMainButton();
     })();
     </script>
 </body>

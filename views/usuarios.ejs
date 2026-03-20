@@ -445,6 +445,7 @@
                     <th>Nombre</th>
                     <th>Rol</th>
                     <th>Estado</th>
+                    <th>Mesas</th>
                     <th>Permisos</th>
                     <th>Ultimo login</th>
                     <th class="text-end">Acciones</th>
@@ -469,6 +470,17 @@
                           <span class="perm-badge" style="background:rgba(34,197,94,0.1);color:#16A34A;">Activo</span>
                         <% } else { %>
                           <span class="perm-badge" style="background:rgba(107,114,128,0.1);color:#6B7280;">Inactivo</span>
+                        <% } %>
+                      </td>
+                      <td>
+                        <% if (u.mesasAsignadas && u.mesasAsignadas.length > 0) { %>
+                          <% u.mesasAsignadas.forEach(num => { %>
+                            <span class="badge bg-light text-dark border" style="font-size:0.7rem;">Mesa <%= num %></span>
+                          <% }) %>
+                        <% } else if (u.rol === 'mesero') { %>
+                          <span class="text-muted small">Sin asignar</span>
+                        <% } else { %>
+                          <span class="text-muted small">—</span>
                         <% } %>
                       </td>
                       <td>
@@ -649,7 +661,8 @@
       activo: Number(u.activo),
       last_login: u.last_login ? new Date(u.last_login).toISOString() : null,
       created_at: u.created_at ? new Date(u.created_at).toISOString() : null,
-      permisosArr: u.permisosArr || []
+      permisosArr: u.permisosArr || [],
+      mesasAsignadas: u.mesasAsignadas || []
     }))) %>;
     window.DG_ALL_MODULES = <%- JSON.stringify(allModules || []) %>;
     window.DG_ROLES = <%- JSON.stringify(roles || []) %>;

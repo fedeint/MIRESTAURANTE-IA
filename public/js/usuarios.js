@@ -232,6 +232,9 @@ document.addEventListener('DOMContentLoaded', function () {
           <div class="usr-card-username">@${escapeHtml(u.usuario)}</div>
           <span class="usr-card-role-badge ${roleBadge}">${escapeHtml(u.rol)}</span><br>
           <span class="usr-status-badge ${statusClass}">${statusText}</span>
+          ${u.mesasAsignadas && u.mesasAsignadas.length > 0
+            ? '<div class="mt-2">' + u.mesasAsignadas.map(n => `<span class="badge bg-light text-dark border" style="font-size:0.65rem;">Mesa ${n}</span>`).join(' ') + '</div>'
+            : (u.rol === 'mesero' ? '<div class="mt-2"><span style="color:#9CA3AF;font-size:0.7rem;">Sin mesas asignadas</span></div>' : '')}
         </div>
         <div class="card-permisos" id="permisos-${u.id}">
           <div class="card-permisos-inner">
@@ -368,11 +371,14 @@ document.addEventListener('DOMContentLoaded', function () {
           const initials = getInitials(u.nombre, u.usuario);
           const avatarClass = getAvatarClass(u.rol);
           const isInactive = Number(u.activo) !== 1;
+          const mesasHtml = u.mesasAsignadas && u.mesasAsignadas.length > 0
+            ? '<div style="margin-top:4px;">' + u.mesasAsignadas.map(n => `<span class="badge bg-light text-dark border" style="font-size:0.6rem;">M${n}</span>`).join(' ') + '</div>'
+            : '';
           staffNode.innerHTML = `
             <div class="org-status-dot ${isInactive ? 'dot-inactivo' : 'dot-activo'}"></div>
             <div class="org-node-avatar ${avatarClass}">${escapeHtml(initials)}</div>
             <div class="org-node-name">${escapeHtml(u.nombre || u.usuario)}</div>
-            <div class="org-node-role">@${escapeHtml(u.usuario)}</div>`;
+            <div class="org-node-role">@${escapeHtml(u.usuario)}</div>${mesasHtml}`;
           staffNode.addEventListener('click', () => {
             const found = usuariosData.find(x => x.id === u.id);
             if (found) abrirEditar(found);

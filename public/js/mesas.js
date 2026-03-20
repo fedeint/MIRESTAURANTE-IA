@@ -13,6 +13,28 @@ $(function() {
   // ID del usuario actual (para destacar "mis mesas" en rol mesero)
   const userId = window.__USER_ID__ || null;
 
+  // =========================================================
+  // FILTRO "MIS MESAS / TODAS" — estado y helper
+  // Definido aquí arriba para que refreshMesas() pueda usarlos.
+  // La ligadura de eventos al #filtroMeseroBar se hace más abajo.
+  // =========================================================
+  let filtroMeseroActivo = 'todas'; // 'todas' | 'mias'
+
+  function aplicarFiltroMesas() {
+    const cards = document.querySelectorAll('#gridMesas .col-6');
+    cards.forEach(col => {
+      const card = col.querySelector('.mesa-card');
+      if (!card) return;
+      if (filtroMeseroActivo === 'mias') {
+        const meseroId = String(card.dataset.mesaMeseroId || '');
+        const esMia = meseroId && userId && String(userId) === meseroId;
+        col.style.display = esMia ? '' : 'none';
+      } else {
+        col.style.display = '';
+      }
+    });
+  }
+
   // ===== Pago mixto (varios medios) =====
   // Relacionado con:
   // - routes/mesas.js (POST /api/mesas/pedidos/:pedidoId/facturar recibe pagos[])
@@ -1316,13 +1338,42 @@ $(function() {
       mesas.forEach(m => {
         const card = document.querySelector(`.mesa-card[data-mesa-id="${m.id}"]`);
         if (!card) return;
+
+        // Actualizar badge de estado (legado, por si existe)
         const badge = card.querySelector('.estado-badge');
         if (badge) {
           badge.textContent = m.estado;
           badge.classList.remove('bg-success','bg-warning','bg-secondary');
           badge.classList.add(m.estado === 'libre' ? 'bg-success' : (m.estado === 'ocupada' ? 'bg-warning' : 'bg-secondary'));
         }
+
+        // Actualizar mesero asignado en data attributes y badge visual
+        const nuevoMeseroId = String(m.mesero_asignado_id || '');
+        const nuevoMeseroNombre = String(m.mesero_asignado_nombre || '');
+        card.dataset.mesaMeseroId = nuevoMeseroId;
+        card.dataset.mesaMeseroNombre = nuevoMeseroNombre;
+
+        const meseroEl = card.querySelector('.mc-mesero');
+        if (meseroEl) {
+          if (nuevoMeseroNombre) {
+            const esMio = userId && nuevoMeseroId && String(userId) === nuevoMeseroId;
+            meseroEl.className = 'mc-mesero' + (esMio ? ' mc-mesero-mio' : '');
+            meseroEl.innerHTML = `<i class="bi bi-person-fill"></i> ${escapeHtml(nuevoMeseroNombre)}`;
+          } else {
+            meseroEl.className = 'mc-mesero mc-sin-asignar';
+            meseroEl.innerHTML = `<i class="bi bi-person-dash"></i> Sin asignar`;
+          }
+        }
+
+        // Highlight de "mis mesas" para mesero
+        if (userRole === 'mesero' && userId) {
+          const esMia = nuevoMeseroId && String(userId) === nuevoMeseroId;
+          card.classList.toggle('mc-mesa-mia', !!esMia);
+        }
       });
+
+      // Re-aplicar filtro si está en modo "mis mesas"
+      if (filtroMeseroActivo === 'mias') aplicarFiltroMesas();
     } catch (_) { /* ignorar errores de red */ }
   }
 
@@ -1904,6 +1955,125 @@ $(function() {
       Swal.fire({ icon:'error', title: err.message || 'No se pudo eliminar la mesa' });
     }
   });
+
+  // =========================================================
+  // ASIGNAR MESERO A MESA (solo administrador)
+  // Relacionado con:
+  // - views/mesas.ejs (botón btnAsignarMesero, solo admin)
+  // - routes/mesas.js (POST /api/mesas/:id/asignar-mesero)
+  // - routes/mesas.js (GET /api/mesas/meseros)
+  // =========================================================
+  let meserosCacheList = null; // cache para no recargar en cada click
+
+  async function cargarMeseros() {
+    if (meserosCacheList) return meserosCacheList;
+    try {
+      const resp = await fetch('/api/mesas/meseros');
+      if (!resp.ok) return [];
+      meserosCacheList = await resp.json();
+      return meserosCacheList;
+    } catch (_) {
+      return [];
+    }
+  }
+
+  $('#gridMesas').on('click', '.btnAsignarMesero', async function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    const card = $(this).closest('.card')[0];
+    if (!card) return;
+
+    const mesaId = card.getAttribute('data-mesa-id');
+    const mesaNumero = card.dataset.mesaNumero || mesaId;
+    const meseroActualId = card.dataset.mesaMeseroId || '';
+    const meseroActualNombre = card.dataset.mesaMeseroNombre || '';
+
+    const meseros = await cargarMeseros();
+
+    const opcionesHtml = meseros.map(m => {
+      const selected = String(m.id) === String(meseroActualId) ? 'selected' : '';
+      const nombreDisplay = escapeHtml(String(m.nombre || m.usuario || '').trim());
+      return `<option value="${m.id}" ${selected}>${nombreDisplay}</option>`;
+    }).join('');
+
+    const result = await Swal.fire({
+      title: `Asignar mesero — Mesa ${escapeHtml(String(mesaNumero))}`,
+      html: `
+        <div class="text-start">
+          <label class="form-label small mb-1">Mesero asignado</label>
+          <select id="selectMeseroAsignar" class="form-select">
+            <option value="">— Sin asignar —</option>
+            ${opcionesHtml}
+          </select>
+          ${meseroActualNombre ? `<div class="small text-muted mt-2">Actual: <strong>${escapeHtml(meseroActualNombre)}</strong></div>` : ''}
+        </div>
+      `,
+      showCancelButton: true,
+      confirmButtonText: 'Guardar',
+      cancelButtonText: 'Cancelar',
+      preConfirm: () => {
+        const sel = document.getElementById('selectMeseroAsignar');
+        return { mesero_id: sel ? (sel.value || null) : null };
+      }
+    });
+
+    if (!result.isConfirmed) return;
+
+    try {
+      const body = { mesero_id: result.value.mesero_id || null };
+      const resp = await fetch(`/api/mesas/${mesaId}/asignar-mesero`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const data = await resp.json();
+      if (!resp.ok) throw new Error(data.error || 'Error al asignar mesero');
+
+      // Actualizar card en el DOM sin recargar la página
+      let nuevoNombre = '';
+      let nuevoId = '';
+      if (body.mesero_id) {
+        const meseroSel = meseros.find(m => String(m.id) === String(body.mesero_id));
+        nuevoNombre = meseroSel ? String(meseroSel.nombre || meseroSel.usuario || '').trim() : '';
+        nuevoId = body.mesero_id;
+      }
+      card.dataset.mesaMeseroId = nuevoId;
+      card.dataset.mesaMeseroNombre = nuevoNombre;
+
+      // Actualizar el badge visual del mesero en la tarjeta
+      const badgeEl = card.querySelector('.mc-mesero');
+      if (badgeEl) {
+        if (nuevoNombre) {
+          badgeEl.className = 'mc-mesero';
+          badgeEl.innerHTML = `<i class="bi bi-person-fill"></i> ${escapeHtml(nuevoNombre)}`;
+        } else {
+          badgeEl.className = 'mc-mesero mc-sin-asignar';
+          badgeEl.innerHTML = `<i class="bi bi-person-dash"></i> Sin asignar`;
+        }
+      }
+
+      // Invalidar cache de meseros para que la proxima apertura refleje cambios si los hubo
+      meserosCacheList = null;
+
+      Swal.fire({ icon: 'success', title: nuevoNombre ? `Mesa asignada a ${nuevoNombre}` : 'Asignación eliminada' });
+    } catch (err) {
+      Swal.fire({ icon: 'error', title: err.message || 'No se pudo asignar el mesero' });
+    }
+  });
+
+  // =========================================================
+  // FILTRO "MIS MESAS / TODAS" — event binding
+  // La lógica (filtroMeseroActivo, aplicarFiltroMesas) está definida
+  // cerca del inicio del bloque $(function(){...}) para que
+  // refreshMesas() pueda usarlos.
+  // =========================================================
+  $('#filtroMeseroBar').on('click', 'button[data-filter]', function() {
+    filtroMeseroActivo = $(this).data('filter');
+    $('#filtroMeseroBar button').removeClass('active');
+    $(this).addClass('active');
+    aplicarFiltroMesas();
+  });
 });
+
 
 

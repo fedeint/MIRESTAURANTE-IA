@@ -97,9 +97,25 @@ router.get('/', async (req, res) => {
     const [usuarios] = await db.query(
       'SELECT id, usuario, nombre, rol, activo, last_login, created_at, permisos FROM usuarios ORDER BY created_at DESC, id DESC'
     );
+    // Traer mesas asignadas a cada mesero
+    let mesasAsignadas = [];
+    try {
+      const [rows] = await db.query(
+        'SELECT id, numero, mesero_asignado_id FROM mesas WHERE mesero_asignado_id IS NOT NULL'
+      );
+      mesasAsignadas = rows || [];
+    } catch (_) { /* tabla puede no existir aún */ }
+
+    const mesasPorUsuario = {};
+    mesasAsignadas.forEach(m => {
+      if (!mesasPorUsuario[m.mesero_asignado_id]) mesasPorUsuario[m.mesero_asignado_id] = [];
+      mesasPorUsuario[m.mesero_asignado_id].push(m.numero);
+    });
+
     const usuariosConPermisos = (usuarios || []).map(u => ({
       ...u,
-      permisosArr: resolvePermisos(u)
+      permisosArr: resolvePermisos(u),
+      mesasAsignadas: mesasPorUsuario[u.id] || []
     }));
     res.render('usuarios', { usuarios: usuariosConPermisos, roles: ROLES, allModules: ALL_MODULES });
   } catch (e) {
