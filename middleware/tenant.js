@@ -47,12 +47,21 @@ function attachTenant(req, res, next) {
                 res.locals.tenant = tenant;
                 res.locals.planLimits = req.planLimits;
             } else {
-                return res.status(503).json({ error: 'Tenant no encontrado o inactivo.' });
+                // Tenant not found by subdomain — fallback to tenant 1 (main instance)
+                req.tenantId = 1;
+                req.planLimits = PLAN_LIMITS.pro;
+                res.locals.tenantId = 1;
+                res.locals.planLimits = PLAN_LIMITS.pro;
             }
             next();
         }).catch((err) => {
             console.error('Tenant resolution error:', err);
-            return res.status(503).json({ error: 'Error al resolver tenant. Intenta mas tarde.' });
+            // Fail open to tenant 1 on DB errors so the app stays usable
+            req.tenantId = 1;
+            req.planLimits = PLAN_LIMITS.pro;
+            res.locals.tenantId = 1;
+            res.locals.planLimits = PLAN_LIMITS.pro;
+            next();
         });
     } else {
         // Desarrollo local: tenant_id = 1
