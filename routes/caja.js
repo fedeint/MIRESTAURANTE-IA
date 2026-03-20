@@ -169,4 +169,34 @@ router.post('/movimiento', async (req, res) => {
     }
 });
 
+// Reasignar mesas a meseros (caja abierta)
+router.post('/reasignar-mesas', async (req, res) => {
+  try {
+    const tid = req.tenantId || 1;
+    const [[caja]] = await db.query(`SELECT id FROM cajas WHERE estado = 'abierta' AND tenant_id = ? LIMIT 1`, [tid]);
+    if (!caja) return res.status(400).json({ error: 'No hay caja abierta' });
+
+    const asignaciones = req.body.asignaciones;
+    if (!asignaciones || !Array.isArray(asignaciones)) {
+      return res.status(400).json({ error: 'Formato invalido' });
+    }
+
+    await db.query(`UPDATE mesas SET mesero_asignado_id = NULL, mesero_asignado_nombre = NULL WHERE tenant_id = ?`, [tid]);
+
+    for (const a of asignaciones) {
+      if (!a.mesa_id || !a.mesero_id) continue;
+      const [[mesero]] = await db.query(`SELECT id, nombre FROM usuarios WHERE id = ? AND activo = 1`, [a.mesero_id]);
+      if (mesero) {
+        await db.query(`UPDATE mesas SET mesero_asignado_id = ?, mesero_asignado_nombre = ? WHERE id = ? AND tenant_id = ?`,
+          [mesero.id, mesero.nombre, a.mesa_id, tid]);
+      }
+    }
+
+    res.json({ message: 'Asignaciones actualizadas' });
+  } catch (err) {
+    console.error('Error reasignar mesas:', err);
+    res.status(500).json({ error: 'Error al reasignar mesas' });
+  }
+});
+
 module.exports = router;
