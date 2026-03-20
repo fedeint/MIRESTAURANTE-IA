@@ -403,14 +403,23 @@
                                 <label for="movConcepto" class="form-label">Concepto</label>
                                 <select class="form-select" id="movConcepto" name="concepto" required>
                                     <option value="" disabled selected>Seleccione un concepto</option>
-                                    <option value="venta">Venta</option>
-                                    <option value="propina">Propina</option>
-                                    <option value="cobro_pendiente">Cobro pendiente</option>
-                                    <option value="pago_proveedor">Pago a proveedor</option>
-                                    <option value="gasto_operativo">Gasto operativo</option>
-                                    <option value="devolucion">Devolucion</option>
-                                    <option value="adelanto_sueldo">Adelanto de sueldo</option>
-                                    <option value="otro">Otro</option>
+                                    <optgroup label="Ingresos">
+                                        <option value="venta_factura">Venta</option>
+                                        <option value="propina">Propina</option>
+                                    </optgroup>
+                                    <optgroup label="Egresos">
+                                        <option value="gasto_compra_almacen">Compra almacen</option>
+                                        <option value="gasto_servicio">Gasto servicio</option>
+                                        <option value="gasto_otro">Otro gasto</option>
+                                        <option value="pago_planilla">Pago planilla</option>
+                                        <option value="retiro_caja_fuerte">Retiro a caja fuerte</option>
+                                        <option value="retiro_banco">Retiro a banco</option>
+                                        <option value="retiro_propietario">Retiro propietario</option>
+                                        <option value="devolucion_cliente">Devolucion cliente</option>
+                                    </optgroup>
+                                    <optgroup label="Otros">
+                                        <option value="ajuste">Ajuste</option>
+                                    </optgroup>
                                 </select>
                             </div>
                             <div class="mb-3">
