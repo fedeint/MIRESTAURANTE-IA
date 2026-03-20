@@ -45,13 +45,27 @@ async function calcularPL(tid, mes, anio) {
             WHERE g.tenant_id=? AND EXTRACT(MONTH FROM g.fecha)=? AND EXTRACT(YEAR FROM g.fecha)=? AND gc.tipo='variable'
         `, [tid, mes, anio]);
 
+        // Also check caja egresos not captured in gastos table
+        let cajaEgresosExtra = 0;
+        try {
+            const [[cajaEg]] = await db.query(`
+                SELECT COALESCE(SUM(cm.monto), 0) as total
+                FROM caja_movimientos cm
+                JOIN cajas c ON c.id = cm.caja_id
+                WHERE cm.tenant_id=? AND cm.tipo='egreso' AND cm.anulado=false
+                  AND cm.concepto NOT IN ('pago_planilla', 'gasto_servicio', 'gasto_otro', 'gasto_compra_almacen')
+                  AND EXTRACT(MONTH FROM cm.created_at)=? AND EXTRACT(YEAR FROM cm.created_at)=?
+            `, [tid, mes, anio]);
+            cajaEgresosExtra = Number(cajaEg.total);
+        } catch (_) {}
+
         const ventasNetas = Number(ventas.ventas_netas);
         const cogsTeorico = Number(cogs.cogs_teorico);
         const totalCompras = Number(compras.total_compras);
         const margenBruto = ventasNetas - cogsTeorico;
         const totalPlanilla = Number(planilla.bruto) + Number(planilla.essalud) + Number(planilla.sctr);
         const totalFijos = Number(gastosFijos.total);
-        const totalVariables = Number(gastosVar.total);
+        const totalVariables = Number(gastosVar.total) + cajaEgresosExtra;
         const ebitda = margenBruto - totalPlanilla - totalFijos - totalVariables;
 
         return {
@@ -261,11 +275,27 @@ router.post('/planilla/pagar', async (req, res) => {
         const sctr = bruto * 0.015;
         const neto = bruto - onpAfp;
 
+        const fechaPago = fecha || new Date().toISOString().split('T')[0];
         await db.query(
             `INSERT INTO planilla_pagos (tenant_id, personal_id, fecha, monto_bruto, deduccion_onp_afp, monto_neto, aporte_essalud, aporte_sctr, horas_trabajadas, notas, pagado)
              VALUES (?,?,?,?,?,?,?,?,?,?,1)`,
-            [tid, personal_id, fecha || new Date().toISOString().split('T')[0], bruto, onpAfp, neto, essalud, sctr, horas_trabajadas||null, notas||null]
+            [tid, personal_id, fechaPago, bruto, onpAfp, neto, essalud, sctr, horas_trabajadas||null, notas||null]
         );
+
+        // Register payroll as caja egreso
+        try {
+            const [[cajaAbierta]] = await db.query(
+                "SELECT id FROM cajas WHERE tenant_id=? AND estado='abierta' LIMIT 1", [tid]
+            );
+            if (cajaAbierta) {
+                await db.query(
+                    `INSERT INTO caja_movimientos (tenant_id, caja_id, tipo, concepto, monto, usuario_id)
+                     VALUES (?, ?, 'egreso', 'pago_planilla', ?, ?)`,
+                    [tid, cajaAbierta.id, neto, req.session?.user?.id || 0]
+                );
+            }
+        } catch (_) {}
+
         res.json({ ok: true, message: 'Pago registrado', bruto, onp_afp: onpAfp, neto, essalud, sctr });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
@@ -287,10 +317,29 @@ router.post('/gastos', async (req, res) => {
         if (!categoria_id || !concepto || !monto) return res.status(400).json({ error: 'Categoria, concepto y monto requeridos' });
         const f = fecha || new Date().toISOString().split('T')[0];
         const d = new Date(f);
+        const uid = req.session?.user?.id || 0;
         await db.query(
             'INSERT INTO gastos (tenant_id, categoria_id, concepto, monto, fecha, periodo_mes, periodo_anio, comprobante, notas, usuario_id) VALUES (?,?,?,?,?,?,?,?,?,?)',
-            [tid, categoria_id, concepto, monto, f, d.getMonth()+1, d.getFullYear(), comprobante||null, notas||null, req.session?.user?.id||0]
+            [tid, categoria_id, concepto, monto, f, d.getMonth()+1, d.getFullYear(), comprobante||null, notas||null, uid]
         );
+
+        // Register expense in caja as egreso
+        try {
+            const [[cajaAbierta]] = await db.query(
+                "SELECT id FROM cajas WHERE tenant_id=? AND estado='abierta' LIMIT 1", [tid]
+            );
+            if (cajaAbierta) {
+                // Map gastos_categorias.tipo to caja concepto
+                const [[cat]] = await db.query('SELECT tipo FROM gastos_categorias WHERE id=?', [categoria_id]);
+                const cajaConcepto = cat?.tipo === 'fijo' ? 'gasto_servicio' : 'gasto_otro';
+                await db.query(
+                    `INSERT INTO caja_movimientos (tenant_id, caja_id, tipo, concepto, monto, usuario_id)
+                     VALUES (?, ?, 'egreso', ?, ?, ?)`,
+                    [tid, cajaAbierta.id, cajaConcepto, monto, uid]
+                );
+            }
+        } catch (_) {}
+
         res.status(201).json({ ok: true, message: 'Gasto registrado' });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
