@@ -381,4 +381,187 @@ router.get('/tenants/:id', async (req, res) => {
   }
 });
 
+// ---------------------------------------------------------------------------
+// Subscriptions Management
+// ---------------------------------------------------------------------------
+
+// GET /api/superadmin/suscripciones - all subscriptions with tenant info
+router.get('/suscripciones', async (req, res) => {
+  try {
+    const [subs] = await db.query(`
+      SELECT ts.*, t.nombre as tenant_nombre, t.email_admin, t.activo as tenant_activo
+      FROM tenant_suscripciones ts
+      JOIN tenants t ON t.id = ts.tenant_id
+      ORDER BY ts.created_at DESC
+      LIMIT 200
+    `);
+    res.json(subs || []);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/superadmin/suscripciones/alertas - expiring + exhausted tenants
+router.get('/suscripciones/alertas', async (req, res) => {
+  try {
+    const alertas = [];
+
+    // Tenants expiring in 7 days
+    const [porVencer] = await db.query(`
+      SELECT ts.*, t.nombre as tenant_nombre, t.email_admin
+      FROM tenant_suscripciones ts
+      JOIN tenants t ON t.id = ts.tenant_id
+      WHERE ts.estado = 'activa'
+        AND ts.fecha_fin <= NOW() + INTERVAL '7 days'
+        AND ts.fecha_fin > NOW()
+      ORDER BY ts.fecha_fin ASC
+    `);
+    (porVencer || []).forEach(s => {
+      const dias = Math.ceil((new Date(s.fecha_fin) - Date.now()) / (1000 * 60 * 60 * 24));
+      alertas.push({
+        tipo: 'por_vencer',
+        nivel: dias <= 2 ? 'critico' : 'warning',
+        tenant: s.tenant_nombre,
+        email: s.email_admin,
+        mensaje: `Suscripcion vence en ${dias} dia${dias !== 1 ? 's' : ''}`,
+        fecha_fin: s.fecha_fin,
+        tenant_id: s.tenant_id
+      });
+    });
+
+    // Tenants with >90% token usage
+    const [tokenAltas] = await db.query(`
+      SELECT ts.tenant_id, ts.tokens_total, ts.tokens_consumidos, t.nombre as tenant_nombre, t.email_admin
+      FROM tenant_suscripciones ts
+      JOIN tenants t ON t.id = ts.tenant_id
+      WHERE ts.estado IN ('activa', 'prueba')
+        AND ts.tokens_total > 0
+        AND ts.tokens_consumidos >= ts.tokens_total * 0.9
+    `);
+    (tokenAltas || []).forEach(s => {
+      const pct = Math.round((s.tokens_consumidos / s.tokens_total) * 100);
+      alertas.push({
+        tipo: 'tokens_agotandose',
+        nivel: pct >= 100 ? 'critico' : 'warning',
+        tenant: s.tenant_nombre,
+        email: s.email_admin,
+        mensaje: `Tokens IA al ${pct}% (${s.tokens_consumidos}/${s.tokens_total})`,
+        tenant_id: s.tenant_id
+      });
+    });
+
+    // Already expired
+    const [vencidas] = await db.query(`
+      SELECT ts.*, t.nombre as tenant_nombre, t.email_admin
+      FROM tenant_suscripciones ts
+      JOIN tenants t ON t.id = ts.tenant_id
+      WHERE ts.estado = 'activa' AND ts.fecha_fin < NOW()
+    `);
+    (vencidas || []).forEach(s => {
+      alertas.push({
+        tipo: 'vencida',
+        nivel: 'critico',
+        tenant: s.tenant_nombre,
+        email: s.email_admin,
+        mensaje: 'Suscripcion vencida — acceso deberia desactivarse',
+        fecha_fin: s.fecha_fin,
+        tenant_id: s.tenant_id
+      });
+    });
+
+    res.json(alertas);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PUT /api/superadmin/suscripciones/:id/extender - extend subscription
+router.put('/suscripciones/:id/extender', async (req, res) => {
+  try {
+    const { dias } = req.body;
+    const d = parseInt(dias) || 30;
+    await db.query(
+      `UPDATE tenant_suscripciones SET fecha_fin = fecha_fin + INTERVAL '1 day' * ? WHERE id = ?`,
+      [d, req.params.id]
+    );
+    res.json({ ok: true, dias_extendidos: d });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PUT /api/superadmin/suscripciones/:id/cancelar - cancel subscription
+router.put('/suscripciones/:id/cancelar', async (req, res) => {
+  try {
+    await db.query(
+      `UPDATE tenant_suscripciones SET estado = 'cancelada' WHERE id = ?`,
+      [req.params.id]
+    );
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Login History & Security (superadmin view)
+// ---------------------------------------------------------------------------
+
+// GET /api/superadmin/login-history - recent logins across all tenants
+router.get('/login-history', async (req, res) => {
+  try {
+    const [logins] = await db.query(`
+      SELECT lh.*, u.usuario, u.rol, t.nombre as tenant_nombre
+      FROM login_history lh
+      LEFT JOIN usuarios u ON u.id = lh.user_id
+      LEFT JOIN tenants t ON t.id = lh.tenant_id
+      ORDER BY lh.created_at DESC
+      LIMIT 100
+    `);
+    res.json(logins || []);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/superadmin/login-history/suspicious - failed + new country logins
+router.get('/login-history/suspicious', async (req, res) => {
+  try {
+    const [suspicious] = await db.query(`
+      SELECT lh.*, u.usuario, t.nombre as tenant_nombre
+      FROM login_history lh
+      LEFT JOIN usuarios u ON u.id = lh.user_id
+      LEFT JOIN tenants t ON t.id = lh.tenant_id
+      WHERE lh.success = false
+        AND lh.created_at > NOW() - INTERVAL '7 days'
+      ORDER BY lh.created_at DESC
+      LIMIT 50
+    `);
+    res.json(suspicious || []);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /api/superadmin/audit-log - recent audit entries
+router.get('/audit-log', async (req, res) => {
+  try {
+    const tenantId = req.query.tenant_id;
+    const where = tenantId ? 'WHERE al.tenant_id = ?' : '';
+    const params = tenantId ? [tenantId] : [];
+    const [logs] = await db.query(`
+      SELECT al.*, u.usuario, t.nombre as tenant_nombre
+      FROM audit_log al
+      LEFT JOIN usuarios u ON u.id = al.user_id
+      LEFT JOIN tenants t ON t.id = al.tenant_id
+      ${where}
+      ORDER BY al.created_at DESC
+      LIMIT 100
+    `, params);
+    res.json(logs || []);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

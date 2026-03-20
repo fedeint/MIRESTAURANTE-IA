@@ -20,6 +20,8 @@
 const express = require('express');
 const router  = express.Router();
 const crypto  = require('crypto');
+const db      = require('../db');
+const logger  = require('../lib/logger');
 
 // ── Plan catalog ──────────────────────────────────────────────────────────────
 const PLANES = {
@@ -111,6 +113,100 @@ const PLANES = {
         destacado: false
     }
 };
+
+// ── Subscription helpers ─────────────────────────────────────────────────────
+
+function calcFechaFin(periodo) {
+    const now = new Date();
+    if (periodo === 'mensual') return new Date(now.setMonth(now.getMonth() + 1));
+    if (periodo === 'anual') return new Date(now.setFullYear(now.getFullYear() + 1));
+    if (periodo === '2anos') return new Date(now.setFullYear(now.getFullYear() + 2));
+    if (periodo === 'vida') return new Date(now.setFullYear(now.getFullYear() + 99));
+    if (periodo === 'trial') return new Date(now.setDate(now.getDate() + 15));
+    return new Date(now.setMonth(now.getMonth() + 1));
+}
+
+function calcPrecioMensual(plan) {
+    if (plan.precio === 0) return 0;
+    if (plan.periodo === 'mensual') return plan.precio / 100;
+    if (plan.periodo === 'anual') return Math.round(plan.precio / 12) / 100;
+    if (plan.periodo === '2anos') return Math.round(plan.precio / 24) / 100;
+    if (plan.periodo === 'vida') return 0;
+    return plan.precio / 100;
+}
+
+async function activarSuscripcion(email, planId, orderId, transactionId) {
+    const plan = PLANES[planId] || PLANES['mensual'];
+    const fechaFin = calcFechaFin(plan.periodo);
+    const precioMensual = calcPrecioMensual(plan);
+
+    try {
+        // Find tenant by admin email
+        const [tenants] = await db.query(
+            'SELECT id FROM tenants WHERE email_admin = ? AND activo = true LIMIT 1',
+            [email]
+        );
+
+        if (!tenants || tenants.length === 0) {
+            logger.warn('pago_sin_tenant', { email, planId, orderId });
+            return null;
+        }
+
+        const tenantId = tenants[0].id;
+
+        // Deactivate previous subscriptions
+        await db.query(
+            `UPDATE tenant_suscripciones SET estado = 'vencida'
+             WHERE tenant_id = ? AND estado IN ('activa', 'prueba')`,
+            [tenantId]
+        );
+
+        // Create new subscription
+        const mapPlan = { gratis: 'free', mensual: 'pro', anual: 'pro', '2anos': 'enterprise', vida: 'enterprise' };
+        const [result] = await db.query(
+            `INSERT INTO tenant_suscripciones (tenant_id, plan, precio_mensual, fecha_inicio, fecha_fin, estado, metodo_pago, referencia_pago)
+             VALUES (?, ?, ?, NOW(), ?, 'activa', 'izipay', ?)
+             RETURNING id`,
+            [tenantId, mapPlan[planId] || 'pro', precioMensual, fechaFin, orderId || transactionId || 'manual']
+        );
+
+        // Update tenant plan
+        await db.query(
+            'UPDATE tenants SET plan = ?, fecha_vencimiento = ? WHERE id = ?',
+            [mapPlan[planId] || 'pro', fechaFin, tenantId]
+        );
+
+        logger.info('suscripcion_activada', {
+            tenantId, planId, orderId,
+            precioMensual, fechaFin: fechaFin.toISOString()
+        });
+
+        return result.insertId;
+    } catch (err) {
+        logger.error('suscripcion_error', { email, planId, orderId, error: err.message });
+        return null;
+    }
+}
+
+async function cancelarSuscripcion(email) {
+    try {
+        const [tenants] = await db.query(
+            'SELECT id FROM tenants WHERE email_admin = ? LIMIT 1',
+            [email]
+        );
+        if (!tenants || tenants.length === 0) return;
+
+        await db.query(
+            `UPDATE tenant_suscripciones SET estado = 'cancelada'
+             WHERE tenant_id = ? AND estado = 'activa'`,
+            [tenants[0].id]
+        );
+
+        logger.info('suscripcion_cancelada', { tenantId: tenants[0].id, email });
+    } catch (err) {
+        logger.error('cancelar_suscripcion_error', { email, error: err.message });
+    }
+}
 
 // ── GET /api/pagos/planes ─────────────────────────────────────────────────────
 router.get('/planes', (req, res) => {
@@ -312,10 +408,16 @@ router.post('/izipay-success', async (req, res) => {
         const planId = answer?.metadata?.plan || 'mensual';
         const status = answer?.orderStatus;
 
-        console.log(`[pagos] Pago exitoso: plan=${planId} status=${status} orderId=${answer?.orderDetails?.orderId}`);
+        const orderId    = answer?.orderDetails?.orderId;
+        const clientEmail = answer?.customer?.email;
+        const txnId      = answer?.transactions?.[0]?.uuid || orderId;
 
-        // TODO: registrar suscripcion en tenant_suscripciones
-        // await db.query('INSERT INTO tenant_suscripciones ...');
+        logger.info('pago_exitoso_redirect', { planId, status, orderId, clientEmail });
+
+        // Activate subscription
+        if (status === 'PAID' && clientEmail) {
+            await activarSuscripcion(clientEmail, planId, orderId, txnId);
+        }
 
         res.redirect(`/setup?plan=${planId}&pago=ok`);
 
@@ -353,11 +455,15 @@ router.post('/izipay-webhook', async (req, res) => {
         const planId      = answer?.metadata?.plan;
         const clientEmail = answer?.customer?.email;
 
-        console.log(`[pagos] Webhook: orderId=${orderId} status=${status} plan=${planId} email=${clientEmail}`);
+        const txnId = answer?.transactions?.[0]?.uuid || orderId;
 
-        // TODO: activate/cancel subscriptions based on status
-        // if (status === 'PAID') { await activarSuscripcion(clientEmail, planId); }
-        // if (status === 'CANCELLED') { await cancelarSuscripcion(clientEmail); }
+        logger.info('webhook_recibido', { orderId, status, planId, clientEmail });
+
+        if (status === 'PAID' && clientEmail) {
+            await activarSuscripcion(clientEmail, planId, orderId, txnId);
+        } else if (status === 'CANCELLED' && clientEmail) {
+            await cancelarSuscripcion(clientEmail);
+        }
 
         res.send('OK');
 
