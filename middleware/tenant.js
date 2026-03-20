@@ -47,14 +47,12 @@ function attachTenant(req, res, next) {
                 res.locals.tenant = tenant;
                 res.locals.planLimits = req.planLimits;
             } else {
-                req.tenantId = 1;
-                res.locals.tenantId = 1;
+                return res.status(503).json({ error: 'Tenant no encontrado o inactivo.' });
             }
             next();
-        }).catch(() => {
-            req.tenantId = 1;
-            res.locals.tenantId = 1;
-            next();
+        }).catch((err) => {
+            console.error('Tenant resolution error:', err);
+            return res.status(503).json({ error: 'Error al resolver tenant. Intenta mas tarde.' });
         });
     } else {
         // Desarrollo local: tenant_id = 1

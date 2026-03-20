@@ -42,6 +42,14 @@ app.use(helmet({
     crossOriginEmbedderPolicy: false
 }));
 
+// Additional security headers
+app.use((req, res, next) => {
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+    res.setHeader('Permissions-Policy', 'geolocation=(), camera=()');
+    next();
+});
+
 // Gzip/deflate compression for all responses (must be early, before routes)
 const compression = require('compression');
 app.use(compression());
@@ -50,6 +58,11 @@ app.use(compression());
 const rateLimit = require('express-rate-limit');
 const loginLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, message: { error: 'Demasiados intentos. Intenta en 15 minutos.' } });
 const chatLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 60, message: { error: 'Límite de mensajes IA alcanzado. Intenta en 1 hora.' } });
+const apiLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 120,
+    message: { error: 'Demasiadas solicitudes. Intenta en un minuto.' }
+});
 
 // Aumentar el límite de tamaño del cuerpo de la petición
 app.use(express.json({ limit: '50mb' }));
@@ -75,6 +88,12 @@ const sessionPoolConfig = IS_LOCAL_MODE
     };
 const sessionPool = new PgPool(sessionPoolConfig);
 
+// Fail if SESSION_SECRET is not set in production
+if (process.env.NODE_ENV === 'production' && !process.env.SESSION_SECRET) {
+    console.error('FATAL: SESSION_SECRET environment variable is required in production.');
+    process.exit(1);
+}
+
 app.use(session({
     store: new pgSession({ pool: sessionPool, tableName: 'session' }),
     name: 'sr.sid',
@@ -86,7 +105,7 @@ app.use(session({
         sameSite: 'lax',
         // In local mode we run plain HTTP on the LAN — never set secure=true there
         secure: process.env.NODE_ENV === 'production' && !IS_LOCAL_MODE,
-        maxAge: 1000 * 60 * 60 * 12 // 12 horas
+        maxAge: 1000 * 60 * 60 * 2 // 2 horas
     }
 }));
 
@@ -195,6 +214,9 @@ const legalRoutes      = require('./routes/legal');
 // Auth routes (públicas): /login /logout /setup
 app.post('/login', loginLimiter); // rate limit login attempts
 app.use(authRoutes);
+
+// Global API rate limiter
+app.use('/api/', apiLimiter);
 
 // ── Legal routes (PUBLIC — no auth required) ──────────────────────────────
 // Libro de Reclamaciones (Ley 32495, Peru - INDECOPI required)

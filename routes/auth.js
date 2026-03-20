@@ -29,11 +29,13 @@ async function countUsuarios() {
   return Number(rows?.[0]?.cnt || 0);
 }
 
-// Validar complejidad de contrasena (min 8, 1 mayusc, 1 numero)
+// Validar complejidad de contrasena (min 10, mayusc, minusc, numero, especial)
 function validarPassword(pwd) {
-  if (!pwd || pwd.length < 8) return 'La contrasena debe tener al menos 8 caracteres';
+  if (!pwd || pwd.length < 10) return 'La contrasena debe tener al menos 10 caracteres';
   if (!/[A-Z]/.test(pwd)) return 'La contrasena debe tener al menos 1 mayuscula';
+  if (!/[a-z]/.test(pwd)) return 'La contrasena debe tener al menos 1 minuscula';
   if (!/[0-9]/.test(pwd)) return 'La contrasena debe tener al menos 1 numero';
+  if (!/[!@#$%^&*._-]/.test(pwd)) return 'La contrasena debe tener al menos 1 caracter especial (!@#$%^&*._-)';
   return null;
 }
 

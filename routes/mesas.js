@@ -4,7 +4,7 @@ const db = require('../db');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
-const { exec } = require('child_process');
+const { execFile } = require('child_process');
 
 // Rutas para gestión de mesas y pedidos de restaurante
 // - Renderiza la vista de mesas (GET /mesas)
@@ -119,9 +119,9 @@ function buildComandaTexto({ pedido, items, negocio }) {
     return lines.join('\r\n');
 }
 
-function execCommand(command) {
+function execFileCommand(cmd, args) {
     return new Promise((resolve, reject) => {
-        exec(command, { timeout: 20000 }, (error, stdout, stderr) => {
+        execFile(cmd, args, { timeout: 20000 }, (error, stdout, stderr) => {
             if (error) return reject(new Error(String(stderr || error.message || 'Error al ejecutar comando de impresión')));
             resolve({ stdout, stderr });
         });
@@ -133,22 +133,18 @@ async function imprimirTextoEnServidor(texto, impresoraNombre) {
     fs.writeFileSync(tmpFile, String(texto || ''), { encoding: 'utf8' });
     try {
         if (process.platform === 'win32') {
-            const psPath = tmpFile.replace(/'/g, "''");
-            const psPrinter = String(impresoraNombre || '').replace(/'/g, "''");
-            const cmd = psPrinter
-                ? `powershell -NoProfile -Command "Get-Content -Raw -Encoding UTF8 '${psPath}' | Out-Printer -Name '${psPrinter}'"`
-                : `powershell -NoProfile -Command "Get-Content -Raw -Encoding UTF8 '${psPath}' | Out-Printer"`;
-            await execCommand(cmd);
+            const psPrinter = String(impresoraNombre || '').trim();
+            const psCommand = psPrinter
+                ? `Get-Content -Raw -Encoding UTF8 '${tmpFile}' | Out-Printer -Name '${psPrinter}'`
+                : `Get-Content -Raw -Encoding UTF8 '${tmpFile}' | Out-Printer`;
+            await execFileCommand('powershell', ['-NoProfile', '-Command', psCommand]);
             return;
         }
 
         // Linux/macOS (CUPS)
-        const quoted = `"${tmpFile.replace(/"/g, '\\"')}"`;
         const p = String(impresoraNombre || '').trim();
-        const cmd = p
-            ? `lp -d "${p.replace(/"/g, '\\"')}" ${quoted}`
-            : `lp ${quoted}`;
-        await execCommand(cmd);
+        const args = p ? ['-d', p, tmpFile] : [tmpFile];
+        await execFileCommand('lp', args);
     } finally {
         try { fs.unlinkSync(tmpFile); } catch (_) {}
     }
