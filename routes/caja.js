@@ -48,7 +48,7 @@ router.get('/', async (req, res) => {
         const [turnos] = await db.query('SELECT * FROM turnos WHERE tenant_id=? AND activo=true', [tid]);
         const [metodos] = await db.query('SELECT * FROM metodos_pago WHERE tenant_id=? AND activo=true', [tid]);
 
-        const [meseros] = await db.query(`SELECT id, nombre, usuario FROM usuarios WHERE rol = 'mesero' AND activo = 1 AND tenant_id = ? ORDER BY nombre`, [tid]);
+        const [meseros] = await db.query(`SELECT id, nombre, usuario FROM usuarios WHERE rol = 'mesero' AND activo = true AND tenant_id = ? ORDER BY nombre`, [tid]);
 
         const [mesasAll] = await db.query(`SELECT id, numero, descripcion, mesero_asignado_id, mesero_asignado_nombre FROM mesas WHERE tenant_id = ? ORDER BY numero`, [tid]);
 
@@ -101,7 +101,7 @@ router.post('/abrir', async (req, res) => {
           await db.query(`UPDATE mesas SET mesero_asignado_id = NULL, mesero_asignado_nombre = NULL WHERE tenant_id = ?`, [tid]);
           for (const a of asignaciones) {
             if (!a.mesa_id || !a.mesero_id) continue;
-            const [[mesero]] = await db.query(`SELECT id, nombre FROM usuarios WHERE id = ? AND activo = 1`, [a.mesero_id]);
+            const [[mesero]] = await db.query(`SELECT id, nombre FROM usuarios WHERE id = ? AND activo = true`, [a.mesero_id]);
             if (mesero) {
               await db.query(`UPDATE mesas SET mesero_asignado_id = ?, mesero_asignado_nombre = ? WHERE id = ? AND tenant_id = ?`,
                 [mesero.id, mesero.nombre, a.mesa_id, tid]);
@@ -252,7 +252,7 @@ router.post('/reasignar-mesas', async (req, res) => {
 
     for (const a of asignaciones) {
       if (!a.mesa_id || !a.mesero_id) continue;
-      const [[mesero]] = await db.query(`SELECT id, nombre FROM usuarios WHERE id = ? AND activo = 1`, [a.mesero_id]);
+      const [[mesero]] = await db.query(`SELECT id, nombre FROM usuarios WHERE id = ? AND activo = true`, [a.mesero_id]);
       if (mesero) {
         await db.query(`UPDATE mesas SET mesero_asignado_id = ?, mesero_asignado_nombre = ? WHERE id = ? AND tenant_id = ?`,
           [mesero.id, mesero.nombre, a.mesa_id, tid]);
