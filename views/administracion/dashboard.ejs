@@ -103,7 +103,7 @@
             </div>
             <div class="col-6 col-md-3">
                 <div class="kpi-card">
-                    <div class="kpi-label mb-1"><i class="bi bi-graph-up me-1"></i> Margen Bruto</div>
+                    <div class="kpi-label mb-1"><i class="bi bi-graph-up me-1"></i> Margen Bruto<span data-bs-toggle="tooltip" data-bs-placement="top" title="Ventas menos el costo de ingredientes. Indica cuánto queda después de cubrir materia prima"><i class="bi bi-info-circle ms-1" style="font-size:0.75rem;color:#9CA3AF;cursor:help;"></i></span></div>
                     <div class="kpi-value <%= (pl.margen_bruto || 0) >= 0 ? 'pl-positive' : 'pl-negative' %>">S/ <%= Number(pl.margen_bruto || 0).toLocaleString('es-PE', {minimumFractionDigits:2, maximumFractionDigits:2}) %></div>
                     <small class="<%= (pl.margen_bruto_pct || 0) >= 30 ? 'text-success' : 'text-warning' %>"><%= pl.margen_bruto_pct || 0 %>% del total</small>
                 </div>
@@ -117,7 +117,7 @@
             </div>
             <div class="col-6 col-md-3">
                 <div class="kpi-card">
-                    <div class="kpi-label mb-1"><i class="bi bi-lightning me-1"></i> EBITDA</div>
+                    <div class="kpi-label mb-1"><i class="bi bi-lightning me-1"></i> EBITDA<span data-bs-toggle="tooltip" data-bs-placement="top" title="Ganancia operativa antes de impuestos, depreciación y amortización"><i class="bi bi-info-circle ms-1" style="font-size:0.75rem;color:#9CA3AF;cursor:help;"></i></span></div>
                     <div class="kpi-value <%= (pl.ebitda || 0) >= 0 ? 'pl-positive' : 'pl-negative' %>">S/ <%= Number(pl.ebitda || 0).toLocaleString('es-PE', {minimumFractionDigits:2, maximumFractionDigits:2}) %></div>
                     <small class="<%= (pl.ebitda_pct || 0) >= 15 ? 'text-success' : 'text-warning' %>"><%= pl.ebitda_pct || 0 %>% margen</small>
                 </div>
@@ -147,15 +147,15 @@
                                     <td class="pl-amount <%= (pl.ventas_netas || 0) >= 0 ? 'pl-positive' : 'pl-negative' %>">S/ <%= Number(pl.ventas_netas || 0).toLocaleString('es-PE', {minimumFractionDigits:2, maximumFractionDigits:2}) %></td>
                                 </tr>
                                 <tr class="pl-row">
-                                    <td class="pl-label"><span class="pl-prefix">(-)</span> COGS teórico</td>
+                                    <td class="pl-label"><span class="pl-prefix">(-)</span> COGS teórico<span data-bs-toggle="tooltip" data-bs-placement="top" title="Costo de los ingredientes usados en los platos vendidos, calculado según las recetas"><i class="bi bi-info-circle ms-1" style="font-size:0.75rem;color:#9CA3AF;cursor:help;"></i></span></td>
                                     <td class="pl-amount pl-negative">S/ <%= Number(pl.cogs_teorico || 0).toLocaleString('es-PE', {minimumFractionDigits:2, maximumFractionDigits:2}) %></td>
                                 </tr>
                                 <tr class="pl-row pl-subtotal">
-                                    <td class="pl-label"><span class="pl-prefix">(=)</span> Margen bruto</td>
+                                    <td class="pl-label"><span class="pl-prefix">(=)</span> Margen bruto<span data-bs-toggle="tooltip" data-bs-placement="top" title="Ventas menos el costo de ingredientes. Indica cuánto queda después de cubrir materia prima"><i class="bi bi-info-circle ms-1" style="font-size:0.75rem;color:#9CA3AF;cursor:help;"></i></span></td>
                                     <td class="pl-amount <%= (pl.margen_bruto || 0) >= 0 ? 'pl-positive' : 'pl-negative' %>">S/ <%= Number(pl.margen_bruto || 0).toLocaleString('es-PE', {minimumFractionDigits:2, maximumFractionDigits:2}) %> <small>(<%= pl.margen_bruto_pct || 0 %>%)</small></td>
                                 </tr>
                                 <tr class="pl-row">
-                                    <td class="pl-label pl-indent">Varianza COGS</td>
+                                    <td class="pl-label pl-indent">Varianza COGS<span data-bs-toggle="tooltip" data-bs-placement="top" title="Diferencia entre lo que debería haberse gastado (teórico) y lo que se gastó (real). Positivo = desperdicio"><i class="bi bi-info-circle ms-1" style="font-size:0.75rem;color:#9CA3AF;cursor:help;"></i></span></td>
                                     <td class="pl-amount <%= (pl.varianza || 0) >= 0 ? 'pl-negative' : 'pl-positive' %>">S/ <%= Number(pl.varianza || 0).toLocaleString('es-PE', {minimumFractionDigits:2, maximumFractionDigits:2}) %> <small>(teórico vs real)</small></td>
                                 </tr>
                                 <tr class="pl-row">
@@ -171,15 +171,15 @@
                                     </td>
                                 </tr>
                                 <tr class="pl-row">
-                                    <td class="pl-label"><span class="pl-prefix">(-)</span> Gastos fijos</td>
+                                    <td class="pl-label"><span class="pl-prefix">(-)</span> Gastos fijos<span data-bs-toggle="tooltip" data-bs-placement="top" title="Gastos que no cambian con las ventas: alquiler, internet, seguros"><i class="bi bi-info-circle ms-1" style="font-size:0.75rem;color:#9CA3AF;cursor:help;"></i></span></td>
                                     <td class="pl-amount pl-negative">S/ <%= Number(pl.gastos_fijos || 0).toLocaleString('es-PE', {minimumFractionDigits:2, maximumFractionDigits:2}) %></td>
                                 </tr>
                                 <tr class="pl-row">
-                                    <td class="pl-label"><span class="pl-prefix">(-)</span> Gastos variables</td>
+                                    <td class="pl-label"><span class="pl-prefix">(-)</span> Gastos variables<span data-bs-toggle="tooltip" data-bs-placement="top" title="Gastos que varían con las ventas: insumos, envases, delivery"><i class="bi bi-info-circle ms-1" style="font-size:0.75rem;color:#9CA3AF;cursor:help;"></i></span></td>
                                     <td class="pl-amount pl-negative">S/ <%= Number(pl.gastos_variables || 0).toLocaleString('es-PE', {minimumFractionDigits:2, maximumFractionDigits:2}) %></td>
                                 </tr>
                                 <tr class="pl-subtotal" style="border-top: 2px solid rgba(255,255,255,0.15);">
-                                    <td class="pl-label"><span class="pl-prefix">(=)</span> <strong>EBITDA</strong></td>
+                                    <td class="pl-label"><span class="pl-prefix">(=)</span> <strong>EBITDA</strong><span data-bs-toggle="tooltip" data-bs-placement="top" title="Ganancia operativa antes de impuestos, depreciación y amortización"><i class="bi bi-info-circle ms-1" style="font-size:0.75rem;color:#9CA3AF;cursor:help;"></i></span></td>
                                     <td class="pl-amount <%= (pl.ebitda || 0) >= 0 ? 'pl-positive' : 'pl-negative' %>">
                                         <strong>S/ <%= Number(pl.ebitda || 0).toLocaleString('es-PE', {minimumFractionDigits:2, maximumFractionDigits:2}) %></strong>
                                         <small>(<%= pl.ebitda_pct || 0 %>%)</small>
@@ -195,7 +195,7 @@
             <div class="col-lg-5">
                 <div class="card shadow-sm mb-3">
                     <div class="card-header">
-                        <h6 class="card-title mb-0"><i class="bi bi-pie-chart me-2"></i>Gastos por Grupo</h6>
+                        <h6 class="card-title mb-0"><i class="bi bi-pie-chart me-2"></i>Gastos por Grupo<span data-bs-toggle="tooltip" data-bs-placement="top" title="Gastos clasificados por categoría: compras, servicios, marketing, sueldos, etc."><i class="bi bi-info-circle ms-1" style="font-size:0.75rem;color:#9CA3AF;cursor:help;"></i></span></h6>
                     </div>
                     <div class="card-body p-0">
                         <div class="table-responsive">
@@ -328,5 +328,9 @@
     </div>
     <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
     <script src="/vendor/sweetalert2/sweetalert2.all.min.js"></script>
+    <script>
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (el) { return new bootstrap.Tooltip(el); });
+    </script>
 </body>
 </html>

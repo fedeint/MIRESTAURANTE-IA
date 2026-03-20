@@ -1114,6 +1114,22 @@ router.put('/:mesaId/entregar', async (req, res) => {
     }
 });
 
+// Helper: costo de receta para un producto (suma ingredientes x costo_promedio)
+async function getRecipeCost(connection, productoId) {
+    try {
+        const [[cost]] = await connection.query(`
+            SELECT COALESCE(SUM(ri.cantidad * ai.costo_promedio), 0) as costo
+            FROM receta_items ri
+            JOIN recetas r ON r.id = ri.receta_id
+            JOIN almacen_ingredientes ai ON ai.id = ri.ingrediente_id
+            WHERE r.producto_id = ?
+        `, [productoId]);
+        return cost ? Number(cost.costo) : 0;
+    } catch (_) {
+        return 0;
+    }
+}
+
 // POST /mesas/pedidos/:pedidoId/facturar - API: genera factura desde pedido y cierra mesa
 router.post('/pedidos/:pedidoId/facturar', async (req, res) => {
     const pedidoId = req.params.pedidoId;
@@ -1175,9 +1191,10 @@ router.post('/pedidos/:pedidoId/facturar', async (req, res) => {
 
             // PostgreSQL does not support VALUES ? bulk syntax; insert individually
             for (const i of items) {
+                const costoReceta = await getRecipeCost(connection, i.producto_id);
                 await connection.query(
-                    `INSERT INTO detalle_factura (factura_id, producto_id, cantidad, precio_unitario, unidad_medida, subtotal) VALUES (?, ?, ?, ?, ?, ?)`,
-                    [facturaId, i.producto_id, i.cantidad, i.precio_unitario, i.unidad_medida, i.subtotal]
+                    `INSERT INTO detalle_factura (factura_id, producto_id, cantidad, precio_unitario, unidad_medida, subtotal, costo_receta) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                    [facturaId, i.producto_id, i.cantidad, i.precio_unitario, i.unidad_medida, i.subtotal, costoReceta]
                 );
             }
 
@@ -1202,6 +1219,21 @@ router.post('/pedidos/:pedidoId/facturar', async (req, res) => {
 
             await connection.query(`UPDATE pedidos SET estado = 'cerrado', total = ? WHERE id = ?`, [total, pedidoId]);
             await connection.query(`UPDATE mesas SET estado = 'libre' WHERE id = ?`, [pedido.mesa_id]);
+
+            // Register sale in caja (within transaction)
+            const tid = req.tenantId || 1;
+            const uid = req.session?.user?.id || 0;
+            const [[cajaAbierta]] = await connection.query(
+                "SELECT id FROM cajas WHERE tenant_id=? AND estado='abierta' LIMIT 1",
+                [tid]
+            );
+            if (cajaAbierta) {
+                await connection.query(
+                    `INSERT INTO caja_movimientos (tenant_id, caja_id, tipo, concepto, monto, usuario_id)
+                     VALUES (?, ?, 'ingreso', 'venta_factura', ?, ?)`,
+                    [tid, cajaAbierta.id, total, uid]
+                );
+            }
 
             await connection.commit();
             connection.release();

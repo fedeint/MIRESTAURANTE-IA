@@ -111,6 +111,22 @@ function buildFacturaTexto({ factura, cliente, detalles, pagos, negocio }) {
     return out.join('\r\n');
 }
 
+// Helper: costo de receta para un producto (suma ingredientes x costo_promedio)
+async function getRecipeCost(connection, productoId) {
+    try {
+        const [[cost]] = await connection.query(`
+            SELECT COALESCE(SUM(ri.cantidad * ai.costo_promedio), 0) as costo
+            FROM receta_items ri
+            JOIN recetas r ON r.id = ri.receta_id
+            JOIN almacen_ingredientes ai ON ai.id = ri.ingrediente_id
+            WHERE r.producto_id = ?
+        `, [productoId]);
+        return cost ? Number(cost.costo) : 0;
+    } catch (_) {
+        return 0;
+    }
+}
+
 // Crear nueva factura
 router.post('/', async (req, res) => {
     const { cliente_id, total, forma_pago, productos, pagos } = req.body;
@@ -159,19 +175,11 @@ router.post('/', async (req, res) => {
             const factura_id = result.insertId;
 
             // Insertar detalles de factura (PostgreSQL does not support VALUES ? bulk syntax; insert individually)
-            const detallesValues = productos.map(p => [
-                factura_id,
-                p.producto_id,
-                p.cantidad,
-                p.precio,
-                p.unidad,
-                p.subtotal
-            ]);
-
-            for (const det of detallesValues) {
+            for (const p of productos) {
+                const costoReceta = await getRecipeCost(connection, p.producto_id);
                 await connection.query(
-                    'INSERT INTO detalle_factura (factura_id, producto_id, cantidad, precio_unitario, unidad_medida, subtotal) VALUES (?, ?, ?, ?, ?, ?)',
-                    det
+                    'INSERT INTO detalle_factura (factura_id, producto_id, cantidad, precio_unitario, unidad_medida, subtotal, costo_receta) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                    [factura_id, p.producto_id, p.cantidad, p.precio, p.unidad, p.subtotal, costoReceta]
                 );
             }
 
@@ -199,22 +207,19 @@ router.post('/', async (req, res) => {
             // NOTA: El descuento de almacen se hace al ENVIAR A COCINA (routes/mesas.js)
             // No al facturar, porque los ingredientes se usan cuando se prepara, no cuando se cobra.
 
-            // === REGISTRO EN CAJA ===
-            try {
-                const facTid = req.tenantId || 1;
-                const [cajaRows] = await connection.query(
-                    "SELECT id FROM cajas WHERE tenant_id=? AND estado='abierta' ORDER BY fecha_apertura DESC LIMIT 1",
-                    [facTid]
+            // === REGISTRO EN CAJA (dentro de la transacción) ===
+            const facTid = req.tenantId || 1;
+            const facUid = req.session?.user?.id || 0;
+            const [[cajaAbierta]] = await connection.query(
+                "SELECT id FROM cajas WHERE tenant_id=? AND estado='abierta' LIMIT 1",
+                [facTid]
+            );
+            if (cajaAbierta) {
+                await connection.query(
+                    `INSERT INTO caja_movimientos (tenant_id, caja_id, tipo, concepto, monto, usuario_id)
+                     VALUES (?, ?, 'ingreso', 'venta_factura', ?, ?)`,
+                    [facTid, cajaAbierta.id, totalNum, facUid]
                 );
-                if (cajaRows && cajaRows[0]) {
-                    await connection.query(
-                        `INSERT INTO caja_movimientos (tenant_id, caja_id, tipo, concepto, monto, usuario_id)
-                         VALUES (?,?,'ingreso','venta_factura',?,0)`,
-                        [facTid, cajaRows[0].id, totalNum]
-                    );
-                }
-            } catch (cajaErr) {
-                console.error('Registro caja error (no bloquea factura):', cajaErr.message);
             }
 
             // Confirmar transacción
