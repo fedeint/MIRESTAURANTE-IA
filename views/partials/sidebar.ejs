@@ -11,6 +11,35 @@
         <!-- Fredoka One para brand MiRest con IA -->
         <link rel="preload" href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap" as="style" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap" rel="stylesheet">
+        <!-- Preloader: shows instantly, hides when page is ready -->
+        <style>
+          .dg-preloader{position:fixed;inset:0;z-index:9999;background:#FFF8F0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:12px;transition:opacity .3s ease, visibility .3s ease;}
+          .dg-preloader.hidden{opacity:0;visibility:hidden;pointer-events:none;}
+          .dg-preloader-spinner{width:36px;height:36px;border:3px solid #f3e8de;border-top-color:#FF6B35;border-radius:50%;animation:dg-spin .7s linear infinite;}
+          .dg-preloader-text{font-family:'DM Sans',system-ui,sans-serif;font-size:0.8rem;color:#9CA3AF;letter-spacing:0.02em;}
+          @keyframes dg-spin{to{transform:rotate(360deg)}}
+          [data-theme="dark"] .dg-preloader{background:#0f172a;}
+          [data-theme="dark"] .dg-preloader-spinner{border-color:#1e293b;border-top-color:#FF6B35;}
+        </style>
+        <div class="dg-preloader" id="dgPreloader">
+          <div class="dg-preloader-spinner"></div>
+          <div class="dg-preloader-text">Cargando...</div>
+        </div>
+        <script>
+          // Hide preloader as soon as DOM is interactive
+          document.addEventListener('DOMContentLoaded', function(){
+            var p = document.getElementById('dgPreloader');
+            if(p) p.classList.add('hidden');
+            // Remove from DOM after transition
+            setTimeout(function(){ if(p && p.parentNode) p.parentNode.removeChild(p); }, 400);
+          });
+          // Safety: force hide after 4s in case DOMContentLoaded already fired
+          setTimeout(function(){
+            var p = document.getElementById('dgPreloader');
+            if(p) p.classList.add('hidden');
+          }, 4000);
+        </script>
+
         <!-- CSS critico inline: evita flash blanco y parpadeo al navegar -->
         <style>
           @font-face{font-display:block;font-family:"bootstrap-icons";src:url("/vendor/bootstrap-icons/fonts/bootstrap-icons.woff2") format("woff2"),url("/vendor/bootstrap-icons/fonts/bootstrap-icons.woff") format("woff");}
