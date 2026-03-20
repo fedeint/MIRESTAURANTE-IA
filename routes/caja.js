@@ -138,6 +138,9 @@ router.post('/cerrar', async (req, res) => {
             [montoSistema, montoReal, diferencia, denominacion_cierre ? JSON.stringify(denominacion_cierre) : null, notas || null, caja.id]
         );
 
+        // Limpiar asignaciones de meseros al cerrar caja
+        await db.query(`UPDATE mesas SET mesero_asignado_id = NULL, mesero_asignado_nombre = NULL WHERE tenant_id = ?`, [tid]);
+
         registrarAudit({ tenantId: tid, usuarioId: uid, accion: 'UPDATE', modulo: 'caja', tabla: 'cajas', registroId: caja.id, datosNuevos: { monto_sistema: montoSistema, monto_real: montoReal, diferencia }, ip: req.ip });
         res.json({ message: 'Caja cerrada', monto_sistema: montoSistema, monto_real: montoReal, diferencia });
     } catch (e) {
