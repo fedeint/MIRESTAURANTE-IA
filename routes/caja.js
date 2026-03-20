@@ -59,7 +59,7 @@ router.get('/', async (req, res) => {
           JOIN pedido_items pi ON pi.pedido_id = p.id
           WHERE m.mesero_asignado_id IS NOT NULL
             AND m.tenant_id = ?
-            AND DATE(p.created_at) = CURRENT_DATE
+            AND (p.created_at AT TIME ZONE 'America/Lima')::date = (NOW() AT TIME ZONE 'America/Lima')::date
             AND pi.estado NOT IN ('cancelado', 'rechazado')
           GROUP BY m.mesero_asignado_id
         `, [tid]);
@@ -73,29 +73,39 @@ router.get('/', async (req, res) => {
 
 // POST /api/caja/abrir
 router.post('/abrir', async (req, res) => {
+    const tid = req.tenantId || 1;
+    const uid = req.session?.user?.id || 0;
+    const connection = await db.getConnection();
     try {
-        const tid = req.tenantId || 1;
-        const uid = req.session?.user?.id || 0;
+        await connection.beginTransaction();
 
-        // Verificar que no hay caja abierta
-        const [[abierta]] = await db.query("SELECT id FROM cajas WHERE tenant_id=? AND estado='abierta' LIMIT 1", [tid]);
-        if (abierta) return res.status(400).json({ error: 'Ya hay una caja abierta. Cierra la actual primero.' });
+        // Lock to prevent race condition — any concurrent open attempt will wait here
+        const [[abierta]] = await connection.query(
+            "SELECT id FROM cajas WHERE tenant_id=? AND estado='abierta' LIMIT 1 FOR UPDATE",
+            [tid]
+        );
+        if (abierta) {
+            await connection.rollback();
+            return res.status(400).json({ error: 'Ya hay una caja abierta. Cierra la actual primero.' });
+        }
 
         const { monto_apertura, turno_id, nombre_caja } = req.body;
-        const [result] = await db.query(
+        const [result] = await connection.query(
             `INSERT INTO cajas (tenant_id, turno_id, usuario_id, nombre_caja, fecha_apertura, monto_apertura, estado)
              VALUES (?,?,?,?,NOW(),?,'abierta') RETURNING id`,
             [tid, turno_id || null, uid, nombre_caja || 'Caja 1', monto_apertura || 0]
         );
 
         // Movimiento de fondo inicial
-        await db.query(
+        await connection.query(
             `INSERT INTO caja_movimientos (tenant_id, caja_id, tipo, concepto, monto, usuario_id)
              VALUES (?,?,'ingreso','fondo_inicial',?,?)`,
             [tid, result.insertId, monto_apertura || 0, uid]
         );
 
-        // Asignar mesas a meseros
+        await connection.commit();
+
+        // Asignar mesas a meseros (outside transaction — non-critical)
         const asignaciones = req.body.asignaciones;
         if (asignaciones && Array.isArray(asignaciones) && asignaciones.length > 0) {
           await db.query(`UPDATE mesas SET mesero_asignado_id = NULL, mesero_asignado_nombre = NULL WHERE tenant_id = ?`, [tid]);
@@ -112,7 +122,10 @@ router.post('/abrir', async (req, res) => {
         registrarAudit({ tenantId: tid, usuarioId: uid, accion: 'INSERT', modulo: 'caja', tabla: 'cajas', registroId: result.insertId, ip: req.ip });
         res.status(201).json({ caja_id: result.insertId, message: 'Caja abierta' });
     } catch (e) {
+        await connection.rollback();
         res.status(500).json({ error: e.message });
+    } finally {
+        connection.release();
     }
 });
 
@@ -196,11 +209,11 @@ router.get('/ranking-meseros', async (req, res) => {
 
     let dateFilter = '';
     if (periodo === 'hoy') {
-      dateFilter = `AND DATE(p.created_at) = CURRENT_DATE`;
+      dateFilter = `AND (p.created_at AT TIME ZONE 'America/Lima')::date = (NOW() AT TIME ZONE 'America/Lima')::date`;
     } else if (periodo === 'semana') {
-      dateFilter = `AND p.created_at >= CURRENT_DATE - INTERVAL '7 days'`;
+      dateFilter = `AND p.created_at >= (NOW() AT TIME ZONE 'America/Lima')::date - INTERVAL '7 days'`;
     } else if (periodo === 'mes') {
-      dateFilter = `AND p.created_at >= CURRENT_DATE - INTERVAL '30 days'`;
+      dateFilter = `AND p.created_at >= (NOW() AT TIME ZONE 'America/Lima')::date - INTERVAL '30 days'`;
     }
 
     const [ranking] = await db.query(`

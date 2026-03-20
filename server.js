@@ -372,7 +372,7 @@ app.get('/', requireAuth, async (req, res) => {
 
             // Ventas y facturas del dia
             const [[vhRow]] = await db.query(
-                "SELECT COUNT(*) as c, COALESCE(SUM(total),0) as m FROM facturas WHERE fecha::date = CURRENT_DATE"
+                "SELECT COUNT(*) as c, COALESCE(SUM(total),0) as m FROM facturas WHERE (fecha AT TIME ZONE 'America/Lima')::date = (NOW() AT TIME ZONE 'America/Lima')::date"
             );
             cajaDash.ventasHoy = Number(vhRow.m).toFixed(2);
             cajaDash.facturasHoy = Number(vhRow.c);
@@ -397,7 +397,7 @@ app.get('/', requireAuth, async (req, res) => {
                     `SELECT mp.nombre as metodo, COALESCE(SUM(f.total),0) as total, COUNT(f.id) as qty
                      FROM facturas f
                      LEFT JOIN metodos_pago mp ON mp.id = f.metodo_pago_id
-                     WHERE f.fecha::date = CURRENT_DATE
+                     WHERE (f.fecha AT TIME ZONE 'America/Lima')::date = (NOW() AT TIME ZONE 'America/Lima')::date
                      GROUP BY mp.nombre
                      ORDER BY total DESC`
                 );
@@ -430,56 +430,45 @@ app.get('/', requireAuth, async (req, res) => {
     const dashboard = { ventasHoy: 0, ventasMes: 0, mesasTotal: 0, mesasOcupadas: 0, productosVendidosHoy: 0, clientesTotal: 0, alertas: 0, topProductos: [], userName: req.session?.user?.nombre || req.session?.user?.usuario || 'Admin', facturasHoy: 0, cajaAbierta: false, personalSinPago: 0, personalTotal: 0, meserosActivos: 0, ratioMesasPorMesero: 0, ventasAyer: 0, pendientes: [], iaInsights: [] };
     try {
         const tid = req.tenantId || 1;
-        const [[vh]] = await db.query("SELECT COUNT(*) as c, COALESCE(SUM(total),0) as m FROM facturas WHERE fecha::date = CURRENT_DATE");
-        dashboard.ventasHoy = Number(vh.m).toFixed(2);
-        dashboard.facturasHoy = vh.c;
+        // Lima-aware "today" expression — reused in every date comparison
+        const HOY = `(NOW() AT TIME ZONE 'America/Lima')::date`;
 
-        const [[vm]] = await db.query("SELECT COALESCE(SUM(total),0) as m FROM facturas WHERE fecha >= NOW() - INTERVAL '30 days'");
-        dashboard.ventasMes = Number(vm.m).toFixed(2);
+        // ── Batch 1: all independent queries in parallel ──────────────────────
+        const [
+            [[vh]], [[vm]], [[mt]], [[mo]],
+            [[ph]], [[cl]], [tp], [[al]],
+            [[cajaRow]], [[pTotal]], [[pPagados]], [[meseros]], [[va]]
+        ] = await Promise.all([
+            db.query(`SELECT COUNT(*) as c, COALESCE(SUM(total),0) as m FROM facturas WHERE (fecha AT TIME ZONE 'America/Lima')::date = ${HOY}`),
+            db.query(`SELECT COALESCE(SUM(total),0) as m FROM facturas WHERE fecha >= NOW() - INTERVAL '30 days'`),
+            db.query(`SELECT COUNT(*) as t FROM mesas`),
+            db.query(`SELECT COUNT(*) as t FROM mesas WHERE estado='ocupada'`),
+            db.query(`SELECT COALESCE(SUM(df.cantidad),0) as t FROM detalle_factura df JOIN facturas f ON f.id=df.factura_id WHERE (f.fecha AT TIME ZONE 'America/Lima')::date = ${HOY}`),
+            db.query(`SELECT COUNT(*) as t FROM clientes`),
+            db.query(`SELECT p.nombre, SUM(df.cantidad) as qty FROM detalle_factura df JOIN productos p ON p.id=df.producto_id JOIN facturas f ON f.id=df.factura_id WHERE (f.fecha AT TIME ZONE 'America/Lima')::date = ${HOY} GROUP BY df.producto_id, p.nombre ORDER BY qty DESC LIMIT 5`),
+            db.query(`SELECT COUNT(*) as t FROM almacen_ingredientes WHERE tenant_id=? AND activo=true AND stock_actual <= stock_minimo`, [tid]),
+            db.query(`SELECT id FROM cajas WHERE tenant_id=? AND estado='abierta' LIMIT 1`, [tid]).catch(() => [[null]]),
+            db.query(`SELECT COUNT(*) as t FROM personal WHERE tenant_id=? AND activo=true`, [tid]).catch(() => [[{ t: 0 }]]),
+            db.query(`SELECT COUNT(DISTINCT personal_id) as t FROM planilla_pagos WHERE tenant_id=? AND (fecha AT TIME ZONE 'America/Lima')::date = ${HOY}`, [tid]).catch(() => [[{ t: 0 }]]),
+            db.query(`SELECT COUNT(*) as t FROM usuarios WHERE rol='mesero' AND activo=true`).catch(() => [[{ t: 0 }]]),
+            db.query(`SELECT COALESCE(SUM(total),0) as m FROM facturas WHERE (fecha AT TIME ZONE 'America/Lima')::date = ${HOY} - INTERVAL '1 day'`).catch(() => [[{ m: 0 }]]),
+        ]);
 
-        const [[mt]] = await db.query("SELECT COUNT(*) as t FROM mesas");
-        dashboard.mesasTotal = mt.t;
-        const [[mo]] = await db.query("SELECT COUNT(*) as t FROM mesas WHERE estado='ocupada'");
-        dashboard.mesasOcupadas = mo.t;
-
-        const [[ph]] = await db.query("SELECT COALESCE(SUM(df.cantidad),0) as t FROM detalle_factura df JOIN facturas f ON f.id=df.factura_id WHERE f.fecha::date = CURRENT_DATE");
+        dashboard.ventasHoy          = Number(vh.m).toFixed(2);
+        dashboard.facturasHoy        = vh.c;
+        dashboard.ventasMes          = Number(vm.m).toFixed(2);
+        dashboard.mesasTotal         = mt.t;
+        dashboard.mesasOcupadas      = mo.t;
         dashboard.productosVendidosHoy = Number(ph.t);
-
-        const [[cl]] = await db.query("SELECT COUNT(*) as t FROM clientes");
-        dashboard.clientesTotal = cl.t;
-
-        const [tp] = await db.query("SELECT p.nombre, SUM(df.cantidad) as qty FROM detalle_factura df JOIN productos p ON p.id=df.producto_id JOIN facturas f ON f.id=df.factura_id WHERE f.fecha::date = CURRENT_DATE GROUP BY df.producto_id, p.nombre ORDER BY qty DESC LIMIT 5");
-        dashboard.topProductos = tp || [];
-
-        const [[al]] = await db.query("SELECT COUNT(*) as t FROM almacen_ingredientes WHERE tenant_id=? AND activo=true AND stock_actual <= stock_minimo", [tid]);
-        dashboard.alertas = al.t;
-
-        // Caja abierta?
-        try {
-            const [[caja]] = await db.query("SELECT id FROM cajas WHERE tenant_id=? AND estado='abierta' LIMIT 1", [tid]);
-            dashboard.cajaAbierta = !!caja;
-        } catch(_) {}
-
-        // Personal sin pago hoy
-        try {
-            const [[pTotal]] = await db.query("SELECT COUNT(*) as t FROM personal WHERE tenant_id=? AND activo=true", [tid]);
-            dashboard.personalTotal = pTotal.t;
-            const [[pPagados]] = await db.query("SELECT COUNT(DISTINCT personal_id) as t FROM planilla_pagos WHERE tenant_id=? AND fecha::date = CURRENT_DATE", [tid]);
-            dashboard.personalSinPago = Math.max(0, pTotal.t - pPagados.t);
-        } catch(_) {}
-
-        // Meseros activos y ratio mesas/mesero
-        try {
-            const [[meseros]] = await db.query("SELECT COUNT(*) as t FROM usuarios WHERE rol='mesero' AND activo=true");
-            dashboard.meserosActivos = meseros.t;
-            dashboard.ratioMesasPorMesero = meseros.t > 0 ? Math.round(dashboard.mesasTotal / meseros.t) : 0;
-        } catch(_) {}
-
-        // Ventas ayer (para comparar)
-        try {
-            const [[va]] = await db.query("SELECT COALESCE(SUM(total),0) as m FROM facturas WHERE fecha::date = CURRENT_DATE - INTERVAL '1 day'");
-            dashboard.ventasAyer = Number(va.m).toFixed(2);
-        } catch(_) {}
+        dashboard.clientesTotal      = cl.t;
+        dashboard.topProductos       = tp || [];
+        dashboard.alertas            = al.t;
+        dashboard.cajaAbierta        = !!cajaRow;
+        dashboard.personalTotal      = pTotal.t;
+        dashboard.personalSinPago    = Math.max(0, Number(pTotal.t) - Number(pPagados.t));
+        dashboard.meserosActivos     = meseros.t;
+        dashboard.ratioMesasPorMesero = meseros.t > 0 ? Math.round(dashboard.mesasTotal / meseros.t) : 0;
+        dashboard.ventasAyer         = Number(va.m).toFixed(2);
 
         // === PENDIENTES DINAMICOS CON PRIORIDAD ===
         // Prioridad: 1=critico (bloquea operacion), 2=urgente (afecta servicio), 3=importante (afecta finanzas), 4=info
@@ -520,7 +509,7 @@ app.get('/', requireAuth, async (req, res) => {
 
         // P3 IMPORTANTE: Gastos fijos del mes sin registrar
         try {
-            const [[gf]] = await db.query("SELECT COUNT(*) as t FROM gastos g JOIN gastos_categorias gc ON gc.id=g.categoria_id WHERE g.tenant_id=? AND gc.tipo='fijo' AND EXTRACT(MONTH FROM g.fecha)=EXTRACT(MONTH FROM CURRENT_DATE) AND EXTRACT(YEAR FROM g.fecha)=EXTRACT(YEAR FROM CURRENT_DATE)", [tid]);
+            const [[gf]] = await db.query(`SELECT COUNT(*) as t FROM gastos g JOIN gastos_categorias gc ON gc.id=g.categoria_id WHERE g.tenant_id=? AND gc.tipo='fijo' AND EXTRACT(MONTH FROM g.fecha)=EXTRACT(MONTH FROM ${HOY}) AND EXTRACT(YEAR FROM g.fecha)=EXTRACT(YEAR FROM ${HOY})`, [tid]);
             if (gf.t === 0) {
                 pendientes.push({ prioridad: 3, color: '#8B5CF6', titulo: 'Registrar gastos fijos del mes', desc: 'Alquiler, luz, agua, internet — registralos para ver el P&L real', btn: 'Ir', href: '/administracion/gastos', urgente: false });
             }
@@ -534,7 +523,7 @@ app.get('/', requireAuth, async (req, res) => {
         // P4 INFO: Revisar reporte del dia anterior
         if (Number(dashboard.ventasAyer) > 0) {
             try {
-                const [[reporteVisto]] = await db.query("SELECT id FROM admin_tareas WHERE tenant_id=? AND titulo='Revisar cierre de ayer' AND created_at::date = CURRENT_DATE AND completada=true LIMIT 1", [tid]);
+                const [[reporteVisto]] = await db.query(`SELECT id FROM admin_tareas WHERE tenant_id=? AND titulo='Revisar cierre de ayer' AND (created_at AT TIME ZONE 'America/Lima')::date = ${HOY} AND completada=true LIMIT 1`, [tid]);
                 if (!reporteVisto) {
                     pendientes.push({ prioridad: 4, color: '#14B8A6', titulo: 'Revisar cierre de ayer', desc: 'Ayer se facturo S/' + dashboard.ventasAyer + ' — revisa el resumen', btn: 'Ver', href: '/ventas', urgente: false });
                 }
@@ -549,7 +538,7 @@ app.get('/', requireAuth, async (req, res) => {
         for (const p of pendientes) {
             try {
                 const [[existe]] = await db.query(
-                    "SELECT id FROM admin_tareas WHERE tenant_id=? AND titulo=? AND created_at::date = CURRENT_DATE AND tipo='auto' LIMIT 1",
+                    `SELECT id FROM admin_tareas WHERE tenant_id=? AND titulo=? AND (created_at AT TIME ZONE 'America/Lima')::date = ${HOY} AND tipo='auto' LIMIT 1`,
                     [tid, p.titulo]
                 );
                 if (!existe) {
@@ -564,7 +553,7 @@ app.get('/', requireAuth, async (req, res) => {
         // Cargar pendientes activos (auto de hoy no completados + manuales no completados)
         try {
             const [tareasActivas] = await db.query(
-                "SELECT * FROM admin_tareas WHERE tenant_id=? AND completada=false AND (tipo='manual' OR created_at::date = CURRENT_DATE) ORDER BY urgente DESC, created_at ASC",
+                `SELECT * FROM admin_tareas WHERE tenant_id=? AND completada=false AND (tipo='manual' OR (created_at AT TIME ZONE 'America/Lima')::date = ${HOY}) ORDER BY urgente DESC, created_at ASC`,
                 [tid]
             );
             dashboard.pendientes = tareasActivas.map(t => ({
@@ -746,7 +735,7 @@ app.get('/ranking', requireRole('administrador'), async (req, res) => {
         const tid = req.tenantId || 1;
         const [[vm]] = await db.query("SELECT COUNT(*) as t, COALESCE(SUM(total),0) as m FROM facturas WHERE fecha >= NOW() - INTERVAL '30 days'");
         stats.ventasMes = Number(vm.m).toFixed(2);
-        const [[vh]] = await db.query("SELECT COUNT(*) as t, COALESCE(SUM(total),0) as m FROM facturas WHERE fecha::date = CURRENT_DATE");
+        const [[vh]] = await db.query("SELECT COUNT(*) as t, COALESCE(SUM(total),0) as m FROM facturas WHERE (fecha AT TIME ZONE 'America/Lima')::date = (NOW() AT TIME ZONE 'America/Lima')::date");
         stats.ventasHoy = Number(vh.m).toFixed(2);
         stats.ticketPromedio = vm.t > 0 ? (Number(vm.m) / vm.t).toFixed(2) : '0.00';
         const [[cl]] = await db.query("SELECT COUNT(*) as t FROM clientes");

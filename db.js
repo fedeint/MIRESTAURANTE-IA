@@ -29,7 +29,7 @@ if (IS_LOCAL) {
     poolConfig = {
         connectionString: process.env.DATABASE_URL,
         ssl: { rejectUnauthorized: false },
-        max: Number(process.env.DB_POOL_SIZE) || 5,
+        max: Number(process.env.DB_POOL_SIZE) || 3,
         idleTimeoutMillis: 10000,
         connectionTimeoutMillis: 10000,
     };
@@ -42,7 +42,7 @@ if (IS_LOCAL) {
         user:     process.env.DB_USER     || 'postgres',
         password: process.env.DB_PASSWORD || '',
         ssl: { rejectUnauthorized: false },
-        max: Number(process.env.DB_POOL_SIZE) || 5,
+        max: Number(process.env.DB_POOL_SIZE) || 3,
         idleTimeoutMillis: 10000,
         connectionTimeoutMillis: 10000,
     };
@@ -229,6 +229,10 @@ async function ensureSchema() {
             'CREATE INDEX IF NOT EXISTS idx_detalle_factura_factura ON detalle_factura(factura_id)',
             'CREATE INDEX IF NOT EXISTS idx_detalle_factura_producto ON detalle_factura(producto_id)',
             'CREATE INDEX IF NOT EXISTS idx_session_expire ON session(expire)',
+            'CREATE INDEX IF NOT EXISTS idx_facturas_tenant_fecha ON facturas(tenant_id, fecha)',
+            'CREATE INDEX IF NOT EXISTS idx_cajas_tenant_estado ON cajas(tenant_id, estado)',
+            'CREATE INDEX IF NOT EXISTS idx_pedido_items_estado_created ON pedido_items(estado, created_at)',
+            'CREATE INDEX IF NOT EXISTS idx_caja_movimientos_caja ON caja_movimientos(caja_id, anulado)',
         ];
         for (const sql of indexes) {
             try { await pgNativeQuery(sql); } catch (_) {}
