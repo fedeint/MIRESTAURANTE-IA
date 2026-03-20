@@ -316,7 +316,7 @@ router.post('/planilla/pagar', async (req, res) => {
         const fechaPago = fecha || new Date().toISOString().split('T')[0];
         await db.query(
             `INSERT INTO planilla_pagos (tenant_id, personal_id, fecha, monto_bruto, deduccion_onp_afp, monto_neto, aporte_essalud, aporte_sctr, horas_trabajadas, notas, pagado)
-             VALUES (?,?,?,?,?,?,?,?,?,?,1)`,
+             VALUES (?,?,?,?,?,?,?,?,?,?,true)`,
             [tid, personal_id, fechaPago, bruto, onpAfp, neto, essalud, sctr, horas_trabajadas||null, notas||null]
         );
 
@@ -342,7 +342,7 @@ router.post('/planilla/pagar', async (req, res) => {
 router.delete('/planilla/:id', async (req, res) => {
     try {
         const tid = req.tenantId || 1;
-        await db.query('UPDATE personal SET activo=0, deleted_at=NOW() WHERE id=? AND tenant_id=?', [req.params.id, tid]);
+        await db.query('UPDATE personal SET activo=false, deleted_at=NOW() WHERE id=? AND tenant_id=?', [req.params.id, tid]);
         res.json({ ok: true, message: 'Personal eliminado' });
     } catch (e) { res.status(500).json({ error: e.message }); }
 });
