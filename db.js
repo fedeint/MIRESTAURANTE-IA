@@ -111,7 +111,12 @@ async function wrappedQuery(sql, params) {
 
     try {
         // Use the native pg query (not the overridden wrapper) to avoid infinite recursion
+        const _t0 = Date.now();
         const pgResult = await pgNativeQuery(converted.sql, converted.params);
+        const _dur = Date.now() - _t0;
+        if (_dur > 500) {
+            console.warn(`[SLOW QUERY] ${_dur}ms — ${sql.substring(0, 120)}`);
+        }
 
         // Build a result object that mirrors mysql2's structure
         const rows = pgResult.rows || [];
@@ -209,6 +214,24 @@ async function ensureSchema() {
             await pgPool.query(`ALTER TABLE productos ADD COLUMN imagen TEXT NULL`);
         } catch (_ignore) {
             // Column already exists, ignore
+        }
+
+        // Performance indexes — each wrapped individually so a missing table
+        // (e.g. session) never blocks the rest of startup.
+        const indexes = [
+            'CREATE INDEX IF NOT EXISTS idx_pedidos_mesa_estado ON pedidos(mesa_id, estado)',
+            'CREATE INDEX IF NOT EXISTS idx_pedido_items_pedido_id ON pedido_items(pedido_id)',
+            'CREATE INDEX IF NOT EXISTS idx_pedido_items_estado ON pedido_items(estado)',
+            'CREATE INDEX IF NOT EXISTS idx_facturas_fecha ON facturas(fecha)',
+            'CREATE INDEX IF NOT EXISTS idx_usuarios_usuario ON usuarios(usuario)',
+            'CREATE INDEX IF NOT EXISTS idx_mesas_estado ON mesas(estado)',
+            'CREATE INDEX IF NOT EXISTS idx_mesas_mesero ON mesas(mesero_asignado_id)',
+            'CREATE INDEX IF NOT EXISTS idx_detalle_factura_factura ON detalle_factura(factura_id)',
+            'CREATE INDEX IF NOT EXISTS idx_detalle_factura_producto ON detalle_factura(producto_id)',
+            'CREATE INDEX IF NOT EXISTS idx_session_expire ON session(expire)',
+        ];
+        for (const sql of indexes) {
+            try { await pgNativeQuery(sql); } catch (_) {}
         }
     } catch (err) {
         console.error('ensureSchema() falló:', err.message || err);

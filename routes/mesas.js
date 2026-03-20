@@ -206,37 +206,24 @@ router.get('/', async (req, res) => {
             SELECT m.*,
             m.mesero_asignado_id,
             m.mesero_asignado_nombre,
-            (
-                -- Conteo de pedidos realmente activos (con al menos 1 item activo).
-                -- Evita bloquear mesas solo por abrir comanda vacía.
-                SELECT COUNT(DISTINCT p.id)
-                FROM pedidos p
-                JOIN pedido_items i ON i.pedido_id = p.id
-                WHERE p.mesa_id = m.id
-                  AND p.estado NOT IN ('cerrado','cancelado','rechazado')
-                  AND i.estado NOT IN ('cancelado','rechazado')
-            ) AS pedidos_abiertos,
-            (
-                SELECT COUNT(*)
-                FROM pedido_items i
-                JOIN pedidos p2 ON p2.id = i.pedido_id
-                WHERE p2.mesa_id = m.id
-                  AND p2.estado NOT IN ('cerrado','cancelado','rechazado')
-                  AND i.estado NOT IN ('cancelado','rechazado')
-            ) AS items_activos,
+            COALESCE(stats.pedidos_abiertos, 0) AS pedidos_abiertos,
+            COALESCE(stats.items_activos, 0) AS items_activos,
             CASE
                 WHEN m.estado IN ('reservada','bloqueada') THEN m.estado
-                WHEN (
-                    SELECT COUNT(*)
-                    FROM pedido_items i2
-                    JOIN pedidos p3 ON p3.id = i2.pedido_id
-                    WHERE p3.mesa_id = m.id
-                      AND p3.estado NOT IN ('cerrado','cancelado','rechazado')
-                      AND i2.estado NOT IN ('cancelado','rechazado')
-                ) > 0 THEN 'ocupada'
+                WHEN COALESCE(stats.items_activos, 0) > 0 THEN 'ocupada'
                 ELSE 'libre'
             END AS estado
             FROM mesas m
+            LEFT JOIN (
+                SELECT p.mesa_id,
+                    COUNT(DISTINCT p.id) AS pedidos_abiertos,
+                    COUNT(i.id) AS items_activos
+                FROM pedidos p
+                JOIN pedido_items i ON i.pedido_id = p.id
+                WHERE p.estado NOT IN ('cerrado','cancelado','rechazado')
+                  AND i.estado NOT IN ('cancelado','rechazado')
+                GROUP BY p.mesa_id
+            ) stats ON stats.mesa_id = m.id
             ORDER BY m.numero
         `);
 
@@ -258,37 +245,24 @@ router.get('/listar', async (req, res) => {
             SELECT m.*,
             m.mesero_asignado_id,
             m.mesero_asignado_nombre,
-            (
-                -- Conteo de pedidos realmente activos (con al menos 1 item activo).
-                -- Evita bloquear mesas solo por abrir comanda vacía.
-                SELECT COUNT(DISTINCT p.id)
-                FROM pedidos p
-                JOIN pedido_items i ON i.pedido_id = p.id
-                WHERE p.mesa_id = m.id
-                  AND p.estado NOT IN ('cerrado','cancelado','rechazado')
-                  AND i.estado NOT IN ('cancelado','rechazado')
-            ) AS pedidos_abiertos,
-            (
-                SELECT COUNT(*)
-                FROM pedido_items i
-                JOIN pedidos p2 ON p2.id = i.pedido_id
-                WHERE p2.mesa_id = m.id
-                  AND p2.estado NOT IN ('cerrado','cancelado','rechazado')
-                  AND i.estado NOT IN ('cancelado','rechazado')
-            ) AS items_activos,
+            COALESCE(stats.pedidos_abiertos, 0) AS pedidos_abiertos,
+            COALESCE(stats.items_activos, 0) AS items_activos,
             CASE
                 WHEN m.estado IN ('reservada','bloqueada') THEN m.estado
-                WHEN (
-                    SELECT COUNT(*)
-                    FROM pedido_items i2
-                    JOIN pedidos p3 ON p3.id = i2.pedido_id
-                    WHERE p3.mesa_id = m.id
-                      AND p3.estado NOT IN ('cerrado','cancelado','rechazado')
-                      AND i2.estado NOT IN ('cancelado','rechazado')
-                ) > 0 THEN 'ocupada'
+                WHEN COALESCE(stats.items_activos, 0) > 0 THEN 'ocupada'
                 ELSE 'libre'
             END AS estado
             FROM mesas m
+            LEFT JOIN (
+                SELECT p.mesa_id,
+                    COUNT(DISTINCT p.id) AS pedidos_abiertos,
+                    COUNT(i.id) AS items_activos
+                FROM pedidos p
+                JOIN pedido_items i ON i.pedido_id = p.id
+                WHERE p.estado NOT IN ('cerrado','cancelado','rechazado')
+                  AND i.estado NOT IN ('cancelado','rechazado')
+                GROUP BY p.mesa_id
+            ) stats ON stats.mesa_id = m.id
             ORDER BY m.numero
         `);
         res.json(mesas);

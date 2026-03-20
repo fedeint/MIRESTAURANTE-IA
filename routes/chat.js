@@ -377,7 +377,14 @@ router.post('/', async (req, res) => {
     }
 });
 
+const _contextCache = { data: null, ts: 0 };
+const CONTEXT_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
 async function obtenerContextoNegocio() {
+    if (_contextCache.data && (Date.now() - _contextCache.ts) < CONTEXT_CACHE_TTL) {
+        return _contextCache.data;
+    }
+
     const partes = [];
 
     try {
@@ -468,7 +475,10 @@ async function obtenerContextoNegocio() {
         }
     } catch (e) {}
 
-    return partes.join('\n') || 'No hay datos del negocio disponibles aun.';
+    const result = partes.join('\n') || 'No hay datos del negocio disponibles aun.';
+    _contextCache.data = result;
+    _contextCache.ts = Date.now();
+    return result;
 }
 
 module.exports = router;
