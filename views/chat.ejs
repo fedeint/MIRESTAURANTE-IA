@@ -533,6 +533,10 @@
                                     <input class="form-check-input" type="checkbox" id="voiceAutoRead" checked style="transform:scale(0.8);">
                                     <label class="form-check-label text-muted" for="voiceAutoRead">Leer en voz alta</label>
                                 </div>
+                                <!-- Stop TTS button -->
+                                <button class="chat-action-btn" id="stopTtsBtn" type="button" title="Parar de hablar" style="display:none;">
+                                    <i class="bi bi-volume-mute-fill" style="color:#EF4444;"></i>
+                                </button>
                             </div>
 
                             <!-- Send / Mic / Stop button -->
@@ -930,35 +934,52 @@
                 }, 100);
             });
 
-            // Start speech recognition
+            // Start speech recognition with interim results for live feedback
             var recognition = new SpeechRecognition();
             recognition.lang = 'es-PE';
-            recognition.interimResults = false;
+            recognition.interimResults = true;
             recognition.maxAlternatives = 1;
             recognition.continuous = true;
 
             window._activeRecognition = recognition;
             window._recognizedText = '';
+            window._interimText = '';
 
             recognition.onresult = function(event) {
-                var last = event.results[event.results.length - 1];
-                if (last.isFinal) {
-                    window._recognizedText += (window._recognizedText ? ' ' : '') + last[0].transcript;
+                var final = '';
+                var interim = '';
+                for (var i = 0; i < event.results.length; i++) {
+                    if (event.results[i].isFinal) {
+                        final += event.results[i][0].transcript + ' ';
+                    } else {
+                        interim += event.results[i][0].transcript;
+                    }
+                }
+                window._recognizedText = final.trim();
+                window._interimText = interim;
+                // Show live text in the recorder area
+                if (recorderTimeEl) {
+                    var display = (window._recognizedText + ' ' + interim).trim();
+                    if (display) {
+                        recorderTimeEl.textContent = display.substring(0, 60) + (display.length > 60 ? '...' : '');
+                    }
                 }
             };
 
-            recognition.onerror = function() {
+            recognition.onerror = function(e) {
+                // "no-speech" is normal — don't stop, just wait
+                if (e.error === 'no-speech' || e.error === 'aborted') return;
                 stopRecording();
             };
 
             recognition.onend = function() {
-                // If still recording, it timed out - finalize
+                // If still recording, restart recognition (browser stops after ~60s)
                 if (isRecording) {
-                    stopRecording();
+                    try { recognition.start(); } catch (_) { stopRecording(); }
                 }
             };
 
-            recognition.start();
+            try { recognition.start(); } catch (_) { stopRecording(); }
         }
 
         function stopRecording() {
@@ -1018,8 +1039,10 @@
             // Button will show but show error on click (handled in startRecording)
         }
 
-        // ─── Text-to-Speech ───
+        // ─── Text-to-Speech with stop button ───
         var voiceAutoRead = document.getElementById('voiceAutoRead');
+        var stopTtsBtn = document.getElementById('stopTtsBtn');
+        var isSpeaking = false;
 
         function leerEnVozAlta(texto) {
             if (!voiceAutoRead || !voiceAutoRead.checked) return;
@@ -1028,7 +1051,29 @@
             var utt = new SpeechSynthesisUtterance(texto.replace(/\*\*/g, '').replace(/`/g, ''));
             utt.lang = 'es-PE';
             utt.rate = 1.1;
+            utt.onstart = function() {
+                isSpeaking = true;
+                if (stopTtsBtn) stopTtsBtn.style.display = 'flex';
+            };
+            utt.onend = function() {
+                isSpeaking = false;
+                if (stopTtsBtn) stopTtsBtn.style.display = 'none';
+            };
+            utt.onerror = function() {
+                isSpeaking = false;
+                if (stopTtsBtn) stopTtsBtn.style.display = 'none';
+            };
             window.speechSynthesis.speak(utt);
+        }
+
+        if (stopTtsBtn) {
+            stopTtsBtn.addEventListener('click', function() {
+                if (window.speechSynthesis) {
+                    window.speechSynthesis.cancel();
+                    isSpeaking = false;
+                    stopTtsBtn.style.display = 'none';
+                }
+            });
         }
 
         // Initialize button state

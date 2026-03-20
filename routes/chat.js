@@ -595,14 +595,58 @@ async function obtenerContextoNegocio() {
         }
     } catch (_) {}
 
-    // --- CAJA ---
+    // --- CAJA (con movimientos del día) ---
     try {
         const [caja] = await db.query("SELECT id, monto_apertura, fecha_apertura FROM cajas WHERE estado = 'abierta' LIMIT 1");
         if (caja.length > 0) {
-            secciones.push(`## CAJA\n- Estado: ABIERTA\n- Monto apertura: S/ ${Number(caja[0].monto_apertura).toFixed(2)}`);
+            let seccion = `## CAJA\n- Estado: ABIERTA\n- Monto apertura: S/ ${Number(caja[0].monto_apertura).toFixed(2)}`;
+            try {
+                const [[totCaja]] = await db.query(`
+                    SELECT COALESCE(SUM(CASE WHEN tipo='ingreso' THEN monto ELSE 0 END), 0) as ingresos,
+                           COALESCE(SUM(CASE WHEN tipo='egreso' THEN monto ELSE 0 END), 0) as egresos
+                    FROM caja_movimientos WHERE caja_id=? AND anulado=false`, [caja[0].id]);
+                const efectivo = Number(caja[0].monto_apertura) + Number(totCaja.ingresos) - Number(totCaja.egresos);
+                seccion += `\n- Ingresos hoy: S/ ${Number(totCaja.ingresos).toFixed(2)}`;
+                seccion += `\n- Egresos hoy: S/ ${Number(totCaja.egresos).toFixed(2)}`;
+                seccion += `\n- Efectivo en caja: S/ ${efectivo.toFixed(2)}`;
+            } catch (_) {}
+            // Recent movements
+            try {
+                const [movs] = await db.query(`
+                    SELECT tipo, concepto, monto FROM caja_movimientos
+                    WHERE caja_id=? AND anulado=false ORDER BY created_at DESC LIMIT 5`, [caja[0].id]);
+                if (movs.length > 0) {
+                    seccion += '\n- Ultimos movimientos:';
+                    movs.forEach(m => { seccion += `\n  - ${m.tipo}: ${m.concepto} S/${Number(m.monto).toFixed(2)}`; });
+                }
+            } catch (_) {}
+            secciones.push(seccion);
         } else {
             secciones.push('## CAJA\n- Estado: CERRADA — recordar al usuario que debe abrir caja para operar');
         }
+
+    // --- PLANILLA (solo admin/superadmin) ---
+    try {
+        const [[planHoy]] = await db.query(`
+            SELECT COUNT(*) as pagos, COALESCE(SUM(monto_neto), 0) as total_neto
+            FROM planilla_pagos
+            WHERE (fecha AT TIME ZONE 'America/Lima')::date = (NOW() AT TIME ZONE 'America/Lima')::date`);
+        if (Number(planHoy.pagos) > 0) {
+            secciones.push(`## PLANILLA HOY\n- Pagos realizados: ${planHoy.pagos}\n- Total neto pagado: S/ ${Number(planHoy.total_neto).toFixed(2)}`);
+        }
+    } catch (_) {}
+
+    // --- GASTOS DEL MES ---
+    try {
+        const [[gastMes]] = await db.query(`
+            SELECT COALESCE(SUM(g.monto), 0) as total, COUNT(*) as cantidad
+            FROM gastos g
+            WHERE EXTRACT(MONTH FROM g.fecha) = EXTRACT(MONTH FROM NOW())
+              AND EXTRACT(YEAR FROM g.fecha) = EXTRACT(YEAR FROM NOW())`);
+        if (Number(gastMes.cantidad) > 0) {
+            secciones.push(`## GASTOS DEL MES\n- Total: S/ ${Number(gastMes.total).toFixed(2)} (${gastMes.cantidad} registros)`);
+        }
+    } catch (_) {}
     } catch (_) {}
 
     const result = secciones.join('\n\n') || 'No hay datos del negocio disponibles aun.';
