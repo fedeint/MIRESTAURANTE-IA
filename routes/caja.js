@@ -48,10 +48,26 @@ router.get('/', async (req, res) => {
         const [turnos] = await db.query('SELECT * FROM turnos WHERE tenant_id=? AND activo=true', [tid]);
         const [metodos] = await db.query('SELECT * FROM metodos_pago WHERE tenant_id=? AND activo=true', [tid]);
 
-        res.render('caja', { cajaAbierta, movimientos, totales, turnos, metodos });
+        const [meseros] = await db.query(`SELECT id, nombre, usuario FROM usuarios WHERE rol = 'mesero' AND activo = 1 AND tenant_id = ? ORDER BY nombre`, [tid]);
+
+        const [mesasAll] = await db.query(`SELECT id, numero, descripcion, mesero_asignado_id, mesero_asignado_nombre FROM mesas WHERE tenant_id = ? ORDER BY numero`, [tid]);
+
+        const [productosPorMesero] = await db.query(`
+          SELECT m.mesero_asignado_id as mesero_id, COALESCE(SUM(pi.cantidad), 0) as productos
+          FROM pedidos p
+          JOIN mesas m ON m.id = p.mesa_id
+          JOIN pedido_items pi ON pi.pedido_id = p.id
+          WHERE m.mesero_asignado_id IS NOT NULL
+            AND m.tenant_id = ?
+            AND DATE(p.created_at) = CURRENT_DATE
+            AND pi.estado NOT IN ('cancelado', 'rechazado')
+          GROUP BY m.mesero_asignado_id
+        `, [tid]);
+
+        res.render('caja', { cajaAbierta, movimientos, totales, turnos, metodos, meseros, mesasAll, productosPorMesero });
     } catch (e) {
         console.error('Caja error:', e.message);
-        res.render('caja', { cajaAbierta: null, movimientos: [], totales: { ingresos: 0, egresos: 0, efectivo_actual: 0 }, turnos: [], metodos: [] });
+        res.render('caja', { cajaAbierta: null, movimientos: [], totales: { ingresos: 0, egresos: 0, efectivo_actual: 0 }, turnos: [], metodos: [], meseros: [], mesasAll: [], productosPorMesero: [] });
     }
 });
 
