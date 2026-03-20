@@ -237,17 +237,51 @@ app.get('/', requireAuth, async (req, res) => {
 
     // ---- MESERO dashboard ----
     if (rol === 'mesero') {
+        const userId = req.session?.user?.id || 0;
         const meseroData = {
             userName: req.session?.user?.nombre || req.session?.user?.usuario || 'Mesero',
-            mesasTotal: 0, mesasOcupadas: 0, pedidosHoy: 0
+            mesasTotal: 0, mesasOcupadas: 0, pedidosHoy: 0,
+            mesasAsignadas: [], mesasAsignadasCount: 0, itemsListos: 0
         };
         try {
             const [[mt]] = await db.query("SELECT COUNT(*) as t FROM mesas");
             meseroData.mesasTotal = Number(mt.t);
             const [[mo]] = await db.query("SELECT COUNT(*) as t FROM mesas WHERE estado='ocupada'");
             meseroData.mesasOcupadas = Number(mo.t);
-            const [[ph]] = await db.query("SELECT COUNT(*) as t FROM pedidos WHERE estado NOT IN ('cerrado','cancelado') AND created_at::date = CURRENT_DATE");
+            const [[ph]] = await db.query("SELECT COUNT(*) as t FROM pedidos WHERE estado NOT IN ('cerrado','cancelado') AND (created_at AT TIME ZONE 'America/Lima')::date = (NOW() AT TIME ZONE 'America/Lima')::date");
             meseroData.pedidosHoy = Number(ph.t);
+
+            // Mesas asignadas a este mesero
+            const [asignadas] = await db.query(
+                "SELECT id, numero, descripcion, estado FROM mesas WHERE mesero_asignado_id = ? ORDER BY numero",
+                [userId]
+            );
+            meseroData.mesasAsignadas = asignadas || [];
+            meseroData.mesasAsignadasCount = meseroData.mesasAsignadas.length;
+
+            // Items listos para entregar en sus mesas asignadas
+            if (meseroData.mesasAsignadasCount > 0) {
+                const mesaIds = meseroData.mesasAsignadas.map(m => m.id);
+                const [[il]] = await db.query(
+                    `SELECT COUNT(*) as t FROM pedido_items pi
+                     JOIN pedidos p ON p.id = pi.pedido_id
+                     WHERE p.mesa_id IN (?) AND pi.estado = 'listo'`,
+                    [mesaIds]
+                );
+                meseroData.itemsListos = Number(il.t);
+
+                // Marcar cuales mesas tienen items listos
+                const [mesasConListos] = await db.query(
+                    `SELECT DISTINCT p.mesa_id FROM pedido_items pi
+                     JOIN pedidos p ON p.id = pi.pedido_id
+                     WHERE p.mesa_id IN (?) AND pi.estado = 'listo'`,
+                    [mesaIds]
+                );
+                const mesasListasSet = new Set((mesasConListos || []).map(r => r.mesa_id));
+                meseroData.mesasAsignadas.forEach(m => {
+                    m.tieneListos = mesasListasSet.has(m.id);
+                });
+            }
         } catch(e) { console.error('Mesero dashboard error:', e.message); }
         return res.render('dashboard-mesero', { meseroData });
     }
