@@ -23,11 +23,23 @@
           .dg-sidebar-link,.dg-sidebar-icon-item,.dg-sidebar-section,.dg-sidebar-header,.dg-sidebar-footer,.dg-sidebar-sep,.dg-brand-text,.dg-brand-icon{visibility:visible;}
           .dg-nav-expanded{display:flex;flex-direction:column;gap:2px;flex:1;}
           .dg-nav-icons{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;}
-          .dg-sidebar-link{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;color:#8B8FAD;text-decoration:none;font-size:14px;font-weight:500;}
+          .dg-sidebar-link{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;color:#8B8FAD;text-decoration:none;font-size:14px;font-weight:500;position:relative;overflow:visible;transition:color .2s;}
+          .dg-sidebar-link::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:40px;height:3px;border-radius:0 0 6px 6px;background:#FF6B35;opacity:0;transition:opacity .25s ease;box-shadow:0 0 8px #FF6B35,0 0 24px rgba(255,107,53,0.3);pointer-events:none;}
+          .dg-sidebar-link::after{content:'';position:absolute;top:3px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:28px solid transparent;border-right:28px solid transparent;border-top:22px solid rgba(255,107,53,0.12);opacity:0;transition:opacity .25s ease;pointer-events:none;}
+          .dg-sidebar-link:hover::before{opacity:1;}
+          .dg-sidebar-link:hover::after{opacity:1;}
+          .dg-sidebar-link:hover{color:#fff;}
           .dg-sidebar-link.active{background:linear-gradient(135deg,#FF6B35,#E55A2B);color:#fff;font-weight:600;border-radius:12px;}
+          .dg-sidebar-link.active::before,.dg-sidebar-link.active::after{display:none;}
           .dg-sidebar-section{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#6B5B4E;padding:20px 12px 8px;}
-          .dg-sidebar-icon-item{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#8B8FAD;font-size:1.15rem;text-decoration:none;}
+          .dg-sidebar-icon-item{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#8B8FAD;font-size:1.15rem;text-decoration:none;position:relative;overflow:visible;transition:color .2s;}
+          .dg-sidebar-icon-item::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:24px;height:3px;border-radius:0 0 5px 5px;background:#FF6B35;opacity:0;transition:opacity .25s ease;box-shadow:0 0 8px #FF6B35,0 0 20px rgba(255,107,53,0.3);pointer-events:none;}
+          .dg-sidebar-icon-item::after{content:'';position:absolute;top:3px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:18px solid transparent;border-right:18px solid transparent;border-top:18px solid rgba(255,107,53,0.15);opacity:0;transition:opacity .25s ease;pointer-events:none;}
+          .dg-sidebar-icon-item:hover::before{opacity:1;}
+          .dg-sidebar-icon-item:hover::after{opacity:1;}
+          .dg-sidebar-icon-item:hover{color:#fff;}
           .dg-sidebar-icon-item.active{background:#FF6B35;color:#fff;}
+          .dg-sidebar-icon-item.active::before,.dg-sidebar-icon-item.active::after{display:none;}
           .dg-sidebar-header{display:flex;align-items:center;justify-content:space-between;padding:0 0 16px;width:100%;}
           .dg-sidebar-footer{padding:12px;border-top:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-between;gap:8px;}
           .dg-sidebar-collapsed .dg-brand-text{display:none;}
@@ -296,8 +308,6 @@
                   class="bi bi-gear-fill"></i><span>Configuracion</span></a>
               <a href="/api/reportes" class="dg-sidebar-link <%= currentPath.startsWith('/reportes') ? 'active' : '' %>"><i
                   class="bi bi-file-earmark-bar-graph"></i><span>Reportes</span></a>
-              <a href="/sunat" class="dg-sidebar-link <%= currentPath === '/sunat' ? 'active' : '' %>"><i
-                  class="bi bi-building"></i><span>SUNAT</span></a>
             <% } %>
 
             <%/* --- Soporte: todos los roles autenticados (excepto superadmin que tiene su propio nav) --- */%>
@@ -406,8 +416,6 @@
                   class="bi bi-gear-fill"></i></a>
               <a href="/api/reportes" class="dg-sidebar-icon-item <%= currentPath.startsWith('/reportes') ? 'active' : '' %>"
                 title="Reportes"><i class="bi bi-file-earmark-bar-graph"></i></a>
-              <a href="/sunat" class="dg-sidebar-icon-item <%= currentPath === '/sunat' ? 'active' : '' %>"
-                title="SUNAT"><i class="bi bi-building"></i></a>
             <% } %>
 
             <%/* --- Soporte: todos los roles autenticados --- */%>
