@@ -3,6 +3,14 @@ const router = express.Router();
 const db = require('../db');
 const { registrarAudit } = require('../services/audit');
 
+// Auto-ensure mesero columns exist
+(async () => {
+  try {
+    await db.query(`ALTER TABLE mesas ADD COLUMN IF NOT EXISTS mesero_asignado_id INTEGER REFERENCES usuarios(id)`);
+    await db.query(`ALTER TABLE mesas ADD COLUMN IF NOT EXISTS mesero_asignado_nombre VARCHAR(100)`);
+  } catch(e) { /* columns may already exist */ }
+})();
+
 // GET /caja - Vista principal
 router.get('/', async (req, res) => {
     try {
