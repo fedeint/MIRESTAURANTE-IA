@@ -1108,6 +1108,42 @@ router.put('/items/:itemId/estado', async (req, res) => {
     }
 });
 
+// PUT /mesas/:mesaId/entregar - API: marcar todos los items "listo" de una mesa como "servido"
+// Llamado desde: public/js/cocina.js (botón "Entregar mesa" en pestaña Listos)
+router.put('/:mesaId/entregar', async (req, res) => {
+    try {
+        const mesaId = Number(req.params.mesaId);
+        if (!Number.isInteger(mesaId) || mesaId <= 0) {
+            return res.status(400).json({ error: 'Mesa inválida' });
+        }
+
+        const [result] = await db.query(
+            `UPDATE pedido_items
+             SET estado = 'servido', servido_at = NOW()
+             WHERE estado = 'listo'
+               AND pedido_id IN (SELECT id FROM pedidos WHERE mesa_id = ? AND estado = 'abierto')`,
+            [mesaId]
+        );
+
+        if ((result?.affectedRows || 0) === 0) {
+            return res.status(404).json({ error: 'No hay items listos para entregar en esta mesa' });
+        }
+
+        // Sync mesa estado
+        const connection = await db.getConnection();
+        try {
+            await syncMesaEstadoByItems(connection, mesaId);
+        } finally {
+            connection.release();
+        }
+
+        res.json({ message: 'Mesa entregada', actualizados: result.affectedRows });
+    } catch (error) {
+        console.error('Error al entregar mesa:', error);
+        res.status(500).json({ error: 'Error al entregar mesa' });
+    }
+});
+
 // POST /mesas/pedidos/:pedidoId/facturar - API: genera factura desde pedido y cierra mesa
 router.post('/pedidos/:pedidoId/facturar', async (req, res) => {
     const pedidoId = req.params.pedidoId;
