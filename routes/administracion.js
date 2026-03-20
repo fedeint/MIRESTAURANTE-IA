@@ -2,79 +2,110 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 
-// Helper para calcular P&L de un mes
+// Helper para calcular P&L de un mes (parallelized queries)
 async function calcularPL(tid, mes, anio) {
     try {
-        const [[ventas]] = await db.query(`
-            SELECT COUNT(*) as cantidad, COALESCE(SUM(total),0) as total_bruto,
-                   COALESCE(SUM(COALESCE(subtotal_sin_igv, total/1.18)),0) as ventas_netas,
-                   COALESCE(SUM(COALESCE(igv, total - total/1.18)),0) as igv_ventas
-            FROM facturas WHERE EXTRACT(MONTH FROM fecha)=? AND EXTRACT(YEAR FROM fecha)=?
-        `, [mes, anio]);
-
-        const [[cogs]] = await db.query(`
-            SELECT COALESCE(SUM(df.costo_receta * df.cantidad), 0) as cogs_teorico
-            FROM detalle_factura df
-            JOIN facturas f ON f.id = df.factura_id
-            WHERE EXTRACT(MONTH FROM f.fecha)=? AND EXTRACT(YEAR FROM f.fecha)=? AND df.costo_receta IS NOT NULL
-        `, [mes, anio]);
-
-        const [[compras]] = await db.query(`
-            SELECT COALESCE(SUM(total),0) as total_compras
-            FROM ordenes_compra WHERE tenant_id=? AND EXTRACT(MONTH FROM fecha_orden)=? AND EXTRACT(YEAR FROM fecha_orden)=? AND estado IN ('recibida','parcial')
-        `, [tid, mes, anio]);
-
-        const [[planilla]] = await db.query(`
-            SELECT COALESCE(SUM(monto_bruto),0) as bruto,
-                   COALESCE(SUM(aporte_essalud),0) as essalud,
-                   COALESCE(SUM(aporte_sctr),0) as sctr
-            FROM planilla_pagos WHERE tenant_id=? AND EXTRACT(MONTH FROM fecha)=? AND EXTRACT(YEAR FROM fecha)=?
-        `, [tid, mes, anio]);
-
-        const [[gastosFijos]] = await db.query(`
-            SELECT COALESCE(SUM(g.monto),0) as total
-            FROM gastos g
-            JOIN gastos_categorias gc ON gc.id = g.categoria_id
-            WHERE g.tenant_id=? AND EXTRACT(MONTH FROM g.fecha)=? AND EXTRACT(YEAR FROM g.fecha)=? AND gc.tipo='fijo'
-        `, [tid, mes, anio]);
-
-        const [[gastosVar]] = await db.query(`
-            SELECT COALESCE(SUM(g.monto),0) as total
-            FROM gastos g
-            JOIN gastos_categorias gc ON gc.id = g.categoria_id
-            WHERE g.tenant_id=? AND EXTRACT(MONTH FROM g.fecha)=? AND EXTRACT(YEAR FROM g.fecha)=? AND gc.tipo='variable'
-        `, [tid, mes, anio]);
-
-        // Also check caja egresos not captured in gastos table
-        let cajaEgresosExtra = 0;
-        try {
-            const [[cajaEg]] = await db.query(`
+        // Run all independent queries in parallel
+        const [
+            [ventasR], [cogsR], [comprasR], [planillaR],
+            [gastosFijosR], [gastosVarR], [cajaIngresosR], [cajaEgresosR], [cajaEgresosExtraR]
+        ] = await Promise.all([
+            // Ventas
+            db.query(`
+                SELECT COUNT(*) as cantidad, COALESCE(SUM(total),0) as total_bruto,
+                       COALESCE(SUM(COALESCE(subtotal_sin_igv, total/1.18)),0) as ventas_netas,
+                       COALESCE(SUM(COALESCE(igv, total - total/1.18)),0) as igv_ventas
+                FROM facturas WHERE EXTRACT(MONTH FROM fecha)=? AND EXTRACT(YEAR FROM fecha)=?
+            `, [mes, anio]),
+            // COGS teórico (from recipes)
+            db.query(`
+                SELECT COALESCE(SUM(df.costo_receta * df.cantidad), 0) as cogs_teorico
+                FROM detalle_factura df
+                JOIN facturas f ON f.id = df.factura_id
+                WHERE EXTRACT(MONTH FROM f.fecha)=? AND EXTRACT(YEAR FROM f.fecha)=? AND df.costo_receta IS NOT NULL
+            `, [mes, anio]),
+            // COGS real (from purchase orders)
+            db.query(`
+                SELECT COALESCE(SUM(total),0) as total_compras
+                FROM ordenes_compra WHERE tenant_id=? AND EXTRACT(MONTH FROM fecha_orden)=? AND EXTRACT(YEAR FROM fecha_orden)=? AND estado IN ('recibida','parcial')
+            `, [tid, mes, anio]).catch(() => [[{ total_compras: 0 }]]),
+            // Planilla
+            db.query(`
+                SELECT COALESCE(SUM(monto_bruto),0) as bruto,
+                       COALESCE(SUM(aporte_essalud),0) as essalud,
+                       COALESCE(SUM(aporte_sctr),0) as sctr
+                FROM planilla_pagos WHERE tenant_id=? AND EXTRACT(MONTH FROM fecha)=? AND EXTRACT(YEAR FROM fecha)=?
+            `, [tid, mes, anio]),
+            // Gastos fijos
+            db.query(`
+                SELECT COALESCE(SUM(g.monto),0) as total
+                FROM gastos g JOIN gastos_categorias gc ON gc.id = g.categoria_id
+                WHERE g.tenant_id=? AND EXTRACT(MONTH FROM g.fecha)=? AND EXTRACT(YEAR FROM g.fecha)=? AND gc.tipo='fijo'
+            `, [tid, mes, anio]),
+            // Gastos variables
+            db.query(`
+                SELECT COALESCE(SUM(g.monto),0) as total
+                FROM gastos g JOIN gastos_categorias gc ON gc.id = g.categoria_id
+                WHERE g.tenant_id=? AND EXTRACT(MONTH FROM g.fecha)=? AND EXTRACT(YEAR FROM g.fecha)=? AND gc.tipo='variable'
+            `, [tid, mes, anio]),
+            // Caja ingresos del mes (for reconciliation)
+            db.query(`
                 SELECT COALESCE(SUM(cm.monto), 0) as total
                 FROM caja_movimientos cm
-                JOIN cajas c ON c.id = cm.caja_id
+                WHERE cm.tenant_id=? AND cm.tipo='ingreso' AND cm.anulado=false
+                  AND cm.concepto != 'fondo_inicial'
+                  AND EXTRACT(MONTH FROM cm.created_at)=? AND EXTRACT(YEAR FROM cm.created_at)=?
+            `, [tid, mes, anio]).catch(() => [[{ total: 0 }]]),
+            // Caja egresos totales del mes (for reconciliation)
+            db.query(`
+                SELECT COALESCE(SUM(cm.monto), 0) as total
+                FROM caja_movimientos cm
+                WHERE cm.tenant_id=? AND cm.tipo='egreso' AND cm.anulado=false
+                  AND EXTRACT(MONTH FROM cm.created_at)=? AND EXTRACT(YEAR FROM cm.created_at)=?
+            `, [tid, mes, anio]).catch(() => [[{ total: 0 }]]),
+            // Caja egresos NOT captured in gastos/planilla (extras)
+            db.query(`
+                SELECT COALESCE(SUM(cm.monto), 0) as total
+                FROM caja_movimientos cm
                 WHERE cm.tenant_id=? AND cm.tipo='egreso' AND cm.anulado=false
                   AND cm.concepto NOT IN ('pago_planilla', 'gasto_servicio', 'gasto_otro', 'gasto_compra_almacen')
                   AND EXTRACT(MONTH FROM cm.created_at)=? AND EXTRACT(YEAR FROM cm.created_at)=?
-            `, [tid, mes, anio]);
-            cajaEgresosExtra = Number(cajaEg.total);
-        } catch (_) {}
+            `, [tid, mes, anio]).catch(() => [[{ total: 0 }]])
+        ]);
+
+        const ventas = ventasR[0];
+        const cogs = cogsR[0];
+        const compras = comprasR[0];
+        const planilla = planillaR[0];
+        const gastosFijos = gastosFijosR[0];
+        const gastosVar = gastosVarR[0];
+        const cajaEgresosExtra = Number(cajaEgresosExtraR[0].total);
 
         const ventasNetas = Number(ventas.ventas_netas);
         const cogsTeorico = Number(cogs.cogs_teorico);
         const totalCompras = Number(compras.total_compras);
-        const margenBruto = ventasNetas - cogsTeorico;
+        // Use COGS teórico if available, otherwise fall back to real purchases
+        const cogsEfectivo = cogsTeorico > 0 ? cogsTeorico : totalCompras;
+        const margenBruto = ventasNetas - cogsEfectivo;
         const totalPlanilla = Number(planilla.bruto) + Number(planilla.essalud) + Number(planilla.sctr);
         const totalFijos = Number(gastosFijos.total);
         const totalVariables = Number(gastosVar.total) + cajaEgresosExtra;
         const ebitda = margenBruto - totalPlanilla - totalFijos - totalVariables;
 
+        // Reconciliation: facturas vs caja
+        const cajaIngresos = Number(cajaIngresosR[0].total);
+        const cajaEgresos = Number(cajaEgresosR[0].total);
+        const ventasBrutas = Number(ventas.total_bruto);
+        const diferenciaVentasCaja = ventasBrutas - cajaIngresos;
+
         return {
             mes, anio,
-            ventas_brutas: Number(ventas.total_bruto),
+            ventas_brutas: ventasBrutas,
             igv_ventas: Number(ventas.igv_ventas),
             ventas_netas: ventasNetas,
             cogs_teorico: cogsTeorico,
             cogs_real: totalCompras,
+            cogs_efectivo: cogsEfectivo,
             varianza: cogsTeorico - totalCompras,
             margen_bruto: margenBruto,
             margen_bruto_pct: ventasNetas > 0 ? ((margenBruto / ventasNetas) * 100).toFixed(1) : 0,
@@ -83,12 +114,19 @@ async function calcularPL(tid, mes, anio) {
             planilla_total: totalPlanilla,
             gastos_fijos: totalFijos,
             gastos_variables: totalVariables,
+            caja_egresos_extra: cajaEgresosExtra,
             ebitda,
             ebitda_pct: ventasNetas > 0 ? ((ebitda / ventasNetas) * 100).toFixed(1) : 0,
-            facturas_cantidad: Number(ventas.cantidad)
+            facturas_cantidad: Number(ventas.cantidad),
+            // Reconciliation
+            caja_ingresos: cajaIngresos,
+            caja_egresos: cajaEgresos,
+            caja_saldo: cajaIngresos - cajaEgresos,
+            diferencia_ventas_caja: diferenciaVentasCaja,
+            reconciliacion_ok: Math.abs(diferenciaVentasCaja) < 1
         };
     } catch (e) {
-        return { mes, anio, ventas_netas: 0, margen_bruto: 0, ebitda: 0, error: e.message };
+        return { mes, anio, ventas_netas: 0, margen_bruto: 0, ebitda: 0, caja_ingresos: 0, caja_egresos: 0, diferencia_ventas_caja: 0, reconciliacion_ok: true, error: e.message };
     }
 }
 

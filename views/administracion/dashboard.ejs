@@ -191,6 +191,67 @@
                 </div>
             </div>
 
+            <!-- Reconciliacion Ventas vs Caja -->
+            <div class="col-lg-5">
+                <div class="card shadow-sm mb-3" style="border-left:4px solid <%= pl.reconciliacion_ok ? '#22C55E' : '#EF4444' %>;">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">
+                            <i class="bi bi-arrow-left-right me-2"></i>Reconciliacion
+                            <span data-bs-toggle="tooltip" data-bs-placement="top" title="Compara lo facturado vs lo registrado en caja. Si hay diferencia, puede indicar ventas sin registrar o efectivo faltante">
+                                <i class="bi bi-info-circle ms-1" style="font-size:0.75rem;color:#9CA3AF;cursor:help;"></i>
+                            </span>
+                            <% if (pl.reconciliacion_ok) { %>
+                                <span class="badge bg-success ms-2" style="font-size:0.65rem;">OK</span>
+                            <% } else { %>
+                                <span class="badge bg-danger ms-2" style="font-size:0.65rem;">Diferencia</span>
+                            <% } %>
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3 text-center">
+                            <div class="col-4">
+                                <div class="small text-muted">Facturado</div>
+                                <div class="fw-bold" style="color:#6366F1;">S/ <%= Number(pl.ventas_brutas || 0).toLocaleString('es-PE', {minimumFractionDigits:2, maximumFractionDigits:2}) %></div>
+                            </div>
+                            <div class="col-4">
+                                <div class="small text-muted">Caja ingresos</div>
+                                <div class="fw-bold" style="color:#22C55E;">S/ <%= Number(pl.caja_ingresos || 0).toLocaleString('es-PE', {minimumFractionDigits:2, maximumFractionDigits:2}) %></div>
+                            </div>
+                            <div class="col-4">
+                                <div class="small text-muted">Diferencia</div>
+                                <div class="fw-bold" style="color:<%= Math.abs(pl.diferencia_ventas_caja || 0) < 1 ? '#22C55E' : '#EF4444' %>;">
+                                    S/ <%= Number(pl.diferencia_ventas_caja || 0).toLocaleString('es-PE', {minimumFractionDigits:2, maximumFractionDigits:2}) %>
+                                </div>
+                            </div>
+                        </div>
+                        <hr style="opacity:0.1;">
+                        <div class="row g-3 text-center">
+                            <div class="col-4">
+                                <div class="small text-muted">Caja egresos</div>
+                                <div class="fw-bold" style="color:#EF4444;">S/ <%= Number(pl.caja_egresos || 0).toLocaleString('es-PE', {minimumFractionDigits:2, maximumFractionDigits:2}) %></div>
+                            </div>
+                            <div class="col-4">
+                                <div class="small text-muted">Saldo caja</div>
+                                <div class="fw-bold" style="color:<%= (pl.caja_saldo || 0) >= 0 ? '#22C55E' : '#EF4444' %>;">
+                                    S/ <%= Number(pl.caja_saldo || 0).toLocaleString('es-PE', {minimumFractionDigits:2, maximumFractionDigits:2}) %>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="small text-muted">Otros egresos</div>
+                                <div class="fw-bold text-muted">S/ <%= Number(pl.caja_egresos_extra || 0).toLocaleString('es-PE', {minimumFractionDigits:2, maximumFractionDigits:2}) %></div>
+                            </div>
+                        </div>
+                        <% if (!pl.reconciliacion_ok) { %>
+                            <div class="alert alert-warning mt-3 mb-0 py-2" style="font-size:0.8rem;">
+                                <i class="bi bi-exclamation-triangle me-1"></i>Hay una diferencia de S/ <%= Math.abs(pl.diferencia_ventas_caja || 0).toFixed(2) %> entre lo facturado y lo registrado en caja. Revisa si hay ventas sin registrar o efectivo faltante.
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4 mb-4">
             <!-- Gastos por Grupo + Presupuesto -->
             <div class="col-lg-5">
                 <div class="card shadow-sm mb-3">
