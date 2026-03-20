@@ -161,40 +161,31 @@ Asistente: "La mesa 8 tiene 3 productos: 1 Lomo Saltado, 1 Chicha Morada y 1 Cer
 function filtrarContextoPorRol(contexto, rol) {
     if (!rol || rol === 'administrador') return contexto;
 
-    const lineas = contexto.split('\n');
-    const filtrado = [];
+    // Split by sections (## headers)
+    const secciones = contexto.split(/(?=^## )/m);
 
-    for (const linea of lineas) {
-        const upper = linea.toUpperCase();
+    // Define what each role can see
+    const permisos = {
+        mesero: ['MESAS', 'PRODUCTOS', 'PEDIDOS ACTIVOS', 'CAJA', 'EQUIPO'],
+        cocinero: ['PEDIDOS ACTIVOS', 'RECETAS', 'ALMACEN'],
+        cajero: ['PRODUCTOS', 'CLIENTES', 'CAJA', 'VENTAS HOY'],
+        almacenero: ['ALMACEN', 'RECETAS', 'PRODUCTOS']
+    };
 
-        // Cocinero: only sees product names (no prices, no sales, no clients)
-        if (rol === 'cocinero') {
-            if (upper.includes('PRODUCTOS:') && !upper.includes('VENDIDOS') && !upper.includes('PRECIO')) {
-                filtrado.push(linea.replace(/\(S\/[\d.,]+\)/g, ''));
-            }
-            continue;
-        }
+    const permitidos = permisos[rol] || [];
+    const filtrado = secciones.filter(sec => {
+        const header = sec.split('\n')[0].toUpperCase();
+        return permitidos.some(p => header.includes(p));
+    });
 
-        // Mesero: sees product names+prices (for ordering), tables. No sales, no totals.
-        if (rol === 'mesero') {
-            if (upper.includes('PRODUCTOS:') || upper.includes('LISTA DE PRODUCTOS') || upper.includes('MESAS:')) {
-                filtrado.push(linea);
-            }
-            continue;
-        }
-
-        // Cajero: sees products+prices, client count. No totals, no rankings.
-        if (rol === 'cajero') {
-            if (upper.includes('PRODUCTOS:') || upper.includes('LISTA DE PRODUCTOS') || upper.includes('CLIENTES:')) {
-                filtrado.push(linea);
-            }
-            continue;
-        }
+    // Remove financial data for non-admin roles
+    let result = filtrado.join('\n');
+    if (rol !== 'administrador') {
+        result = result.replace(/S\/\s*[\d.,]+/g, '[restringido]');
+        result = result.replace(/Monto.*S\/.*\n?/gi, '');
     }
 
-    return filtrado.length > 0
-        ? filtrado.join('\n')
-        : 'Datos limitados segun tu rol. Consulta con el administrador para mas informacion.';
+    return result || 'Datos limitados segun tu rol. Consulta con el administrador para mas informacion.';
 }
 
 // Build conversation messages with token-budget window
@@ -506,11 +497,111 @@ async function obtenerContextoNegocio() {
         secciones.push(`## CLIENTES\n- Registrados: ${clientes[0].total}`);
     } catch (_) {}
 
-    // --- EQUIPO ---
+    // --- EQUIPO + MESEROS CON MESAS ---
     try {
-        const [usuarios] = await db.query('SELECT usuario, rol FROM usuarios WHERE activo = true');
+        const [usuarios] = await db.query('SELECT id, usuario, nombre, rol FROM usuarios WHERE activo = true');
         if (usuarios.length > 0) {
-            secciones.push('## EQUIPO ACTIVO\n' + usuarios.map(u => `- ${u.usuario} (${u.rol})`).join('\n'));
+            let seccion = '## EQUIPO ACTIVO';
+            for (const u of usuarios) {
+                let linea = `- ${u.nombre || u.usuario} (${u.rol})`;
+                if (u.rol === 'mesero') {
+                    try {
+                        const [mesas] = await db.query('SELECT numero FROM mesas WHERE mesero_asignado_id = ? ORDER BY numero', [u.id]);
+                        if (mesas.length > 0) {
+                            linea += ` — mesas asignadas: ${mesas.map(m => m.numero).join(', ')}`;
+                        } else {
+                            linea += ' — sin mesas asignadas';
+                        }
+                    } catch (_) {}
+                }
+                seccion += '\n' + linea;
+            }
+            secciones.push(seccion);
+        }
+    } catch (_) {}
+
+    // --- MESEROS: RANKING DE HOY ---
+    try {
+        const [ranking] = await db.query(`
+            SELECT COALESCE(m.mesero_asignado_nombre, u.nombre) as nombre,
+                   COUNT(DISTINCT p.mesa_id) as mesas_atendidas,
+                   COALESCE(SUM(pi.cantidad), 0) as productos_servidos
+            FROM pedidos p
+            JOIN mesas m ON m.id = p.mesa_id
+            JOIN pedido_items pi ON pi.pedido_id = p.id
+            LEFT JOIN usuarios u ON u.id = m.mesero_asignado_id
+            WHERE m.mesero_asignado_id IS NOT NULL
+              AND pi.estado NOT IN ('cancelado','rechazado')
+              AND (p.created_at AT TIME ZONE 'America/Lima')::date = (NOW() AT TIME ZONE 'America/Lima')::date
+            GROUP BY m.mesero_asignado_nombre, u.nombre
+            ORDER BY productos_servidos DESC
+        `);
+        if (ranking.length > 0) {
+            secciones.push('## RANKING MESEROS HOY\n' + ranking.map((r, i) => `${i + 1}. ${r.nombre}: ${r.mesas_atendidas} mesas, ${r.productos_servidos} productos`).join('\n'));
+        }
+    } catch (_) {}
+
+    // --- PEDIDOS ACTIVOS EN MESAS ---
+    try {
+        const [activos] = await db.query(`
+            SELECT m.numero, STRING_AGG(pr.nombre || ' x' || pi.cantidad, ', ') as productos, pi2.estado as estado_cocina
+            FROM mesas m
+            JOIN pedidos p ON p.mesa_id = m.id
+            JOIN pedido_items pi ON pi.pedido_id = p.id
+            JOIN productos pr ON pr.id = pi.producto_id
+            LEFT JOIN LATERAL (
+                SELECT pi3.estado FROM pedido_items pi3 WHERE pi3.pedido_id = p.id
+                AND pi3.estado NOT IN ('cancelado','rechazado','servido')
+                ORDER BY CASE pi3.estado WHEN 'listo' THEN 1 WHEN 'preparando' THEN 2 WHEN 'enviado' THEN 3 ELSE 4 END
+                LIMIT 1
+            ) pi2 ON true
+            WHERE p.estado = 'abierto' AND pi.estado NOT IN ('cancelado','rechazado')
+            GROUP BY m.id, m.numero, pi2.estado
+            ORDER BY m.numero
+        `);
+        if (activos.length > 0) {
+            secciones.push('## PEDIDOS ACTIVOS AHORA\n' + activos.map(a =>
+                `- Mesa ${a.numero}: ${a.productos} (estado: ${a.estado_cocina || 'servido'})`
+            ).join('\n'));
+        }
+    } catch (_) {}
+
+    // --- ALMACEN ---
+    try {
+        const [alm] = await db.query('SELECT COUNT(*) as total, COALESCE(SUM(stock_actual), 0) as stock_total FROM almacen_ingredientes WHERE activo = true');
+        let seccion = `## ALMACEN\n- Ingredientes registrados: ${alm[0].total}\n- Stock total: ${Number(alm[0].stock_total).toFixed(1)} unidades`;
+
+        const [bajo] = await db.query('SELECT nombre, stock_actual, stock_minimo, unidad_medida FROM almacen_ingredientes WHERE activo = true AND stock_actual <= stock_minimo ORDER BY stock_actual ASC LIMIT 10');
+        if (bajo.length > 0) {
+            seccion += `\n- ALERTA stock bajo (${bajo.length}):\n` + bajo.map(b => `  - ${b.nombre}: ${b.stock_actual} ${b.unidad_medida} (min: ${b.stock_minimo})`).join('\n');
+        } else {
+            seccion += '\n- Stock: todo OK, ningun ingrediente bajo minimo';
+        }
+        secciones.push(seccion);
+    } catch (_) {}
+
+    // --- RECETAS (platos con ingredientes) ---
+    try {
+        const [recetas] = await db.query(`
+            SELECT p.nombre, COUNT(ri.id) as ingredientes
+            FROM productos p
+            JOIN recetas rec ON rec.producto_id = p.id
+            JOIN receta_items ri ON ri.receta_id = rec.id
+            GROUP BY p.id, p.nombre
+            ORDER BY ingredientes DESC LIMIT 10
+        `);
+        if (recetas.length > 0) {
+            secciones.push('## RECETAS (platos con mas ingredientes)\n' + recetas.map((r, i) => `${i + 1}. ${r.nombre} — ${r.ingredientes} ingredientes`).join('\n'));
+        }
+    } catch (_) {}
+
+    // --- CAJA ---
+    try {
+        const [caja] = await db.query("SELECT id, monto_apertura, fecha_apertura FROM cajas WHERE estado = 'abierta' LIMIT 1");
+        if (caja.length > 0) {
+            secciones.push(`## CAJA\n- Estado: ABIERTA\n- Monto apertura: S/ ${Number(caja[0].monto_apertura).toFixed(2)}`);
+        } else {
+            secciones.push('## CAJA\n- Estado: CERRADA — recordar al usuario que debe abrir caja para operar');
         }
     } catch (_) {}
 
