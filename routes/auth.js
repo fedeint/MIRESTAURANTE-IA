@@ -124,12 +124,28 @@ router.post('/login', async (req, res) => {
     const u = rows?.[0];
     if (!u || Number(u.activo) !== 1) {
       registerFailedAttempt(usuario, clientIp);
+      // Log failed login attempt
+      try {
+        await db.query(
+          `INSERT INTO login_history (tenant_id, user_id, ip_address, country, city, user_agent, success)
+           VALUES (?, ?, ?, ?, ?, ?, false)`,
+          [req.tenantId || 1, 0, req.geo?.ip || req.ip, req.geo?.country || 'unknown', req.geo?.city || 'unknown', String(req.headers['user-agent'] || '').substring(0, 300)]
+        );
+      } catch (_) {}
       return res.status(401).render('login', { error: 'Usuario o contraseña incorrectos.' });
     }
 
     const ok = await bc.compare(password, String(u.password_hash || ''));
     if (!ok) {
       registerFailedAttempt(usuario, clientIp);
+      // Log failed login attempt
+      try {
+        await db.query(
+          `INSERT INTO login_history (tenant_id, user_id, ip_address, country, city, user_agent, success)
+           VALUES (?, ?, ?, ?, ?, ?, false)`,
+          [req.tenantId || 1, 0, req.geo?.ip || req.ip, req.geo?.country || 'unknown', req.geo?.city || 'unknown', String(req.headers['user-agent'] || '').substring(0, 300)]
+        );
+      } catch (_) {}
       return res.status(401).render('login', { error: 'Usuario o contraseña incorrectos.' });
     }
 
@@ -163,6 +179,15 @@ router.post('/login', async (req, res) => {
 
     // Audit login
     registrarAudit({ tenantId: req.tenantId || 1, usuarioId: u.id, accion: 'LOGIN', modulo: 'auth', tabla: 'usuarios', registroId: u.id, ip: req.ip, userAgent: req.headers['user-agent'] });
+
+    // Log successful login with geo data
+    try {
+      await db.query(
+        `INSERT INTO login_history (tenant_id, user_id, ip_address, country, city, user_agent, success)
+         VALUES (?, ?, ?, ?, ?, ?, true)`,
+        [req.tenantId || 1, u.id, req.geo?.ip || req.ip, req.geo?.country || 'unknown', req.geo?.city || 'unknown', String(req.headers['user-agent'] || '').substring(0, 300)]
+      );
+    } catch (_) {}
 
     res.redirect(defaultRedirectForRole(u.rol));
   } catch (e) {

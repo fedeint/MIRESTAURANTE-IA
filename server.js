@@ -9,6 +9,7 @@ const session = require('express-session');
 const { attachUserToLocals, requireAuth, requireRole } = require('./middleware/auth');
 const { attachTenant } = require('./middleware/tenant');
 const { requireCajaAbierta } = require('./middleware/requireCaja');
+const { attachGeoContext } = require('./middleware/geoContext');
 
 // Crear directorios necesarios
 const createRequiredDirectories = () => {
@@ -108,6 +109,9 @@ app.use(session({
         maxAge: 1000 * 60 * 60 * 2 // 2 horas
     }
 }));
+
+// Geo context middleware (reads Vercel headers + fallback to req.ip)
+app.use(attachGeoContext);
 
 // Tenant middleware (resuelve tenant_id por request)
 app.use(attachTenant);
@@ -210,6 +214,20 @@ const backupsRoutes    = require('./routes/backups');
 const soporteRoutes    = require('./routes/soporte');
 const pagosRoutes      = require('./routes/pagos');
 const legalRoutes      = require('./routes/legal');
+
+// Honeypot: detect automated scanners hitting common attack paths
+['/wp-admin', '/wp-login.php', '/.env', '/config.php', '/phpmyadmin', '/admin.php'].forEach(p => {
+    app.all(p, (req, res) => {
+        const logger = require('./lib/logger');
+        logger.security('honeypot_triggered', {
+            path: req.path,
+            ip: req.geo?.ip || req.ip,
+            country: req.geo?.country,
+            userAgent: String(req.headers['user-agent'] || '').substring(0, 200)
+        });
+        res.status(404).send('Not found');
+    });
+});
 
 // Auth routes (públicas): /login /logout /setup
 app.post('/login', loginLimiter); // rate limit login attempts
