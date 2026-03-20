@@ -236,6 +236,9 @@
               <a href="/superadmin/billing" class="dg-sidebar-link <%= currentPath.startsWith('/superadmin/billing') ? 'active' : '' %>">
                 <i class="bi bi-cash-stack"></i><span>Billing & P&L</span>
               </a>
+              <a href="/contratos" class="dg-sidebar-link <%= currentPath.startsWith('/contratos') ? 'active' : '' %>">
+                <i class="bi bi-file-earmark-text"></i><span>Contratos</span>
+              </a>
             <% } else { %>
 
             <%/* --- Asistente IA: solo administrador --- */%>
@@ -348,6 +351,9 @@
               </a>
               <a href="/superadmin/billing" class="dg-sidebar-icon-item <%= currentPath.startsWith('/superadmin/billing') ? 'active' : '' %>" title="Billing">
                 <i class="bi bi-cash-stack"></i>
+              </a>
+              <a href="/contratos" class="dg-sidebar-icon-item <%= currentPath.startsWith('/contratos') ? 'active' : '' %>" title="Contratos">
+                <i class="bi bi-file-earmark-text"></i>
               </a>
             <% } else { %>
 
@@ -473,6 +479,7 @@
               <a href="/superadmin" class="dg-panel-item <%= currentPath==='/superadmin' ? 'active' : '' %>"><span class="dg-panel-dot"></span>Dashboard SaaS</a>
               <a href="/superadmin/tenants" class="dg-panel-item <%= currentPath.startsWith('/superadmin/tenants') ? 'active' : '' %>"><span class="dg-panel-dot"></span>Tenants</a>
               <a href="/superadmin/billing" class="dg-panel-item <%= currentPath.startsWith('/superadmin/billing') ? 'active' : '' %>"><span class="dg-panel-dot"></span>Billing & P&L</a>
+              <a href="/contratos" class="dg-panel-item <%= currentPath.startsWith('/contratos') ? 'active' : '' %>"><span class="dg-panel-dot"></span>Contratos</a>
             <% } %>
             <% if (panelAlmacen) { %>
               <div class="dg-panel-title"><i class="bi bi-box-seam"></i> Almacen</div>

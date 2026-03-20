@@ -218,6 +218,7 @@ const backupsRoutes    = require('./routes/backups');
 const soporteRoutes    = require('./routes/soporte');
 const pagosRoutes      = require('./routes/pagos');
 const legalRoutes      = require('./routes/legal');
+const contratosRoutes  = require('./routes/contratos');
 
 // Honeypot: detect automated scanners hitting common attack paths
 ['/wp-admin', '/wp-login.php', '/.env', '/config.php', '/phpmyadmin', '/admin.php'].forEach(p => {
@@ -718,6 +719,10 @@ app.use('/api/caja', requireRole(['administrador', 'cajero']), cajaRoutes);
 // Chat IA (admin)
 app.use('/chat', requireRole('administrador'), chatLimiter, chatRoutes);
 app.use('/api/chat', requireRole('administrador'), chatLimiter, chatRoutes);
+
+// Contratos (superadmin only)
+app.use('/contratos', requireAuth, requireRole('superadmin'), contratosRoutes);
+app.use('/api/contratos', requireAuth, requireRole('superadmin'), contratosRoutes);
 
 // Social media API (admin)
 app.use('/api/social', requireRole('administrador'), socialApiRoutes);
