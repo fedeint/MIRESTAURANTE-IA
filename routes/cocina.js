@@ -64,14 +64,16 @@ router.get('/entregados', requireRole(['cocinero', 'mesero', 'administrador']), 
 
         // Validación simple de formato (YYYY-MM-DD). Si no cumple, ignoramos filtro.
         const isDate = (s) => /^\d{4}-\d{2}-\d{2}$/.test(String(s || ''));
+        // Use America/Lima timezone so date filter matches the user's local date
+        const dateExpr = `(COALESCE(i.servido_at, i.updated_at, i.created_at) AT TIME ZONE 'America/Lima')::date`;
         if (isDate(desde) && isDate(hasta)) {
-            where.push(`COALESCE(i.servido_at, i.updated_at, i.created_at)::date BETWEEN ? AND ?`);
+            where.push(`${dateExpr} BETWEEN ? AND ?`);
             params.push(desde, hasta);
         } else if (isDate(desde) && !isDate(hasta)) {
-            where.push(`COALESCE(i.servido_at, i.updated_at, i.created_at)::date >= ?`);
+            where.push(`${dateExpr} >= ?`);
             params.push(desde);
         } else if (!isDate(desde) && isDate(hasta)) {
-            where.push(`COALESCE(i.servido_at, i.updated_at, i.created_at)::date <= ?`);
+            where.push(`${dateExpr} <= ?`);
             params.push(hasta);
         }
 
@@ -113,14 +115,16 @@ router.get('/rechazados', requireRole(['cocinero', 'mesero', 'administrador']), 
 
         // Validación simple de formato (YYYY-MM-DD). Si no cumple, ignoramos filtro.
         const isDate = (s) => /^\d{4}-\d{2}-\d{2}$/.test(String(s || ''));
+        // Use America/Lima timezone so date filter matches the user's local date
+        const dateExpr = `(COALESCE(i.updated_at, i.created_at) AT TIME ZONE 'America/Lima')::date`;
         if (isDate(desde) && isDate(hasta)) {
-            where.push(`COALESCE(i.updated_at, i.created_at)::date BETWEEN ? AND ?`);
+            where.push(`${dateExpr} BETWEEN ? AND ?`);
             params.push(desde, hasta);
         } else if (isDate(desde) && !isDate(hasta)) {
-            where.push(`COALESCE(i.updated_at, i.created_at)::date >= ?`);
+            where.push(`${dateExpr} >= ?`);
             params.push(desde);
         } else if (!isDate(desde) && isDate(hasta)) {
-            where.push(`COALESCE(i.updated_at, i.created_at)::date <= ?`);
+            where.push(`${dateExpr} <= ?`);
             params.push(hasta);
         }
 
