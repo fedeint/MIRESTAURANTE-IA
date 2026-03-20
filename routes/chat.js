@@ -117,11 +117,41 @@ ${contexto}
 
 # ESTILO DE RESPUESTA
 - Responde en español peruano, amigable y profesional
-- Se conciso pero completo
-- Usa emojis moderadamente para ser amigable
+- Se CONVERSACIONAL: habla como un colega experto, no como un manual. Usa lenguaje natural.
+- Se conciso: respuestas cortas y directas. Solo da pasos detallados si el usuario lo pide.
+- Usa emojis con moderacion (1-2 por respuesta maximo)
 - Si explicas pasos, usa listas numeradas
 - Menciona las rutas del sistema cuando sea relevante (ej: "ve a /productos")
-- Siempre termina preguntando si necesita mas ayuda`;
+- NO repitas informacion que ya dijiste en la conversacion
+- Si el usuario hace una pregunta de seguimiento, responde directamente sin re-explicar todo
+- Adapta tu nivel de detalle: si el usuario parece experto, se breve. Si parece nuevo, guialo paso a paso.
+- Termina con una pregunta corta de seguimiento SOLO si tiene sentido, no en cada mensaje
+
+# EJEMPLOS DE CONVERSACIONES CORRECTAS
+
+Ejemplo 1 - Consulta rapida:
+Usuario: "cuanto vendimos hoy?"
+Asistente: "Hoy llevas S/ 450.00 en 12 facturas. El producto estrella fue Arroz con Pollo (8 unidades). ¿Quieres el desglose por metodo de pago?"
+
+Ejemplo 2 - Guia paso a paso:
+Usuario: "como agrego un producto a un pedido?"
+Asistente: "Facil:
+1. Ve a **Mesas** y toca la mesa donde quieres agregar
+2. En la barra de busqueda, escribe el nombre del producto
+3. Pon la cantidad y dale **+ Agregar**
+4. El producto aparece en el pedido a la derecha
+Cuando tengas todos los productos, dale **Enviar a cocina**."
+
+Ejemplo 3 - Rechazo amable:
+Usuario: "cuentame un chiste"
+Asistente: "Jaja, me encantaria pero solo puedo ayudarte con temas del restaurante y el sistema. ¿En que te puedo echar una mano?"
+
+Ejemplo 4 - Seguimiento natural:
+Usuario: "que mesas estan ocupadas?"
+Asistente: "Hay 5 de 20 mesas ocupadas (25%). Las mesas 2, 5, 8, 12 y 15 tienen pedidos activos."
+Usuario: "y la 8?"
+Asistente: "La mesa 8 tiene 3 productos: 1 Lomo Saltado, 1 Chicha Morada y 1 Cerveza. Estado: preparando en cocina."`;
+
 }
 
 // Filter business context by role - non-admins get limited data
@@ -164,18 +194,28 @@ function filtrarContextoPorRol(contexto, rol) {
         : 'Datos limitados segun tu rol. Consulta con el administrador para mas informacion.';
 }
 
-// Build conversation messages from history
-function buildMessages(historial, mensaje) {
+// Build conversation messages with token-budget window
+// Instead of naive slice(-20), fills context up to a token budget
+function buildMessages(historial, mensaje, budgetTokens = 8000) {
+    const estimateTokens = (text) => Math.ceil((text || '').length / 4);
+
+    const newMsg = { role: 'user', content: String(mensaje).trim() };
+    let used = estimateTokens(newMsg.content);
     const messages = [];
-    if (Array.isArray(historial)) {
-        historial.slice(-20).forEach(m => {
-            messages.push({
-                role: m.role === 'assistant' ? 'assistant' : 'user',
-                content: String(m.content || '')
-            });
+
+    // Walk history backwards, add messages until budget is used
+    const history = Array.isArray(historial) ? [...historial].reverse() : [];
+    for (const m of history) {
+        const tokens = estimateTokens(m.content);
+        if (used + tokens > budgetTokens) break;
+        messages.unshift({
+            role: m.role === 'assistant' ? 'assistant' : 'user',
+            content: String(m.content || '')
         });
+        used += tokens;
     }
-    messages.push({ role: 'user', content: String(mensaje).trim() });
+
+    messages.push(newMsg);
     return messages;
 }
 
@@ -183,7 +223,7 @@ function buildMessages(historial, mensaje) {
 async function chatWithKimi(apiKey, systemPrompt, messages) {
     const body = {
         model: 'moonshotai/kimi-k2',
-        max_tokens: 1024,
+        max_tokens: 2048,
         messages: [
             { role: 'system', content: systemPrompt },
             ...messages
@@ -216,7 +256,7 @@ async function chatWithClaude(apiKey, systemPrompt, messages) {
 
     const response = await client.messages.create({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 1024,
+        max_tokens: 2048,
         system: systemPrompt,
         messages
     });
@@ -385,97 +425,93 @@ async function obtenerContextoNegocio() {
         return _contextCache.data;
     }
 
-    const partes = [];
+    const secciones = [];
 
+    // --- NEGOCIO ---
     try {
-        // Products summary
-        const [productos] = await db.query('SELECT COUNT(*) as total FROM productos');
-        const [topProductos] = await db.query('SELECT nombre, precio_unidad FROM productos ORDER BY nombre LIMIT 15');
-        partes.push(`PRODUCTOS: ${productos[0].total} en total.`);
-        if (topProductos.length > 0) {
-            partes.push('Lista de productos: ' + topProductos.map(p => `${p.nombre} (S/${p.precio_unidad})`).join(', '));
+        const [config] = await db.query('SELECT nombre_negocio, direccion, telefono FROM configuracion_impresion LIMIT 1');
+        if (config.length > 0 && config[0].nombre_negocio) {
+            secciones.push(`## NEGOCIO\n- Nombre: ${config[0].nombre_negocio}\n- Direccion: ${config[0].direccion || 'N/A'}\n- Telefono: ${config[0].telefono || 'N/A'}`);
         }
-    } catch (e) { /* tabla no existe */ }
+    } catch (_) {}
 
+    // --- VENTAS HOY (lo más importante) ---
     try {
-        // Clients summary
-        const [clientes] = await db.query('SELECT COUNT(*) as total FROM clientes');
-        partes.push(`CLIENTES: ${clientes[0].total} registrados.`);
-    } catch (e) {}
+        const [hoy] = await db.query(`
+            SELECT COUNT(*) as total, COALESCE(SUM(total), 0) as monto
+            FROM facturas WHERE (fecha AT TIME ZONE 'America/Lima')::date = (NOW() AT TIME ZONE 'America/Lima')::date
+        `);
+        secciones.push(`## VENTAS HOY\n- Facturas: ${hoy[0].total}\n- Monto total: S/ ${Number(hoy[0].monto).toFixed(2)}`);
+    } catch (_) {}
 
+    // --- VENTAS 30 DIAS + METODOS ---
     try {
-        // Sales summary (last 30 days)
         const [ventas] = await db.query(`
             SELECT COUNT(*) as total, COALESCE(SUM(total), 0) as monto
-            FROM facturas
-            WHERE fecha >= NOW() - INTERVAL '30 days'
+            FROM facturas WHERE fecha >= NOW() - INTERVAL '30 days'
         `);
-        partes.push(`VENTAS (ultimos 30 dias): ${ventas[0].total} facturas, monto total S/${Number(ventas[0].monto).toFixed(2)}`);
-    } catch (e) {}
+        let seccion = `## VENTAS ULTIMOS 30 DIAS\n- Facturas: ${ventas[0].total}\n- Total: S/ ${Number(ventas[0].monto).toFixed(2)}`;
 
-    try {
-        // Sales by payment method
         const [metodos] = await db.query(`
             SELECT forma_pago, COUNT(*) as cantidad, SUM(total) as monto
-            FROM facturas
-            WHERE fecha >= NOW() - INTERVAL '30 days'
+            FROM facturas WHERE fecha >= NOW() - INTERVAL '30 days'
             GROUP BY forma_pago
         `);
         if (metodos.length > 0) {
-            partes.push('Ventas por metodo: ' + metodos.map(m => `${m.forma_pago}: ${m.cantidad} ventas (S/${Number(m.monto).toFixed(2)})`).join(', '));
+            seccion += '\n- Por metodo: ' + metodos.map(m => `${m.forma_pago}: ${m.cantidad} ventas (S/${Number(m.monto).toFixed(2)})`).join(', ');
         }
-    } catch (e) {}
+        secciones.push(seccion);
+    } catch (_) {}
 
+    // --- MESAS ---
     try {
-        // Tables
         const [mesas] = await db.query('SELECT COUNT(*) as total FROM mesas');
         const [ocupadas] = await db.query("SELECT COUNT(*) as total FROM mesas WHERE estado = 'ocupada'");
-        partes.push(`MESAS: ${mesas[0].total} total, ${ocupadas[0].total} ocupadas ahora.`);
-    } catch (e) {}
+        const pct = mesas[0].total > 0 ? Math.round((ocupadas[0].total / mesas[0].total) * 100) : 0;
+        secciones.push(`## MESAS\n- Total: ${mesas[0].total}\n- Ocupadas: ${ocupadas[0].total} (${pct}%)\n- Libres: ${mesas[0].total - ocupadas[0].total}`);
+    } catch (_) {}
 
+    // --- PRODUCTOS ---
     try {
-        // Today's sales
-        const [hoy] = await db.query(`
-            SELECT COUNT(*) as total, COALESCE(SUM(total), 0) as monto
-            FROM facturas
-            WHERE fecha::date = CURRENT_DATE
-        `);
-        partes.push(`VENTAS HOY: ${hoy[0].total} facturas, S/${Number(hoy[0].monto).toFixed(2)}`);
-    } catch (e) {}
+        const [productos] = await db.query('SELECT COUNT(*) as total FROM productos');
+        const [topProductos] = await db.query('SELECT nombre, precio_unidad FROM productos ORDER BY nombre LIMIT 20');
+        let seccion = `## PRODUCTOS (${productos[0].total} en carta)`;
+        if (topProductos.length > 0) {
+            seccion += '\n- Carta: ' + topProductos.map(p => `${p.nombre} (S/${p.precio_unidad})`).join(', ');
+        }
+        secciones.push(seccion);
+    } catch (_) {}
 
+    // --- TOP VENDIDOS ---
     try {
-        // Top selling products
         const [topVentas] = await db.query(`
-            SELECT p.nombre, SUM(df.cantidad) as total_vendido, SUM(df.subtotal) as total_monto
+            SELECT p.nombre, SUM(df.cantidad) as vendidos
             FROM detalle_factura df
             JOIN productos p ON p.id = df.producto_id
             WHERE df.created_at >= NOW() - INTERVAL '30 days'
             GROUP BY df.producto_id, p.nombre
-            ORDER BY total_vendido DESC
-            LIMIT 10
+            ORDER BY vendidos DESC LIMIT 10
         `);
         if (topVentas.length > 0) {
-            partes.push('PRODUCTOS MAS VENDIDOS (30 dias): ' + topVentas.map(p => `${p.nombre}: ${p.total_vendido} unidades (S/${Number(p.total_monto).toFixed(2)})`).join(', '));
+            secciones.push('## TOP 10 MAS VENDIDOS (30 dias)\n' + topVentas.map((p, i) => `${i + 1}. ${p.nombre} — ${p.vendidos} uds`).join('\n'));
         }
-    } catch (e) {}
+    } catch (_) {}
 
+    // --- CLIENTES ---
     try {
-        // Users
+        const [clientes] = await db.query('SELECT COUNT(*) as total FROM clientes');
+        secciones.push(`## CLIENTES\n- Registrados: ${clientes[0].total}`);
+    } catch (_) {}
+
+    // --- EQUIPO ---
+    try {
         const [usuarios] = await db.query('SELECT usuario, rol FROM usuarios WHERE activo = true');
         if (usuarios.length > 0) {
-            partes.push('USUARIOS ACTIVOS: ' + usuarios.map(u => `${u.usuario} (${u.rol})`).join(', '));
+            secciones.push('## EQUIPO ACTIVO\n' + usuarios.map(u => `- ${u.usuario} (${u.rol})`).join('\n'));
         }
-    } catch (e) {}
+    } catch (_) {}
 
-    try {
-        // Config
-        const [config] = await db.query('SELECT nombre_negocio, direccion, telefono FROM configuracion_impresion LIMIT 1');
-        if (config.length > 0 && config[0].nombre_negocio) {
-            partes.push(`NEGOCIO: ${config[0].nombre_negocio}, Dir: ${config[0].direccion || 'N/A'}, Tel: ${config[0].telefono || 'N/A'}`);
-        }
-    } catch (e) {}
-
-    const result = partes.join('\n') || 'No hay datos del negocio disponibles aun.';
+    const result = secciones.join('\n\n') || 'No hay datos del negocio disponibles aun.';
     _contextCache.data = result;
     _contextCache.ts = Date.now();
     return result;
