@@ -51,6 +51,10 @@ router.post('/generar', async (req, res) => {
     // Collect PDF into buffer instead of piping to response
     const chunks = [];
     doc.on('data', c => chunks.push(c));
+    doc.on('error', (err) => {
+        console.error('PDFKit error:', err.message, err.stack);
+        if (!res.headersSent) res.status(500).json({ error: 'Error generando PDF: ' + err.message });
+    });
     doc.on('end', async () => {
         try {
             const pdfBuffer = Buffer.concat(chunks);
@@ -76,10 +80,6 @@ router.post('/generar', async (req, res) => {
             if (!res.headersSent) res.status(500).json({ error: 'Error al guardar contrato: ' + err.message });
         }
     });
-    } catch (err) {
-        console.error('Error generando contrato:', err.message, err.stack);
-        return res.status(500).json({ error: 'Error al generar contrato: ' + err.message });
-    }
 
     const pw = doc.page.width - 110;
     const ml = 55;
@@ -669,6 +669,10 @@ router.post('/generar', async (req, res) => {
     doc.text('Documento firmado en dos (2) ejemplares originales de igual tenor y valor.', { align: 'center' });
 
     doc.end();
+    } catch (err) {
+        console.error('Error generando contrato:', err.message, err.stack);
+        if (!res.headersSent) res.status(500).json({ error: 'Error al generar contrato: ' + err.message });
+    }
 });
 
 // POST /api/contratos/:id/reenviar - Reenviar email de firma
