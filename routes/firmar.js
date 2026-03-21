@@ -136,7 +136,12 @@ router.post('/:token/submit', submitLimiter, async (req, res) => {
 
         // Send signed PDF by email
         try {
-            await sendSignedContract(contrato, pdfFirmado);
+            await sendSignedContract({
+                to: contrato.email,
+                nombreCliente: contrato.nombre_cliente,
+                nroContrato: contrato.nro_contrato,
+                pdfBuffer: pdfFirmado
+            });
             await db.query('UPDATE contratos SET email_enviado_at=NOW() WHERE id=?', [contrato.id]);
         } catch (emailErr) {
             console.error('Error sending signed contract email:', emailErr);
