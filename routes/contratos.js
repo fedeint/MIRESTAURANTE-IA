@@ -15,13 +15,13 @@ router.get('/', (req, res) => {
 // GET /api/contratos/lista - Listar contratos
 router.get('/lista', async (req, res) => {
     try {
-        const result = await db.query(
+        const [rows] = await db.query(
             `SELECT id, nro_contrato, nombre_cliente, razon_social, dni, ruc, email, estado,
                     token, firmado_at, email_enviado_at, created_at
              FROM contratos WHERE tenant_id = $1 ORDER BY created_at DESC`,
             [req.tenantId || 1]
         );
-        res.json(result.rows);
+        res.json(rows);
     } catch (err) {
         console.error('Lista contratos error:', err.message);
         res.status(500).json({ error: 'Error al obtener contratos' });
@@ -42,8 +42,8 @@ router.post('/generar', async (req, res) => {
     const fechaTexto = `${hoy.getDate()} de ${meses[hoy.getMonth()]} de ${hoy.getFullYear()}`;
 
     // Generate nro_contrato from DB sequence
-    const seqResult = await db.query("SELECT nextval('contratos_nro_seq') as seq");
-    const seqVal = seqResult.rows[0].seq;
+    const [[seqRow]] = await db.query("SELECT nextval('contratos_nro_seq') as seq");
+    const seqVal = seqRow.seq;
     const nroContrato = `CTR-${hoy.getFullYear()}${String(hoy.getMonth()+1).padStart(2,'0')}${String(hoy.getDate()).padStart(2,'0')}-${String(seqVal).padStart(4,'0')}`;
 
     const doc = new PDFDocument({ size: 'A4', margins: { top: 50, bottom: 50, left: 55, right: 55 }, bufferPages: true });
@@ -56,13 +56,12 @@ router.post('/generar', async (req, res) => {
             const pdfBuffer = Buffer.concat(chunks);
             const pdfHash = crypto.createHash('sha256').update(pdfBuffer).digest('hex');
 
-            const insertResult = await db.query(
+            const [[contrato]] = await db.query(
                 `INSERT INTO contratos (tenant_id, nro_contrato, nombre_cliente, razon_social, dni, ruc, email, telefono, direccion, nombre_establecimiento, nombre_representante, cargo_representante, dni_representante, pdf_original, pdf_hash, created_by)
                  VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
                  RETURNING id, token, nro_contrato`,
                 [req.tenantId||1, nroContrato, nombre_cliente, razon_social||null, dni, ruc||null, email||null, telefono||null, direccion||null, nombre_establecimiento||null, nombre_representante||null, cargo_representante||null, dni_representante||null, pdfBuffer, pdfHash, req.session?.user?.id||null]
             );
-            const contrato = insertResult.rows[0];
             const baseUrl = `${req.protocol}://${req.get('host')}`;
             const link = `${baseUrl}/firmar/${contrato.token}`;
 
@@ -675,12 +674,12 @@ router.post('/generar', async (req, res) => {
 // POST /api/contratos/:id/reenviar - Reenviar email de firma
 router.post('/:id/reenviar', async (req, res) => {
     try {
-        const r = await db.query(
+        const [rows] = await db.query(
             'SELECT id, token, nro_contrato, nombre_cliente, email, estado FROM contratos WHERE id = $1 AND tenant_id = $2',
             [req.params.id, req.tenantId || 1]
         );
-        if (!r.rows.length) return res.status(404).json({ error: 'Contrato no encontrado' });
-        const c = r.rows[0];
+        if (!rows.length) return res.status(404).json({ error: 'Contrato no encontrado' });
+        const c = rows[0];
         if (!c.email) return res.status(400).json({ error: 'El cliente no tiene email registrado' });
         const baseUrl = `${req.protocol}://${req.get('host')}`;
         const link = `${baseUrl}/firmar/${c.token}`;
@@ -697,12 +696,12 @@ router.post('/:id/reenviar', async (req, res) => {
 router.get('/:id/descargar/:tipo', async (req, res) => {
     try {
         const col = req.params.tipo === 'firmado' ? 'pdf_firmado' : 'pdf_original';
-        const r2 = await db.query(
+        const [rows] = await db.query(
             `SELECT ${col}, nro_contrato, nombre_cliente FROM contratos WHERE id = $1 AND tenant_id = $2`,
             [req.params.id, req.tenantId || 1]
         );
-        if (!r2.rows.length || !r2.rows[0][col]) return res.status(404).json({ error: 'PDF no encontrado' });
-        const c = r2.rows[0];
+        if (!rows.length || !rows[0][col]) return res.status(404).json({ error: 'PDF no encontrado' });
+        const c = rows[0];
         res.setHeader('Content-Type', 'application/pdf');
         res.setHeader('Content-Disposition', `attachment; filename="Contrato_${c.nro_contrato}_${req.params.tipo}.pdf"`);
         res.send(c[col]);
