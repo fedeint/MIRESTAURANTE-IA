@@ -24,7 +24,7 @@
             </div>
         </div>
 
-        <form id="formContrato" action="/api/contratos/generar" method="POST" target="_blank">
+        <form id="formContrato">
 
             <!-- Datos del Cliente -->
             <div class="card border-0 shadow-sm mb-4" style="border-radius:16px;">
@@ -177,7 +177,29 @@
                 </button>
             </div>
 
+            <!-- Resultado de generación -->
+            <div id="resultado" style="display:none;"></div>
+
         </form>
+
+        <!-- Contratos Enviados -->
+        <div class="card border-0 shadow-sm mb-4" style="border-radius:16px;">
+            <div class="card-body p-4">
+                <h5 class="mb-3" style="font-weight:700;">
+                    <i class="bi bi-table me-2"></i>Contratos Enviados
+                </h5>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr><th>Nro</th><th>Cliente</th><th>Email</th><th>Estado</th><th>Fecha</th><th>Acciones</th></tr>
+                        </thead>
+                        <tbody id="contratos-tbody">
+                            <tr><td colspan="6" class="text-center text-muted py-4">Cargando...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
 
     </div>
     </main>
@@ -185,6 +207,7 @@
 
     <script src="/vendor/jquery/jquery.min.js"></script>
     <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="/vendor/sweetalert2/sweetalert2.all.min.js"></script>
     <script>
     // Auto-fill RUC prefix from DNI (for persona natural con negocio)
     document.querySelector('[name="dni"]').addEventListener('input', function() {
@@ -195,6 +218,102 @@
             setTimeout(() => rucField.classList.remove('border-warning'), 2000);
         }
     });
+
+    // Form submit via fetch
+    document.getElementById('formContrato').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData.entries());
+        const btn = e.target.querySelector('button[type="submit"]');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Generando...';
+
+        try {
+            const resp = await fetch('/api/contratos/generar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const result = await resp.json();
+            if (result.error) throw new Error(result.error);
+
+            // Show result
+            document.getElementById('resultado').innerHTML = `
+                <div class="card border-0 shadow-sm mb-4" style="border-radius:16px;border-left:4px solid #22c55e !important;">
+                    <div class="card-body p-4">
+                        <h5 class="text-success"><i class="bi bi-check-circle me-2"></i>Contrato Generado</h5>
+                        <p class="mb-1"><strong>Nro:</strong> ${result.nro_contrato}</p>
+                        <p class="mb-2"><strong>Link de firma:</strong></p>
+                        <div class="input-group mb-2">
+                            <input type="text" class="form-control" value="${result.link}" readonly id="linkFirma">
+                            <button class="btn btn-outline-secondary" onclick="navigator.clipboard.writeText(document.getElementById('linkFirma').value); Swal.fire({toast:true,position:'top-end',icon:'success',title:'Link copiado',showConfirmButton:false,timer:1500});">
+                                <i class="bi bi-clipboard"></i>
+                            </button>
+                        </div>
+                        <span class="badge ${result.email_enviado ? 'bg-success' : 'bg-warning text-dark'}">
+                            ${result.email_enviado ? 'Email enviado al cliente' : 'Email no enviado (SMTP no configurado)'}
+                        </span>
+                    </div>
+                </div>
+            `;
+            document.getElementById('resultado').style.display = 'block';
+            loadContratos(); // refresh table
+        } catch (err) {
+            Swal.fire({ icon: 'error', title: 'Error', text: err.message });
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-file-earmark-pdf me-2"></i>Generar Contrato PDF';
+        }
+    });
+
+    // Load contracts table
+    async function loadContratos() {
+        try {
+            const resp = await fetch('/api/contratos/lista');
+            const contratos = await resp.json();
+            const tbody = document.getElementById('contratos-tbody');
+            if (!contratos.length) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">No hay contratos generados aún</td></tr>';
+                return;
+            }
+            tbody.innerHTML = contratos.map(c => {
+                const estadoBadge = c.estado === 'firmado' ? 'bg-success' : c.estado === 'expirado' ? 'bg-danger' : 'bg-warning text-dark';
+                const fecha = new Date(c.created_at).toLocaleDateString('es-PE');
+                const linkFirma = `${window.location.origin}/firmar/${c.token}`;
+                return `<tr>
+                    <td><small class="fw-bold">${c.nro_contrato}</small></td>
+                    <td>${c.nombre_cliente}</td>
+                    <td><small>${c.email || '-'}</small></td>
+                    <td><span class="badge ${estadoBadge}">${c.estado}</span></td>
+                    <td><small>${fecha}</small></td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-secondary" title="Copiar link" onclick="navigator.clipboard.writeText('${linkFirma}'); Swal.fire({toast:true,position:'top-end',icon:'success',title:'Link copiado',showConfirmButton:false,timer:1500});">
+                                <i class="bi bi-clipboard"></i>
+                            </button>
+                            ${c.email ? `<button class="btn btn-outline-primary" title="Reenviar email" onclick="reenviar(${c.id})"><i class="bi bi-envelope"></i></button>` : ''}
+                            <a href="/api/contratos/${c.id}/descargar/original" class="btn btn-outline-dark" title="Descargar original"><i class="bi bi-download"></i></a>
+                            ${c.estado === 'firmado' ? `<a href="/api/contratos/${c.id}/descargar/firmado" class="btn btn-outline-success" title="Descargar firmado"><i class="bi bi-file-earmark-check"></i></a>` : ''}
+                        </div>
+                    </td>
+                </tr>`;
+            }).join('');
+        } catch (err) {
+            console.error('Error loading contratos:', err);
+        }
+    }
+
+    async function reenviar(id) {
+        try {
+            const resp = await fetch(`/api/contratos/${id}/reenviar`, { method: 'POST' });
+            const data = await resp.json();
+            Swal.fire({ toast:true, position:'top-end', icon: data.ok ? 'success' : 'error', title: data.message, showConfirmButton:false, timer:2000 });
+        } catch (err) {
+            Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo reenviar' });
+        }
+    }
+
+    loadContratos();
     </script>
 </body>
 </html>
