@@ -17,7 +17,7 @@ const submitLimiter = rateLimit({
 // GET /:token — Public signing page
 router.get('/:token', async (req, res) => {
     try {
-        const [rows] = await db.query(PENDING_CONTRACT_QUERY, [req.params.token]);
+        const { rows } = await db.query(PENDING_CONTRACT_QUERY, [req.params.token]);
         if (!rows || rows.length === 0) {
             return res.render('firmar', {
                 contrato: null,
@@ -37,7 +37,7 @@ router.get('/:token', async (req, res) => {
 // GET /:token/pdf — Serve PDF for iframe
 router.get('/:token/pdf', async (req, res) => {
     try {
-        const [rows] = await db.query(PENDING_CONTRACT_QUERY, [req.params.token]);
+        const { rows } = await db.query(PENDING_CONTRACT_QUERY, [req.params.token]);
         if (!rows || rows.length === 0) {
             return res.status(404).send('No encontrado');
         }
@@ -69,7 +69,7 @@ router.post('/:token/submit', submitLimiter, async (req, res) => {
         }
 
         // Validate contract exists, is pending, and not expired
-        const [rows] = await db.query(PENDING_CONTRACT_QUERY, [req.params.token]);
+        const { rows } = await db.query(PENDING_CONTRACT_QUERY, [req.params.token]);
         if (!rows || rows.length === 0) {
             return res.status(404).json({ error: 'Este contrato no existe, ya fue firmado o el enlace ha expirado.' });
         }
