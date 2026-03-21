@@ -92,8 +92,10 @@ router.post('/:token/submit', submitLimiter, async (req, res) => {
         const sigDims = sigImage.scaleToFit(120, 50);
 
         // Position on the RIGHT side (client section), aligned with signature line area
+        // pdf-lib Y=0 is bottom of page. The signature lines are roughly in the upper third of the last page.
+        const { height } = lastPage.getSize();
         const sigX = width / 2 + 40;
-        const sigY = 185;
+        const sigY = height - 230;
 
         lastPage.drawImage(sigImage, {
             x: sigX,
@@ -107,7 +109,7 @@ router.post('/:token/submit', submitLimiter, async (req, res) => {
         const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.ip;
         lastPage.drawText(`Firmado electronicamente el ${fecha} — IP: ${ip}`, {
             x: sigX,
-            y: sigY - 10,
+            y: sigY - 15,
             size: 6,
             color: rgb(0.5, 0.5, 0.5)
         });
