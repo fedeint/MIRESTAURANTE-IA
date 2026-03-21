@@ -70,11 +70,14 @@ router.post('/generar', async (req, res) => {
             const link = `${baseUrl}/firmar/${contrato.token}`;
 
             let emailEnviado = false;
+            let emailReason = 'Sin email del cliente';
             if (email) {
-                emailEnviado = await sendSigningLink({ to: email, nombreCliente: nombre_cliente, nroContrato: contrato.nro_contrato, link });
+                const result = await sendSigningLink({ to: email, nombreCliente: nombre_cliente, nroContrato: contrato.nro_contrato, link });
+                emailEnviado = result.sent;
+                emailReason = result.sent ? 'Enviado' : result.reason;
                 if (emailEnviado) await db.query('UPDATE contratos SET email_enviado_at = NOW() WHERE id = ?', [contrato.id]);
             }
-            res.json({ id: contrato.id, token: contrato.token, nro_contrato: contrato.nro_contrato, link, email_enviado: emailEnviado });
+            res.json({ id: contrato.id, token: contrato.token, nro_contrato: contrato.nro_contrato, link, email_enviado: emailEnviado, email_reason: emailReason });
         } catch (err) {
             console.error('Error guardando contrato:', err.message, err.stack);
             if (!res.headersSent) res.status(500).json({ error: 'Error al guardar contrato: ' + err.message });

@@ -251,7 +251,7 @@
                             </button>
                         </div>
                         <span class="badge ${result.email_enviado ? 'bg-success' : 'bg-warning text-dark'}">
-                            ${result.email_enviado ? 'Email enviado al cliente' : 'Email no enviado (SMTP no configurado)'}
+                            ${result.email_enviado ? 'Email enviado al cliente' : (result.email_reason || 'Email no enviado')}
                         </span>
                     </div>
                 </div>
