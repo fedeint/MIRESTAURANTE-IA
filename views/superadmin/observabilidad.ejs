@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Observabilidad - dignita.tech</title>
+  <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+  <link rel="stylesheet" href="/css/theme.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
+  <style>
+    body { background: #0f172a; }
+    .dg-main { background: #0f172a; }
+    .obs-card {
+      background: #1e2235;
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 16px;
+      padding: 1.5rem;
+      color: #e2e8f0;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .obs-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+    .obs-kpi-value { font-size: 2rem; font-weight: 800; color: #fff; line-height: 1; }
+    .obs-kpi-label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; margin-top: 4px; }
+    .obs-kpi-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; }
+    .obs-section-title { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: #64748b; padding: 8px 0 12px; }
+    .obs-table th { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #64748b; border-bottom: 1px solid rgba(255,255,255,0.06); padding: 10px 12px; }
+    .obs-table td { font-size: 0.83rem; color: #cbd5e1; padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: middle; }
+    .obs-table tr:hover td { background: rgba(255,255,255,0.03); }
+
+    .nav-tabs { border-bottom: 1px solid rgba(255,255,255,0.08); }
+    .nav-tabs .nav-link {
+      color: #94a3b8; border: none; font-size: 0.82rem; font-weight: 600;
+      padding: 0.6rem 1rem; border-radius: 8px 8px 0 0;
+    }
+    .nav-tabs .nav-link:hover { color: #e2e8f0; background: rgba(255,255,255,0.04); }
+    .nav-tabs .nav-link.active { color: #f97316; background: rgba(249,115,22,0.08); border-bottom: 2px solid #f97316; }
+
+    .obs-badge-ok { background: rgba(34,197,94,0.15); color: #22c55e; border-radius: 20px; padding: 2px 10px; font-size: 0.72rem; font-weight: 700; }
+    .obs-badge-warn { background: rgba(251,191,36,0.15); color: #fbbf24; border-radius: 20px; padding: 2px 10px; font-size: 0.72rem; font-weight: 700; }
+    .obs-badge-danger { background: rgba(239,68,68,0.15); color: #ef4444; border-radius: 20px; padding: 2px 10px; font-size: 0.72rem; font-weight: 700; }
+
+    #mapa-container { border-radius: 12px; overflow: hidden; border: 1px solid rgba(255,255,255,0.07); }
+    .chart-container { position: relative; height: 300px; }
+  </style>
+</head>
+<body>
+  <%- include('../partials/sidebar') %>
+  <div class="dg-main">
+    <main class="flex-grow-1">
+      <div class="container-fluid" style="max-width:1300px;padding:1.5rem 1.5rem 3rem;">
+
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <div class="obs-section-title">OBSERVABILIDAD</div>
+            <h4 class="fw-bold mb-1" style="color:#fff;font-family:'DM Sans',sans-serif;letter-spacing:-0.02em;">
+              <i class="bi bi-graph-up me-2" style="color:#f97316;"></i>Observabilidad
+            </h4>
+            <p class="mb-0" style="color:#64748b;font-size:0.82rem;">Monitoreo en tiempo real &mdash; <%= new Date().toLocaleDateString('es-PE', { weekday:'long', year:'numeric', month:'long', day:'numeric' }) %></p>
+          </div>
+          <div class="d-flex gap-2">
+            <button id="btn-refresh-all" class="btn btn-sm" style="background:#f97316;color:#fff;border-radius:10px;font-weight:600;">
+              <i class="bi bi-arrow-clockwise me-1"></i>Actualizar
+            </button>
+          </div>
+        </div>
+
+        <!-- Nav Tabs -->
+        <ul class="nav nav-tabs mb-4" id="obsTabs" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="tab-negocio" data-bs-toggle="tab" data-bs-target="#pane-negocio" type="button" role="tab" aria-controls="pane-negocio" aria-selected="true">
+              <i class="bi bi-cash-coin me-1"></i>Negocio
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tab-rendimiento" data-bs-toggle="tab" data-bs-target="#pane-rendimiento" type="button" role="tab" aria-controls="pane-rendimiento" aria-selected="false">
+              <i class="bi bi-speedometer2 me-1"></i>Rendimiento
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tab-seguridad" data-bs-toggle="tab" data-bs-target="#pane-seguridad" type="button" role="tab" aria-controls="pane-seguridad" aria-selected="false">
+              <i class="bi bi-shield-lock me-1"></i>Seguridad
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tab-infra" data-bs-toggle="tab" data-bs-target="#pane-infra" type="button" role="tab" aria-controls="pane-infra" aria-selected="false">
+              <i class="bi bi-hdd-rack me-1"></i>Infra
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tab-mapa" data-bs-toggle="tab" data-bs-target="#pane-mapa" type="button" role="tab" aria-controls="pane-mapa" aria-selected="false">
+              <i class="bi bi-geo-alt me-1"></i>Mapa
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tab-ataques" data-bs-toggle="tab" data-bs-target="#pane-ataques" type="button" role="tab" aria-controls="pane-ataques" aria-selected="false">
+              <i class="bi bi-bug me-1"></i>Ataques
+            </button>
+          </li>
+        </ul>
+
+        <!-- Tab Content -->
+        <div class="tab-content" id="obsTabContent">
+
+          <!-- ===================== NEGOCIO ===================== -->
+          <div class="tab-pane fade show active" id="pane-negocio" role="tabpanel" aria-labelledby="tab-negocio">
+            <div id="negocio-kpis" class="row g-3 mb-4">
+              <div class="col-6 col-lg-3">
+                <div class="obs-card">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                      <div class="obs-kpi-value" id="kpi-mrr">--</div>
+                      <div class="obs-kpi-label">MRR</div>
+                    </div>
+                    <div class="obs-kpi-icon" style="background:rgba(34,197,94,0.1);color:#22c55e;">
+                      <i class="bi bi-currency-dollar"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-6 col-lg-3">
+                <div class="obs-card">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                      <div class="obs-kpi-value" id="kpi-tenants-activos">--</div>
+                      <div class="obs-kpi-label">Tenants Activos</div>
+                    </div>
+                    <div class="obs-kpi-icon" style="background:rgba(249,115,22,0.1);color:#f97316;">
+                      <i class="bi bi-building"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-6 col-lg-3">
+                <div class="obs-card">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                      <div class="obs-kpi-value" id="kpi-ventas-hoy">--</div>
+                      <div class="obs-kpi-label">Ventas Hoy</div>
+                    </div>
+                    <div class="obs-kpi-icon" style="background:rgba(99,102,241,0.1);color:#818cf8;">
+                      <i class="bi bi-cart-check"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-6 col-lg-3">
+                <div class="obs-card">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                      <div class="obs-kpi-value" id="kpi-churn">--</div>
+                      <div class="obs-kpi-label">Churn Rate</div>
+                    </div>
+                    <div class="obs-kpi-icon" style="background:rgba(239,68,68,0.1);color:#ef4444;">
+                      <i class="bi bi-person-dash"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="row g-3 mb-4">
+              <div class="col-lg-6">
+                <div class="obs-card">
+                  <div class="obs-section-title">Ingresos Mensuales</div>
+                  <div class="chart-container"><canvas id="chart-ingresos-mensuales"></canvas></div>
+                </div>
+              </div>
+              <div class="col-lg-6">
+                <div class="obs-card">
+                  <div class="obs-section-title">Ventas por Tenant</div>
+                  <div class="chart-container"><canvas id="chart-ventas-tenant"></canvas></div>
+                </div>
+              </div>
+            </div>
+            <div class="obs-card">
+              <div class="obs-section-title">Actividad Reciente</div>
+              <div class="table-responsive">
+                <table class="obs-table w-100" id="tabla-negocio">
+                  <thead>
+                    <tr>
+                      <th>Tenant</th><th>Evento</th><th>Monto</th><th>Fecha</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- ===================== RENDIMIENTO ===================== -->
+          <div class="tab-pane fade" id="pane-rendimiento" role="tabpanel" aria-labelledby="tab-rendimiento">
+            <div id="rendimiento-kpis" class="row g-3 mb-4">
+              <div class="col-6 col-lg-3">
+                <div class="obs-card">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                      <div class="obs-kpi-value" id="kpi-p50">--</div>
+                      <div class="obs-kpi-label">P50 Latencia</div>
+                    </div>
+                    <div class="obs-kpi-icon" style="background:rgba(34,197,94,0.1);color:#22c55e;">
+                      <i class="bi bi-lightning"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-6 col-lg-3">
+                <div class="obs-card">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                      <div class="obs-kpi-value" id="kpi-p99">--</div>
+                      <div class="obs-kpi-label">P99 Latencia</div>
+                    </div>
+                    <div class="obs-kpi-icon" style="background:rgba(251,191,36,0.1);color:#fbbf24;">
+                      <i class="bi bi-lightning-charge"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-6 col-lg-3">
+                <div class="obs-card">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                      <div class="obs-kpi-value" id="kpi-rpm">--</div>
+                      <div class="obs-kpi-label">Requests/min</div>
+                    </div>
+                    <div class="obs-kpi-icon" style="background:rgba(99,102,241,0.1);color:#818cf8;">
+                      <i class="bi bi-arrow-repeat"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-6 col-lg-3">
+                <div class="obs-card">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                      <div class="obs-kpi-value" id="kpi-error-rate">--</div>
+                      <div class="obs-kpi-label">Error Rate</div>
+                    </div>
+                    <div class="obs-kpi-icon" style="background:rgba(239,68,68,0.1);color:#ef4444;">
+                      <i class="bi bi-exclamation-triangle"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="row g-3 mb-4">
+              <div class="col-lg-6">
+                <div class="obs-card">
+                  <div class="obs-section-title">Latencia (P50 / P99)</div>
+                  <div class="chart-container"><canvas id="chart-latencia"></canvas></div>
+                </div>
+              </div>
+              <div class="col-lg-6">
+                <div class="obs-card">
+                  <div class="obs-section-title">Throughput (RPM)</div>
+                  <div class="chart-container"><canvas id="chart-throughput"></canvas></div>
+                </div>
+              </div>
+            </div>
+            <div class="obs-card">
+              <div class="obs-section-title">Endpoints Lentos</div>
+              <div class="table-responsive">
+                <table class="obs-table w-100" id="tabla-endpoints-lentos">
+                  <thead>
+                    <tr>
+                      <th>Endpoint</th><th>Metodo</th><th>P50 (ms)</th><th>P99 (ms)</th><th>RPM</th><th>Errores</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- ===================== SEGURIDAD ===================== -->
+          <div class="tab-pane fade" id="pane-seguridad" role="tabpanel" aria-labelledby="tab-seguridad">
+            <div id="seguridad-kpis" class="row g-3 mb-4">
+              <div class="col-6 col-lg-3">
+                <div class="obs-card">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                      <div class="obs-kpi-value" id="kpi-login-fallidos">--</div>
+                      <div class="obs-kpi-label">Login Fallidos (24h)</div>
+                    </div>
+                    <div class="obs-kpi-icon" style="background:rgba(239,68,68,0.1);color:#ef4444;">
+                      <i class="bi bi-shield-exclamation"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-6 col-lg-3">
+                <div class="obs-card">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                      <div class="obs-kpi-value" id="kpi-ips-bloqueadas">--</div>
+                      <div class="obs-kpi-label">IPs Bloqueadas</div>
+                    </div>
+                    <div class="obs-kpi-icon" style="background:rgba(251,191,36,0.1);color:#fbbf24;">
+                      <i class="bi bi-ban"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-6 col-lg-3">
+                <div class="obs-card">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                      <div class="obs-kpi-value" id="kpi-eventos-seg">--</div>
+                      <div class="obs-kpi-label">Eventos Seguridad</div>
+                    </div>
+                    <div class="obs-kpi-icon" style="background:rgba(99,102,241,0.1);color:#818cf8;">
+                      <i class="bi bi-journal-text"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-6 col-lg-3">
+                <div class="obs-card">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                      <div class="obs-kpi-value" id="kpi-rate-limit">--</div>
+                      <div class="obs-kpi-label">Rate Limit Hits</div>
+                    </div>
+                    <div class="obs-kpi-icon" style="background:rgba(249,115,22,0.1);color:#f97316;">
+                      <i class="bi bi-speedometer"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="row g-3 mb-4">
+              <div class="col-lg-6">
+                <div class="obs-card">
+                  <div class="obs-section-title">Login Fallidos (7 dias)</div>
+                  <div class="chart-container"><canvas id="chart-login-fallidos"></canvas></div>
+                </div>
+              </div>
+              <div class="col-lg-6">
+                <div class="obs-card">
+                  <div class="obs-section-title">Eventos por Tipo</div>
+                  <div class="chart-container"><canvas id="chart-eventos-seguridad"></canvas></div>
+                </div>
+              </div>
+            </div>
+            <div class="obs-card">
+              <div class="obs-section-title">Log de Seguridad</div>
+              <div class="table-responsive">
+                <table class="obs-table w-100" id="tabla-seguridad">
+                  <thead>
+                    <tr>
+                      <th>Fecha</th><th>Tipo</th><th>IP</th><th>Usuario</th><th>Detalle</th><th>Severidad</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- ===================== INFRA ===================== -->
+          <div class="tab-pane fade" id="pane-infra" role="tabpanel" aria-labelledby="tab-infra">
+            <div id="infra-kpis" class="row g-3 mb-4">
+              <div class="col-6 col-lg-3">
+                <div class="obs-card">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                      <div class="obs-kpi-value" id="kpi-cpu">--</div>
+                      <div class="obs-kpi-label">CPU Usage</div>
+                    </div>
+                    <div class="obs-kpi-icon" style="background:rgba(34,197,94,0.1);color:#22c55e;">
+                      <i class="bi bi-cpu"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-6 col-lg-3">
+                <div class="obs-card">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                      <div class="obs-kpi-value" id="kpi-memoria">--</div>
+                      <div class="obs-kpi-label">Memoria</div>
+                    </div>
+                    <div class="obs-kpi-icon" style="background:rgba(99,102,241,0.1);color:#818cf8;">
+                      <i class="bi bi-memory"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-6 col-lg-3">
+                <div class="obs-card">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                      <div class="obs-kpi-value" id="kpi-disco">--</div>
+                      <div class="obs-kpi-label">Disco</div>
+                    </div>
+                    <div class="obs-kpi-icon" style="background:rgba(251,191,36,0.1);color:#fbbf24;">
+                      <i class="bi bi-hdd"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-6 col-lg-3">
+                <div class="obs-card">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                      <div class="obs-kpi-value" id="kpi-db-pool">--</div>
+                      <div class="obs-kpi-label">DB Pool Activo</div>
+                    </div>
+                    <div class="obs-kpi-icon" style="background:rgba(249,115,22,0.1);color:#f97316;">
+                      <i class="bi bi-database"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="row g-3 mb-4">
+              <div class="col-lg-6">
+                <div class="obs-card">
+                  <div class="obs-section-title">CPU / Memoria (1h)</div>
+                  <div class="chart-container"><canvas id="chart-cpu-mem"></canvas></div>
+                </div>
+              </div>
+              <div class="col-lg-6">
+                <div class="obs-card">
+                  <div class="obs-section-title">DB Pool & Conexiones</div>
+                  <div class="chart-container"><canvas id="chart-db-pool"></canvas></div>
+                </div>
+              </div>
+            </div>
+            <div class="obs-card">
+              <div class="obs-section-title">Estado de Servicios</div>
+              <div class="table-responsive">
+                <table class="obs-table w-100" id="tabla-servicios">
+                  <thead>
+                    <tr>
+                      <th>Servicio</th><th>Estado</th><th>Uptime</th><th>Latencia</th><th>Ultima Verificacion</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- ===================== MAPA ===================== -->
+          <div class="tab-pane fade" id="pane-mapa" role="tabpanel" aria-labelledby="tab-mapa">
+            <div class="obs-card mb-4">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="obs-section-title mb-0">Mapa de Actividad</div>
+                <div class="d-flex gap-3">
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="layer-markers" checked>
+                    <label class="form-check-label" for="layer-markers" style="color:#94a3b8;font-size:0.8rem;">Marcadores</label>
+                  </div>
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="layer-heat" checked>
+                    <label class="form-check-label" for="layer-heat" style="color:#94a3b8;font-size:0.8rem;">Heatmap</label>
+                  </div>
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="layer-clusters" checked>
+                    <label class="form-check-label" for="layer-clusters" style="color:#94a3b8;font-size:0.8rem;">Clusters</label>
+                  </div>
+                </div>
+              </div>
+              <div id="mapa-container" style="height:500px"></div>
+            </div>
+            <div class="row g-3">
+              <div class="col-lg-6">
+                <div class="obs-card">
+                  <div class="obs-section-title">Top Paises</div>
+                  <div class="chart-container"><canvas id="chart-paises"></canvas></div>
+                </div>
+              </div>
+              <div class="col-lg-6">
+                <div class="obs-card">
+                  <div class="obs-section-title">Conexiones por Region</div>
+                  <div class="table-responsive">
+                    <table class="obs-table w-100" id="tabla-regiones">
+                      <thead>
+                        <tr>
+                          <th>Region</th><th>Conexiones</th><th>Porcentaje</th>
+                        </tr>
+                      </thead>
+                      <tbody></tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ===================== ATAQUES ===================== -->
+          <div class="tab-pane fade" id="pane-ataques" role="tabpanel" aria-labelledby="tab-ataques">
+            <div id="ataques-kpis" class="row g-3 mb-4">
+              <div class="col-6 col-lg-3">
+                <div class="obs-card">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                      <div class="obs-kpi-value" id="kpi-ataques-24h">--</div>
+                      <div class="obs-kpi-label">Ataques (24h)</div>
+                    </div>
+                    <div class="obs-kpi-icon" style="background:rgba(239,68,68,0.1);color:#ef4444;">
+                      <i class="bi bi-bug"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-6 col-lg-3">
+                <div class="obs-card">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                      <div class="obs-kpi-value" id="kpi-blacklisted">--</div>
+                      <div class="obs-kpi-label">IPs Blacklisted</div>
+                    </div>
+                    <div class="obs-kpi-icon" style="background:rgba(251,191,36,0.1);color:#fbbf24;">
+                      <i class="bi bi-slash-circle"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-6 col-lg-3">
+                <div class="obs-card">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                      <div class="obs-kpi-value" id="kpi-whitelisted">--</div>
+                      <div class="obs-kpi-label">IPs Whitelisted</div>
+                    </div>
+                    <div class="obs-kpi-icon" style="background:rgba(34,197,94,0.1);color:#22c55e;">
+                      <i class="bi bi-check-circle"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div class="col-6 col-lg-3">
+                <div class="obs-card">
+                  <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                      <div class="obs-kpi-value" id="kpi-bloqueados-hoy">--</div>
+                      <div class="obs-kpi-label">Bloqueados Hoy</div>
+                    </div>
+                    <div class="obs-kpi-icon" style="background:rgba(249,115,22,0.1);color:#f97316;">
+                      <i class="bi bi-shield-x"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="row g-3 mb-4">
+              <div class="col-lg-6">
+                <div class="obs-card">
+                  <div class="obs-section-title">Ataques por Hora (24h)</div>
+                  <div class="chart-container"><canvas id="chart-ataques-hora"></canvas></div>
+                </div>
+              </div>
+              <div class="col-lg-6">
+                <div class="obs-card">
+                  <div class="obs-section-title">Tipos de Ataque</div>
+                  <div class="chart-container"><canvas id="chart-tipos-ataque"></canvas></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Blacklist -->
+            <div class="obs-card mb-4">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="obs-section-title mb-0">Blacklist</div>
+                <div class="d-flex gap-2">
+                  <a href="#" id="btn-export-blacklist" class="btn btn-sm" style="background:rgba(255,255,255,0.04);color:#94a3b8;border:1px solid rgba(255,255,255,0.08);border-radius:8px;font-size:0.78rem;">
+                    <i class="bi bi-download me-1"></i>CSV
+                  </a>
+                  <button class="btn btn-sm" data-bs-toggle="modal" data-bs-target="#modalBlacklist" style="background:#ef4444;color:#fff;border-radius:8px;font-weight:600;font-size:0.78rem;">
+                    <i class="bi bi-plus-circle me-1"></i>Agregar IP
+                  </button>
+                </div>
+              </div>
+              <div class="table-responsive">
+                <table class="obs-table w-100" id="tabla-blacklist">
+                  <thead>
+                    <tr>
+                      <th>IP</th><th>Razon</th><th>Duracion</th><th>Fecha Bloqueo</th><th>Expira</th><th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Whitelist -->
+            <div class="obs-card">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="obs-section-title mb-0">Whitelist</div>
+                <div class="d-flex gap-2">
+                  <a href="#" id="btn-export-whitelist" class="btn btn-sm" style="background:rgba(255,255,255,0.04);color:#94a3b8;border:1px solid rgba(255,255,255,0.08);border-radius:8px;font-size:0.78rem;">
+                    <i class="bi bi-download me-1"></i>CSV
+                  </a>
+                  <button class="btn btn-sm" data-bs-toggle="modal" data-bs-target="#modalWhitelist" style="background:#22c55e;color:#fff;border-radius:8px;font-weight:600;font-size:0.78rem;">
+                    <i class="bi bi-plus-circle me-1"></i>Agregar IP
+                  </button>
+                </div>
+              </div>
+              <div class="table-responsive">
+                <table class="obs-table w-100" id="tabla-whitelist">
+                  <thead>
+                    <tr>
+                      <th>IP</th><th>Descripcion</th><th>Fecha Agregado</th><th>Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+        </div><!-- /tab-content -->
+
+      </div>
+    </main>
+  </div>
+
+  <!-- ===================== MODALS ===================== -->
+
+  <!-- Modal Blacklist -->
+  <div class="modal fade" id="modalBlacklist" tabindex="-1" aria-labelledby="modalBlacklistLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content" style="background:#1e2235;border:1px solid rgba(255,255,255,0.1);color:#e2e8f0;">
+        <div class="modal-header" style="border-bottom:1px solid rgba(255,255,255,0.06);">
+          <h5 class="modal-title" id="modalBlacklistLabel"><i class="bi bi-slash-circle me-2" style="color:#ef4444;"></i>Agregar IP a Blacklist</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <form id="form-blacklist">
+            <div class="mb-3">
+              <label for="blacklist-ip" class="form-label" style="font-size:0.82rem;color:#94a3b8;">Direccion IP</label>
+              <input type="text" class="form-control" id="blacklist-ip" placeholder="192.168.1.1" required
+                style="background:#0f172a;border:1px solid rgba(255,255,255,0.1);color:#e2e8f0;">
+            </div>
+            <div class="mb-3">
+              <label for="blacklist-razon" class="form-label" style="font-size:0.82rem;color:#94a3b8;">Razon</label>
+              <input type="text" class="form-control" id="blacklist-razon" placeholder="Brute force, DDoS, etc." required
+                style="background:#0f172a;border:1px solid rgba(255,255,255,0.1);color:#e2e8f0;">
+            </div>
+            <div class="mb-3">
+              <label for="blacklist-duracion" class="form-label" style="font-size:0.82rem;color:#94a3b8;">Duracion (horas, 0 = permanente)</label>
+              <input type="number" class="form-control" id="blacklist-duracion" value="24" min="0"
+                style="background:#0f172a;border:1px solid rgba(255,255,255,0.1);color:#e2e8f0;">
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer" style="border-top:1px solid rgba(255,255,255,0.06);">
+          <button type="button" class="btn btn-sm" data-bs-dismiss="modal" style="color:#94a3b8;">Cancelar</button>
+          <button type="submit" form="form-blacklist" class="btn btn-sm" id="btn-submit-blacklist" style="background:#ef4444;color:#fff;border-radius:8px;font-weight:600;">
+            <i class="bi bi-slash-circle me-1"></i>Bloquear IP
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Whitelist -->
+  <div class="modal fade" id="modalWhitelist" tabindex="-1" aria-labelledby="modalWhitelistLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content" style="background:#1e2235;border:1px solid rgba(255,255,255,0.1);color:#e2e8f0;">
+        <div class="modal-header" style="border-bottom:1px solid rgba(255,255,255,0.06);">
+          <h5 class="modal-title" id="modalWhitelistLabel"><i class="bi bi-check-circle me-2" style="color:#22c55e;"></i>Agregar IP a Whitelist</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+        </div>
+        <div class="modal-body">
+          <form id="form-whitelist">
+            <div class="mb-3">
+              <label for="whitelist-ip" class="form-label" style="font-size:0.82rem;color:#94a3b8;">Direccion IP</label>
+              <input type="text" class="form-control" id="whitelist-ip" placeholder="192.168.1.1" required
+                style="background:#0f172a;border:1px solid rgba(255,255,255,0.1);color:#e2e8f0;">
+            </div>
+            <div class="mb-3">
+              <label for="whitelist-descripcion" class="form-label" style="font-size:0.82rem;color:#94a3b8;">Descripcion</label>
+              <input type="text" class="form-control" id="whitelist-descripcion" placeholder="Oficina principal, VPN, etc." required
+                style="background:#0f172a;border:1px solid rgba(255,255,255,0.1);color:#e2e8f0;">
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer" style="border-top:1px solid rgba(255,255,255,0.06);">
+          <button type="button" class="btn btn-sm" data-bs-dismiss="modal" style="color:#94a3b8;">Cancelar</button>
+          <button type="submit" form="form-whitelist" class="btn btn-sm" id="btn-submit-whitelist" style="background:#22c55e;color:#fff;border-radius:8px;font-weight:600;">
+            <i class="bi bi-check-circle me-1"></i>Agregar IP
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+  <script src="https://unpkg.com/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+  <script src="/js/observabilidad.js"></script>
+  <script src="/js/observabilidad-mapa.js"></script>
+</body>
+</html>
