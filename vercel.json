@@ -11,5 +11,11 @@
       "src": "/(.*)",
       "dest": "/api/index.js"
     }
+  ],
+  "crons": [
+    { "path": "/api/cron/kpi-snapshot", "schedule": "*/5 * * * *" },
+    { "path": "/api/cron/metrics-infra", "schedule": "*/5 * * * *" },
+    { "path": "/api/cron/attack-detection", "schedule": "* * * * *" },
+    { "path": "/api/cron/cleanup", "schedule": "0 3 * * *" }
   ]
 }

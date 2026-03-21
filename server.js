@@ -231,6 +231,10 @@ const pagosRoutes      = require('./routes/pagos');
 const legalRoutes      = require('./routes/legal');
 const contratosRoutes  = require('./routes/contratos');
 const firmarRoutes     = require('./routes/firmar');
+const cronRoutes       = require('./routes/cron');
+
+// Cron endpoints (Vercel Cron Jobs — auth via CRON_SECRET header)
+app.use('/api/cron', cronRoutes);
 
 // Honeypot: detect automated scanners hitting common attack paths
 ['/wp-admin', '/wp-login.php', '/.env', '/config.php', '/phpmyadmin', '/admin.php'].forEach(p => {
