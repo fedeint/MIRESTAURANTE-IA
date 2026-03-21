@@ -255,6 +255,107 @@ async function ensureSchema() {
             await pgNativeQuery('CREATE INDEX IF NOT EXISTS idx_audit_tenant_date ON audit_log(tenant_id, created_at DESC)');
             await pgNativeQuery('CREATE INDEX IF NOT EXISTS idx_login_history_user ON login_history(user_id, created_at DESC)');
         } catch (_) {}
+
+        // ── Observability tables (012_observabilidad safety net) ──────────────
+        try {
+            await pgNativeQuery(`CREATE TABLE IF NOT EXISTS modulo_usage (
+                id SERIAL PRIMARY KEY,
+                tenant_id INT NOT NULL,
+                modulo VARCHAR(50) NOT NULL,
+                fecha DATE NOT NULL,
+                hits INT DEFAULT 1,
+                UNIQUE(tenant_id, modulo, fecha)
+            )`);
+            await pgNativeQuery(`CREATE TABLE IF NOT EXISTS kpi_snapshots (
+                id SERIAL PRIMARY KEY,
+                tipo VARCHAR(50) NOT NULL UNIQUE,
+                datos JSONB,
+                calculado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )`);
+            await pgNativeQuery(`CREATE TABLE IF NOT EXISTS alertas_estado (
+                id SERIAL PRIMARY KEY,
+                regla VARCHAR(80) NOT NULL UNIQUE,
+                ultimo_envio TIMESTAMP,
+                conteo INT DEFAULT 0,
+                silenciado_hasta TIMESTAMP
+            )`);
+            await pgNativeQuery(`CREATE TABLE IF NOT EXISTS alertas_configuracion (
+                id SERIAL PRIMARY KEY,
+                regla VARCHAR(80) NOT NULL UNIQUE,
+                umbral JSONB,
+                severidad VARCHAR(20) DEFAULT 'media',
+                canal VARCHAR(30) DEFAULT 'email',
+                activa BOOLEAN DEFAULT true,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )`);
+            await pgNativeQuery(`CREATE TABLE IF NOT EXISTS ip_blacklist (
+                id SERIAL PRIMARY KEY,
+                ip VARCHAR(45) NOT NULL UNIQUE,
+                razon VARCHAR(200),
+                tipo VARCHAR(30) DEFAULT 'auto',
+                bloqueado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                expira_en TIMESTAMP,
+                hits_bloqueados INT DEFAULT 0
+            )`);
+            await pgNativeQuery(`CREATE TABLE IF NOT EXISTS ip_whitelist (
+                id SERIAL PRIMARY KEY,
+                ip VARCHAR(45) NOT NULL UNIQUE,
+                descripcion VARCHAR(200),
+                agregado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )`);
+            await pgNativeQuery(`CREATE TABLE IF NOT EXISTS ataques_log (
+                id SERIAL PRIMARY KEY,
+                ip VARCHAR(45) NOT NULL,
+                tipo VARCHAR(50) NOT NULL,
+                ruta VARCHAR(300),
+                requests_por_minuto INT,
+                pais VARCHAR(5),
+                ciudad VARCHAR(100),
+                lat DECIMAL(10,7),
+                lon DECIMAL(10,7),
+                accion_tomada VARCHAR(50),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )`);
+            await pgNativeQuery(`CREATE UNLOGGED TABLE IF NOT EXISTS request_counts (
+                id BIGSERIAL PRIMARY KEY,
+                ip VARCHAR(45) NOT NULL,
+                ruta VARCHAR(300),
+                status_code SMALLINT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )`);
+            await pgNativeQuery(`CREATE TABLE IF NOT EXISTS session_geo (
+                id SERIAL PRIMARY KEY,
+                session_id VARCHAR(128) NOT NULL UNIQUE,
+                tenant_id INT,
+                usuario_id INT,
+                ip VARCHAR(45),
+                pais VARCHAR(5),
+                ciudad VARCHAR(100),
+                lat DECIMAL(10,7),
+                lon DECIMAL(10,7),
+                last_seen TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )`);
+        } catch (_) {}
+
+        // ALTER tenants — add geo columns (ignore if already exist)
+        try { await pgNativeQuery(`ALTER TABLE tenants ADD COLUMN geo_lat DECIMAL(10,7)`); } catch (_) {}
+        try { await pgNativeQuery(`ALTER TABLE tenants ADD COLUMN geo_lon DECIMAL(10,7)`); } catch (_) {}
+
+        // Observability indexes
+        const obsIndexes = [
+            'CREATE INDEX IF NOT EXISTS idx_facturas_fecha_tenant ON facturas(fecha, tenant_id)',
+            'CREATE INDEX IF NOT EXISTS idx_pedidos_fecha_tenant ON pedidos(fecha, tenant_id)',
+            'CREATE INDEX IF NOT EXISTS idx_audit_log_created ON audit_log(created_at)',
+            'CREATE INDEX IF NOT EXISTS idx_request_counts_ip_created ON request_counts(ip, created_at)',
+            'CREATE INDEX IF NOT EXISTS idx_request_counts_created ON request_counts(created_at)',
+            'CREATE INDEX IF NOT EXISTS idx_ataques_log_ip ON ataques_log(ip, created_at)',
+            'CREATE INDEX IF NOT EXISTS idx_modulo_usage_tenant_fecha ON modulo_usage(tenant_id, fecha)',
+            'CREATE INDEX IF NOT EXISTS idx_session_geo_tenant ON session_geo(tenant_id, last_seen)',
+            'CREATE INDEX IF NOT EXISTS idx_ip_blacklist_expira ON ip_blacklist(expira_en)',
+        ];
+        for (const sql of obsIndexes) {
+            try { await pgNativeQuery(sql); } catch (_) {}
+        }
     } catch (err) {
         console.error('ensureSchema() falló:', err.message || err);
     }
