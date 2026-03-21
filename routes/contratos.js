@@ -18,7 +18,7 @@ router.get('/lista', async (req, res) => {
         const [rows] = await db.query(
             `SELECT id, nro_contrato, nombre_cliente, razon_social, dni, ruc, email, estado,
                     token, firmado_at, email_enviado_at, created_at
-             FROM contratos WHERE tenant_id = $1 ORDER BY created_at DESC`,
+             FROM contratos WHERE tenant_id = ? ORDER BY created_at DESC`,
             [req.tenantId || 1]
         );
         res.json(rows);
@@ -62,7 +62,7 @@ router.post('/generar', async (req, res) => {
 
             const [[contrato]] = await db.query(
                 `INSERT INTO contratos (tenant_id, nro_contrato, nombre_cliente, razon_social, dni, ruc, email, telefono, direccion, nombre_establecimiento, nombre_representante, cargo_representante, dni_representante, pdf_original, pdf_hash, created_by)
-                 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
+                 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
                  RETURNING id, token, nro_contrato`,
                 [req.tenantId||1, nroContrato, nombre_cliente, razon_social||null, dni, ruc||null, email||null, telefono||null, direccion||null, nombre_establecimiento||null, nombre_representante||null, cargo_representante||null, dni_representante||null, pdfBuffer, pdfHash, req.session?.user?.id||null]
             );
@@ -72,7 +72,7 @@ router.post('/generar', async (req, res) => {
             let emailEnviado = false;
             if (email) {
                 emailEnviado = await sendSigningLink({ to: email, nombreCliente: nombre_cliente, nroContrato: contrato.nro_contrato, link });
-                if (emailEnviado) await db.query('UPDATE contratos SET email_enviado_at = NOW() WHERE id = $1', [contrato.id]);
+                if (emailEnviado) await db.query('UPDATE contratos SET email_enviado_at = NOW() WHERE id = ?', [contrato.id]);
             }
             res.json({ id: contrato.id, token: contrato.token, nro_contrato: contrato.nro_contrato, link, email_enviado: emailEnviado });
         } catch (err) {
@@ -679,7 +679,7 @@ router.post('/generar', async (req, res) => {
 router.post('/:id/reenviar', async (req, res) => {
     try {
         const [rows] = await db.query(
-            'SELECT id, token, nro_contrato, nombre_cliente, email, estado FROM contratos WHERE id = $1 AND tenant_id = $2',
+            'SELECT id, token, nro_contrato, nombre_cliente, email, estado FROM contratos WHERE id = ? AND tenant_id = ?',
             [req.params.id, req.tenantId || 1]
         );
         if (!rows.length) return res.status(404).json({ error: 'Contrato no encontrado' });
@@ -688,7 +688,7 @@ router.post('/:id/reenviar', async (req, res) => {
         const baseUrl = `${req.protocol}://${req.get('host')}`;
         const link = `${baseUrl}/firmar/${c.token}`;
         const ok = await sendSigningLink({ to: c.email, nombreCliente: c.nombre_cliente, nroContrato: c.nro_contrato, link });
-        if (ok) await db.query('UPDATE contratos SET email_enviado_at = NOW() WHERE id = $1', [c.id]);
+        if (ok) await db.query('UPDATE contratos SET email_enviado_at = NOW() WHERE id = ?', [c.id]);
         res.json({ ok, message: ok ? 'Email reenviado' : 'Error al enviar email' });
     } catch (err) {
         console.error('Reenviar error:', err.message);
@@ -701,7 +701,7 @@ router.get('/:id/descargar/:tipo', async (req, res) => {
     try {
         const col = req.params.tipo === 'firmado' ? 'pdf_firmado' : 'pdf_original';
         const [rows] = await db.query(
-            `SELECT ${col}, nro_contrato, nombre_cliente FROM contratos WHERE id = $1 AND tenant_id = $2`,
+            `SELECT ${col}, nro_contrato, nombre_cliente FROM contratos WHERE id = ? AND tenant_id = ?`,
             [req.params.id, req.tenantId || 1]
         );
         if (!rows.length || !rows[0][col]) return res.status(404).json({ error: 'PDF no encontrado' });

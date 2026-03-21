@@ -6,7 +6,7 @@ const { PDFDocument, rgb } = require('pdf-lib');
 const db = require('../db');
 const { sendSignedContract } = require('../lib/mailer');
 
-const PENDING_CONTRACT_QUERY = `SELECT * FROM contratos WHERE token = $1 AND estado = 'pendiente' AND token_expires_at > NOW()`;
+const PENDING_CONTRACT_QUERY = `SELECT * FROM contratos WHERE token = ? AND estado = 'pendiente' AND token_expires_at > NOW()`;
 
 const submitLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -129,15 +129,15 @@ router.post('/:token/submit', submitLimiter, async (req, res) => {
         const clientIp = req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.ip;
         const userAgent = req.headers['user-agent'] || '';
         await db.query(
-            `UPDATE contratos SET pdf_firmado=$1, firma_png=$2, estado='firmado',
-                    firmado_ip=$3, firmado_user_agent=$4, firmado_at=NOW() WHERE id=$5`,
+            `UPDATE contratos SET pdf_firmado=?, firma_png=?, estado='firmado',
+                    firmado_ip=?, firmado_user_agent=?, firmado_at=NOW() WHERE id=?`,
             [pdfFirmado, sigBuffer, clientIp, userAgent, contrato.id]
         );
 
         // Send signed PDF by email
         try {
             await sendSignedContract(contrato, pdfFirmado);
-            await db.query('UPDATE contratos SET email_enviado_at=NOW() WHERE id=$1', [contrato.id]);
+            await db.query('UPDATE contratos SET email_enviado_at=NOW() WHERE id=?', [contrato.id]);
         } catch (emailErr) {
             console.error('Error sending signed contract email:', emailErr);
             // Continue — signing succeeded even if email fails
