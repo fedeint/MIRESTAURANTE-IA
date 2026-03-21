@@ -89,11 +89,11 @@ router.post('/:token/submit', submitLimiter, async (req, res) => {
 
         // Embed the signature PNG
         const sigImage = await pdfDoc.embedPng(sigBuffer);
-        const sigDims = sigImage.scaleToFit(150, 60);
+        const sigDims = sigImage.scaleToFit(120, 50);
 
-        // Position on the RIGHT side (client section)
-        const sigX = width / 2 + 30;
-        const sigY = 120;
+        // Position on the RIGHT side (client section), aligned with signature line area
+        const sigX = width / 2 + 40;
+        const sigY = 185;
 
         lastPage.drawImage(sigImage, {
             x: sigX,

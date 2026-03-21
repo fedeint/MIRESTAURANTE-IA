@@ -31,7 +31,7 @@ router.get('/lista', async (req, res) => {
 // POST /api/contratos/generar - Generar PDF del contrato
 router.post('/generar', async (req, res) => {
     try {
-    const { nombre_cliente, ruc, dni, razon_social, direccion, telefono, email, nombre_establecimiento, nombre_representante, cargo_representante, dni_representante } = req.body;
+    const { nombre_cliente, ruc, dni, razon_social, direccion, telefono, email, nombre_establecimiento, nombre_representante, cargo_representante, dni_representante, modalidad_pago, monto_total, cuotas, notas_pago } = req.body;
 
     if (!nombre_cliente || !dni) {
         return res.status(400).json({ error: 'Nombre y DNI son obligatorios' });
@@ -301,9 +301,47 @@ router.post('/generar', async (req, res) => {
     item('Mantenimiento de integraciones (SUNAT, WhatsApp)');
 
     doc.moveDown(0.3);
+    const montoTotalNum = parseFloat(monto_total) || 3000;
     bold('4.3. Condiciones de Pago:');
-    item('El monto total del primer ano (S/ 3,000.00) se abonara al momento de la firma del contrato.');
-    item('Pagos del Servicio Anual: anualmente, con plazo de 15 dias calendario.');
+
+    if (cuotas && cuotas.length > 0) {
+        para(`Modalidad: Pago en ${cuotas.length} cuota(s). Monto total: S/ ${montoTotalNum.toLocaleString('es-PE', {minimumFractionDigits:2})}`);
+        doc.moveDown(0.2);
+
+        checkPage(80);
+        ty = doc.y;
+        const cuotaCols = [pw * 0.15, pw * 0.25, pw * 0.35, pw * 0.25];
+        doc.rect(ml, ty, pw, 16).fill('#FF6B35');
+        doc.fontSize(8).font('Helvetica-Bold').fillColor('#fff');
+        doc.text('Cuota', ml + 5, ty + 4, { width: cuotaCols[0] });
+        doc.text('Monto', ml + cuotaCols[0] + 5, ty + 4, { width: cuotaCols[1], align: 'center' });
+        doc.text('Descripcion', ml + cuotaCols[0] + cuotaCols[1] + 5, ty + 4, { width: cuotaCols[2] });
+        doc.text('Fecha', ml + cuotaCols[0] + cuotaCols[1] + cuotaCols[2] + 5, ty + 4, { width: cuotaCols[3], align: 'center' });
+        doc.fillColor('#000');
+        ty += 16;
+
+        cuotas.forEach((c, i) => {
+            const rh = 16;
+            if (i % 2 === 0) doc.rect(ml, ty, pw, rh).fill('#FFF8F0').fillColor('#000');
+            doc.fontSize(8).font('Helvetica-Bold').text(`Cuota ${i+1}`, ml + 5, ty + 4, { width: cuotaCols[0] });
+            doc.font('Helvetica').text(`S/ ${parseFloat(c.monto).toFixed(2)}`, ml + cuotaCols[0] + 5, ty + 4, { width: cuotaCols[1], align: 'center' });
+            doc.text(c.descripcion || '-', ml + cuotaCols[0] + cuotaCols[1] + 5, ty + 4, { width: cuotaCols[2] });
+            doc.text(c.fecha || '-', ml + cuotaCols[0] + cuotaCols[1] + cuotaCols[2] + 5, ty + 4, { width: cuotaCols[3], align: 'center' });
+            ty += rh;
+        });
+        doc.y = ty + 5;
+    } else {
+        para(`Modalidad: Pago al contado. Monto total: S/ ${montoTotalNum.toLocaleString('es-PE', {minimumFractionDigits:2})}`);
+        item('El monto total se abonara al momento de la firma del contrato.');
+    }
+
+    if (notas_pago) {
+        doc.moveDown(0.2);
+        bold('Notas adicionales de pago:');
+        para(notas_pago);
+    }
+
+    doc.moveDown(0.2);
     item('Medios de pago: transferencia bancaria, deposito en cuenta o pago electronico.');
 
     // === TOKENS DALIA ===
@@ -646,7 +684,7 @@ router.post('/generar', async (req, res) => {
     // Embed firma-dignita.png on the LEFT side (dignita.tech side)
     const firmaPath = path.join(__dirname, '..', 'public', 'uploads', 'firma-dignita.png');
     if (fs.existsSync(firmaPath)) {
-        doc.image(firmaPath, ml + 40, firmaY - 60, { width: 130 });
+        doc.image(firmaPath, ml + 55, firmaY - 50, { width: 90 });
     }
 
     // Lineas de firma

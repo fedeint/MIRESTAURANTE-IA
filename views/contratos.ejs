@@ -170,6 +170,49 @@
                 </div>
             </div>
 
+            <!-- Condiciones de Pago -->
+            <div class="card border-0 shadow-sm mb-4" style="border-radius:16px;">
+                <div class="card-body p-4">
+                    <h5 class="mb-3" style="font-weight:700;color:#FF6B35;">
+                        <i class="bi bi-cash-stack me-2"></i>Condiciones de Pago
+                    </h5>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Modalidad de Pago</label>
+                            <select name="modalidad_pago" class="form-select" id="modalidadPago">
+                                <option value="contado">Pago al contado (S/ 3,000)</option>
+                                <option value="2_partes">2 cuotas</option>
+                                <option value="3_partes">3 cuotas</option>
+                                <option value="personalizado">Personalizado</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Monto Total</label>
+                            <div class="input-group">
+                                <span class="input-group-text">S/</span>
+                                <input type="number" name="monto_total" class="form-control" value="3000" step="0.01" id="montoTotal">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cuotas dinámicas -->
+                    <div id="cuotasContainer" class="mt-3" style="display:none;">
+                        <label class="form-label small fw-bold">Detalle de Cuotas</label>
+                        <div id="cuotasList"></div>
+                        <button type="button" class="btn btn-sm btn-outline-secondary mt-2" id="btnAddCuota" style="display:none;">
+                            <i class="bi bi-plus-circle me-1"></i>Agregar cuota
+                        </button>
+                    </div>
+
+                    <!-- Notas de pago -->
+                    <div class="mt-3">
+                        <label class="form-label small fw-bold">Notas de Pago <small class="text-muted fw-normal">(opcional)</small></label>
+                        <textarea name="notas_pago" class="form-control" rows="2" placeholder="Ej: Primera cuota en efectivo, segunda en vale de comida..."></textarea>
+                    </div>
+                </div>
+            </div>
+
             <!-- Botón -->
             <div class="d-grid gap-2 mb-5">
                 <button type="submit" class="btn btn-lg text-white fw-bold" style="background:linear-gradient(135deg,#FF6B35,#E55A2B);border:none;border-radius:14px;padding:0.9rem;">
@@ -219,11 +262,102 @@
         }
     });
 
+    // Cuotas dinámicas
+    const modalidadSelect = document.getElementById('modalidadPago');
+    const cuotasContainer = document.getElementById('cuotasContainer');
+    const cuotasList = document.getElementById('cuotasList');
+    const btnAddCuota = document.getElementById('btnAddCuota');
+    const montoTotal = document.getElementById('montoTotal');
+
+    function renderCuotas(numCuotas, editable) {
+        const total = parseFloat(montoTotal.value) || 3000;
+        const montoPorCuota = (total / numCuotas).toFixed(2);
+        cuotasList.innerHTML = '';
+        for (let i = 0; i < numCuotas; i++) {
+            const div = document.createElement('div');
+            div.className = 'row g-2 mb-2 align-items-center';
+            div.innerHTML = `
+                <div class="col-auto"><span class="badge bg-secondary">Cuota ${i+1}</span></div>
+                <div class="col">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text">S/</span>
+                        <input type="number" name="cuota_monto_${i}" class="form-control cuota-monto" value="${montoPorCuota}" step="0.01">
+                    </div>
+                </div>
+                <div class="col">
+                    <input type="text" name="cuota_desc_${i}" class="form-control form-control-sm" placeholder="Ej: Al firmar, A fin de mes, Vale de comida..." value="${i===0?'Al firmar contrato':''}">
+                </div>
+                <div class="col-auto">
+                    <input type="date" name="cuota_fecha_${i}" class="form-control form-control-sm">
+                </div>
+                ${editable && i >= 2 ? `<div class="col-auto"><button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest('.row').remove()"><i class="bi bi-x"></i></button></div>` : ''}
+            `;
+            cuotasList.appendChild(div);
+        }
+        cuotasContainer.style.display = 'block';
+        btnAddCuota.style.display = editable ? 'inline-block' : 'none';
+    }
+
+    modalidadSelect.addEventListener('change', function() {
+        const v = this.value;
+        if (v === 'contado') {
+            cuotasContainer.style.display = 'none';
+            cuotasList.innerHTML = '';
+        } else if (v === '2_partes') {
+            renderCuotas(2, false);
+        } else if (v === '3_partes') {
+            renderCuotas(3, false);
+        } else if (v === 'personalizado') {
+            renderCuotas(2, true);
+        }
+    });
+
+    btnAddCuota.addEventListener('click', () => {
+        const idx = cuotasList.children.length;
+        const div = document.createElement('div');
+        div.className = 'row g-2 mb-2 align-items-center';
+        div.innerHTML = `
+            <div class="col-auto"><span class="badge bg-secondary">Cuota ${idx+1}</span></div>
+            <div class="col">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text">S/</span>
+                    <input type="number" name="cuota_monto_${idx}" class="form-control cuota-monto" value="0" step="0.01">
+                </div>
+            </div>
+            <div class="col">
+                <input type="text" name="cuota_desc_${idx}" class="form-control form-control-sm" placeholder="Descripción...">
+            </div>
+            <div class="col-auto">
+                <input type="date" name="cuota_fecha_${idx}" class="form-control form-control-sm">
+            </div>
+            <div class="col-auto"><button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest('.row').remove()"><i class="bi bi-x"></i></button></div>
+        `;
+        cuotasList.appendChild(div);
+    });
+
+    montoTotal.addEventListener('change', () => {
+        const v = modalidadSelect.value;
+        if (v !== 'contado') modalidadSelect.dispatchEvent(new Event('change'));
+    });
+
     // Form submit via fetch
     document.getElementById('formContrato').addEventListener('submit', async (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
         const data = Object.fromEntries(formData.entries());
+
+        // Collect cuotas into array
+        const cuotas = [];
+        document.querySelectorAll('#cuotasList .row').forEach((row, i) => {
+            const monto = row.querySelector(`[name="cuota_monto_${i}"]`)?.value;
+            const desc = row.querySelector(`[name="cuota_desc_${i}"]`)?.value;
+            const fecha = row.querySelector(`[name="cuota_fecha_${i}"]`)?.value;
+            if (monto) cuotas.push({ monto: parseFloat(monto), descripcion: desc || '', fecha: fecha || '' });
+        });
+        if (cuotas.length) data.cuotas = cuotas;
+        // Clean up individual cuota fields
+        Object.keys(data).forEach(k => { if (k.startsWith('cuota_monto_') || k.startsWith('cuota_desc_') || k.startsWith('cuota_fecha_')) delete data[k]; });
+
         const btn = e.target.querySelector('button[type="submit"]');
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Generando...';
