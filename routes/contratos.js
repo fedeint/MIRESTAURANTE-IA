@@ -239,7 +239,7 @@ router.post('/generar', async (req, res) => {
         doc.font('Helvetica').text(p[1], ml + 110, ty + 4, { width: pw - 115 });
         ty += rh;
     });
-    doc.y = ty + 5;
+    doc.x = ml; doc.y = ty + 5;
 
     doc.moveDown(0.3);
     bold('3.3. Integraciones Incluidas:');
@@ -287,7 +287,7 @@ router.post('/generar', async (req, res) => {
         doc.font(isBold ? 'Helvetica-Bold' : 'Helvetica').text(p[1], ml + pw - 100, ty + 4, { width: 95, align: 'right' });
         ty += rh;
     });
-    doc.y = ty + 5;
+    doc.x = ml; doc.y = ty + 5;
 
     doc.moveDown(0.3);
     para('A partir del segundo ano, el Cliente abonara unicamente el Servicio Anual de Mantenimiento: S/ 700.00/ano.');
@@ -329,7 +329,7 @@ router.post('/generar', async (req, res) => {
             doc.text(c.fecha || '-', ml + cuotaCols[0] + cuotaCols[1] + cuotaCols[2] + 5, ty + 4, { width: cuotaCols[3], align: 'center' });
             ty += rh;
         });
-        doc.y = ty + 5;
+        doc.x = ml; doc.y = ty + 5;
     } else {
         para(`Modalidad: Pago al contado. Monto total: S/ ${montoTotalNum.toLocaleString('es-PE', {minimumFractionDigits:2})}`);
         item('El monto total se abonara al momento de la firma del contrato.');
@@ -396,7 +396,7 @@ router.post('/generar', async (req, res) => {
         doc.font('Helvetica').text(t.detalle, ml + colW[0] + colW[1] + 5, ty + 4, { width: colW[2] - 10 });
         ty += rh;
     });
-    doc.y = ty + 10;
+    doc.x = ml; doc.y = ty + 10;
 
     // === CAPACITACION ===
     sectionTitle('CLAUSULA SEPTIMA: CAPACITACION');
@@ -531,7 +531,7 @@ router.post('/generar', async (req, res) => {
         doc.text(p[2], ml + sunatCols[0] + sunatCols[1] + 5, ty + 4, { width: sunatCols[2], align: 'center' });
         ty += rh;
     });
-    doc.y = ty + 8;
+    doc.x = ml; doc.y = ty + 8;
 
     doc.moveDown(0.2);
     doc.fontSize(8).font('Helvetica').fillColor('#666').text('* Los precios de NubeFact son referenciales y pueden variar. Consultar directamente con el proveedor. Precios no incluyen IGV.', { align: 'center' });
@@ -594,7 +594,7 @@ router.post('/generar', async (req, res) => {
         doc.fontSize(7).text(p[3], ml + waCols[0] + waCols[1] + waCols[2] + 3, ty + 4, { width: waCols[3], align: 'center' });
         ty += rh;
     });
-    doc.y = ty + 8;
+    doc.x = ml; doc.y = ty + 8;
 
     doc.moveDown(0.2);
     doc.fontSize(8).font('Helvetica-Bold').fillColor('#25D366').text('* dignita.tech asume el costo de los primeros 500 mensajes/mes por sede como parte del Servicio Anual de Mantenimiento.', { align: 'center' });
@@ -646,7 +646,7 @@ router.post('/generar', async (req, res) => {
         doc.font('Helvetica-Bold').text(p[3], ml + resCols[0] + resCols[1] + resCols[2] + 3, ty + 4, { width: resCols[3], align: 'center' });
         ty += rh;
     });
-    doc.y = ty + 8;
+    doc.x = ml; doc.y = ty + 8;
 
     doc.moveDown(0.3);
     doc.fontSize(8).font('Helvetica').fillColor('#666').text('* Todos los precios son referenciales, no incluyen IGV (18%), y pueden variar segun el proveedor elegido y las politicas vigentes de Meta y SUNAT.', { align: 'center' });
