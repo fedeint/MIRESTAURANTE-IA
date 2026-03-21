@@ -225,4 +225,76 @@ router.get('/cleanup', async (req, res) => {
   }
 })
 
+// ---------------------------------------------------------------------------
+// Trial expiration check — daily at 8am
+// ---------------------------------------------------------------------------
+router.get('/trial-expiration', async (req, res) => {
+  try {
+    // Mark expired trials
+    const [expired] = await db.query(
+      `UPDATE tenants SET estado_trial = 'expirado'
+       WHERE estado_trial = 'activo' AND trial_fin < NOW()
+       RETURNING id, nombre`
+    )
+
+    // Send expiration emails
+    const { enviarEmailTrialExpirado } = require('../services/notificaciones-trial')
+    for (const tenant of (expired || [])) {
+      const [[user]] = await db.query(
+        'SELECT google_email, nombre FROM usuarios WHERE tenant_id = ? AND rol = ? LIMIT 1',
+        [tenant.id, 'administrador']
+      )
+      if (user?.google_email) {
+        await enviarEmailTrialExpirado(user.google_email, user.nombre)
+      }
+    }
+
+    // Cleanup: remove photos/video from approved requests older than 7 days
+    await db.query(
+      `UPDATE solicitudes_registro SET fotos = '[]'::jsonb, video_url = NULL
+       WHERE estado = 'aprobado' AND revisado_at < NOW() - INTERVAL '7 days' AND fotos != '[]'::jsonb`
+    )
+
+    logger.info('cron_trial_expiration', { expired: (expired || []).length })
+    res.json({ ok: true, expired: (expired || []).length })
+  } catch (err) {
+    logger.error('cron_trial_expiration_error', { error: err.message })
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// ---------------------------------------------------------------------------
+// Data retention cleanup — weekly (30-day retention for expired trials)
+// ---------------------------------------------------------------------------
+router.get('/trial-data-cleanup', async (req, res) => {
+  try {
+    const [stale] = await db.query(
+      `SELECT id FROM tenants
+       WHERE estado_trial = 'expirado'
+         AND trial_fin < NOW() - INTERVAL '30 days'
+         AND plan = 'free'
+         AND activo = true`
+    )
+
+    for (const tenant of (stale || [])) {
+      await db.query(
+        `UPDATE usuarios SET nombre = 'Usuario eliminado', google_email = NULL,
+         google_avatar = NULL, google_id = NULL WHERE tenant_id = ?`,
+        [tenant.id]
+      )
+      await db.query(
+        `UPDATE tenants SET activo = false, nombre = 'Tenant inactivo',
+         direccion = NULL, distrito = NULL, departamento = NULL WHERE id = ?`,
+        [tenant.id]
+      )
+    }
+
+    logger.info('cron_data_cleanup', { cleaned: (stale || []).length })
+    res.json({ ok: true, cleaned: (stale || []).length })
+  } catch (err) {
+    logger.error('cron_data_cleanup_error', { error: err.message })
+    res.status(500).json({ error: err.message })
+  }
+})
+
 module.exports = router

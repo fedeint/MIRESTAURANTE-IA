@@ -14,6 +14,8 @@
   ],
   "crons": [
     { "path": "/api/cron/kpi-snapshot", "schedule": "0 8 * * *" },
-    { "path": "/api/cron/cleanup", "schedule": "0 3 * * *" }
+    { "path": "/api/cron/cleanup", "schedule": "0 3 * * *" },
+    { "path": "/api/cron/trial-expiration", "schedule": "0 8 * * *" },
+    { "path": "/api/cron/trial-data-cleanup", "schedule": "0 3 * * 0" }
   ]
 }
