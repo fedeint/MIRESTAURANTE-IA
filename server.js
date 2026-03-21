@@ -123,6 +123,17 @@ app.use(attachTenant);
 // Hacer disponible el usuario en EJS como "user"
 app.use(attachUserToLocals);
 
+// Observability middlewares (after tenant + user are resolved)
+const ipGuard = require('./middleware/ipGuard');
+const telemetry = require('./middleware/telemetry');
+const moduloUsage = require('./middleware/moduloUsage');
+const sessionGeo = require('./middleware/sessionGeo');
+
+app.use(ipGuard);
+app.use(telemetry);
+app.use(moduloUsage);
+app.use(sessionGeo);
+
 // Make reqPath available in all views
 app.use((req, res, next) => {
     res.locals.reqPath = req.path;
