@@ -219,6 +219,7 @@ const soporteRoutes    = require('./routes/soporte');
 const pagosRoutes      = require('./routes/pagos');
 const legalRoutes      = require('./routes/legal');
 const contratosRoutes  = require('./routes/contratos');
+const firmarRoutes     = require('./routes/firmar');
 
 // Honeypot: detect automated scanners hitting common attack paths
 ['/wp-admin', '/wp-login.php', '/.env', '/config.php', '/phpmyadmin', '/admin.php'].forEach(p => {
@@ -252,6 +253,10 @@ app.get('/terminos', (req, res) => res.render('legal/terminos'));
 
 // Pagos Izipay (public - no auth needed so landing page can initiate payments)
 app.use('/api/pagos', pagosRoutes);
+
+// Firma electronica de contratos (public - no auth, rate limited)
+const firmaLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 15, message: { error: 'Demasiados intentos.' } });
+app.use('/firmar', firmaLimiter, firmarRoutes);
 
 // Onboarding wizard (admin only, before the main dashboard guard)
 app.use('/onboarding', requireAuth, requireRole('administrador'), onboardingRoutes);
