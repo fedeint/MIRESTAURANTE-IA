@@ -232,6 +232,7 @@ const legalRoutes      = require('./routes/legal');
 const contratosRoutes  = require('./routes/contratos');
 const firmarRoutes     = require('./routes/firmar');
 const cronRoutes       = require('./routes/cron');
+const observabilidadRoutes = require('./routes/observabilidad');
 
 // Cron endpoints (Vercel Cron Jobs — auth via CRON_SECRET header)
 app.use('/api/cron', cronRoutes);
@@ -771,6 +772,9 @@ app.get('/ranking', requireRole('administrador'), async (req, res) => {
     } catch (e) { console.error('Ranking stats error:', e.message); }
     res.render('ranking', { stats });
 });
+
+// Observabilidad panel (superadmin only)
+app.use('/superadmin/observabilidad', requireAuth, requireRole('superadmin'), observabilidadRoutes);
 
 // Superadmin panel (superadmin role only - cross-tenant)
 app.use('/superadmin', requireAuth, requireRole('superadmin'), superadminRoutes);
