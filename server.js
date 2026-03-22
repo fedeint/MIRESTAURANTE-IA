@@ -64,6 +64,20 @@ const apiLimiter = rateLimit({
     max: 120,
     message: { error: 'Demasiadas solicitudes. Intenta en un minuto.' }
 });
+// Rate limit agresivo para tenants en trial (30 req/min vs 120 normal)
+const trialApiLimiter = rateLimit({
+    windowMs: 60 * 1000,
+    max: 30,
+    message: { error: 'Demasiadas solicitudes. Intenta en un minuto.' },
+    keyGenerator: (req) => `trial-${req.tenantId || req.ip}`,
+    skip: (req) => {
+        const user = req.session?.user;
+        if (!user || user.auth_provider === 'local' || !user.auth_provider) return true;
+        const tenant = req.tenant;
+        if (!tenant || tenant.plan === 'pro' || tenant.plan === 'enterprise') return true;
+        return tenant.estado_trial !== 'activo';
+    }
+});
 
 // Aumentar el límite de tamaño del cuerpo de la petición
 app.use(express.json({ limit: '50mb' }));
@@ -123,6 +137,11 @@ app.use(attachTenant);
 // Hacer disponible el usuario en EJS como "user"
 app.use(attachUserToLocals);
 
+// Passport (Google OAuth)
+const passport = require('passport');
+app.use(passport.initialize());
+app.use(passport.session());
+
 // Observability middlewares (after tenant + user are resolved)
 const ipGuard = require('./middleware/ipGuard');
 const telemetry = require('./middleware/telemetry');
@@ -133,6 +152,11 @@ app.use(ipGuard);
 app.use(telemetry);
 app.use(moduloUsage);
 app.use(sessionGeo);
+
+// Trial guard (after tenant + user resolved)
+const { requireTrialActivo, blockTrialExports } = require('./middleware/requireTrial');
+app.use(requireTrialActivo);
+app.use(blockTrialExports);
 
 // Make reqPath available in all views
 app.use((req, res, next) => {
@@ -255,8 +279,14 @@ app.use('/api/cron', cronRoutes);
 app.post('/login', loginLimiter); // rate limit login attempts
 app.use(authRoutes);
 
-// Global API rate limiter
+// Google Auth routes (public, rate limited)
+const googleAuthRoutes = require('./routes/google-auth');
+const googleAuthLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 10, message: { error: 'Demasiados intentos de registro.' } });
+app.use('/auth', googleAuthLimiter, googleAuthRoutes);
+
+// Global API rate limiter (+ trial rate limit for free trial tenants)
 app.use('/api/', apiLimiter);
+app.use('/api/', trialApiLimiter);
 
 // ── Legal routes (PUBLIC — no auth required) ──────────────────────────────
 // Libro de Reclamaciones (Ley 32495, Peru - INDECOPI required)
@@ -276,6 +306,27 @@ app.use('/firmar', firmaLimiter, firmarRoutes);
 
 // Onboarding wizard (admin only, before the main dashboard guard)
 app.use('/onboarding', requireAuth, requireRole('administrador'), onboardingRoutes);
+
+// Pantallas de estado del trial (requieren auth pero NO trial activo)
+app.get('/espera-verificacion', requireAuth, async (req, res) => {
+    const tenantId = req.tenantId || req.session?.user?.tenant_id;
+    try {
+        const [[solicitud]] = await db.query(
+            `SELECT estado, motivo_rechazo, intento, created_at FROM solicitudes_registro
+             WHERE tenant_id = ? ORDER BY created_at DESC LIMIT 1`, [tenantId]
+        );
+        res.render('espera-verificacion', {
+            solicitud: solicitud || {},
+            email: req.session?.user?.google_email || req.session?.user?.usuario
+        });
+    } catch (e) {
+        res.render('espera-verificacion', { solicitud: {}, email: req.session?.user?.usuario });
+    }
+});
+
+app.get('/trial-expirado', requireAuth, (req, res) => {
+    res.render('trial-expirado');
+});
 
 // Landing page (always public)
 app.get('/landing', (req, res) => {

@@ -10,7 +10,7 @@ async function resolveTenant(subdominio) {
 
     try {
         const [[tenant]] = await db.query(
-            'SELECT id, nombre, subdominio, plan, activo FROM tenants WHERE subdominio = ? AND activo = true LIMIT 1',
+            'SELECT id, nombre, subdominio, plan, activo, estado_trial, trial_inicio, trial_fin FROM tenants WHERE subdominio = ? AND activo = true LIMIT 1',
             [subdominio]
         );
         if (tenant) {

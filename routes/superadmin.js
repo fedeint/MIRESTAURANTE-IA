@@ -564,4 +564,55 @@ router.get('/audit-log', async (req, res) => {
   }
 });
 
+// ---------------------------------------------------------------------------
+// Solicitudes de registro (onboarding trial)
+// ---------------------------------------------------------------------------
+const { getSolicitudesPendientes, aprobarSolicitud, rechazarSolicitud } = require('../services/verificacion');
+const { enviarEmailAprobacion, enviarEmailRechazo, notificarSuperadminWhatsApp } = require('../services/notificaciones-trial');
+
+// GET /superadmin/solicitudes — List pending verification requests
+router.get('/solicitudes', async (req, res) => {
+  try {
+    const pendientes = await getSolicitudesPendientes();
+    res.json({ solicitudes: pendientes });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /superadmin/solicitudes/:id/aprobar
+router.post('/solicitudes/:id/aprobar', async (req, res) => {
+  try {
+    const result = await aprobarSolicitud(Number(req.params.id), req.session.user.id);
+    if (result.error) return res.status(400).json(result);
+
+    // Send approval notification
+    if (result.email) {
+      enviarEmailAprobacion(result.email, result.nombre).catch(() => {});
+    }
+
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /superadmin/solicitudes/:id/rechazar
+router.post('/solicitudes/:id/rechazar', async (req, res) => {
+  try {
+    const { motivo } = req.body;
+    const result = await rechazarSolicitud(Number(req.params.id), req.session.user.id, motivo);
+    if (result.error) return res.status(400).json(result);
+
+    // Send rejection notification
+    if (result.email) {
+      enviarEmailRechazo(result.email, result.nombre, motivo).catch(() => {});
+    }
+
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;

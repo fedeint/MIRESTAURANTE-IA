@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Configura tu Restaurante - dignita.tech</title>
+  <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'DM Sans', system-ui, sans-serif; background: #f8f9fa; min-height: 100vh; }
+    .wizard-container { max-width: 1100px; margin: 0 auto; padding: 2rem 1rem; }
+
+    /* Progress bar */
+    .progress-steps { display: flex; justify-content: center; gap: 0.5rem; margin-bottom: 2rem; }
+    .progress-step { display: flex; align-items: center; gap: 0.5rem; }
+    .step-circle {
+      width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center;
+      justify-content: center; font-weight: 700; font-size: 0.85rem;
+      border: 2px solid #dee2e6; color: #6c757d; background: #fff; transition: all 0.3s;
+    }
+    .step-circle.active { border-color: #4f46e5; color: #fff; background: #4f46e5; }
+    .step-circle.completed { border-color: #10b981; color: #fff; background: #10b981; }
+    .step-label { font-size: 0.8rem; color: #6c757d; display: none; }
+    @media(min-width:768px) { .step-label { display: inline; } }
+    .step-connector { width: 30px; height: 2px; background: #dee2e6; margin: 0 0.25rem; }
+    .step-connector.completed { background: #10b981; }
+
+    /* Form sections */
+    .wizard-step { display: none; }
+    .wizard-step.active { display: block; }
+
+    /* DalIA panel responsive */
+    @media(max-width:767px) {
+      #dalia-panel { display: none !important; }
+      #dalia-mobile-toggle { display: flex !important; align-items: center; justify-content: center; }
+    }
+    @media(min-width:768px) {
+      #dalia-mobile-toggle { display: none !important; }
+      #dalia-mobile-overlay { display: none !important; }
+    }
+
+    /* Google Maps */
+    #map-container { height: 350px; border-radius: 0.5rem; overflow: hidden; border: 1px solid #dee2e6; }
+
+    /* File upload preview */
+    .preview-grid { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.5rem; }
+    .preview-item { position: relative; width: 100px; height: 100px; border-radius: 0.5rem; overflow: hidden; border: 1px solid #dee2e6; }
+    .preview-item img { width: 100%; height: 100%; object-fit: cover; }
+    .preview-item .remove-btn { position: absolute; top: 2px; right: 2px; background: rgba(0,0,0,0.6); color: #fff; border: none; border-radius: 50%; width: 22px; height: 22px; font-size: 0.7rem; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="wizard-container">
+    <!-- Header -->
+    <div class="text-center mb-4">
+      <h4 class="fw-bold mb-1"><i class="bi bi-stars text-primary me-2"></i>Configura tu Restaurante</h4>
+      <p class="text-muted mb-0">Completa estos pasos para comenzar tu prueba gratuita de 5 días</p>
+    </div>
+
+    <!-- Progress Steps -->
+    <div class="progress-steps" id="progress-steps">
+      <div class="progress-step">
+        <div class="step-circle active" data-step="1">1</div>
+        <span class="step-label">Datos</span>
+      </div>
+      <div class="step-connector"></div>
+      <div class="progress-step">
+        <div class="step-circle" data-step="2">2</div>
+        <span class="step-label">Ubicación</span>
+      </div>
+      <div class="step-connector"></div>
+      <div class="progress-step">
+        <div class="step-circle" data-step="3">3</div>
+        <span class="step-label">Verificación</span>
+      </div>
+      <div class="step-connector"></div>
+      <div class="progress-step">
+        <div class="step-circle" data-step="4">4</div>
+        <span class="step-label">Operaciones</span>
+      </div>
+      <div class="step-connector"></div>
+      <div class="progress-step">
+        <div class="step-circle" data-step="5">5</div>
+        <span class="step-label">Equipo</span>
+      </div>
+    </div>
+
+    <div class="row g-4">
+      <!-- Left: Form -->
+      <div class="col-md-8">
+        <form id="onboarding-form" enctype="multipart/form-data">
+
+          <!-- PASO 1: Datos del negocio -->
+          <div class="wizard-step active" data-step="1">
+            <div class="card shadow-sm border-0">
+              <div class="card-body p-4">
+                <h5 class="fw-bold mb-3"><i class="bi bi-shop me-2"></i>Datos del Negocio</h5>
+                <div class="mb-3">
+                  <label class="form-label fw-semibold">Nombre del restaurante <span class="text-danger">*</span></label>
+                  <input type="text" name="nombre_empresa" class="form-control" required placeholder="Ej: Restaurante El Buen Sabor">
+                </div>
+                <div class="mb-3">
+                  <label class="form-label fw-semibold">RUC <small class="text-muted">(opcional)</small></label>
+                  <input type="text" name="ruc" class="form-control" maxlength="11" pattern="[0-9]{11}" placeholder="20XXXXXXXXX">
+                </div>
+                <div class="mb-3">
+                  <label class="form-label fw-semibold">Teléfono <small class="text-muted">(opcional)</small></label>
+                  <input type="tel" name="telefono" class="form-control" placeholder="999 888 777">
+                </div>
+                <div class="mb-3">
+                  <label class="form-label fw-semibold">Logo <small class="text-muted">(opcional, JPG/PNG, máx 2MB)</small></label>
+                  <input type="file" name="logo" class="form-control" accept=".jpg,.jpeg,.png">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- PASO 2: Ubicación -->
+          <div class="wizard-step" data-step="2">
+            <div class="card shadow-sm border-0">
+              <div class="card-body p-4">
+                <h5 class="fw-bold mb-3"><i class="bi bi-geo-alt me-2"></i>Ubicación de tu Local</h5>
+                <div class="mb-3">
+                  <label class="form-label fw-semibold">Dirección <span class="text-danger">*</span></label>
+                  <input type="text" id="direccion-input" name="direccion" class="form-control" required placeholder="Busca tu dirección...">
+                </div>
+                <div id="map-container" class="mb-3"></div>
+                <input type="hidden" name="latitud" id="latitud">
+                <input type="hidden" name="longitud" id="longitud">
+                <input type="hidden" name="distrito" id="distrito">
+                <input type="hidden" name="departamento" id="departamento">
+                <div class="row">
+                  <div class="col-6">
+                    <small class="text-muted">Distrito: <span id="distrito-display">-</span></small>
+                  </div>
+                  <div class="col-6">
+                    <small class="text-muted">Departamento: <span id="departamento-display">-</span></small>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- PASO 3: Verificación -->
+          <div class="wizard-step" data-step="3">
+            <div class="card shadow-sm border-0">
+              <div class="card-body p-4">
+                <h5 class="fw-bold mb-3"><i class="bi bi-camera me-2"></i>Verificación del Negocio</h5>
+                <div class="alert alert-info small">
+                  <i class="bi bi-info-circle me-1"></i>
+                  Necesitamos verificar que tu negocio es real. Sube fotos de tu fachada en un día activo con clientes.
+                </div>
+                <div class="mb-3">
+                  <label class="form-label fw-semibold">Fotos de la fachada <span class="text-danger">*</span> <small class="text-muted">(mínimo 2, JPG/PNG, máx 5MB c/u)</small></label>
+                  <input type="file" name="fotos" id="fotos-input" class="form-control" accept=".jpg,.jpeg,.png" multiple required>
+                  <div id="fotos-preview" class="preview-grid"></div>
+                  <small id="fotos-count" class="text-muted">0 fotos seleccionadas</small>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label fw-semibold">Video del local <span class="text-danger">*</span> <small class="text-muted">(máx 50 segundos, MP4/WebM, máx 50MB)</small></label>
+                  <input type="file" name="video" id="video-input" class="form-control" accept=".mp4,.webm" required>
+                  <div id="video-preview" class="mt-2"></div>
+                  <small id="video-duration" class="text-muted"></small>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- PASO 4: Configuración operativa -->
+          <div class="wizard-step" data-step="4">
+            <div class="card shadow-sm border-0">
+              <div class="card-body p-4">
+                <h5 class="fw-bold mb-3"><i class="bi bi-gear me-2"></i>Configuración Operativa</h5>
+                <div class="row g-3">
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Moneda</label>
+                    <select name="moneda" class="form-select">
+                      <option value="PEN" selected>Soles (PEN)</option>
+                      <option value="USD">Dólares (USD)</option>
+                    </select>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">IGV %</label>
+                    <input type="number" name="igv_porcentaje" class="form-control" value="18" min="0" max="100">
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Zona horaria</label>
+                    <select name="zona_horaria" class="form-select">
+                      <option value="America/Lima" selected>America/Lima (UTC-5)</option>
+                      <option value="America/Bogota">America/Bogota (UTC-5)</option>
+                      <option value="America/Mexico_City">America/Mexico_City (UTC-6)</option>
+                    </select>
+                  </div>
+                  <div class="col-md-6">
+                    <label class="form-label fw-semibold">Formato de papel</label>
+                    <select name="formato_papel" class="form-select">
+                      <option value="80" selected>80mm (ticket)</option>
+                      <option value="A4">A4</option>
+                    </select>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label fw-semibold">Número de mesas <span class="text-danger">*</span></label>
+                    <input type="number" name="num_mesas" class="form-control" min="1" required placeholder="Ej: 15">
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label fw-semibold">Trabajadores <span class="text-danger">*</span></label>
+                    <input type="number" name="num_trabajadores" class="form-control" min="1" required placeholder="Ej: 8">
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label fw-semibold">Antigüedad <span class="text-danger">*</span></label>
+                    <select name="antiguedad" class="form-select" required>
+                      <option value="">Selecciona...</option>
+                      <option value="MENOS_1">Menos de 1 año</option>
+                      <option value="1_3">1-3 años</option>
+                      <option value="3_5">3-5 años</option>
+                      <option value="5_10">5-10 años</option>
+                      <option value="MAS_10">Más de 10 años</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- PASO 5: Equipo (opcional) -->
+          <div class="wizard-step" data-step="5">
+            <div class="card shadow-sm border-0">
+              <div class="card-body p-4">
+                <h5 class="fw-bold mb-3"><i class="bi bi-people me-2"></i>Crea tu Equipo <span class="badge bg-secondary">Opcional</span></h5>
+                <p class="text-muted small">Puedes saltar este paso y crear tu equipo después desde el panel de administración.</p>
+
+                <!-- Mesero -->
+                <div class="border rounded p-3 mb-3">
+                  <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" id="crear-mesero" onchange="document.getElementById('mesero-fields').classList.toggle('d-none')">
+                    <label class="form-check-label fw-semibold" for="crear-mesero">
+                      <i class="bi bi-person-badge me-1"></i>Crear Mesero
+                    </label>
+                  </div>
+                  <div id="mesero-fields" class="d-none row g-2">
+                    <div class="col-md-4"><input type="text" name="mesero_nombre" class="form-control form-control-sm" placeholder="Nombre"></div>
+                    <div class="col-md-4"><input type="text" name="mesero_usuario" class="form-control form-control-sm" placeholder="Usuario"></div>
+                    <div class="col-md-4"><input type="password" name="mesero_password" class="form-control form-control-sm" placeholder="Contraseña" minlength="10"></div>
+                  </div>
+                </div>
+
+                <!-- Cocinero -->
+                <div class="border rounded p-3 mb-3">
+                  <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" id="crear-cocinero" onchange="document.getElementById('cocinero-fields').classList.toggle('d-none')">
+                    <label class="form-check-label fw-semibold" for="crear-cocinero">
+                      <i class="bi bi-fire me-1"></i>Crear Cocinero
+                    </label>
+                  </div>
+                  <div id="cocinero-fields" class="d-none row g-2">
+                    <div class="col-md-4"><input type="text" name="cocinero_nombre" class="form-control form-control-sm" placeholder="Nombre"></div>
+                    <div class="col-md-4"><input type="text" name="cocinero_usuario" class="form-control form-control-sm" placeholder="Usuario"></div>
+                    <div class="col-md-4"><input type="password" name="cocinero_password" class="form-control form-control-sm" placeholder="Contraseña" minlength="10"></div>
+                  </div>
+                </div>
+
+                <!-- Cajero -->
+                <div class="border rounded p-3 mb-3">
+                  <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" id="crear-cajero" onchange="document.getElementById('cajero-fields').classList.toggle('d-none')">
+                    <label class="form-check-label fw-semibold" for="crear-cajero">
+                      <i class="bi bi-cash-stack me-1"></i>Crear Cajero
+                    </label>
+                  </div>
+                  <div id="cajero-fields" class="d-none row g-2">
+                    <div class="col-md-4"><input type="text" name="cajero_nombre" class="form-control form-control-sm" placeholder="Nombre"></div>
+                    <div class="col-md-4"><input type="text" name="cajero_usuario" class="form-control form-control-sm" placeholder="Usuario"></div>
+                    <div class="col-md-4"><input type="password" name="cajero_password" class="form-control form-control-sm" placeholder="Contraseña" minlength="10"></div>
+                  </div>
+                </div>
+
+                <!-- Almacenero -->
+                <div class="border rounded p-3">
+                  <div class="form-check mb-2">
+                    <input class="form-check-input" type="checkbox" id="crear-almacenero" onchange="document.getElementById('almacenero-fields').classList.toggle('d-none')">
+                    <label class="form-check-label fw-semibold" for="crear-almacenero">
+                      <i class="bi bi-box-seam me-1"></i>Crear Almacenero
+                    </label>
+                  </div>
+                  <div id="almacenero-fields" class="d-none row g-2">
+                    <div class="col-md-4"><input type="text" name="almacenero_nombre" class="form-control form-control-sm" placeholder="Nombre"></div>
+                    <div class="col-md-4"><input type="text" name="almacenero_usuario" class="form-control form-control-sm" placeholder="Usuario"></div>
+                    <div class="col-md-4"><input type="password" name="almacenero_password" class="form-control form-control-sm" placeholder="Contraseña" minlength="10"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </form>
+
+        <!-- Navigation buttons -->
+        <div class="d-flex justify-content-between mt-3">
+          <button id="btn-prev" class="btn btn-outline-secondary" style="display:none;" onclick="wizardNav(-1)">
+            <i class="bi bi-arrow-left me-1"></i>Anterior
+          </button>
+          <div class="ms-auto">
+            <button id="btn-next" class="btn btn-primary" onclick="wizardNav(1)">
+              Siguiente <i class="bi bi-arrow-right ms-1"></i>
+            </button>
+            <button id="btn-submit" class="btn btn-success" style="display:none;" onclick="submitWizard()">
+              <i class="bi bi-check-circle me-1"></i>Enviar solicitud
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: DalIA Panel -->
+      <div class="col-md-4 d-none d-md-block">
+        <%- include('partials/dalia-panel') %>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="/vendor/jquery/jquery.min.js"></script>
+  <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script src="/vendor/sweetalert2/sweetalert2.all.min.js"></script>
+  <% if (typeof googleMapsApiKey !== 'undefined' && googleMapsApiKey) { %>
+  <script src="https://maps.googleapis.com/maps/api/js?key=<%= googleMapsApiKey %>&libraries=places&callback=initMap" async defer></script>
+  <% } %>
+  <script src="/js/onboarding-wizard.js"></script>
+</body>
+</html>
