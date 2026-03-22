@@ -57,6 +57,10 @@
             <a href="/superadmin/billing" class="btn btn-sm" style="background:#1e2235;color:#94a3b8;border:1px solid rgba(255,255,255,0.1);border-radius:10px;">
               <i class="bi bi-cash-stack me-1"></i>Billing
             </a>
+            <button id="btn-solicitudes" class="btn btn-sm position-relative" style="background:#1e2235;color:#94a3b8;border:1px solid rgba(255,255,255,0.1);border-radius:10px;" onclick="toggleSolicitudes()">
+              <i class="bi bi-person-check me-1"></i>Solicitudes
+              <span id="solicitudes-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display:none;">0</span>
+            </button>
           </div>
         </div>
 
@@ -219,9 +223,182 @@
           </div>
 
         </div>
+
+        <!-- Solicitudes Panel (hidden by default) -->
+        <div id="solicitudes-panel" style="display:none;" class="mt-4">
+          <div class="sa-card">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h5 class="fw-bold mb-0" style="color:#fff;"><i class="bi bi-person-check me-2 text-warning"></i>Solicitudes de Registro</h5>
+              <button class="btn btn-sm btn-outline-secondary" onclick="loadSolicitudes()"><i class="bi bi-arrow-clockwise"></i></button>
+            </div>
+            <div id="solicitudes-list">
+              <p class="text-muted">Cargando...</p>
+            </div>
+          </div>
+        </div>
+
       </div>
     </main>
   </div>
   <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script src="/vendor/sweetalert2/sweetalert2.all.min.js"></script>
+  <script>
+    let solicitudesVisible = false;
+
+    function toggleSolicitudes() {
+      solicitudesVisible = !solicitudesVisible;
+      document.getElementById('solicitudes-panel').style.display = solicitudesVisible ? '' : 'none';
+      if (solicitudesVisible) loadSolicitudes();
+    }
+
+    function loadSolicitudes() {
+      fetch('/superadmin/solicitudes')
+        .then(r => r.json())
+        .then(data => {
+          const list = document.getElementById('solicitudes-list');
+          const badge = document.getElementById('solicitudes-badge');
+          const solicitudes = data.solicitudes || [];
+
+          badge.textContent = solicitudes.length;
+          badge.style.display = solicitudes.length > 0 ? '' : 'none';
+
+          if (solicitudes.length === 0) {
+            list.innerHTML = '<p style="color:#64748b;">No hay solicitudes pendientes.</p>';
+            return;
+          }
+
+          list.innerHTML = solicitudes.map(s => {
+            const hace = timeAgo(s.created_at);
+            const fotos = s.fotos || [];
+            const fotosHtml = fotos.map((f, i) =>
+              f.url ? `<a href="${escHtml(f.url)}" target="_blank" class="me-1"><img src="${escHtml(f.url)}" style="width:60px;height:60px;object-fit:cover;border-radius:6px;border:1px solid rgba(255,255,255,0.1);"></a>`
+              : `<span class="badge bg-secondary me-1">Foto ${i+1}</span>`
+            ).join('');
+
+            return `
+              <div class="border rounded p-3 mb-3" style="border-color:rgba(255,255,255,0.08) !important;background:rgba(255,255,255,0.02);">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                  <div>
+                    <h6 class="fw-bold mb-0" style="color:#fff;">${escHtml(s.tenant_nombre || 'Sin nombre')}</h6>
+                    <small style="color:#94a3b8;">${escHtml(s.usuario_nombre || '')} &bull; ${escHtml(s.google_email || '')}</small>
+                  </div>
+                  <small style="color:#64748b;">${hace}</small>
+                </div>
+                <div class="mb-2" style="color:#94a3b8;font-size:0.82rem;">
+                  <i class="bi bi-geo-alt me-1"></i>${escHtml(s.distrito || '-')}, ${escHtml(s.departamento || '-')}
+                  ${s.latitud && s.longitud ? `<a href="https://www.google.com/maps?q=${s.latitud},${s.longitud}" target="_blank" class="ms-2" style="color:#f97316;font-size:0.75rem;"><i class="bi bi-map"></i> Ver en mapa</a>` : ''}
+                </div>
+                <div class="mb-2" style="color:#94a3b8;font-size:0.82rem;">
+                  <i class="bi bi-table me-1"></i>${s.num_mesas || '-'} mesas &bull;
+                  <i class="bi bi-people me-1"></i>${s.num_trabajadores || '-'} trabajadores &bull;
+                  Antigüedad: ${escHtml(formatAntiguedad(s.antiguedad))}
+                </div>
+                <div class="mb-2">
+                  <strong style="color:#94a3b8;font-size:0.75rem;">FOTOS:</strong>
+                  <div class="mt-1">${fotosHtml || '<span style="color:#64748b;">Sin fotos</span>'}</div>
+                </div>
+                ${s.video_url ? `<div class="mb-2"><a href="${escHtml(s.video_url)}" target="_blank" class="btn btn-sm btn-outline-light"><i class="bi bi-play-circle me-1"></i>Ver video</a></div>` : ''}
+                <div class="d-flex gap-2 mt-3">
+                  <button class="btn btn-sm btn-success" onclick="aprobarSolicitud(${s.id})">
+                    <i class="bi bi-check-circle me-1"></i>Aprobar
+                  </button>
+                  <button class="btn btn-sm btn-danger" onclick="rechazarSolicitud(${s.id})">
+                    <i class="bi bi-x-circle me-1"></i>Rechazar
+                  </button>
+                </div>
+              </div>
+            `;
+          }).join('');
+        })
+        .catch(err => {
+          document.getElementById('solicitudes-list').innerHTML = '<p class="text-danger">Error cargando solicitudes</p>';
+        });
+    }
+
+    function aprobarSolicitud(id) {
+      Swal.fire({
+        title: '¿Aprobar esta solicitud?',
+        text: 'Se activará la prueba gratuita de 5 días para este restaurante.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, aprobar',
+        cancelButtonText: 'Cancelar',
+        background: '#1e2235',
+        color: '#e2e8f0'
+      }).then(result => {
+        if (!result.isConfirmed) return;
+        fetch(`/superadmin/solicitudes/${id}/aprobar`, { method: 'POST', headers: { 'Content-Type': 'application/json' } })
+          .then(r => r.json())
+          .then(data => {
+            if (data.error) return Swal.fire('Error', data.error, 'error');
+            Swal.fire({ title: 'Aprobado', text: `Trial activado para ${data.nombre || 'el restaurante'}`, icon: 'success', background: '#1e2235', color: '#e2e8f0' });
+            loadSolicitudes();
+          });
+      });
+    }
+
+    function rechazarSolicitud(id) {
+      Swal.fire({
+        title: 'Rechazar solicitud',
+        input: 'textarea',
+        inputLabel: 'Motivo del rechazo (obligatorio)',
+        inputPlaceholder: 'Escribe el motivo...',
+        showCancelButton: true,
+        confirmButtonText: 'Rechazar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#ef4444',
+        background: '#1e2235',
+        color: '#e2e8f0',
+        inputValidator: (value) => {
+          if (!value || !value.trim()) return 'El motivo es obligatorio';
+        }
+      }).then(result => {
+        if (!result.isConfirmed) return;
+        fetch(`/superadmin/solicitudes/${id}/rechazar`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ motivo: result.value })
+        })
+          .then(r => r.json())
+          .then(data => {
+            if (data.error) return Swal.fire('Error', data.error, 'error');
+            Swal.fire({ title: 'Rechazado', text: 'Se notificará al usuario.', icon: 'info', background: '#1e2235', color: '#e2e8f0' });
+            loadSolicitudes();
+          });
+      });
+    }
+
+    function timeAgo(dateStr) {
+      const diff = Date.now() - new Date(dateStr).getTime();
+      const mins = Math.floor(diff / 60000);
+      if (mins < 60) return `Hace ${mins} min`;
+      const hrs = Math.floor(mins / 60);
+      if (hrs < 24) return `Hace ${hrs}h`;
+      return `Hace ${Math.floor(hrs / 24)}d`;
+    }
+
+    function formatAntiguedad(code) {
+      const map = { 'MENOS_1': '<1 año', '1_3': '1-3 años', '3_5': '3-5 años', '5_10': '5-10 años', 'MAS_10': '+10 años' };
+      return map[code] || code || '-';
+    }
+
+    function escHtml(str) {
+      if (!str) return '';
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    // Auto-load badge count on page load
+    fetch('/superadmin/solicitudes')
+      .then(r => r.json())
+      .then(data => {
+        const count = (data.solicitudes || []).length;
+        const badge = document.getElementById('solicitudes-badge');
+        badge.textContent = count;
+        badge.style.display = count > 0 ? '' : 'none';
+      })
+      .catch(() => {});
+  </script>
 </body>
 </html>
