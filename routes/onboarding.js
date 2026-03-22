@@ -7,6 +7,7 @@ const bcrypt = require('bcryptjs');
 const multer = require('multer');
 const { validateMagicBytes, extractExifSafe, distanciaKm } = require('../services/file-upload');
 const { crearSolicitud } = require('../services/verificacion');
+const { uploadVerificationPhotos, uploadVerificationVideo } = require('../services/supabase-storage');
 
 // Multer: store files in memory (logo, fotos, video)
 const upload = multer({
@@ -85,34 +86,27 @@ router.post('/setup', uploadFields, async (req, res) => {
         }
 
         // ----------------------------------------------------------------
-        // 1. Extract EXIF from photos + check GPS distance
+        // 1. Extract EXIF from photos + check GPS distance + upload to Storage
         // ----------------------------------------------------------------
-        const fotosData = [];
         const declaredLat = parseFloat(latitud);
         const declaredLng = parseFloat(longitud);
 
-        for (const foto of fotosFiles) {
+        const exifDataArray = fotosFiles.map(foto => {
             const exif = extractExifSafe(foto.buffer);
             let sospechoso = false;
-
             if (exif.lat && exif.lng && !isNaN(declaredLat) && !isNaN(declaredLng)) {
                 const dist = distanciaKm(exif.lat, exif.lng, declaredLat, declaredLng);
                 if (dist > 2) sospechoso = true;
             }
+            return { ...exif, sospechoso };
+        });
 
-            // TODO: Upload to Supabase Storage and get URL
-            // For now, store as base64 (will be replaced with Supabase Storage URLs)
-            fotosData.push({
-                filename: foto.originalname,
-                size: foto.size,
-                exif: exif,
-                sospechoso: sospechoso,
-                url: null // Replace with Supabase Storage URL
-            });
-        }
+        // Upload photos to Supabase Storage
+        const fotosData = await uploadVerificationPhotos(tid, fotosFiles, exifDataArray);
 
-        // Video duration estimated from file metadata (real validation would need ffprobe)
-        const videoDuracion = null; // Will be validated on frontend
+        // Upload video to Supabase Storage
+        const videoUrl = await uploadVerificationVideo(tid, videoFile);
+        const videoDuracion = null; // Validated on frontend (50s max)
 
         // ----------------------------------------------------------------
         // 2. Update / insert configuracion_impresion
@@ -196,7 +190,6 @@ router.post('/setup', uploadFields, async (req, res) => {
         // ----------------------------------------------------------------
         // 5. Create verification request
         // ----------------------------------------------------------------
-        const videoUrl = null; // TODO: Supabase Storage URL
         const result = await crearSolicitud(tid, userId, fotosData, videoUrl, videoDuracion);
 
         if (result.error) {
@@ -343,14 +336,11 @@ router.post('/retry', uploadFields, async (req, res) => {
             return res.status(400).json({ error: 'El video no es válido' });
         }
 
-        const fotosData = fotosFiles.map(f => ({
-            filename: f.originalname,
-            size: f.size,
-            exif: extractExifSafe(f.buffer),
-            url: null
-        }));
+        const exifDataArray = fotosFiles.map(f => extractExifSafe(f.buffer));
+        const fotosData = await uploadVerificationPhotos(tid, fotosFiles, exifDataArray);
+        const videoUrl = await uploadVerificationVideo(tid, videoFiles[0]);
 
-        const result = await crearSolicitud(tid, userId, fotosData, null, null);
+        const result = await crearSolicitud(tid, userId, fotosData, videoUrl, null);
         if (result.error) {
             return res.status(400).json({ error: result.error });
         }
