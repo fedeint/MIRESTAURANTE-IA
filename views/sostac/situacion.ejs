@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title || 'Situación — SOSTAC' %></title>
+  <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+  <link rel="stylesheet" href="/css/theme.css">
+  <style>
+    /* ── Page-level layout ───────────────────────────────────── */
+    .sit-header {
+      background: linear-gradient(135deg, rgba(59,130,246,0.1) 0%, rgba(37,99,235,0.04) 100%);
+      border: 1px solid rgba(59,130,246,0.18);
+      border-radius: 16px;
+      padding: 1.5rem 1.75rem;
+      margin-bottom: 1.75rem;
+    }
+    .sit-header-title {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: var(--dg-text, #1e293b);
+    }
+    [data-theme="dark"] .sit-header-title { color: #f1f5f9; }
+    .breadcrumb-link { color: #f97316; text-decoration: none; font-size: 0.82rem; }
+    .breadcrumb-link:hover { text-decoration: underline; }
+
+    /* ── Section cards ───────────────────────────────────────── */
+    .section-card {
+      background: var(--dg-card-bg, #fff);
+      border: 1px solid var(--dg-border, #e2e8f0);
+      border-radius: 14px;
+      padding: 1.5rem;
+      margin-bottom: 1.25rem;
+    }
+    [data-theme="dark"] .section-card {
+      background: rgba(255,255,255,0.04);
+      border-color: rgba(255,255,255,0.08);
+    }
+    .section-card-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--dg-text, #1e293b);
+    }
+    [data-theme="dark"] .section-card-title { color: #f1f5f9; }
+
+    /* ── KPI cards row ───────────────────────────────────────── */
+    .kpi-card {
+      background: var(--dg-card-bg, #fff);
+      border: 1px solid var(--dg-border, #e2e8f0);
+      border-radius: 14px;
+      padding: 1.2rem 1.25rem;
+    }
+    [data-theme="dark"] .kpi-card {
+      background: rgba(255,255,255,0.04);
+      border-color: rgba(255,255,255,0.08);
+    }
+    .kpi-card-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      color: var(--dg-text-muted, #94a3b8);
+      margin-bottom: 0.35rem;
+    }
+    .kpi-card-value {
+      font-size: 1.6rem;
+      font-weight: 800;
+      line-height: 1;
+      color: var(--dg-text, #0f172a);
+    }
+    [data-theme="dark"] .kpi-card-value { color: #f1f5f9; }
+    .kpi-card-sub {
+      font-size: 0.75rem;
+      margin-top: 0.35rem;
+      color: var(--dg-text-muted, #64748b);
+    }
+    .kpi-trend-up   { color: #10b981; font-weight: 700; }
+    .kpi-trend-down { color: #ef4444; font-weight: 700; }
+    .kpi-trend-flat { color: #94a3b8; font-weight: 700; }
+
+    /* ── Bar charts ──────────────────────────────────────────── */
+    .bar-chart-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 0.6rem;
+    }
+    .bar-chart-label {
+      font-size: 0.8rem;
+      width: 140px;
+      flex-shrink: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: var(--dg-text, #334155);
+    }
+    [data-theme="dark"] .bar-chart-label { color: #cbd5e1; }
+    .bar-chart-track {
+      flex: 1;
+      background: var(--dg-border, #e2e8f0);
+      border-radius: 999px;
+      height: 8px;
+      overflow: hidden;
+    }
+    [data-theme="dark"] .bar-chart-track { background: rgba(255,255,255,0.09); }
+    .bar-chart-fill {
+      height: 100%;
+      border-radius: 999px;
+      transition: width 0.6s cubic-bezier(.4,0,.2,1);
+    }
+    .bar-chart-count {
+      font-size: 0.78rem;
+      font-weight: 700;
+      min-width: 48px;
+      text-align: right;
+      color: var(--dg-text, #1e293b);
+    }
+    [data-theme="dark"] .bar-chart-count { color: #e2e8f0; }
+
+    /* ── Alert rows ──────────────────────────────────────────── */
+    .alert-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.6rem 0;
+      border-bottom: 1px solid var(--dg-border, #e2e8f0);
+    }
+    [data-theme="dark"] .alert-row { border-color: rgba(255,255,255,0.07); }
+    .alert-row:last-child { border-bottom: none; }
+    .alert-icon { font-size: 1rem; width: 1.25rem; text-align: center; flex-shrink: 0; }
+    .alert-name { flex: 1; font-size: 0.84rem; font-weight: 600; color: var(--dg-text, #1e293b); }
+    [data-theme="dark"] .alert-name { color: #e2e8f0; }
+    .alert-detail { font-size: 0.75rem; color: var(--dg-text-muted, #94a3b8); }
+
+    /* ── FODA ─────────────────────────────────────────────────── */
+    .foda-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+    }
+    @media (max-width: 576px) { .foda-grid { grid-template-columns: 1fr; } }
+    .foda-cell { border-radius: 10px; padding: 1rem 1.1rem; }
+    .foda-cell-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em; margin-bottom: 0.6rem; }
+    .foda-cell ul { margin: 0; padding-left: 1.1rem; }
+    .foda-cell li { font-size: 0.83rem; margin-bottom: 0.3rem; color: var(--dg-text, #334155); }
+    [data-theme="dark"] .foda-cell li { color: #cbd5e1; }
+    .foda-f { background: rgba(16,185,129,0.07);  border: 1px solid rgba(16,185,129,0.18); }
+    .foda-f .foda-cell-title { color: #10b981; }
+    .foda-d { background: rgba(239,68,68,0.06);   border: 1px solid rgba(239,68,68,0.16); }
+    .foda-d .foda-cell-title { color: #ef4444; }
+    .foda-o { background: rgba(59,130,246,0.06);  border: 1px solid rgba(59,130,246,0.16); }
+    .foda-o .foda-cell-title { color: #3b82f6; }
+    .foda-a { background: rgba(245,158,11,0.06);  border: 1px solid rgba(245,158,11,0.18); }
+    .foda-a .foda-cell-title { color: #f59e0b; }
+
+    /* ── Insight / recommendation boxes ─────────────────────── */
+    .insight-box {
+      background: rgba(249,115,22,0.07);
+      border-left: 3px solid #f97316;
+      border-radius: 0 8px 8px 0;
+      padding: 0.9rem 1rem;
+      font-size: 0.875rem;
+      color: var(--dg-text, #334155);
+      margin-bottom: 1rem;
+    }
+    [data-theme="dark"] .insight-box { color: #cbd5e1; }
+    .kpi-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.7rem 0;
+      border-bottom: 1px solid var(--dg-border, #e2e8f0);
+    }
+    [data-theme="dark"] .kpi-row { border-color: rgba(255,255,255,0.07); }
+    .kpi-row:last-child { border-bottom: none; }
+    .kpi-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .kpi-dot-ok     { background: #10b981; }
+    .kpi-dot-alerta { background: #f59e0b; }
+    .kpi-dot-critico{ background: #ef4444; }
+    .kpi-name  { font-size: 0.87rem; font-weight: 600; flex: 1; color: var(--dg-text, #1e293b); }
+    [data-theme="dark"] .kpi-name { color: #e2e8f0; }
+    .kpi-actual{ font-size: 0.85rem; font-weight: 700; }
+    .kpi-bench { font-size: 0.75rem; color: var(--dg-text-muted, #94a3b8); }
+    .recomendacion-card {
+      background: linear-gradient(135deg, rgba(249,115,22,0.1), rgba(234,88,12,0.05));
+      border: 1px solid rgba(249,115,22,0.2);
+      border-radius: 12px;
+      padding: 1.25rem;
+    }
+    .posicion-card {
+      background: rgba(139,92,246,0.07);
+      border: 1px solid rgba(139,92,246,0.18);
+      border-radius: 12px;
+      padding: 1.1rem 1.25rem;
+    }
+
+    /* ── Empty / loading states ──────────────────────────────── */
+    .empty-state {
+      text-align: center;
+      padding: 3.5rem 1.5rem;
+      color: var(--dg-text-muted, #94a3b8);
+    }
+    .empty-state-icon { font-size: 3rem; opacity: 0.3; display: block; margin-bottom: 0.75rem; }
+    .skeleton {
+      background: linear-gradient(90deg,
+        var(--dg-border,#e2e8f0) 25%,
+        rgba(148,163,184,0.15) 50%,
+        var(--dg-border,#e2e8f0) 75%);
+      background-size: 200% 100%;
+      animation: shimmer 1.4s infinite;
+      border-radius: 8px;
+    }
+    @keyframes shimmer { to { background-position: -200% 0; } }
+
+    /* ── Pill badges ─────────────────────────────────────────── */
+    .pill {
+      display: inline-block;
+      padding: 0.18rem 0.65rem;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      font-weight: 700;
+    }
+    .pill-green  { background: rgba(16,185,129,0.12); color: #10b981; }
+    .pill-red    { background: rgba(239,68,68,0.11);  color: #ef4444; }
+    .pill-amber  { background: rgba(245,158,11,0.12); color: #d97706; }
+    .pill-blue   { background: rgba(59,130,246,0.11); color: #3b82f6; }
+    .pill-purple { background: rgba(139,92,246,0.11); color: #8b5cf6; }
+
+    /* ── Divider between sections ────────────────────────────── */
+    .section-divider {
+      border: none;
+      border-top: 1px solid var(--dg-border, #e2e8f0);
+      margin: 1.5rem 0;
+    }
+    [data-theme="dark"] .section-divider { border-color: rgba(255,255,255,0.07); }
+  </style>
+</head>
+<body>
+  <%- include('../partials/sidebar') %>
+  <div class="dg-main">
+  <main class="flex-grow-1">
+  <div class="container py-3">
+
+    <!-- Breadcrumb -->
+    <div style="font-size:0.8rem;margin-bottom:1rem;color:var(--dg-text-muted,#94a3b8);">
+      <a href="/sostac" class="breadcrumb-link">SOSTAC</a>
+      <span class="mx-1">/</span>
+      <span>Situación</span>
+    </div>
+
+    <!-- Header -->
+    <div class="sit-header">
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+          <div class="sit-header-title">
+            <i class="bi bi-search me-2" style="color:#3b82f6;"></i>Análisis Situacional
+          </div>
+          <div style="font-size:0.875rem;color:var(--dg-text-muted,#64748b);margin-top:0.15rem;">
+            Estado actual del negocio — datos reales del POS + análisis estratégico de Delfino
+          </div>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+          <button id="btnRefreshDatos" class="btn btn-sm"
+            style="background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.25);color:#10b981;border-radius:8px;font-size:0.8rem;font-weight:600;padding:0.4rem 1rem;">
+            <i class="bi bi-arrow-repeat me-1"></i>Actualizar datos
+          </button>
+          <% if (brief) { %>
+          <button id="btnRegenerate" class="btn btn-sm"
+            style="background:linear-gradient(135deg,#3b82f6,#2563eb);border:none;color:#fff;border-radius:8px;font-size:0.8rem;font-weight:600;padding:0.4rem 1rem;">
+            <i class="bi bi-robot me-1"></i><%= situacion ? 'Regenerar análisis IA' : 'Generar análisis IA' %>
+          </button>
+          <% } %>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         SECTION 1 — LIVE POS DASHBOARD (always visible, loaded via AJAX)
+    ════════════════════════════════════════════════════════════════════ -->
+    <div id="pos-dashboard">
+      <!-- KPI Cards row (skeleton while loading) -->
+      <div class="row g-3 mb-3" id="kpi-cards-row">
+        <div class="col-6 col-md-3"><div class="kpi-card"><div class="skeleton" style="height:60px;"></div></div></div>
+        <div class="col-6 col-md-3"><div class="kpi-card"><div class="skeleton" style="height:60px;"></div></div></div>
+        <div class="col-6 col-md-3"><div class="kpi-card"><div class="skeleton" style="height:60px;"></div></div></div>
+        <div class="col-6 col-md-3"><div class="kpi-card"><div class="skeleton" style="height:60px;"></div></div></div>
+      </div>
+
+      <div class="row g-3">
+        <!-- Top 5 productos -->
+        <div class="col-md-6">
+          <div class="section-card h-100">
+            <div class="section-card-title">
+              <i class="bi bi-bar-chart-fill" style="color:#3b82f6;"></i>
+              Top 5 Productos (30 días)
+            </div>
+            <div id="chart-top5"><div class="skeleton" style="height:120px;"></div></div>
+          </div>
+        </div>
+
+        <!-- Gastos por categoría -->
+        <div class="col-md-6">
+          <div class="section-card h-100">
+            <div class="section-card-title">
+              <i class="bi bi-pie-chart-fill" style="color:#f59e0b;"></i>
+              Gastos por Categoría (mes actual)
+            </div>
+            <div id="chart-gastos"><div class="skeleton" style="height:120px;"></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="row g-3 mt-0">
+        <!-- Alertas de inventario -->
+        <div class="col-md-6">
+          <div class="section-card h-100">
+            <div class="section-card-title">
+              <i class="bi bi-exclamation-triangle-fill" style="color:#ef4444;"></i>
+              Alertas de Inventario
+            </div>
+            <div id="alertas-inventario"><div class="skeleton" style="height:80px;"></div></div>
+          </div>
+        </div>
+
+        <!-- Personal + Clientes + Mesas -->
+        <div class="col-md-6">
+          <div class="section-card h-100">
+            <div class="section-card-title">
+              <i class="bi bi-people-fill" style="color:#8b5cf6;"></i>
+              Recursos del Negocio
+            </div>
+            <div id="recursos-negocio"><div class="skeleton" style="height:80px;"></div></div>
+          </div>
+        </div>
+      </div>
+    </div><!-- /#pos-dashboard -->
+
+    <!-- ═══════════════════════════════════════════════════════════════════
+         SECTION 2 — AI STRATEGIC ANALYSIS (from sostac_situacion table)
+    ════════════════════════════════════════════════════════════════════ -->
+
+    <% if (!brief) { %>
+    <!-- No brief yet -->
+    <hr class="section-divider">
+    <div class="section-card">
+      <div class="empty-state">
+        <i class="bi bi-robot empty-state-icon"></i>
+        <h5 style="font-weight:700;margin-bottom:0.5rem;">Análisis IA no configurado</h5>
+        <p style="max-width:400px;margin:0 auto 1.5rem;font-size:0.875rem;">
+          Completa el Brief Express para que Delfino pueda generar el análisis estratégico FODA de tu negocio.
+        </p>
+        <a href="/sostac/brief" class="btn"
+          style="background:linear-gradient(135deg,#f97316,#ea580c);border:none;color:#fff;border-radius:10px;font-weight:600;padding:0.6rem 1.75rem;">
+          <i class="bi bi-play-fill me-1"></i>Completar Brief Express
+        </a>
+      </div>
+    </div>
+
+    <% } else if (!situacion) { %>
+    <!-- Brief exists but no analysis yet -->
+    <hr class="section-divider">
+    <div class="section-card">
+      <div class="empty-state">
+        <i class="bi bi-robot empty-state-icon"></i>
+        <h5 style="font-weight:700;margin-bottom:0.5rem;">Análisis IA aún no generado</h5>
+        <p style="max-width:420px;margin:0 auto 1rem;font-size:0.875rem;">
+          Haz clic en "Generar análisis IA" para que Delfino construya el FODA estratégico a partir de tu brief.
+        </p>
+      </div>
+    </div>
+
+    <% } else { %>
+    <!-- Full AI strategic analysis -->
+    <%
+      const sit = situacion.datos || {};
+    %>
+
+    <hr class="section-divider">
+
+    <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:var(--dg-text-muted,#94a3b8);margin-bottom:0.85rem;">
+      <i class="bi bi-robot me-1"></i>Análisis Estratégico de Delfino
+    </div>
+
+    <!-- Resumen ejecutivo -->
+    <% if (sit.resumen_ejecutivo) { %>
+    <div class="insight-box">
+      <strong>Resumen ejecutivo:</strong> <%= sit.resumen_ejecutivo %>
+    </div>
+    <% } %>
+
+    <!-- FODA -->
+    <div class="section-card">
+      <div class="section-card-title">
+        <i class="bi bi-grid-1x2-fill" style="color:#3b82f6;"></i> Análisis FODA
+      </div>
+      <div class="foda-grid">
+        <div class="foda-cell foda-f">
+          <div class="foda-cell-title"><i class="bi bi-plus-circle-fill me-1"></i>Fortalezas</div>
+          <ul><% (sit.fortalezas || []).forEach(f => { %><li><%- f %></li><% }) %></ul>
+        </div>
+        <div class="foda-cell foda-d">
+          <div class="foda-cell-title"><i class="bi bi-dash-circle-fill me-1"></i>Debilidades</div>
+          <ul><% (sit.debilidades || []).forEach(d => { %><li><%- d %></li><% }) %></ul>
+        </div>
+        <div class="foda-cell foda-o">
+          <div class="foda-cell-title"><i class="bi bi-arrow-up-circle-fill me-1"></i>Oportunidades</div>
+          <ul><% (sit.oportunidades || []).forEach(o => { %><li><%- o %></li><% }) %></ul>
+        </div>
+        <div class="foda-cell foda-a">
+          <div class="foda-cell-title"><i class="bi bi-exclamation-triangle-fill me-1"></i>Amenazas</div>
+          <ul><% (sit.amenazas || []).forEach(a => { %><li><%- a %></li><% }) %></ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Two column: Posicion + KPIs -->
+    <div class="row g-3">
+      <div class="col-md-6">
+        <% if (sit.posicion_competitiva) { %>
+        <div class="section-card h-100">
+          <div class="section-card-title">
+            <i class="bi bi-trophy-fill" style="color:#8b5cf6;"></i>Posición Competitiva
+          </div>
+          <div class="posicion-card">
+            <div style="font-size:0.875rem;line-height:1.6;"><%- sit.posicion_competitiva %></div>
+          </div>
+        </div>
+        <% } %>
+      </div>
+      <div class="col-md-6">
+        <% if (sit.indicadores_clave && sit.indicadores_clave.length > 0) { %>
+        <div class="section-card h-100">
+          <div class="section-card-title">
+            <i class="bi bi-speedometer2" style="color:#f59e0b;"></i>Indicadores Clave
+          </div>
+          <% sit.indicadores_clave.forEach(kpi => { %>
+          <div class="kpi-row">
+            <div class="kpi-dot kpi-dot-<%= kpi.estado || 'ok' %>"></div>
+            <div class="kpi-name"><%= kpi.nombre %></div>
+            <div>
+              <div class="kpi-actual"
+                style="color:<%= kpi.estado === 'ok' ? '#10b981' : kpi.estado === 'alerta' ? '#f59e0b' : '#ef4444' %>">
+                <%= kpi.valor_actual %>
+              </div>
+              <div class="kpi-bench">Benchmark: <%= kpi.benchmark %></div>
+            </div>
+          </div>
+          <% }) %>
+        </div>
+        <% } %>
+      </div>
+    </div>
+
+    <!-- Recomendacion principal -->
+    <% if (sit.recomendacion_principal) { %>
+    <div class="recomendacion-card mt-1">
+      <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;color:#f97316;margin-bottom:0.4rem;">
+        <i class="bi bi-lightbulb-fill me-1"></i>Recomendación Principal de Delfino
+      </div>
+      <div style="font-size:0.92rem;font-weight:500;"><%- sit.recomendacion_principal %></div>
+    </div>
+    <% } %>
+
+    <!-- Metadata footer -->
+    <div class="mt-3 text-end" style="font-size:0.75rem;color:var(--dg-text-muted,#94a3b8);">
+      <i class="bi bi-clock me-1"></i>
+      Generado el <%= new Date(situacion.created_at).toLocaleDateString('es-PE', {day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'}) %>
+      &nbsp;&middot;&nbsp;Período: <%= situacion.periodo || '—' %>
+    </div>
+
+    <% } /* end situacion exists */ %>
+
+  </div><!-- /.container -->
+  </main>
+  </div><!-- /.dg-main -->
+
+  <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script src="/vendor/sweetalert2/sweetalert2.all.min.js"></script>
+  <script>
+  (function () {
+    'use strict';
+
+    /* ── Formatting helpers ───────────────────────────────── */
+    function fmtSoles(n) {
+      if (!n && n !== 0) return 'S/ —';
+      return 'S/ ' + Number(n).toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    function fmtDate(iso) {
+      if (!iso) return '—';
+      const d = new Date(iso);
+      return d.toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' });
+    }
+
+    /* ── Bar chart renderer ───────────────────────────────── */
+    function renderBars(containerId, items, valueKey, labelKey, color) {
+      const el = document.getElementById(containerId);
+      if (!el) return;
+      if (!items || items.length === 0) {
+        el.innerHTML = '<div style="font-size:0.8rem;color:var(--dg-text-muted,#94a3b8);padding:0.75rem 0;">Sin datos disponibles</div>';
+        return;
+      }
+      const max = Math.max(...items.map(i => Number(i[valueKey]) || 0), 1);
+      el.innerHTML = items.map(item => {
+        const val    = Number(item[valueKey]) || 0;
+        const pct    = Math.max(2, Math.round((val / max) * 100));
+        const label  = item[labelKey] || '—';
+        const display = valueKey === 'total'
+          ? fmtSoles(val)
+          : val.toLocaleString('es-PE');
+        return `<div class="bar-chart-row">
+          <div class="bar-chart-label" title="${label}">${label}</div>
+          <div class="bar-chart-track">
+            <div class="bar-chart-fill" style="width:${pct}%;background:${color};"></div>
+          </div>
+          <div class="bar-chart-count">${display}</div>
+        </div>`;
+      }).join('');
+    }
+
+    /* ── KPI cards renderer ───────────────────────────────── */
+    function renderKpiCards(d) {
+      const row = document.getElementById('kpi-cards-row');
+      if (!row) return;
+
+      const vPct  = d.ventas.variacion_pct;
+      const vSign = vPct === null ? '' : (vPct >= 0 ? '+' : '');
+      const vClass = vPct === null ? 'kpi-trend-flat'
+                   : vPct >= 0   ? 'kpi-trend-up'
+                   :                'kpi-trend-down';
+      const vIcon  = vPct === null ? '<i class="bi bi-dash"></i>'
+                   : vPct >= 0   ? '<i class="bi bi-arrow-up-right"></i>'
+                   :                '<i class="bi bi-arrow-down-right"></i>';
+
+      const alertCount = (d.inventario.bajo_minimo || []).length + (d.inventario.por_vencer || []).length;
+      const alertClass = alertCount === 0 ? 'kpi-trend-up' : alertCount <= 3 ? 'kpi-trend-flat' : 'kpi-trend-down';
+
+      row.innerHTML = `
+        <div class="col-6 col-md-3">
+          <div class="kpi-card">
+            <div class="kpi-card-label"><i class="bi bi-cash-stack me-1"></i>Ventas del Mes</div>
+            <div class="kpi-card-value">${fmtSoles(d.ventas.mes)}</div>
+            <div class="kpi-card-sub ${vClass}">${vIcon} ${vSign}${vPct !== null ? vPct + '% vs mes anterior' : 'sin comparativo'}</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="kpi-card">
+            <div class="kpi-card-label"><i class="bi bi-calendar-day me-1"></i>Ventas de Hoy</div>
+            <div class="kpi-card-value">${fmtSoles(d.ventas.hoy)}</div>
+            <div class="kpi-card-sub" style="color:var(--dg-text-muted,#94a3b8);">
+              Esta semana: ${fmtSoles(d.ventas.semana)}
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="kpi-card">
+            <div class="kpi-card-label"><i class="bi bi-box-seam me-1"></i>Total Productos</div>
+            <div class="kpi-card-value">${d.productos.total}</div>
+            <div class="kpi-card-sub" style="color:var(--dg-text-muted,#94a3b8);">productos activos en carta</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="kpi-card">
+            <div class="kpi-card-label"><i class="bi bi-exclamation-triangle me-1"></i>Alertas Inventario</div>
+            <div class="kpi-card-value ${alertClass}">${alertCount}</div>
+            <div class="kpi-card-sub" style="color:var(--dg-text-muted,#94a3b8);">
+              ${(d.inventario.bajo_minimo||[]).length} bajo mínimo &middot; ${(d.inventario.por_vencer||[]).length} por vencer
+            </div>
+          </div>
+        </div>`;
+    }
+
+    /* ── Inventory alerts renderer ────────────────────────── */
+    function renderAlertas(d) {
+      const el = document.getElementById('alertas-inventario');
+      if (!el) return;
+
+      const bajo    = d.inventario.bajo_minimo || [];
+      const vencer  = d.inventario.por_vencer  || [];
+
+      if (bajo.length === 0 && vencer.length === 0) {
+        el.innerHTML = `<div style="text-align:center;padding:1.5rem 0;color:#10b981;font-size:0.875rem;font-weight:600;">
+          <i class="bi bi-check-circle-fill me-1"></i>Sin alertas de inventario
+        </div>`;
+        return;
+      }
+
+      const bajoHtml = bajo.map(item => `
+        <div class="alert-row">
+          <span class="alert-icon" style="color:#ef4444;"><i class="bi bi-arrow-down-circle-fill"></i></span>
+          <div>
+            <div class="alert-name">${item.nombre}</div>
+            <div class="alert-detail">Stock: ${item.stock_actual} ${item.unidad} / Mínimo: ${item.stock_minimo} ${item.unidad}</div>
+          </div>
+          <span class="pill pill-red ms-auto">Bajo mínimo</span>
+        </div>`).join('');
+
+      const vencerHtml = vencer.map(item => `
+        <div class="alert-row">
+          <span class="alert-icon" style="color:#f59e0b;"><i class="bi bi-clock-fill"></i></span>
+          <div>
+            <div class="alert-name">${item.nombre}</div>
+            <div class="alert-detail">Vence: ${fmtDate(item.fecha_vencimiento)} &middot; ${item.cantidad} ${item.unidad}</div>
+          </div>
+          <span class="pill pill-amber ms-auto">Por vencer</span>
+        </div>`).join('');
+
+      el.innerHTML = bajoHtml + vencerHtml;
+    }
+
+    /* ── Resources card renderer ──────────────────────────── */
+    function renderRecursos(d) {
+      const el = document.getElementById('recursos-negocio');
+      if (!el) return;
+
+      const rolesHtml = (d.personal.por_rol || []).map(r =>
+        `<span class="pill pill-purple me-1 mb-1">${r.rol} (${r.total})</span>`
+      ).join('');
+
+      el.innerHTML = `
+        <div class="row g-3">
+          <div class="col-6">
+            <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--dg-text-muted,#94a3b8);margin-bottom:.3rem;">Personal activo</div>
+            <div style="font-size:1.6rem;font-weight:800;color:var(--dg-text,#0f172a);">${d.personal.total}</div>
+            <div style="margin-top:.35rem;">${rolesHtml || '<span style="font-size:0.78rem;color:var(--dg-text-muted,#94a3b8);">Sin datos de roles</span>'}</div>
+          </div>
+          <div class="col-3">
+            <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--dg-text-muted,#94a3b8);margin-bottom:.3rem;">Clientes</div>
+            <div style="font-size:1.6rem;font-weight:800;color:var(--dg-text,#0f172a);">${d.clientes.total}</div>
+            <div style="font-size:0.72rem;color:#10b981;font-weight:700;margin-top:.3rem;">+${d.clientes.nuevos_mes} este mes</div>
+          </div>
+          <div class="col-3">
+            <div style="font-size:0.72rem;text-transform:uppercase;letter-spacing:.08em;color:var(--dg-text-muted,#94a3b8);margin-bottom:.3rem;">Mesas</div>
+            <div style="font-size:1.6rem;font-weight:800;color:var(--dg-text,#0f172a);">${d.mesas.total}</div>
+            <div style="font-size:0.72rem;color:var(--dg-text-muted,#94a3b8);margin-top:.3rem;">en comedor</div>
+          </div>
+        </div>`;
+    }
+
+    /* ── Main data loader ─────────────────────────────────── */
+    async function loadDatos(showLoader) {
+      if (showLoader) {
+        ['kpi-cards-row','chart-top5','chart-gastos','alertas-inventario','recursos-negocio'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.innerHTML = '<div class="skeleton" style="height:80px;border-radius:8px;"></div>';
+        });
+      }
+
+      try {
+        const res  = await fetch('/sostac/api/situacion/datos');
+        const json = await res.json();
+        if (!json.ok) throw new Error(json.error || 'Error al obtener datos');
+
+        const d = json.datos;
+
+        renderKpiCards(d);
+        renderBars('chart-top5',  d.productos.top_5,        'vendidos', 'nombre', '#3b82f6');
+        renderBars('chart-gastos', d.gastos.por_categoria,  'total',    'categoria', '#f59e0b');
+        renderAlertas(d);
+        renderRecursos(d);
+      } catch (err) {
+        console.error('[SOSTAC] loadDatos error:', err.message);
+        ['chart-top5','chart-gastos','alertas-inventario','recursos-negocio'].forEach(id => {
+          const el = document.getElementById(id);
+          if (el) el.innerHTML = `<div style="font-size:0.8rem;color:#ef4444;padding:.5rem 0;"><i class="bi bi-x-circle me-1"></i>${err.message}</div>`;
+        });
+      }
+    }
+
+    /* ── Refresh button ───────────────────────────────────── */
+    const btnRefresh = document.getElementById('btnRefreshDatos');
+    if (btnRefresh) {
+      btnRefresh.addEventListener('click', function () {
+        this.disabled = true;
+        this.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Cargando...';
+        loadDatos(true).finally(() => {
+          this.disabled = false;
+          this.innerHTML = '<i class="bi bi-arrow-repeat me-1"></i>Actualizar datos';
+        });
+      });
+    }
+
+    /* ── Regenerate AI analysis button ───────────────────── */
+    const btnRegen = document.getElementById('btnRegenerate');
+    if (btnRegen) {
+      btnRegen.addEventListener('click', async function () {
+        const confirmed = await Swal.fire({
+          title: '<%- situacion ? "¿Regenerar análisis IA?" : "¿Generar análisis IA?" %>',
+          text: 'Delfino procesará tu brief actual y generará un análisis FODA estratégico actualizado.',
+          icon: 'question',
+          showCancelButton: true,
+          confirmButtonText: 'Sí, generar',
+          cancelButtonText: 'Cancelar',
+          confirmButtonColor: '#3b82f6',
+          background: 'var(--dg-card-bg, #fff)',
+        });
+        if (!confirmed.isConfirmed) return;
+
+        this.disabled = true;
+        this.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Analizando...';
+
+        try {
+          const r    = await fetch('/sostac/api/brief/generate', { method: 'POST' });
+          const json = await r.json();
+          if (!json.ok) throw new Error(json.error || 'Error al generar.');
+
+          await Swal.fire({
+            icon: 'success',
+            title: 'Análisis actualizado',
+            text: 'Tu análisis situacional SOSTAC ha sido generado.',
+            background: 'var(--dg-card-bg, #fff)',
+            confirmButtonColor: '#3b82f6',
+            timer: 2000,
+            showConfirmButton: false,
+          });
+          window.location.reload();
+        } catch (err) {
+          Swal.fire({ icon: 'error', title: 'Error', text: err.message, background: 'var(--dg-card-bg,#fff)', confirmButtonColor: '#3b82f6' });
+          this.disabled = false;
+          this.innerHTML = '<i class="bi bi-robot me-1"></i><%= situacion ? "Regenerar análisis IA" : "Generar análisis IA" %>';
+        }
+      });
+    }
+
+    /* ── Auto-load on page open ───────────────────────────── */
+    loadDatos(false);
+
+  })();
+  </script>
+</body>
+</html>

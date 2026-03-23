@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recetas - mirestconia.com</title>
+    <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/theme.css">
+    <style>
+        .recetas-page {
+            padding: 2rem 2rem 3rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* --- Page Header --- */
+        .recetas-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1.5rem;
+            margin-bottom: 1.75rem;
+            flex-wrap: wrap;
+        }
+
+        .recetas-header-left h1 {
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: var(--dg-text);
+            margin: 0 0 0.25rem;
+            letter-spacing: -0.03em;
+        }
+
+        .recetas-header-subtitle {
+            font-size: 0.85rem;
+            color: var(--dg-text-muted);
+            font-weight: 400;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .recetas-header-subtitle .dot {
+            width: 3px;
+            height: 3px;
+            border-radius: 50%;
+            background: var(--dg-text-muted);
+            display: inline-block;
+        }
+
+        .recetas-header-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        /* --- Search --- */
+        .recetas-search-wrap {
+            position: relative;
+        }
+
+        .recetas-search-wrap i {
+            position: absolute;
+            left: 0.9rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--dg-text-muted);
+            font-size: 0.9rem;
+            pointer-events: none;
+        }
+
+        .recetas-search-input {
+            padding-left: 2.4rem;
+            padding-right: 1rem;
+            height: 40px;
+            border-radius: 10px;
+            border: 1px solid var(--dg-surface-border);
+            background: var(--dg-surface);
+            color: var(--dg-text);
+            font-size: 0.875rem;
+            width: 220px;
+            transition: var(--dg-transition);
+            box-shadow: var(--dg-shadow-sm);
+        }
+
+        .recetas-search-input::placeholder {
+            color: var(--dg-text-muted);
+        }
+
+        .recetas-search-input:focus {
+            outline: none;
+            border-color: #F97316;
+            box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15);
+            width: 260px;
+        }
+
+        /* --- Filter Tabs --- */
+        .recetas-filters {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1.75rem;
+            flex-wrap: wrap;
+        }
+
+        .recetas-filter-tab {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.45rem 1rem;
+            border-radius: 100px;
+            font-size: 0.82rem;
+            font-weight: 500;
+            cursor: pointer;
+            border: 1px solid var(--dg-surface-border);
+            transition: var(--dg-transition-fast);
+            background: var(--dg-surface);
+            color: var(--dg-text-secondary);
+            box-shadow: var(--dg-shadow-sm);
+            user-select: none;
+        }
+
+        .recetas-filter-tab .tab-count {
+            font-size: 0.72rem;
+            background: rgba(0,0,0,0.06);
+            border-radius: 100px;
+            padding: 0.05rem 0.4rem;
+            font-weight: 600;
+        }
+
+        .recetas-filter-tab:hover {
+            background: var(--dg-surface-hover);
+            color: var(--dg-text);
+        }
+
+        .recetas-filter-tab.active {
+            background: linear-gradient(135deg, #F97316, #EA580C);
+            color: #fff;
+            border-color: transparent;
+            box-shadow: 0 4px 14px rgba(249, 115, 22, 0.3);
+        }
+
+        .recetas-filter-tab.active .tab-count {
+            background: rgba(255,255,255,0.25);
+        }
+
+        /* --- Table container --- */
+        .recetas-table-wrap {
+            background: var(--dg-surface);
+            border-radius: 16px;
+            border: 1px solid var(--dg-surface-border);
+            overflow: hidden;
+            box-shadow: var(--dg-shadow-sm);
+        }
+
+        .recetas-table {
+            margin: 0;
+            font-size: 0.875rem;
+        }
+
+        .recetas-table thead th {
+            background: var(--dg-surface-alt, var(--dg-surface));
+            color: var(--dg-text-muted);
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 0.85rem 1rem;
+            border-bottom: 1px solid var(--dg-surface-border);
+            white-space: nowrap;
+        }
+
+        .recetas-table tbody tr.receta-row {
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .recetas-table tbody tr.receta-row:hover {
+            background: var(--dg-surface-hover);
+        }
+
+        .recetas-table tbody td {
+            padding: 0.85rem 1rem;
+            border-bottom: 1px solid var(--dg-surface-border);
+            vertical-align: middle;
+            color: var(--dg-text);
+        }
+
+        .recetas-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        /* expand detail row */
+        .receta-detail-row td {
+            padding: 0 !important;
+            border-bottom: 1px solid var(--dg-surface-border);
+        }
+
+        .receta-detail-inner {
+            padding: 1rem 1.5rem 1.25rem;
+            background: var(--dg-surface-alt, rgba(0,0,0,0.02));
+        }
+
+        .receta-detail-inner .ingredients-table {
+            font-size: 0.82rem;
+            margin: 0;
+        }
+
+        .receta-detail-inner .ingredients-table th {
+            font-weight: 600;
+            color: var(--dg-text-muted);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            padding: 0.5rem 0.75rem;
+        }
+
+        .receta-detail-inner .ingredients-table td {
+            padding: 0.45rem 0.75rem;
+            color: var(--dg-text);
+            border-color: var(--dg-surface-border);
+        }
+
+        /* --- Food cost badge --- */
+        .fc-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.25rem 0.65rem;
+            border-radius: 100px;
+            font-size: 0.78rem;
+            font-weight: 600;
+        }
+
+        .fc-green  { background: rgba(34,197,94,0.12);  color: #16a34a; }
+        .fc-yellow { background: rgba(234,179,8,0.15);  color: #a16207; }
+        .fc-red    { background: rgba(239,68,68,0.12);  color: #dc2626; }
+        .fc-none   { background: var(--dg-surface-border); color: var(--dg-text-muted); }
+
+        /* --- Status badge --- */
+        .status-activa   { background: rgba(34,197,94,0.12); color: #16a34a; }
+        .status-inactiva { background: rgba(107,114,128,0.12); color: #6b7280; }
+
+        /* --- Producto badge / version pill --- */
+        .producto-name {
+            font-weight: 600;
+            color: var(--dg-text);
+        }
+
+        .version-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.2rem 0.55rem;
+            border-radius: 100px;
+            font-size: 0.72rem;
+            font-weight: 600;
+            background: rgba(249,115,22,0.1);
+            color: #EA580C;
+        }
+
+        /* --- Empty state --- */
+        .recetas-empty {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--dg-text-muted);
+        }
+
+        .recetas-empty i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.4;
+        }
+
+        .recetas-empty p {
+            font-size: 0.9rem;
+            margin: 0;
+        }
+
+        /* --- Loading spinner --- */
+        .recetas-loading {
+            display: none;
+            text-align: center;
+            padding: 3rem;
+            color: var(--dg-text-muted);
+        }
+
+        /* chevron rotate */
+        .expand-chevron {
+            transition: transform 0.2s;
+            color: var(--dg-text-muted);
+            font-size: 0.85rem;
+        }
+
+        .expand-chevron.open {
+            transform: rotate(180deg);
+        }
+
+        @media (max-width: 768px) {
+            .recetas-page { padding: 1rem 1rem 2rem; }
+            .recetas-search-input { width: 160px; }
+            .recetas-search-input:focus { width: 190px; }
+        }
+    </style>
+</head>
+<body>
+
+<%- include('partials/navbar') %>
+
+<div class="recetas-page">
+
+    <!-- Header -->
+    <div class="recetas-header">
+        <div class="recetas-header-left">
+            <h1><i class="bi bi-journal-text me-2" style="color:#F97316;"></i>Recetas</h1>
+            <div class="recetas-header-subtitle">
+                <span><i class="bi bi-collection"></i> <%= recetas.length %> receta<%= recetas.length !== 1 ? 's' : '' %></span>
+                <span class="dot"></span>
+                <span><i class="bi bi-check-circle"></i> <%= recetas.filter(r => r.activa).length %> activa<%= recetas.filter(r => r.activa).length !== 1 ? 's' : '' %></span>
+            </div>
+        </div>
+        <div class="recetas-header-actions">
+            <div class="recetas-search-wrap">
+                <i class="bi bi-search"></i>
+                <input type="text" id="searchInput" class="recetas-search-input" placeholder="Buscar receta...">
+            </div>
+            <button class="btn btn-sm" id="btnRefresh"
+                style="height:40px;border-radius:10px;border:1px solid var(--dg-surface-border);background:var(--dg-surface);color:var(--dg-text-secondary);padding:0 0.9rem;"
+                title="Actualizar lista">
+                <i class="bi bi-arrow-clockwise"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Category filter tabs -->
+    <div class="recetas-filters" id="filterTabs">
+        <button class="recetas-filter-tab active" data-cat="todos">
+            Todos <span class="tab-count" id="countTodos"><%= recetas.length %></span>
+        </button>
+        <button class="recetas-filter-tab" data-cat="activas">
+            Activas <span class="tab-count" id="countActivas"><%= recetas.filter(r => r.activa).length %></span>
+        </button>
+        <% categorias.forEach(cat => { %>
+        <button class="recetas-filter-tab" data-cat="<%= cat %>">
+            <%= cat %> <span class="tab-count"><%= recetas.filter(r => r.categoria === cat).length %></span>
+        </button>
+        <% }); %>
+    </div>
+
+    <!-- Table -->
+    <div class="recetas-table-wrap">
+        <div class="recetas-loading" id="loadingState">
+            <div class="spinner-border spinner-border-sm text-warning me-2"></div>
+            Cargando recetas...
+        </div>
+
+        <table class="table recetas-table" id="recetasTable">
+            <thead>
+                <tr>
+                    <th style="width:36px;"></th>
+                    <th>Producto</th>
+                    <th>Categoria</th>
+                    <th>Version</th>
+                    <th>Food Cost %</th>
+                    <th>Tiempo Prep</th>
+                    <th>Porciones</th>
+                    <th>Ingredientes</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody id="recetasBody">
+                <% recetas.forEach(r => { %>
+                <tr class="receta-row"
+                    data-id="<%= r.id %>"
+                    data-nombre="<%= String(r.producto_nombre || '').toLowerCase() %>"
+                    data-cat="<%= r.categoria %>"
+                    data-activa="<%= r.activa ? '1' : '0' %>">
+                    <td><i class="bi bi-chevron-down expand-chevron" id="chevron-<%= r.id %>"></i></td>
+                    <td>
+                        <span class="producto-name"><%= r.producto_nombre %></span>
+                        <% if (r.nombre_version) { %>
+                        <br><small class="text-muted"><%= r.nombre_version %></small>
+                        <% } %>
+                    </td>
+                    <td><small class="text-muted"><%= r.categoria %></small></td>
+                    <td><span class="version-pill">v<%= r.version %></span></td>
+                    <td>
+                        <% if (r.food_cost_objetivo_pct != null) {
+                            const fc = Number(r.food_cost_objetivo_pct);
+                            let cls = fc < 30 ? 'fc-green' : fc <= 35 ? 'fc-yellow' : 'fc-red';
+                            let icon = fc < 30 ? 'bi-check-circle-fill' : fc <= 35 ? 'bi-exclamation-circle-fill' : 'bi-x-circle-fill';
+                        %>
+                        <span class="fc-badge <%= cls %>">
+                            <i class="bi <%= icon %>"></i>
+                            <%= fc.toFixed(1) %>%
+                        </span>
+                        <% } else { %>
+                        <span class="fc-badge fc-none">—</span>
+                        <% } %>
+                    </td>
+                    <td>
+                        <% if (r.tiempo_preparacion_min != null) { %>
+                        <span><i class="bi bi-clock text-muted me-1"></i><%= r.tiempo_preparacion_min %> min</span>
+                        <% } else { %>
+                        <span class="text-muted">—</span>
+                        <% } %>
+                    </td>
+                    <td>
+                        <% if (r.rendimiento_porciones != null) { %>
+                        <span><i class="bi bi-people text-muted me-1"></i><%= Number(r.rendimiento_porciones) %></span>
+                        <% } else { %>
+                        <span class="text-muted">—</span>
+                        <% } %>
+                    </td>
+                    <td>
+                        <span class="badge bg-secondary bg-opacity-10 text-secondary"><%= r.num_ingredientes %></span>
+                    </td>
+                    <td>
+                        <% if (r.activa) { %>
+                        <span class="fc-badge status-activa"><i class="bi bi-circle-fill" style="font-size:0.55rem;"></i> Activa</span>
+                        <% } else { %>
+                        <span class="fc-badge status-inactiva"><i class="bi bi-circle" style="font-size:0.55rem;"></i> Inactiva</span>
+                        <% } %>
+                    </td>
+                </tr>
+                <!-- Expandable detail row (hidden by default) -->
+                <tr class="receta-detail-row d-none" id="detail-<%= r.id %>">
+                    <td colspan="9">
+                        <div class="receta-detail-inner" id="detail-content-<%= r.id %>">
+                            <div class="text-muted text-center py-2">
+                                <div class="spinner-border spinner-border-sm me-2"></div>Cargando ingredientes...
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                <% }); %>
+
+                <% if (recetas.length === 0) { %>
+                <tr id="emptyRow">
+                    <td colspan="9">
+                        <div class="recetas-empty">
+                            <i class="bi bi-journal-x d-block"></i>
+                            <p>No hay recetas registradas.<br>
+                               <small>Cree recetas desde la sección de Productos.</small>
+                            </p>
+                        </div>
+                    </td>
+                </tr>
+                <% } %>
+            </tbody>
+        </table>
+
+        <!-- No-results row (shown by JS filter) -->
+        <div id="noResults" class="recetas-empty d-none">
+            <i class="bi bi-search d-block"></i>
+            <p>No se encontraron recetas para ese criterio.</p>
+        </div>
+    </div>
+
+</div><!-- /.recetas-page -->
+
+<script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script>
+(function () {
+    'use strict';
+
+    // ── State ──────────────────────────────────────────────────────────────────
+    let activeFilter = 'todos';
+    let searchTerm   = '';
+
+    // ── Filter / Search ────────────────────────────────────────────────────────
+    function applyFilter() {
+        const rows     = document.querySelectorAll('#recetasBody tr.receta-row');
+        let visible    = 0;
+
+        rows.forEach(function(row) {
+            const nombre = row.dataset.nombre || '';
+            const cat    = row.dataset.cat    || '';
+            const activa = row.dataset.activa === '1';
+            const id     = row.dataset.id;
+
+            const matchSearch = searchTerm === '' || nombre.includes(searchTerm);
+            let   matchFilter = false;
+            if      (activeFilter === 'todos')   matchFilter = true;
+            else if (activeFilter === 'activas') matchFilter = activa;
+            else                                 matchFilter = cat === activeFilter;
+
+            const show = matchSearch && matchFilter;
+            row.classList.toggle('d-none', !show);
+
+            // Also hide associated detail row when parent is hidden
+            const detailRow = document.getElementById('detail-' + id);
+            if (detailRow && !show) {
+                detailRow.classList.add('d-none');
+                const chevron = document.getElementById('chevron-' + id);
+                if (chevron) chevron.classList.remove('open');
+            }
+
+            if (show) visible++;
+        });
+
+        const noResults = document.getElementById('noResults');
+        const emptyRow  = document.getElementById('emptyRow');
+        if (noResults) noResults.classList.toggle('d-none', visible > 0 || rows.length === 0);
+        if (emptyRow)  emptyRow.classList.toggle('d-none', rows.length === 0 ? false : true);
+    }
+
+    // ── Filter tabs ────────────────────────────────────────────────────────────
+    document.querySelectorAll('.recetas-filter-tab').forEach(function(tab) {
+        tab.addEventListener('click', function() {
+            document.querySelectorAll('.recetas-filter-tab').forEach(function(t) { t.classList.remove('active'); });
+            tab.classList.add('active');
+            activeFilter = tab.dataset.cat;
+            applyFilter();
+        });
+    });
+
+    // ── Search input ───────────────────────────────────────────────────────────
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            searchTerm = this.value.toLowerCase().trim();
+            applyFilter();
+        });
+    }
+
+    // ── Row expand / collapse ──────────────────────────────────────────────────
+    const loadedRecetas = {};
+
+    document.querySelectorAll('tr.receta-row').forEach(function(row) {
+        row.addEventListener('click', function() {
+            const id        = row.dataset.id;
+            const detailRow = document.getElementById('detail-' + id);
+            const chevron   = document.getElementById('chevron-' + id);
+            if (!detailRow) return;
+
+            const isOpen = !detailRow.classList.contains('d-none');
+
+            if (isOpen) {
+                detailRow.classList.add('d-none');
+                if (chevron) chevron.classList.remove('open');
+                return;
+            }
+
+            detailRow.classList.remove('d-none');
+            if (chevron) chevron.classList.add('open');
+
+            if (loadedRecetas[id]) return; // already loaded
+
+            fetch('/api/recetas-standalone/' + id + '/items')
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    loadedRecetas[id] = true;
+                    const container = document.getElementById('detail-content-' + id);
+                    if (!container) return;
+                    if (!data.items || data.items.length === 0) {
+                        container.innerHTML = '<p class="text-muted mb-0" style="font-size:0.82rem;">Esta receta no tiene ingredientes registrados.</p>';
+                        return;
+                    }
+
+                    let rows = '';
+                    data.items.forEach(function(item) {
+                        const costo = item.costo_item > 0 ? 'S/ ' + Number(item.costo_item).toFixed(3) : '—';
+                        const opcional = item.es_opcional
+                            ? '<span class="badge bg-warning bg-opacity-20 text-warning" style="font-size:0.7rem;">Opcional</span>'
+                            : '';
+                        const notas = item.notas
+                            ? '<small class="text-muted ms-1">' + escapeHtml(item.notas) + '</small>'
+                            : '';
+                        rows += '<tr>'
+                            + '<td>' + escapeHtml(item.ingrediente_nombre || 'Sub-receta / sin nombre') + opcional + notas + '</td>'
+                            + '<td>' + Number(item.cantidad).toLocaleString('es-PE', {maximumFractionDigits: 3}) + ' ' + escapeHtml(item.unidad_medida || '') + '</td>'
+                            + '<td>' + costo + '</td>'
+                            + '</tr>';
+                    });
+
+                    const total = data.costo_total > 0 ? 'S/ ' + Number(data.costo_total).toFixed(3) : '—';
+                    container.innerHTML =
+                        '<table class="table table-sm ingredients-table mb-1">'
+                        + '<thead><tr>'
+                        + '<th>Ingrediente</th>'
+                        + '<th>Cantidad</th>'
+                        + '<th>Costo</th>'
+                        + '</tr></thead>'
+                        + '<tbody>' + rows + '</tbody>'
+                        + '<tfoot><tr>'
+                        + '<td colspan="2" class="text-end fw-semibold" style="font-size:0.82rem;">Costo total receta</td>'
+                        + '<td class="fw-bold" style="font-size:0.82rem;">' + total + '</td>'
+                        + '</tr></tfoot>'
+                        + '</table>';
+                })
+                .catch(function(err) {
+                    const container = document.getElementById('detail-content-' + id);
+                    if (container) container.innerHTML = '<p class="text-danger mb-0" style="font-size:0.82rem;"><i class="bi bi-exclamation-circle me-1"></i>Error al cargar ingredientes.</p>';
+                });
+        });
+    });
+
+    // ── Refresh button ─────────────────────────────────────────────────────────
+    const btnRefresh = document.getElementById('btnRefresh');
+    if (btnRefresh) {
+        btnRefresh.addEventListener('click', function() {
+            window.location.reload();
+        });
+    }
+
+    // ── Util ───────────────────────────────────────────────────────────────────
+    function escapeHtml(str) {
+        return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // ── Bootstrap tooltips ─────────────────────────────────────────────────────
+    if (typeof bootstrap !== 'undefined') {
+        document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(el) {
+            new bootstrap.Tooltip(el, { trigger: 'hover' });
+        });
+    }
+
+})();
+</script>
+</body>
+</html>

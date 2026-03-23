@@ -239,6 +239,7 @@ const chatRoutes = require('./routes/chat');
 const socialApiRoutes = require('./routes/social-api');
 const almacenRoutes = require('./routes/almacen');
 const recetasRoutes = require('./routes/recetas');
+const recetasStandaloneRoutes = require('./routes/recetas-standalone');
 const cajaRoutes = require('./routes/caja');
 const sunatRoutes = require('./routes/sunat');
 const administracionRoutes = require('./routes/administracion');
@@ -257,6 +258,7 @@ const contratosRoutes  = require('./routes/contratos');
 const firmarRoutes     = require('./routes/firmar');
 const cronRoutes       = require('./routes/cron');
 const observabilidadRoutes = require('./routes/observabilidad');
+const sostacRoutes         = require('./routes/sostac');
 
 // Cron endpoints (Vercel Cron Jobs — auth via CRON_SECRET header)
 app.use('/api/cron', cronRoutes);
@@ -780,6 +782,10 @@ app.use('/almacen', requireRole(['administrador', 'almacenero']), almacenRoutes)
 // Recetas API (admin + almacenero)
 app.use('/api/recetas', requireRole(['administrador', 'almacenero']), recetasRoutes);
 
+// Recetas standalone page + items API (admin + almacenero)
+app.use('/recetas', requireAuth, requireRole(['administrador', 'almacenero']), recetasStandaloneRoutes);
+app.use('/api/recetas-standalone', requireAuth, requireRole(['administrador', 'almacenero']), recetasStandaloneRoutes);
+
 // SUNAT (admin)
 app.use('/sunat', requireRole('administrador'), sunatRoutes);
 app.use('/api/sunat', requireRole('administrador'), sunatRoutes);
@@ -791,6 +797,9 @@ app.use('/api/caja', requireRole(['administrador', 'cajero']), cajaRoutes);
 // Chat IA (admin)
 app.use('/chat', requireRole('administrador'), chatLimiter, chatRoutes);
 app.use('/api/chat', requireRole('administrador'), chatLimiter, chatRoutes);
+
+// SOSTAC — strategic framework (admin)
+app.use('/sostac', requireAuth, requireRole(['administrador']), sostacRoutes);
 
 // Contratos (superadmin only)
 app.use('/contratos', requireAuth, requireRole('superadmin'), contratosRoutes);

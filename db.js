@@ -356,6 +356,61 @@ async function ensureSchema() {
         for (const sql of obsIndexes) {
             try { await pgNativeQuery(sql); } catch (_) {}
         }
+
+        // ── Knowledge Base table (agentes_knowledge_base) ─────────────────
+        try {
+            await pgNativeQuery(`CREATE TABLE IF NOT EXISTS agentes_knowledge_base (
+                id SERIAL PRIMARY KEY,
+                tenant_id INT NOT NULL,
+                categoria VARCHAR(50) NOT NULL,
+                clave VARCHAR(100) NOT NULL,
+                valor TEXT,
+                datos JSONB DEFAULT '{}',
+                fuente VARCHAR(50) DEFAULT 'sistema',
+                updated_at TIMESTAMP DEFAULT NOW()
+            )`);
+            await pgNativeQuery(`CREATE INDEX IF NOT EXISTS idx_kb_tenant ON agentes_knowledge_base(tenant_id)`);
+        } catch (_) {}
+
+        // ── SOSTAC tables (014_sostac safety net) ─────────────────────────
+        try {
+            await pgNativeQuery(`CREATE TABLE IF NOT EXISTS sostac_briefs (
+                id SERIAL PRIMARY KEY,
+                tenant_id INT NOT NULL,
+                datos JSONB NOT NULL DEFAULT '{}',
+                generado_por VARCHAR(50) DEFAULT 'delfino',
+                version INT DEFAULT 1,
+                activo BOOLEAN DEFAULT true,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )`);
+            await pgNativeQuery(`CREATE TABLE IF NOT EXISTS sostac_situacion (
+                id SERIAL PRIMARY KEY,
+                tenant_id INT NOT NULL,
+                brief_id INT REFERENCES sostac_briefs(id) ON DELETE SET NULL,
+                datos JSONB NOT NULL DEFAULT '{}',
+                periodo VARCHAR(20),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )`);
+            await pgNativeQuery(`CREATE TABLE IF NOT EXISTS sostac_objetivos (
+                id SERIAL PRIMARY KEY,
+                tenant_id INT NOT NULL,
+                brief_id INT REFERENCES sostac_briefs(id) ON DELETE SET NULL,
+                titulo VARCHAR(200) NOT NULL,
+                tipo VARCHAR(20) DEFAULT 'smart',
+                metrica VARCHAR(100),
+                valor_actual DECIMAL(12,2),
+                valor_objetivo DECIMAL(12,2),
+                fecha_limite DATE,
+                estado VARCHAR(20) DEFAULT 'activo',
+                progreso INT DEFAULT 0,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )`);
+            await pgNativeQuery(`CREATE INDEX IF NOT EXISTS idx_sostac_briefs_tenant ON sostac_briefs(tenant_id, activo)`);
+            await pgNativeQuery(`CREATE INDEX IF NOT EXISTS idx_sostac_situacion_brief ON sostac_situacion(brief_id, tenant_id)`);
+            await pgNativeQuery(`CREATE INDEX IF NOT EXISTS idx_sostac_objetivos_brief ON sostac_objetivos(brief_id, tenant_id)`);
+        } catch (_) {}
+
     } catch (err) {
         console.error('ensureSchema() falló:', err.message || err);
     }

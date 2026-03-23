@@ -15,6 +15,7 @@
         <a href="/cocina" class="btn btn-outline-light btn-sm" data-bs-toggle="tooltip" title="Cocina"><i class="bi bi-fire"></i></a>
         <a href="/ventas" class="btn btn-outline-light btn-sm" data-bs-toggle="tooltip" title="Ventas"><i class="bi bi-graph-up-arrow"></i></a>
         <a href="/productos" class="btn btn-outline-light btn-sm" data-bs-toggle="tooltip" title="Productos"><i class="bi bi-box-seam-fill"></i></a>
+        <a href="/recetas" class="btn btn-outline-light btn-sm" data-bs-toggle="tooltip" title="Recetas"><i class="bi bi-journal-text"></i></a>
         <a href="/clientes" class="btn btn-outline-light btn-sm" data-bs-toggle="tooltip" title="Clientes"><i class="bi bi-people-fill"></i></a>
         <a href="/usuarios" class="btn btn-outline-light btn-sm" data-bs-toggle="tooltip" title="Usuarios"><i class="bi bi-person-gear"></i></a>
         <a href="/configuracion" class="btn btn-outline-light btn-sm" data-bs-toggle="tooltip" title="Configuracion"><i class="bi bi-gear-fill"></i></a>
@@ -27,6 +28,12 @@
 
       <% if (rol === 'cocinero') { %>
         <a href="/cocina" class="btn btn-outline-light btn-sm" data-bs-toggle="tooltip" title="Cocina"><i class="bi bi-fire"></i></a>
+      <% } %>
+
+      <% if (rol === 'almacenero') { %>
+        <a href="/almacen" class="btn btn-outline-light btn-sm" data-bs-toggle="tooltip" title="Almacen"><i class="bi bi-archive-fill"></i></a>
+        <a href="/productos" class="btn btn-outline-light btn-sm" data-bs-toggle="tooltip" title="Productos"><i class="bi bi-box-seam-fill"></i></a>
+        <a href="/recetas" class="btn btn-outline-light btn-sm" data-bs-toggle="tooltip" title="Recetas"><i class="bi bi-journal-text"></i></a>
       <% } %>
 
       <!-- Theme toggle -->

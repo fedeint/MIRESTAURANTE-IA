@@ -1,0 +1,711 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Brief Express — SOSTAC</title>
+  <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+  <link rel="stylesheet" href="/css/theme.css">
+  <style>
+    /* ── SOSTAC Brief Wizard ── */
+    .brief-shell {
+      min-height: 100vh;
+      background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 2rem 1rem 3rem;
+    }
+    .brief-header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
+    .brief-logo {
+      font-size: 2.8rem;
+      background: linear-gradient(135deg, #f97316, #fb923c);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      font-weight: 800;
+      letter-spacing: -1px;
+      line-height: 1;
+    }
+    .brief-subtitle {
+      color: rgba(255,255,255,0.55);
+      font-size: 0.95rem;
+      margin-top: 0.3rem;
+    }
+    /* Progress bar */
+    .brief-progress-wrap {
+      width: 100%;
+      max-width: 720px;
+      margin-bottom: 2rem;
+    }
+    .brief-steps-labels {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+    }
+    .brief-step-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: rgba(255,255,255,0.35);
+      transition: color 0.3s;
+    }
+    .brief-step-label.active-step { color: #f97316; }
+    .brief-step-label.done-step { color: rgba(255,255,255,0.6); }
+    .progress-track {
+      height: 5px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #f97316, #fb923c);
+      border-radius: 99px;
+      transition: width 0.45s cubic-bezier(0.34,1.56,0.64,1);
+    }
+    /* Card */
+    .brief-card {
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 20px;
+      padding: 2.2rem 2.5rem;
+      width: 100%;
+      max-width: 720px;
+      backdrop-filter: blur(12px);
+      box-shadow: 0 24px 64px rgba(0,0,0,0.45);
+    }
+    .step-category-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: rgba(249,115,22,0.12);
+      border: 1px solid rgba(249,115,22,0.25);
+      color: #f97316;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      padding: 0.3rem 0.75rem;
+      border-radius: 99px;
+      margin-bottom: 0.8rem;
+    }
+    .step-title {
+      color: #fff;
+      font-size: 1.35rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+    }
+    .step-desc {
+      color: rgba(255,255,255,0.45);
+      font-size: 0.875rem;
+      margin-bottom: 1.75rem;
+    }
+    /* Inputs */
+    .brief-label {
+      color: rgba(255,255,255,0.75);
+      font-size: 0.82rem;
+      font-weight: 600;
+      margin-bottom: 0.35rem;
+    }
+    .brief-input,
+    .brief-textarea,
+    .brief-select {
+      background: rgba(255,255,255,0.06) !important;
+      border: 1px solid rgba(255,255,255,0.12) !important;
+      color: #e2e8f0 !important;
+      border-radius: 10px !important;
+      padding: 0.6rem 0.9rem !important;
+      font-size: 0.88rem !important;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .brief-input:focus,
+    .brief-textarea:focus,
+    .brief-select:focus {
+      border-color: rgba(249,115,22,0.6) !important;
+      box-shadow: 0 0 0 3px rgba(249,115,22,0.15) !important;
+      outline: none;
+      background: rgba(255,255,255,0.09) !important;
+    }
+    .brief-input::placeholder,
+    .brief-textarea::placeholder { color: rgba(255,255,255,0.25) !important; }
+    .brief-select option { background: #1e293b; color: #e2e8f0; }
+    /* Nav buttons */
+    .brief-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid rgba(255,255,255,0.07);
+    }
+    .btn-brief-prev {
+      background: transparent;
+      border: 1px solid rgba(255,255,255,0.15);
+      color: rgba(255,255,255,0.6);
+      border-radius: 10px;
+      padding: 0.55rem 1.4rem;
+      font-size: 0.88rem;
+      transition: all 0.2s;
+    }
+    .btn-brief-prev:hover {
+      border-color: rgba(255,255,255,0.35);
+      color: #fff;
+      background: rgba(255,255,255,0.05);
+    }
+    .btn-brief-next {
+      background: linear-gradient(135deg, #f97316, #ea580c);
+      border: none;
+      color: #fff;
+      border-radius: 10px;
+      padding: 0.6rem 1.8rem;
+      font-size: 0.88rem;
+      font-weight: 600;
+      transition: all 0.2s;
+      box-shadow: 0 4px 16px rgba(249,115,22,0.3);
+    }
+    .btn-brief-next:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 22px rgba(249,115,22,0.45);
+    }
+    .btn-brief-next:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+    /* Step counter */
+    .step-counter {
+      color: rgba(255,255,255,0.35);
+      font-size: 0.8rem;
+    }
+    .step-counter span { color: #f97316; font-weight: 700; }
+    /* Loading screen */
+    .brief-loading {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 3rem 1rem;
+    }
+    .loading-ring {
+      width: 72px;
+      height: 72px;
+      border: 4px solid rgba(249,115,22,0.2);
+      border-top-color: #f97316;
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+      margin: 0 auto 1.5rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-title {
+      color: #fff;
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin-bottom: 0.4rem;
+    }
+    .loading-sub {
+      color: rgba(255,255,255,0.45);
+      font-size: 0.875rem;
+    }
+    .loading-dots::after {
+      content: '';
+      animation: dots 1.5s steps(4, end) infinite;
+    }
+    @keyframes dots {
+      0%  { content: ''; }
+      25% { content: '.'; }
+      50% { content: '..'; }
+      75% { content: '...'; }
+    }
+    /* Field group */
+    .brief-field { margin-bottom: 1.2rem; }
+    /* Responsive */
+    @media (max-width: 576px) {
+      .brief-card { padding: 1.5rem 1.25rem; }
+      .brief-logo { font-size: 2.2rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="brief-shell">
+
+    <!-- Header -->
+    <div class="brief-header">
+      <div class="brief-logo"><i class="bi bi-compass-fill" style="font-size:2.2rem;vertical-align:middle;margin-right:0.3rem;"></i>SOSTAC</div>
+      <div class="brief-subtitle">Brief Express con Delfino &mdash; Construye tu estrategia en 5 minutos</div>
+    </div>
+
+    <!-- Progress -->
+    <div class="brief-progress-wrap">
+      <div class="brief-steps-labels">
+        <span class="brief-step-label active-step" data-step-label="1">Negocio</span>
+        <span class="brief-step-label" data-step-label="2">Clientes</span>
+        <span class="brief-step-label" data-step-label="3">Finanzas</span>
+        <span class="brief-step-label" data-step-label="4">Competencia</span>
+        <span class="brief-step-label" data-step-label="5">Objetivos</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progressFill" style="width:20%;"></div>
+      </div>
+    </div>
+
+    <!-- Wizard Card -->
+    <div class="brief-card">
+
+      <!-- ── STEP 1: NEGOCIO ─────────────────────────────── -->
+      <div class="brief-step" data-step="1">
+        <div class="step-category-badge"><i class="bi bi-building"></i> Paso 1 de 5</div>
+        <div class="step-title">Cuéntame sobre tu negocio</div>
+        <div class="step-desc">Empecemos con lo básico. Esta información define el punto de partida de tu estrategia.</div>
+
+        <div class="brief-field">
+          <label class="brief-label">Nombre del restaurante *</label>
+          <input type="text" class="form-control brief-input" id="f_nombre" name="nombre" placeholder="Ej: La Leña, Maido, El Bodegón..." required>
+        </div>
+        <div class="row g-3">
+          <div class="col-sm-6">
+            <div class="brief-field mb-0">
+              <label class="brief-label">Tipo de cocina *</label>
+              <select class="form-select brief-select" id="f_tipo_cocina" name="tipo_cocina">
+                <option value="">Selecciona...</option>
+                <option value="Criolla / peruana">Criolla / peruana</option>
+                <option value="Fusión">Fusión</option>
+                <option value="Italiana">Italiana</option>
+                <option value="Parrilla / carnes">Parrilla / carnes</option>
+                <option value="Mariscos / cevichería">Mariscos / cevichería</option>
+                <option value="Asiática">Asiática</option>
+                <option value="Fast food">Fast food</option>
+                <option value="Cafetería / brunch">Cafetería / brunch</option>
+                <option value="Vegetariana / vegana">Vegetariana / vegana</option>
+                <option value="Pizzería">Pizzería</option>
+                <option value="Otra">Otra</option>
+              </select>
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <div class="brief-field mb-0">
+              <label class="brief-label">Años operando</label>
+              <input type="number" class="form-control brief-input" id="f_años_operando" name="años_operando" placeholder="Ej: 3" min="0" max="100">
+            </div>
+          </div>
+        </div>
+        <div class="row g-3 mt-0">
+          <div class="col-sm-6">
+            <div class="brief-field mb-0">
+              <label class="brief-label">Número de empleados</label>
+              <input type="number" class="form-control brief-input" id="f_num_empleados" name="num_empleados" placeholder="Ej: 8" min="1">
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <div class="brief-field mb-0">
+              <label class="brief-label">Número de sedes</label>
+              <input type="number" class="form-control brief-input" id="f_num_sedes" name="num_sedes" placeholder="Ej: 1" min="1">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── STEP 2: CLIENTES ────────────────────────────── -->
+      <div class="brief-step" data-step="2" style="display:none;">
+        <div class="step-category-badge"><i class="bi bi-people-fill"></i> Paso 2 de 5</div>
+        <div class="step-title">¿Quiénes son tus clientes?</div>
+        <div class="step-desc">Entender a tu cliente ideal es clave para toda decisión estratégica.</div>
+
+        <div class="brief-field">
+          <label class="brief-label">¿Cómo describirías a tu cliente ideal? *</label>
+          <textarea class="form-control brief-textarea" id="f_cliente_ideal" name="cliente_ideal" rows="2" placeholder="Ej: Familias de NSE B/C entre 25-45 años, oficinistas del distrito, turistas de negocios..."></textarea>
+        </div>
+        <div class="row g-3">
+          <div class="col-sm-6">
+            <div class="brief-field mb-0">
+              <label class="brief-label">Ticket promedio (S/)</label>
+              <input type="text" class="form-control brief-input" id="f_ticket_promedio" name="ticket_promedio" placeholder="Ej: S/ 45 por persona">
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <div class="brief-field mb-0">
+              <label class="brief-label">Frecuencia de visita</label>
+              <select class="form-select brief-select" id="f_frecuencia_visita" name="frecuencia_visita">
+                <option value="">Selecciona...</option>
+                <option value="Diaria (habituales)">Diaria (habituales)</option>
+                <option value="2-3 veces por semana">2-3 veces por semana</option>
+                <option value="1 vez por semana">1 vez por semana</option>
+                <option value="Quincenal">Quincenal</option>
+                <option value="Mensual">Mensual</option>
+                <option value="Ocasional / esporádica">Ocasional / esporádica</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="brief-field mt-3">
+          <label class="brief-label">¿Cómo llegan tus clientes?</label>
+          <textarea class="form-control brief-textarea" id="f_como_llegan" name="como_llegan" rows="2" placeholder="Ej: 60% por recomendación, 30% por Google Maps, 10% redes sociales..."></textarea>
+        </div>
+      </div>
+
+      <!-- ── STEP 3: FINANZAS ────────────────────────────── -->
+      <div class="brief-step" data-step="3" style="display:none;">
+        <div class="step-category-badge"><i class="bi bi-cash-stack"></i> Paso 3 de 5</div>
+        <div class="step-title">Situación financiera actual</div>
+        <div class="step-desc">Datos aproximados son suficientes. Esto nos ayuda a calibrar tus objetivos.</div>
+
+        <div class="row g-3">
+          <div class="col-sm-6">
+            <div class="brief-field mb-0">
+              <label class="brief-label">Ventas mensuales aproximadas (S/)</label>
+              <input type="text" class="form-control brief-input" id="f_ventas_mensuales" name="ventas_mensuales" placeholder="Ej: S/ 35,000">
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <div class="brief-field mb-0">
+              <label class="brief-label">Food cost actual (%)</label>
+              <input type="text" class="form-control brief-input" id="f_food_cost" name="food_cost" placeholder="Ej: 38%">
+            </div>
+          </div>
+        </div>
+        <div class="row g-3 mt-0">
+          <div class="col-sm-6">
+            <div class="brief-field mb-0">
+              <label class="brief-label">Margen neto objetivo (%)</label>
+              <input type="text" class="form-control brief-input" id="f_margen_objetivo" name="margen_objetivo" placeholder="Ej: 18%">
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <div class="brief-field mb-0">
+              <label class="brief-label">Gastos fijos mensuales (S/)</label>
+              <input type="text" class="form-control brief-input" id="f_gastos_fijos" name="gastos_fijos" placeholder="Ej: S/ 12,000">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── STEP 4: COMPETENCIA ─────────────────────────── -->
+      <div class="brief-step" data-step="4" style="display:none;">
+        <div class="step-category-badge"><i class="bi bi-trophy-fill"></i> Paso 4 de 5</div>
+        <div class="step-title">Panorama competitivo</div>
+        <div class="step-desc">Conocer el terreno te permite jugar el partido estratégico con ventaja.</div>
+
+        <div class="brief-field">
+          <label class="brief-label">Principales competidores *</label>
+          <textarea class="form-control brief-textarea" id="f_principales" name="principales" rows="2" placeholder="Ej: La Picantería, El Rincón Familiar, Pescados Capitales..."></textarea>
+        </div>
+        <div class="brief-field">
+          <label class="brief-label">¿Qué te diferencia de ellos? *</label>
+          <textarea class="form-control brief-textarea" id="f_diferenciador" name="diferenciador" rows="2" placeholder="Ej: Ingredientes 100% de mercado local, precio accesible, ambiente familiar único..."></textarea>
+        </div>
+        <div class="brief-field">
+          <label class="brief-label">Amenazas que te preocupan</label>
+          <textarea class="form-control brief-textarea" id="f_amenazas" name="amenazas" rows="2" placeholder="Ej: Nuevos locales en el distrito, alza de costos de insumos, delivery dominado por grandes cadenas..."></textarea>
+        </div>
+      </div>
+
+      <!-- ── STEP 5: OBJETIVOS ───────────────────────────── -->
+      <div class="brief-step" data-step="5" style="display:none;">
+        <div class="step-category-badge"><i class="bi bi-flag-fill"></i> Paso 5 de 5</div>
+        <div class="step-title">¿Adónde quieres llegar?</div>
+        <div class="step-desc">Tus objetivos guían todas las decisiones estratégicas. Sé ambicioso pero realista.</div>
+
+        <div class="brief-field">
+          <label class="brief-label">Objetivo principal este año *</label>
+          <textarea class="form-control brief-textarea" id="f_objetivo_principal" name="objetivo_principal" rows="2" placeholder="Ej: Aumentar ventas un 25%, abrir segunda sede, mejorar rentabilidad..."></textarea>
+        </div>
+        <div class="row g-3">
+          <div class="col-sm-6">
+            <div class="brief-field mb-0">
+              <label class="brief-label">Meta de ventas anuales (S/)</label>
+              <input type="text" class="form-control brief-input" id="f_meta_ventas" name="meta_ventas" placeholder="Ej: S/ 600,000">
+            </div>
+          </div>
+          <div class="col-sm-6">
+            <div class="brief-field mb-0">
+              <label class="brief-label">Expansión planificada</label>
+              <select class="form-select brief-select" id="f_expansion" name="expansion">
+                <option value="No planificada">No planificada este año</option>
+                <option value="Nueva sede en el mismo distrito">Nueva sede en el mismo distrito</option>
+                <option value="Nueva sede en otro distrito">Nueva sede en otro distrito</option>
+                <option value="Dark kitchen / delivery">Dark kitchen / delivery</option>
+                <option value="Franquicia">Modelo de franquicia</option>
+                <option value="Internacional">Expansión internacional</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="brief-field mt-3">
+          <label class="brief-label">Áreas que más necesitas mejorar</label>
+          <textarea class="form-control brief-textarea" id="f_areas_mejorar" name="areas_mejorar" rows="2" placeholder="Ej: Marketing digital, control de costos, gestión del personal, fidelización..."></textarea>
+        </div>
+      </div>
+
+      <!-- ── LOADING SCREEN ─────────────────────────────── -->
+      <div class="brief-loading" id="briefLoading">
+        <div class="loading-ring"></div>
+        <div class="loading-title">Delfino está analizando tu negocio<span class="loading-dots"></span></div>
+        <div class="loading-sub">Generando tu análisis estratégico SOSTAC personalizado</div>
+      </div>
+
+      <!-- Navigation -->
+      <div class="brief-nav" id="briefNav">
+        <button type="button" class="btn-brief-prev" id="btnPrev" style="visibility:hidden;">
+          <i class="bi bi-arrow-left me-1"></i> Anterior
+        </button>
+        <span class="step-counter">Paso <span id="stepNumDisplay">1</span> de 5</span>
+        <button type="button" class="btn-brief-next" id="btnNext">
+          Siguiente <i class="bi bi-arrow-right ms-1"></i>
+        </button>
+      </div>
+
+    </div><!-- /.brief-card -->
+
+    <!-- Back to dashboard link (only if brief exists) -->
+    <% if (brief) { %>
+    <div class="mt-3 text-center">
+      <a href="/sostac" style="color:rgba(255,255,255,0.35);font-size:0.8rem;text-decoration:none;">
+        <i class="bi bi-arrow-left me-1"></i> Volver al dashboard sin guardar
+      </a>
+    </div>
+    <% } %>
+
+  </div><!-- /.brief-shell -->
+
+  <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script src="/vendor/sweetalert2/sweetalert2.all.min.js"></script>
+  <script>
+  (function(){
+    const TOTAL_STEPS = 5;
+    let currentStep  = 1;
+
+    const progressFill    = document.getElementById('progressFill');
+    const btnNext         = document.getElementById('btnNext');
+    const btnPrev         = document.getElementById('btnPrev');
+    const stepNumDisplay  = document.getElementById('stepNumDisplay');
+    const briefNav        = document.getElementById('briefNav');
+    const briefLoading    = document.getElementById('briefLoading');
+
+    function getStepEl(n) {
+      return document.querySelector(`.brief-step[data-step="${n}"]`);
+    }
+    function getLabelEl(n) {
+      return document.querySelector(`.brief-step-label[data-step-label="${n}"]`);
+    }
+
+    function updateProgress(step) {
+      const pct = Math.round((step / TOTAL_STEPS) * 100);
+      progressFill.style.width = pct + '%';
+      stepNumDisplay.textContent = step;
+
+      for (let i = 1; i <= TOTAL_STEPS; i++) {
+        const lbl = getLabelEl(i);
+        if (!lbl) continue;
+        lbl.className = 'brief-step-label';
+        if (i < step)  lbl.classList.add('done-step');
+        if (i === step) lbl.classList.add('active-step');
+      }
+
+      btnPrev.style.visibility = step > 1 ? 'visible' : 'hidden';
+      if (step === TOTAL_STEPS) {
+        btnNext.innerHTML = '<i class="bi bi-check2-circle me-1"></i> Generar estrategia';
+      } else {
+        btnNext.innerHTML = 'Siguiente <i class="bi bi-arrow-right ms-1"></i>';
+      }
+    }
+
+    function showStep(n) {
+      document.querySelectorAll('.brief-step').forEach(el => el.style.display = 'none');
+      const el = getStepEl(n);
+      if (el) el.style.display = '';
+      updateProgress(n);
+    }
+
+    function validateCurrentStep() {
+      const stepEl = getStepEl(currentStep);
+      if (!stepEl) return true;
+      const required = stepEl.querySelectorAll('[required]');
+      let valid = true;
+      required.forEach(inp => {
+        if (!inp.value.trim()) {
+          inp.style.borderColor = 'rgba(239,68,68,0.7)';
+          inp.style.boxShadow   = '0 0 0 3px rgba(239,68,68,0.15)';
+          valid = false;
+          inp.addEventListener('input', function once() {
+            inp.style.borderColor = '';
+            inp.style.boxShadow   = '';
+            inp.removeEventListener('input', once);
+          });
+        }
+      });
+      return valid;
+    }
+
+    function collectData() {
+      const d = {};
+
+      // Step 1: negocio
+      d.negocio = {
+        nombre:        _v('f_nombre'),
+        tipo_cocina:   _v('f_tipo_cocina'),
+        años_operando: _v('f_años_operando'),
+        num_empleados: _v('f_num_empleados'),
+        num_sedes:     _v('f_num_sedes'),
+      };
+      // Step 2: clientes
+      d.clientes = {
+        cliente_ideal:    _v('f_cliente_ideal'),
+        ticket_promedio:  _v('f_ticket_promedio'),
+        frecuencia_visita:_v('f_frecuencia_visita'),
+        como_llegan:      _v('f_como_llegan'),
+      };
+      // Step 3: finanzas
+      d.finanzas = {
+        ventas_mensuales: _v('f_ventas_mensuales'),
+        food_cost:        _v('f_food_cost'),
+        margen_objetivo:  _v('f_margen_objetivo'),
+        gastos_fijos:     _v('f_gastos_fijos'),
+      };
+      // Step 4: competencia
+      d.competencia = {
+        principales:  _v('f_principales'),
+        diferenciador:_v('f_diferenciador'),
+        amenazas:     _v('f_amenazas'),
+      };
+      // Step 5: objetivos
+      d.objetivos = {
+        objetivo_principal:_v('f_objetivo_principal'),
+        meta_ventas:       _v('f_meta_ventas'),
+        expansion:         _v('f_expansion'),
+        areas_mejorar:     _v('f_areas_mejorar'),
+      };
+
+      return d;
+    }
+
+    function _v(id) {
+      const el = document.getElementById(id);
+      return el ? el.value.trim() : '';
+    }
+
+    async function submitBrief() {
+      // Show loading
+      document.querySelectorAll('.brief-step').forEach(el => el.style.display = 'none');
+      briefNav.style.display = 'none';
+      briefLoading.style.display = 'flex';
+
+      const datos = collectData();
+
+      try {
+        // 1. Save brief
+        const saveRes = await fetch('/sostac/brief', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ datos }),
+        });
+        const saveJson = await saveRes.json();
+
+        if (!saveJson.ok) throw new Error(saveJson.error || 'Error al guardar el brief.');
+
+        // 2. Trigger AI analysis (fire-and-forget tolerated)
+        try {
+          await fetch('/sostac/api/brief/generate', { method: 'POST' });
+        } catch(_) { /* non-blocking */ }
+
+        // 3. Redirect
+        window.location.href = '/sostac';
+      } catch(err) {
+        briefLoading.style.display = 'none';
+        briefNav.style.display = '';
+        showStep(TOTAL_STEPS);
+        Swal.fire({
+          icon: 'error',
+          title: 'Ups...',
+          text: err.message || 'Hubo un error al guardar tu brief. Intenta de nuevo.',
+          background: '#1e293b',
+          color: '#e2e8f0',
+          confirmButtonColor: '#f97316',
+        });
+      }
+    }
+
+    // ── Event listeners ─────────────────────
+    btnNext.addEventListener('click', function() {
+      if (!validateCurrentStep()) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'Campo requerido',
+          text: 'Por favor completa los campos obligatorios antes de continuar.',
+          background: '#1e293b',
+          color: '#e2e8f0',
+          confirmButtonColor: '#f97316',
+          timer: 2500,
+          showConfirmButton: false,
+        });
+        return;
+      }
+      if (currentStep < TOTAL_STEPS) {
+        currentStep++;
+        showStep(currentStep);
+      } else {
+        submitBrief();
+      }
+    });
+
+    btnPrev.addEventListener('click', function() {
+      if (currentStep > 1) {
+        currentStep--;
+        showStep(currentStep);
+      }
+    });
+
+    // Init
+    showStep(1);
+
+    // Pre-populate from existing brief if editing
+    <% if (brief && brief.datos) { %>
+    (function prefill() {
+      const d = <%- JSON.stringify(brief.datos) %>;
+      function s(id, obj, key) {
+        const el = document.getElementById(id);
+        if (el && obj && obj[key] !== undefined) el.value = obj[key];
+      }
+      if (d.negocio) {
+        s('f_nombre',        d.negocio, 'nombre');
+        s('f_tipo_cocina',   d.negocio, 'tipo_cocina');
+        s('f_años_operando', d.negocio, 'años_operando');
+        s('f_num_empleados', d.negocio, 'num_empleados');
+        s('f_num_sedes',     d.negocio, 'num_sedes');
+      }
+      if (d.clientes) {
+        s('f_cliente_ideal',     d.clientes, 'cliente_ideal');
+        s('f_ticket_promedio',   d.clientes, 'ticket_promedio');
+        s('f_frecuencia_visita', d.clientes, 'frecuencia_visita');
+        s('f_como_llegan',       d.clientes, 'como_llegan');
+      }
+      if (d.finanzas) {
+        s('f_ventas_mensuales', d.finanzas, 'ventas_mensuales');
+        s('f_food_cost',        d.finanzas, 'food_cost');
+        s('f_margen_objetivo',  d.finanzas, 'margen_objetivo');
+        s('f_gastos_fijos',     d.finanzas, 'gastos_fijos');
+      }
+      if (d.competencia) {
+        s('f_principales',   d.competencia, 'principales');
+        s('f_diferenciador', d.competencia, 'diferenciador');
+        s('f_amenazas',      d.competencia, 'amenazas');
+      }
+      if (d.objetivos) {
+        s('f_objetivo_principal', d.objetivos, 'objetivo_principal');
+        s('f_meta_ventas',        d.objetivos, 'meta_ventas');
+        s('f_expansion',          d.objetivos, 'expansion');
+        s('f_areas_mejorar',      d.objetivos, 'areas_mejorar');
+      }
+    })();
+    <% } %>
+
+  })();
+  </script>
+</body>
+</html>

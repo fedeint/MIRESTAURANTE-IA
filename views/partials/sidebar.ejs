@@ -286,6 +286,12 @@
                   class="bi bi-graph-up-arrow"></i><span>Ventas</span></a>
             <% } %>
 
+            <%/* --- SOSTAC: solo administrador --- */%>
+            <% if (rol === 'administrador') { %>
+              <a href="/sostac" class="dg-sidebar-link <%= currentPath.startsWith('/sostac') ? 'active' : '' %>"><i
+                  class="bi bi-compass-fill"></i><span>SOSTAC</span></a>
+            <% } %>
+
             <%/* --- Almacen: administrador + almacenero --- */%>
             <% if (rol === 'administrador' || rol === 'almacenero') { %>
               <div class="dg-sidebar-section">OPERACIONES</div>
@@ -403,6 +409,12 @@
             <% if (rol === 'administrador') { %>
               <a href="/ventas" class="dg-sidebar-icon-item <%= currentPath === '/ventas' ? 'active' : '' %>"
                 title="Ventas"><i class="bi bi-graph-up-arrow"></i></a>
+            <% } %>
+
+            <%/* --- SOSTAC: solo administrador --- */%>
+            <% if (rol === 'administrador') { %>
+              <a href="/sostac" class="dg-sidebar-icon-item <%= currentPath.startsWith('/sostac') ? 'active' : '' %>"
+                title="SOSTAC"><i class="bi bi-compass-fill"></i></a>
             <% } %>
 
             <div class="dg-sidebar-sep"></div>

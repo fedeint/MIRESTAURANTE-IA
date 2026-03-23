@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title || 'SOSTAC — Estrategia' %></title>
+  <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+  <link rel="stylesheet" href="/css/theme.css">
+  <style>
+    /* ── SOSTAC Dashboard ── */
+    .sostac-hero {
+      background: linear-gradient(135deg, rgba(249,115,22,0.12) 0%, rgba(30,27,75,0.4) 60%, transparent 100%);
+      border: 1px solid rgba(249,115,22,0.15);
+      border-radius: 16px;
+      padding: 1.75rem 2rem;
+      margin-bottom: 1.75rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .sostac-hero::before {
+      content: 'SOSTAC';
+      position: absolute;
+      right: -10px;
+      top: -18px;
+      font-size: 6.5rem;
+      font-weight: 900;
+      color: rgba(249,115,22,0.06);
+      letter-spacing: -2px;
+      pointer-events: none;
+      user-select: none;
+    }
+    .sostac-hero-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--dg-text, #1e293b);
+      margin-bottom: 0.2rem;
+    }
+    [data-theme="dark"] .sostac-hero-title { color: #f1f5f9; }
+    .sostac-hero-sub {
+      font-size: 0.875rem;
+      color: var(--dg-text-muted, #64748b);
+      margin: 0;
+    }
+    /* SOSTAC phase cards */
+    .phase-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.75rem;
+    }
+    .phase-card {
+      background: var(--dg-card-bg, #fff);
+      border: 1px solid var(--dg-border, #e2e8f0);
+      border-radius: 14px;
+      padding: 1.25rem 1.4rem;
+      text-decoration: none;
+      transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      position: relative;
+      overflow: hidden;
+      cursor: pointer;
+    }
+    [data-theme="dark"] .phase-card {
+      background: rgba(255,255,255,0.04);
+      border-color: rgba(255,255,255,0.08);
+    }
+    .phase-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+      border-color: rgba(249,115,22,0.35);
+      text-decoration: none;
+    }
+    .phase-card-accent {
+      position: absolute;
+      top: 0; left: 0;
+      width: 3px;
+      height: 100%;
+      border-radius: 14px 0 0 14px;
+    }
+    .phase-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.15rem;
+      flex-shrink: 0;
+    }
+    .phase-name {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--dg-text-muted, #64748b);
+    }
+    .phase-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--dg-text, #1e293b);
+      margin: 0;
+    }
+    [data-theme="dark"] .phase-title { color: #f1f5f9; }
+    .phase-desc {
+      font-size: 0.8rem;
+      color: var(--dg-text-muted, #64748b);
+      line-height: 1.5;
+    }
+    .phase-status {
+      margin-top: auto;
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.75rem;
+    }
+    .phase-badge-ok   { color: #10b981; }
+    .phase-badge-pending { color: #f59e0b; }
+    .phase-badge-empty { color: #94a3b8; }
+    /* Brief summary card */
+    .brief-summary-card {
+      background: var(--dg-card-bg, #fff);
+      border: 1px solid var(--dg-border, #e2e8f0);
+      border-radius: 14px;
+      padding: 1.5rem;
+      margin-bottom: 1.75rem;
+    }
+    [data-theme="dark"] .brief-summary-card {
+      background: rgba(255,255,255,0.04);
+      border-color: rgba(255,255,255,0.08);
+    }
+    .brief-field-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    .brief-field-item { }
+    .brief-field-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--dg-text-muted, #94a3b8);
+      margin-bottom: 0.15rem;
+    }
+    .brief-field-value {
+      font-size: 0.88rem;
+      color: var(--dg-text, #1e293b);
+      font-weight: 500;
+    }
+    [data-theme="dark"] .brief-field-value { color: #e2e8f0; }
+    /* Situacion FODA */
+    .foda-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.75rem;
+    }
+    @media (max-width: 576px) { .foda-grid { grid-template-columns: 1fr; } }
+    .foda-cell {
+      border-radius: 10px;
+      padding: 0.9rem 1rem;
+    }
+    .foda-cell-title {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      margin-bottom: 0.5rem;
+    }
+    .foda-cell ul { margin: 0; padding-left: 1.1rem; }
+    .foda-cell li { font-size: 0.8rem; margin-bottom: 0.2rem; }
+    .foda-f { background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2); }
+    .foda-f .foda-cell-title { color: #10b981; }
+    .foda-d { background: rgba(239,68,68,0.07); border: 1px solid rgba(239,68,68,0.18); }
+    .foda-d .foda-cell-title { color: #ef4444; }
+    .foda-o { background: rgba(59,130,246,0.07); border: 1px solid rgba(59,130,246,0.18); }
+    .foda-o .foda-cell-title { color: #3b82f6; }
+    .foda-a { background: rgba(245,158,11,0.07); border: 1px solid rgba(245,158,11,0.2); }
+    .foda-a .foda-cell-title { color: #f59e0b; }
+    /* Objectives */
+    .obj-card {
+      background: var(--dg-card-bg, #fff);
+      border: 1px solid var(--dg-border, #e2e8f0);
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 0.75rem;
+    }
+    [data-theme="dark"] .obj-card {
+      background: rgba(255,255,255,0.04);
+      border-color: rgba(255,255,255,0.08);
+    }
+    .obj-progress-track {
+      height: 5px;
+      background: rgba(0,0,0,0.08);
+      border-radius: 99px;
+      overflow: hidden;
+      margin-top: 0.5rem;
+    }
+    [data-theme="dark"] .obj-progress-track { background: rgba(255,255,255,0.1); }
+    .obj-progress-fill {
+      height: 100%;
+      border-radius: 99px;
+      transition: width 0.6s ease;
+    }
+    /* KPI table */
+    .kpi-indicator {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.65rem 0;
+      border-bottom: 1px solid var(--dg-border, #e2e8f0);
+    }
+    [data-theme="dark"] .kpi-indicator { border-color: rgba(255,255,255,0.07); }
+    .kpi-indicator:last-child { border-bottom: none; }
+    .kpi-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .kpi-dot-ok { background: #10b981; }
+    .kpi-dot-alerta { background: #f59e0b; }
+    .kpi-dot-critico { background: #ef4444; }
+    .kpi-name { font-size: 0.85rem; font-weight: 600; flex: 1; }
+    .kpi-val { font-size: 0.8rem; color: var(--dg-text-muted, #64748b); }
+    /* CTA (no brief) */
+    .sostac-cta-card {
+      background: linear-gradient(135deg, rgba(249,115,22,0.1) 0%, rgba(234,88,12,0.05) 100%);
+      border: 1px solid rgba(249,115,22,0.25);
+      border-radius: 16px;
+      padding: 3rem 2rem;
+      text-align: center;
+    }
+    .sostac-cta-icon {
+      font-size: 3.5rem;
+      color: #f97316;
+      margin-bottom: 1rem;
+    }
+    .btn-cta-brief {
+      background: linear-gradient(135deg, #f97316, #ea580c);
+      border: none;
+      color: #fff;
+      padding: 0.75rem 2.25rem;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 1rem;
+      box-shadow: 0 4px 20px rgba(249,115,22,0.35);
+      transition: all 0.2s;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .btn-cta-brief:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 28px rgba(249,115,22,0.5);
+      color: #fff;
+    }
+    /* Section headers */
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+    }
+    .section-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--dg-text, #1e293b);
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    [data-theme="dark"] .section-title { color: #f1f5f9; }
+    /* Insight box */
+    .insight-box {
+      background: rgba(249,115,22,0.07);
+      border-left: 3px solid #f97316;
+      border-radius: 0 8px 8px 0;
+      padding: 0.85rem 1rem;
+      font-size: 0.875rem;
+      color: var(--dg-text, #334155);
+      margin-bottom: 1rem;
+    }
+    [data-theme="dark"] .insight-box { color: #cbd5e1; }
+    /* Recommendation */
+    .recomendacion-card {
+      background: linear-gradient(135deg, rgba(249,115,22,0.1), rgba(234,88,12,0.06));
+      border: 1px solid rgba(249,115,22,0.2);
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      margin-top: 1rem;
+    }
+    .recomendacion-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #f97316;
+      margin-bottom: 0.35rem;
+    }
+  </style>
+</head>
+<body>
+  <%- include('../partials/sidebar') %>
+  <div class="dg-main">
+  <main class="flex-grow-1">
+  <div class="container py-3">
+
+    <% if (!brief) { %>
+    <!-- ── NO BRIEF: CTA ─────────────────────────────────── -->
+    <div class="sostac-hero">
+      <div class="sostac-hero-title"><i class="bi bi-compass-fill me-2" style="color:#f97316;"></i>SOSTAC Estrategia</div>
+      <p class="sostac-hero-sub">Framework estratégico completo: Brief &rarr; Situación &rarr; Objetivos &rarr; Estrategia &rarr; Tácticas &rarr; Acción &rarr; Control</p>
+    </div>
+
+    <div class="sostac-cta-card">
+      <div class="sostac-cta-icon"><i class="bi bi-robot"></i></div>
+      <h4 style="font-weight:700;margin-bottom:0.5rem;">Comienza con el Brief Express</h4>
+      <p style="color:var(--dg-text-muted,#64748b);max-width:480px;margin:0 auto 1.75rem;font-size:0.9rem;">
+        Delfino te guía en 5 minutos a través de 20 preguntas clave sobre tu negocio, clientes, finanzas, competencia y objetivos. Al final genera tu análisis estratégico personalizado.
+      </p>
+      <a href="/sostac/brief" class="btn-cta-brief">
+        <i class="bi bi-play-fill me-2"></i>Completar Brief Express con Delfino
+      </a>
+    </div>
+
+    <% } else { %>
+
+    <!-- ── BRIEF EXISTS: FULL DASHBOARD ───────────────────── -->
+
+    <!-- Hero -->
+    <div class="sostac-hero">
+      <div class="d-flex align-items-start justify-content-between flex-wrap gap-2">
+        <div>
+          <div class="sostac-hero-title">
+            <i class="bi bi-compass-fill me-2" style="color:#f97316;"></i>
+            <% const nombre = brief.datos && brief.datos.negocio ? brief.datos.negocio.nombre : 'Tu negocio'; %>
+            SOSTAC — <%= nombre %>
+          </div>
+          <p class="sostac-hero-sub">
+            <% const tipoCocina = brief.datos && brief.datos.negocio ? brief.datos.negocio.tipo_cocina : ''; %>
+            <%= tipoCocina ? tipoCocina + ' · ' : '' %>
+            Brief actualizado <%= new Date(brief.updated_at || brief.created_at).toLocaleDateString('es-PE', {day:'2-digit',month:'long',year:'numeric'}) %>
+          </p>
+        </div>
+        <a href="/sostac/brief" class="btn btn-sm" style="background:rgba(249,115,22,0.12);border:1px solid rgba(249,115,22,0.3);color:#f97316;border-radius:8px;">
+          <i class="bi bi-pencil-fill me-1"></i> Actualizar Brief
+        </a>
+      </div>
+    </div>
+
+    <!-- SOSTAC Phase Cards -->
+    <div class="section-header">
+      <h6 class="section-title"><i class="bi bi-grid-1x2-fill" style="color:#f97316;"></i> Fases SOSTAC</h6>
+    </div>
+    <div class="phase-grid mb-4">
+
+      <!-- S — Situación -->
+      <a href="/sostac/situacion" class="phase-card" style="color:inherit;">
+        <div class="phase-card-accent" style="background:linear-gradient(to bottom,#3b82f6,#2563eb);"></div>
+        <div style="display:flex;align-items:center;gap:0.75rem;">
+          <div class="phase-icon" style="background:rgba(59,130,246,0.12);color:#3b82f6;">
+            <i class="bi bi-search"></i>
+          </div>
+          <div>
+            <div class="phase-name">S</div>
+            <div class="phase-title">Situación</div>
+          </div>
+        </div>
+        <div class="phase-desc">Análisis FODA, posición competitiva y diagnóstico del estado actual del negocio.</div>
+        <div class="phase-status">
+          <% if (situacion) { %>
+          <i class="bi bi-check-circle-fill phase-badge-ok"></i>
+          <span class="phase-badge-ok">Análisis generado</span>
+          <% } else { %>
+          <i class="bi bi-clock phase-badge-pending"></i>
+          <span class="phase-badge-pending">Pendiente de generación</span>
+          <% } %>
+        </div>
+      </a>
+
+      <!-- O — Objetivos -->
+      <div class="phase-card" style="color:inherit;">
+        <div class="phase-card-accent" style="background:linear-gradient(to bottom,#10b981,#059669);"></div>
+        <div style="display:flex;align-items:center;gap:0.75rem;">
+          <div class="phase-icon" style="background:rgba(16,185,129,0.12);color:#10b981;">
+            <i class="bi bi-flag-fill"></i>
+          </div>
+          <div>
+            <div class="phase-name">O</div>
+            <div class="phase-title">Objetivos</div>
+          </div>
+        </div>
+        <div class="phase-desc">Metas SMART y OKRs con indicadores de progreso alineados al brief.</div>
+        <div class="phase-status">
+          <% if (objetivos && objetivos.length > 0) { %>
+          <i class="bi bi-check-circle-fill phase-badge-ok"></i>
+          <span class="phase-badge-ok"><%= objetivos.length %> objetivo<%= objetivos.length > 1 ? 's' : '' %> activo<%= objetivos.length > 1 ? 's' : '' %></span>
+          <% } else { %>
+          <i class="bi bi-circle phase-badge-empty"></i>
+          <span class="phase-badge-empty">Sin objetivos definidos aún</span>
+          <% } %>
+        </div>
+      </div>
+
+      <!-- S — Estrategia -->
+      <div class="phase-card" style="color:inherit;">
+        <div class="phase-card-accent" style="background:linear-gradient(to bottom,#8b5cf6,#7c3aed);"></div>
+        <div style="display:flex;align-items:center;gap:0.75rem;">
+          <div class="phase-icon" style="background:rgba(139,92,246,0.12);color:#8b5cf6;">
+            <i class="bi bi-diagram-3-fill"></i>
+          </div>
+          <div>
+            <div class="phase-name">S</div>
+            <div class="phase-title">Estrategia</div>
+          </div>
+        </div>
+        <div class="phase-desc">Segmentación, posicionamiento y propuesta de valor diferenciada.</div>
+        <div class="phase-status">
+          <i class="bi bi-circle phase-badge-empty"></i>
+          <span class="phase-badge-empty">Próximamente con Delfino</span>
+        </div>
+      </div>
+
+      <!-- T — Tácticas -->
+      <div class="phase-card" style="color:inherit;">
+        <div class="phase-card-accent" style="background:linear-gradient(to bottom,#f59e0b,#d97706);"></div>
+        <div style="display:flex;align-items:center;gap:0.75rem;">
+          <div class="phase-icon" style="background:rgba(245,158,11,0.12);color:#f59e0b;">
+            <i class="bi bi-lightning-fill"></i>
+          </div>
+          <div>
+            <div class="phase-name">T</div>
+            <div class="phase-title">Tácticas</div>
+          </div>
+        </div>
+        <div class="phase-desc">Mezcla de marketing, canales digitales, pricing y operaciones.</div>
+        <div class="phase-status">
+          <i class="bi bi-circle phase-badge-empty"></i>
+          <span class="phase-badge-empty">Próximamente con Delfino</span>
+        </div>
+      </div>
+
+      <!-- A — Acción -->
+      <div class="phase-card" style="color:inherit;">
+        <div class="phase-card-accent" style="background:linear-gradient(to bottom,#ef4444,#dc2626);"></div>
+        <div style="display:flex;align-items:center;gap:0.75rem;">
+          <div class="phase-icon" style="background:rgba(239,68,68,0.12);color:#ef4444;">
+            <i class="bi bi-rocket-fill"></i>
+          </div>
+          <div>
+            <div class="phase-name">A</div>
+            <div class="phase-title">Acción</div>
+          </div>
+        </div>
+        <div class="phase-desc">Plan de implementación con responsables, plazos y recursos.</div>
+        <div class="phase-status">
+          <i class="bi bi-circle phase-badge-empty"></i>
+          <span class="phase-badge-empty">Próximamente con Delfino</span>
+        </div>
+      </div>
+
+      <!-- C — Control -->
+      <div class="phase-card" style="color:inherit;">
+        <div class="phase-card-accent" style="background:linear-gradient(to bottom,#ec4899,#db2777);"></div>
+        <div style="display:flex;align-items:center;gap:0.75rem;">
+          <div class="phase-icon" style="background:rgba(236,72,153,0.12);color:#ec4899;">
+            <i class="bi bi-bar-chart-fill"></i>
+          </div>
+          <div>
+            <div class="phase-name">C</div>
+            <div class="phase-title">Control</div>
+          </div>
+        </div>
+        <div class="phase-desc">KPIs, dashboards y mecanismos de ajuste continuo.</div>
+        <div class="phase-status">
+          <i class="bi bi-circle phase-badge-empty"></i>
+          <span class="phase-badge-empty">Próximamente con Delfino</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Two-column lower section -->
+    <div class="row g-4">
+
+      <!-- LEFT: Situacion summary -->
+      <div class="col-lg-7">
+        <div class="brief-summary-card">
+          <div class="section-header mb-0">
+            <h6 class="section-title"><i class="bi bi-search" style="color:#3b82f6;"></i> Análisis Situacional</h6>
+            <% if (!situacion) { %>
+            <button class="btn btn-sm" id="btnGenerate"
+              style="background:linear-gradient(135deg,#3b82f6,#2563eb);border:none;color:#fff;border-radius:8px;font-size:0.78rem;font-weight:600;padding:0.35rem 0.85rem;">
+              <i class="bi bi-stars me-1"></i>Generar con IA
+            </button>
+            <% } else { %>
+            <a href="/sostac/situacion" class="btn btn-sm btn-outline-secondary" style="font-size:0.78rem;border-radius:8px;">
+              <i class="bi bi-arrow-right me-1"></i>Ver completo
+            </a>
+            <% } %>
+          </div>
+
+          <% if (!situacion) { %>
+          <div class="mt-3 text-center py-3" style="color:var(--dg-text-muted,#94a3b8);">
+            <i class="bi bi-robot" style="font-size:2rem;display:block;margin-bottom:0.5rem;opacity:0.4;"></i>
+            <span style="font-size:0.85rem;">Delfino analizará tu brief y generará el FODA automáticamente.</span>
+          </div>
+          <% } else { %>
+          <%
+            const sit = situacion.datos || {};
+          %>
+          <% if (sit.resumen_ejecutivo) { %>
+          <div class="insight-box mt-3">
+            <strong>Resumen ejecutivo:</strong> <%= sit.resumen_ejecutivo %>
+          </div>
+          <% } %>
+
+          <% if ((sit.fortalezas || sit.debilidades || sit.oportunidades || sit.amenazas) ) { %>
+          <div class="foda-grid">
+            <div class="foda-cell foda-f">
+              <div class="foda-cell-title"><i class="bi bi-plus-circle-fill me-1"></i>Fortalezas</div>
+              <ul><% (sit.fortalezas || []).forEach(f => { %><li><%- f %></li><% }) %></ul>
+            </div>
+            <div class="foda-cell foda-d">
+              <div class="foda-cell-title"><i class="bi bi-dash-circle-fill me-1"></i>Debilidades</div>
+              <ul><% (sit.debilidades || []).forEach(d => { %><li><%- d %></li><% }) %></ul>
+            </div>
+            <div class="foda-cell foda-o">
+              <div class="foda-cell-title"><i class="bi bi-arrow-up-circle-fill me-1"></i>Oportunidades</div>
+              <ul><% (sit.oportunidades || []).forEach(o => { %><li><%- o %></li><% }) %></ul>
+            </div>
+            <div class="foda-cell foda-a">
+              <div class="foda-cell-title"><i class="bi bi-exclamation-triangle-fill me-1"></i>Amenazas</div>
+              <ul><% (sit.amenazas || []).forEach(a => { %><li><%- a %></li><% }) %></ul>
+            </div>
+          </div>
+          <% } %>
+
+          <% if (sit.recomendacion_principal) { %>
+          <div class="recomendacion-card">
+            <div class="recomendacion-label"><i class="bi bi-lightbulb-fill me-1"></i>Recomendación principal de Delfino</div>
+            <div style="font-size:0.875rem;"><%- sit.recomendacion_principal %></div>
+          </div>
+          <% } %>
+
+          <% } /* end situacion exists */ %>
+        </div>
+      </div>
+
+      <!-- RIGHT: Brief data + Objetivos -->
+      <div class="col-lg-5">
+
+        <!-- Brief snapshot -->
+        <div class="brief-summary-card mb-3">
+          <div class="section-header mb-0">
+            <h6 class="section-title"><i class="bi bi-file-earmark-text-fill" style="color:#f97316;"></i> Brief Actual</h6>
+          </div>
+          <%
+            const neg = (brief.datos && brief.datos.negocio) ? brief.datos.negocio : {};
+            const cli = (brief.datos && brief.datos.clientes) ? brief.datos.clientes : {};
+            const fin = (brief.datos && brief.datos.finanzas) ? brief.datos.finanzas : {};
+          %>
+          <div class="brief-field-grid">
+            <div class="brief-field-item">
+              <div class="brief-field-label">Tipo cocina</div>
+              <div class="brief-field-value"><%= neg.tipo_cocina || '—' %></div>
+            </div>
+            <div class="brief-field-item">
+              <div class="brief-field-label">Empleados</div>
+              <div class="brief-field-value"><%= neg.num_empleados || '—' %></div>
+            </div>
+            <div class="brief-field-item">
+              <div class="brief-field-label">Ticket promedio</div>
+              <div class="brief-field-value"><%= cli.ticket_promedio || '—' %></div>
+            </div>
+            <div class="brief-field-item">
+              <div class="brief-field-label">Food cost</div>
+              <div class="brief-field-value"><%= fin.food_cost || '—' %></div>
+            </div>
+            <div class="brief-field-item">
+              <div class="brief-field-label">Ventas mensuales</div>
+              <div class="brief-field-value"><%= fin.ventas_mensuales || '—' %></div>
+            </div>
+            <div class="brief-field-item">
+              <div class="brief-field-label">Sedes</div>
+              <div class="brief-field-value"><%= neg.num_sedes || '—' %></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Objetivos -->
+        <div class="brief-summary-card">
+          <div class="section-header mb-2">
+            <h6 class="section-title"><i class="bi bi-flag-fill" style="color:#10b981;"></i> Objetivos</h6>
+          </div>
+
+          <% if (!objetivos || objetivos.length === 0) { %>
+          <div class="text-center py-2" style="color:var(--dg-text-muted,#94a3b8);font-size:0.83rem;">
+            <i class="bi bi-flag" style="font-size:1.5rem;display:block;margin-bottom:0.4rem;opacity:0.35;"></i>
+            Los objetivos SMART se generarán desde tu brief
+          </div>
+          <% } else { %>
+          <% objetivos.slice(0, 5).forEach(obj => {
+               const progColor = obj.progreso >= 75 ? '#10b981' : obj.progreso >= 40 ? '#f59e0b' : '#ef4444';
+          %>
+          <div class="obj-card">
+            <div class="d-flex justify-content-between align-items-start gap-2">
+              <div style="font-size:0.85rem;font-weight:600;color:var(--dg-text,#1e293b);">
+                <span [data-theme="dark"] style="color:#f1f5f9;"><%= obj.titulo %></span>
+              </div>
+              <span class="badge rounded-pill" style="background:<%= obj.estado === 'completado' ? 'rgba(16,185,129,0.15)' : 'rgba(249,115,22,0.12)' %>;color:<%= obj.estado === 'completado' ? '#10b981' : '#f97316' %>;font-size:0.68rem;">
+                <%= obj.estado %>
+              </span>
+            </div>
+            <% if (obj.metrica) { %>
+            <div style="font-size:0.75rem;color:var(--dg-text-muted,#64748b);margin-top:0.2rem;">
+              <%= obj.metrica %>
+              <% if (obj.valor_actual != null && obj.valor_objetivo != null) { %>
+              &nbsp;&middot;&nbsp;<%= obj.valor_actual %> &rarr; <strong style="color:<%= progColor %>"><%= obj.valor_objetivo %></strong>
+              <% } %>
+            </div>
+            <% } %>
+            <div class="obj-progress-track">
+              <div class="obj-progress-fill" style="width:<%= obj.progreso || 0 %>%;background:<%= progColor %>;"></div>
+            </div>
+            <div style="font-size:0.7rem;color:var(--dg-text-muted,#94a3b8);margin-top:0.2rem;text-align:right;">
+              <%= obj.progreso || 0 %>% completado
+            </div>
+          </div>
+          <% }) %>
+          <% } %>
+
+          <!-- KPI indicators from situacion -->
+          <% if (situacion && situacion.datos && situacion.datos.indicadores_clave && situacion.datos.indicadores_clave.length > 0) { %>
+          <div class="mt-2 pt-2" style="border-top:1px solid var(--dg-border,#e2e8f0);">
+            <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:var(--dg-text-muted,#94a3b8);margin-bottom:0.5rem;">Indicadores clave</div>
+            <% situacion.datos.indicadores_clave.forEach(kpi => { %>
+            <div class="kpi-indicator">
+              <div class="kpi-dot kpi-dot-<%= kpi.estado || 'ok' %>"></div>
+              <div class="kpi-name"><%= kpi.nombre %></div>
+              <div class="kpi-val"><%= kpi.valor_actual %> <span style="opacity:0.5;">/ <%= kpi.benchmark %></span></div>
+            </div>
+            <% }) %>
+          </div>
+          <% } %>
+
+        </div>
+      </div>
+
+    </div><!-- /.row -->
+    <% } /* end brief exists */ %>
+
+  </div>
+  </main>
+  </div>
+
+  <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script src="/vendor/sweetalert2/sweetalert2.all.min.js"></script>
+  <script>
+  (function(){
+    const btnGenerate = document.getElementById('btnGenerate');
+    if (!btnGenerate) return;
+
+    btnGenerate.addEventListener('click', async function() {
+      btnGenerate.disabled = true;
+      btnGenerate.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span>Analizando...';
+
+      try {
+        const res  = await fetch('/sostac/api/brief/generate', { method: 'POST' });
+        const json = await res.json();
+
+        if (!json.ok) throw new Error(json.error || 'Error al generar el análisis.');
+
+        await Swal.fire({
+          icon: 'success',
+          title: 'Análisis generado',
+          text: 'Delfino completó tu análisis situacional SOSTAC.',
+          background: 'var(--dg-card-bg, #fff)',
+          confirmButtonColor: '#f97316',
+          timer: 2000,
+          showConfirmButton: false,
+        });
+        window.location.reload();
+      } catch(err) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: err.message || 'No se pudo generar el análisis.',
+          background: 'var(--dg-card-bg, #fff)',
+          confirmButtonColor: '#f97316',
+        });
+        btnGenerate.disabled = false;
+        btnGenerate.innerHTML = '<i class="bi bi-stars me-1"></i>Generar con IA';
+      }
+    });
+  })();
+  </script>
+</body>
+</html>

@@ -7,8 +7,38 @@ $(function(){
   let entregadosItems = []; // items estado='servido' (cargados por rango de fecha)
   let rechazadosItems = []; // items estado='rechazado' (cargados por rango de fecha)
   let autoRefreshTimer = null;
+  let secondTickTimer = null;
   let lastDataHash = '';
   const ALERTA_MINUTOS = 8; // Priorizar pedidos > 8 minutos
+
+  // Web Audio API: tick de alerta al llegar a 8 min (sin archivos externos)
+  let _audioCtx = null;
+  let _alertedIds = new Set(); // evitar re-alertar el mismo item
+  function getAudioCtx(){
+    if(!_audioCtx){
+      try { _audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(_){ /* noop */ }
+    }
+    return _audioCtx;
+  }
+  function playTickAlert(){
+    const ctx = getAudioCtx();
+    if(!ctx) return;
+    try {
+      // Dos pitidos cortos
+      [0, 0.18].forEach(offset => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, ctx.currentTime + offset);
+        gain.gain.setValueAtTime(0.25, ctx.currentTime + offset);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + offset + 0.15);
+        osc.start(ctx.currentTime + offset);
+        osc.stop(ctx.currentTime + offset + 0.15);
+      });
+    } catch(_){ /* noop */ }
+  }
 
   function setText(id, value){
     const el = document.getElementById(id);
@@ -41,15 +71,56 @@ $(function(){
     return meseroLabel(found || fallback || {});
   }
 
-  function timeAgo(date){
+  // Devuelve { mins, secs } desde una fecha dada
+  function elapsedParts(date){
+    if(!date) return { mins: 0, secs: 0, totalSecs: 0 };
+    const totalSecs = Math.max(0, Math.floor((Date.now() - date.getTime()) / 1000));
+    return { mins: Math.floor(totalSecs / 60), secs: totalSecs % 60, totalSecs };
+  }
+
+  // Etiqueta "hace X min Y seg" o "hace X h Y min"
+  function elapsedLabel(date){
     if(!date) return '';
-    const diffMs = Date.now() - date.getTime();
-    const mins = Math.max(0, Math.floor(diffMs / 60000));
-    if(mins < 1) return 'justo ahora';
-    if(mins < 60) return `hace ${mins} min`;
+    const { mins, secs, totalSecs } = elapsedParts(date);
+    if(totalSecs < 10) return 'justo ahora';
+    if(mins < 1) return `hace ${secs} seg`;
+    if(mins < 60) return `hace ${mins} min ${secs} seg`;
     const hrs = Math.floor(mins / 60);
-    const rem = mins % 60;
-    return rem ? `hace ${hrs} h ${rem} min` : `hace ${hrs} h`;
+    const remMin = mins % 60;
+    return remMin ? `hace ${hrs} h ${remMin} min` : `hace ${hrs} h`;
+  }
+
+  // Determina clase de urgencia según minutos transcurridos
+  function urgencyLevel(mins){
+    if(mins < 3) return 'verde';
+    if(mins < 5) return 'amarillo';
+    if(mins < ALERTA_MINUTOS) return 'naranja';
+    return 'rojo';
+  }
+
+  // Retorna badge HTML para el timer (usado en tarjetas de mesa activa)
+  function timerBadgeHtml(date, extraDataAttrs){
+    if(!date) return '';
+    const { mins, secs } = elapsedParts(date);
+    const level = urgencyLevel(mins);
+    const iso = date.toISOString();
+    const data = extraDataAttrs ? ` ${extraDataAttrs}` : '';
+    const urgente = level === 'rojo';
+    const labelSecs = mins < 60 ? `hace ${mins} min ${secs} seg` : elapsedLabel(date);
+
+    const colorMap = { verde:'#16a34a', amarillo:'#ca8a04', naranja:'#ea580c', rojo:'#dc2626' };
+    const color = colorMap[level];
+    const pulseStyle = urgente ? 'animation:cocina-pulse 1s infinite;' : '';
+    const urgenteText = urgente ? ' <strong>URGENTE</strong>' : '';
+
+    return `<span class="badge cocina-timer-badge" data-timer-ts="${iso}"${data}
+      style="background:${color};color:#fff;font-size:.9rem;${pulseStyle}">
+      <i class="bi bi-stopwatch me-1"></i><span class="timer-text">${labelSecs}</span>${urgenteText}
+    </span>`;
+  }
+
+  function timeAgo(date){
+    return elapsedLabel(date);
   }
 
   // Permitir abrir directamente pestaña con ?tab=listos|preparando|enviados
@@ -210,12 +281,13 @@ $(function(){
     const totalLineas = mesaItems.length;
     const totalUnidades = mesaItems.reduce((acc, it) => acc + Math.max(0, Number(it.cantidad || 0)), 0);
 
-    // Timer: minutos desde que se envio
+    // Timer: tiempo desde que se envió (nivel de urgencia para borde y fondo)
     const minutos = ref ? Math.floor((Date.now() - ref.getTime()) / 60000) : 0;
     const esUrgente = minutos >= ALERTA_MINUTOS;
-    const timerColor = esUrgente ? '#ef4444' : minutos >= 5 ? '#f59e0b' : '#10b981';
-    const timerBg = esUrgente ? 'rgba(239,68,68,0.08)' : 'transparent';
-    const timerLabel = minutos < 1 ? 'ahora' : minutos + ' min';
+    const level = urgencyLevel(minutos);
+    const borderColorMap = { verde:'primary', amarillo:'warning', naranja:'warning', rojo:'danger' };
+    const borderClass = borderColorMap[level] || 'primary';
+    const timerBg = esUrgente ? 'rgba(220,38,38,0.07)' : level === 'naranja' ? 'rgba(234,88,12,0.05)' : 'transparent';
 
     const detalles = mesaItems.map(it => {
       const producto = escapeHtml(it.producto_nombre);
@@ -239,24 +311,23 @@ $(function(){
       </div>` : '';
 
     return `
-      <div class="card cocina-card border-start border-4 ${esUrgente ? 'border-danger' : 'border-primary'}" style="background:${timerBg};">
+      <div class="card cocina-card border-start border-4 border-${borderClass}" style="background:${timerBg};" data-mesa-card="${mesaId}">
         <div class="card-body">
           <div class="d-flex justify-content-between gap-2 mb-2">
-            <div>
-              <div class="d-flex align-items-center gap-2 flex-wrap">
+            <div class="flex-grow-1">
+              <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
                 <span class="badge text-bg-dark"><i class="bi bi-grid-3x3-gap me-1"></i>Mesa ${mesa}</span>
                 <span class="badge text-bg-primary"><i class="bi bi-send me-1"></i>Enviado</span>
-                <span class="badge" style="background:${timerColor};color:#fff;font-size:.85rem;${esUrgente ? 'animation:pulse 1s infinite;' : ''}">
-                  <i class="bi bi-stopwatch me-1"></i>${timerLabel}
-                </span>
-                ${esUrgente ? '<span class="badge bg-danger">PRIORIDAD</span>' : ''}
               </div>
-              <div class="meta mt-1">${hora ? `${hora} · ${timeAgo(ref)}` : timeAgo(ref)}</div>
+              <div class="cocina-timer-wrap my-2 text-center">
+                ${timerBadgeHtml(ref, '')}
+              </div>
+              <div class="meta mt-1">${hora ? `<i class="bi bi-clock me-1"></i>Enviado a las ${hora}` : ''}</div>
               <div class="meta mt-1"><i class="bi bi-person-badge me-1"></i>Mesero: ${mesero}</div>
             </div>
             <div class="text-end">
-              <div class="badge text-bg-light border">Lineas: ${totalLineas}</div>
-              <div class="badge text-bg-light border ms-1">Unidades: ${totalUnidades}</div>
+              <div class="badge text-bg-light border">Líneas: ${totalLineas}</div>
+              <div class="badge text-bg-light border mt-1">Unidades: ${totalUnidades}</div>
             </div>
           </div>
           <div class="vstack gap-1">${detalles}</div>
@@ -269,7 +340,8 @@ $(function(){
     if(!Array.isArray(mesaItems) || mesaItems.length === 0) return '';
     const first = mesaItems[0] || {};
     const mesa = escapeHtml(first.mesa_numero);
-    const ref = parseDate(first.preparado_at) || parseDate(first.enviado_at) || parseDate(first.created_at);
+    // Para preparando usamos el tiempo de envío original (no preparado_at) para medir cuánto lleva esperando
+    const ref = parseDate(first.enviado_at) || parseDate(first.preparado_at) || parseDate(first.created_at);
     const hora = ref ? ref.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
     const canKitchenActions = (userRole !== 'mesero');
     const mesero = meseroLabelFromItems(mesaItems, first);
@@ -307,21 +379,30 @@ $(function(){
         </div>`;
     }).join('');
 
+    const minutos = ref ? Math.floor((Date.now() - ref.getTime()) / 60000) : 0;
+    const level = urgencyLevel(minutos);
+    const borderColorMap = { verde:'warning', amarillo:'warning', naranja:'warning', rojo:'danger' };
+    const borderClass = borderColorMap[level] || 'warning';
+    const timerBg = minutos >= ALERTA_MINUTOS ? 'rgba(220,38,38,0.07)' : 'transparent';
+
     return `
-      <div class="card cocina-card border-start border-4 border-warning">
+      <div class="card cocina-card border-start border-4 border-${borderClass}" style="background:${timerBg};">
         <div class="card-body">
           <div class="d-flex justify-content-between gap-2 mb-2">
-            <div>
-              <div class="d-flex align-items-center gap-2 flex-wrap">
+            <div class="flex-grow-1">
+              <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
                 <span class="badge text-bg-dark"><i class="bi bi-grid-3x3-gap me-1"></i>Mesa ${mesa}</span>
                 <span class="badge text-bg-warning"><i class="bi bi-fire me-1"></i>Preparando</span>
               </div>
-              <div class="meta mt-1">${hora ? `${hora} · ${timeAgo(ref)}` : timeAgo(ref)}</div>
+              <div class="cocina-timer-wrap my-2 text-center">
+                ${timerBadgeHtml(ref, '')}
+              </div>
+              <div class="meta mt-1">${hora ? `<i class="bi bi-clock me-1"></i>Enviado a las ${hora}` : ''}</div>
               <div class="meta mt-1"><i class="bi bi-person-badge me-1"></i>Mesero: ${mesero}</div>
             </div>
             <div class="text-end">
               <div class="badge text-bg-light border">Líneas: ${totalLineas}</div>
-              <div class="badge text-bg-light border ms-1">Unidades: ${totalUnidades}</div>
+              <div class="badge text-bg-light border mt-1">Unidades: ${totalUnidades}</div>
             </div>
           </div>
           <div class="vstack gap-1">${detalles}</div>
@@ -377,6 +458,24 @@ $(function(){
     setText('pillListos', cListos);
     setText('pillEntregados', (entregadosItems || []).length);
     setText('pillRechazados', (rechazadosItems || []).length);
+
+    // Summary bar: pedidos activos, tiempo promedio, urgentes
+    const activeItems = allItems.filter(it => ['enviado','preparando','listo'].includes(it.estado));
+    // Mesas activas únicas (por mesa_numero)
+    const mesasActivas = new Set(activeItems.map(it => String(it.mesa_numero ?? ''))).size;
+    const now = Date.now();
+    const tiempos = activeItems.map(it => {
+      const d = parseDate(it.enviado_at) || parseDate(it.created_at);
+      return d ? Math.floor((now - d.getTime()) / 60000) : 0;
+    });
+    const promedio = tiempos.length ? Math.round(tiempos.reduce((a,b)=>a+b,0) / tiempos.length) : 0;
+    const urgentes = tiempos.filter(m => m >= ALERTA_MINUTOS).length;
+    setText('summaryActivos', mesasActivas);
+    setText('summaryPromedio', promedio);
+    setText('summaryUrgentes', urgentes);
+    // Highlight urgentes badge
+    const urgEl = document.getElementById('summaryUrgentesBadge');
+    if(urgEl) urgEl.className = `badge ${urgentes > 0 ? 'text-bg-danger' : 'text-bg-secondary'}`;
 
     // Enviados: agrupar por mesa para preparar todo el pedido con un solo botón.
     const enviadosPorMesa = new Map();
@@ -452,6 +551,61 @@ $(function(){
     // Relacionado con: views/cocina.ejs (pestaña Rechazados)
     rechazadosFiltrados.forEach(it => rechazadosEl.append(cardItem(it)));
     setEmpty('emptyRechazados', rechazadosFiltrados.length === 0);
+  }
+
+  // Actualiza los timers en el DOM cada segundo sin re-renderizar las tarjetas
+  function updateTimers(){
+    const colorMap = { verde:'#16a34a', amarillo:'#ca8a04', naranja:'#ea580c', rojo:'#dc2626' };
+    document.querySelectorAll('.cocina-timer-badge[data-timer-ts]').forEach(el => {
+      const ts = el.getAttribute('data-timer-ts');
+      const date = parseDate(ts);
+      if(!date) return;
+      const { mins, secs } = elapsedParts(date);
+      const level = urgencyLevel(mins);
+      const color = colorMap[level];
+      const urgente = level === 'rojo';
+      const labelSecs = mins < 60 ? `hace ${mins} min ${secs} seg` : elapsedLabel(date);
+
+      // Actualizar texto
+      const textEl = el.querySelector('.timer-text');
+      if(textEl) textEl.textContent = labelSecs;
+
+      // Actualizar color de fondo
+      el.style.background = color;
+
+      // Pulso si urgente
+      el.style.animation = urgente ? 'cocina-pulse 1s infinite' : '';
+
+      // Texto URGENTE (solo si ya está montado como strong)
+      let strongEl = el.querySelector('strong');
+      if(urgente && !strongEl){
+        strongEl = document.createElement('strong');
+        strongEl.textContent = ' URGENTE';
+        el.appendChild(strongEl);
+      } else if(!urgente && strongEl){
+        strongEl.remove();
+      }
+
+      // Sonido de alerta al cruzar los 8 min (una sola vez por item)
+      // Usamos el dataset del badge como key de alerta
+      const alertKey = ts;
+      if(urgente && !_alertedIds.has(alertKey)){
+        _alertedIds.add(alertKey);
+        playTickAlert();
+      } else if(!urgente && _alertedIds.has(alertKey)){
+        // Si el item fue atendido y volvió a ser <8 min (improbable) limpiar
+        _alertedIds.delete(alertKey);
+      }
+    });
+  }
+
+  function startSecondTick(){
+    stopSecondTick();
+    secondTickTimer = setInterval(updateTimers, 1000);
+  }
+  function stopSecondTick(){
+    if(secondTickTimer) clearInterval(secondTickTimer);
+    secondTickTimer = null;
   }
 
   // Acciones
@@ -566,6 +720,7 @@ $(function(){
   render();
   cargarCola();
   activarTabDesdeQuery();
+  startSecondTick();
 
   // Si el usuario regresa a la pestaña del navegador, forzamos refresco inmediato.
   // Relacionado con: pedido de actualización automática para "Listos".

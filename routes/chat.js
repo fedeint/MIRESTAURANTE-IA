@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const { buildContext } = require('../services/knowledge-base');
 
 // GET /chat - Render chat view
 router.get('/', (req, res) => {
@@ -407,8 +408,17 @@ router.post('/', async (req, res) => {
     // ─────────────────────────────────────────────────────────────────────────
 
     try {
-        const contexto    = await obtenerContextoNegocio();
-        const systemPrompt = buildSystemPrompt(contexto, rol || '');
+        const [contexto, kbContext] = await Promise.all([
+            obtenerContextoNegocio(),
+            buildContext(tid)
+        ]);
+
+        const kbBlock = kbContext
+            ? `${kbContext}\n\nUsa el CONTEXTO DEL NEGOCIO para dar respuestas personalizadas. Si el usuario pregunta sobre ventas, inventario u objetivos, responde con datos reales.\n\n`
+            : '';
+
+        const rawSystemPrompt = buildSystemPrompt(contexto, rol || '');
+        const systemPrompt = kbBlock + rawSystemPrompt;
         const messages    = buildMessages(historial, mensaje);
 
         const modelo = kimiKey ? 'kimi' : 'claude';
