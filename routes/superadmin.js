@@ -193,7 +193,7 @@ router.get('/billing', async (req, res) => {
       { concepto: 'Vercel (Hosting)', tipo: 'fijo', monto: 20.00, moneda: 'USD', frecuencia: 'mensual' },
       { concepto: 'OpenAI API (DalIA)', tipo: 'variable', monto: 15.00, moneda: 'USD', frecuencia: 'mensual' },
       { concepto: 'Nubefact (OSE SUNAT)', tipo: 'variable', monto: 10.00, moneda: 'USD', frecuencia: 'mensual' },
-      { concepto: 'Dominio dignita.tech', tipo: 'fijo', monto: 1.00, moneda: 'USD', frecuencia: 'mensual' },
+      { concepto: 'Dominio mirestconia.com', tipo: 'fijo', monto: 1.00, moneda: 'USD', frecuencia: 'mensual' },
     ];
 
     const totalGastoUSD = gastosSaas.reduce((s, g) => s + g.monto, 0);

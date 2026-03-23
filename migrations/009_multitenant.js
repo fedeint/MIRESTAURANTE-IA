@@ -37,7 +37,7 @@ exports.up = async function(knex) {
     nombre: 'Mi Restaurante',
     subdominio: 'mirestaurante',
     plan: 'pro',
-    email_admin: 'admin@dignita.tech',
+    email_admin: 'admin@mirestconia.com',
     fecha_inicio: new Date().toISOString().split('T')[0],
     activo: true
   });

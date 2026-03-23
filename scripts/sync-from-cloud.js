@@ -232,7 +232,7 @@ async function main() {
     const mode      = FULL_SYNC ? 'COMPLETA (--full)' : 'INCREMENTAL';
 
     console.log('============================================');
-    console.log('  dignita.tech - Descargar desde la Nube');
+    console.log('  mirestconia.com - Descargar desde la Nube');
     console.log(`  Modo: ${mode}`);
     console.log(`  Iniciado: ${startTime.toLocaleString()}`);
     console.log('============================================');

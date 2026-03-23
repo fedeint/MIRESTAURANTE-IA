@@ -391,7 +391,7 @@ async function enviarMensajePrueba({ provider, telefono, config }) {
             throw new Error('Numero de telefono invalido para prueba');
         }
 
-        const mensaje = 'Mensaje de prueba desde el sistema de restaurante dignita.tech. WhatsApp configurado correctamente.';
+        const mensaje = 'Mensaje de prueba desde el sistema de restaurante mirestconia.com. WhatsApp configurado correctamente.';
 
         if (provider === 'twilio') {
             const resultado = await enviarPorTwilio({

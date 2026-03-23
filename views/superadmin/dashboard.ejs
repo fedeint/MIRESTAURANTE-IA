@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Superadmin Dashboard - dignita.tech</title>
+  <title>Superadmin Dashboard - mirestconia.com</title>
   <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
   <link rel="stylesheet" href="/css/theme.css">
@@ -48,7 +48,7 @@
             <h3 class="fw-bold mb-1" style="color:#fff;font-family:'DM Sans',sans-serif;letter-spacing:-0.02em;">
               <i class="bi bi-shield-fill-check me-2" style="color:#f97316;"></i>Superadmin
             </h3>
-            <p class="mb-0" style="color:#64748b;font-size:0.82rem;">dignita.tech SaaS &mdash; <%= new Date().toLocaleDateString('es-PE', { weekday:'long', year:'numeric', month:'long', day:'numeric' }) %></p>
+            <p class="mb-0" style="color:#64748b;font-size:0.82rem;">mirestconia.com SaaS &mdash; <%= new Date().toLocaleDateString('es-PE', { weekday:'long', year:'numeric', month:'long', day:'numeric' }) %></p>
           </div>
           <div class="d-flex gap-2">
             <a href="/superadmin/tenants" class="btn btn-sm" style="background:#f97316;color:#fff;border-radius:10px;font-weight:600;">
@@ -189,7 +189,7 @@
                         <tr>
                           <td>
                             <div style="font-weight:600;color:#e2e8f0;"><%= t.nombre %></div>
-                            <div style="font-size:0.7rem;color:#64748b;"><%= t.subdominio %>.dignita.tech</div>
+                            <div style="font-size:0.7rem;color:#64748b;"><%= t.subdominio %>.mirestconia.com</div>
                           </td>
                           <td>
                             <span class="sa-badge-plan plan-<%= t.plan %>"><%= (t.plan||'free').toUpperCase() %></span>

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>restaurante.dignita.tech - Sistema de Gestion de Restaurantes</title>
+  <title>restaurante.mirestconia.com - Sistema de Gestion de Restaurantes</title>
   <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -191,9 +191,8 @@
           <h1>Gestiona tu restaurante con <span>tecnologia</span></h1>
           <p>Mesas, cocina, facturacion y mas. Todo desde una interfaz moderna, rapida y facil de usar. Hecho para restaurantes en Peru.</p>
           <div class="hero-btns">
-            <a href="/auth/google" class="btn-hero btn-hero-primary"><i class="bi bi-google me-2"></i>Prueba gratis 5 días</a>
-            <a href="/login" class="btn-hero btn-hero-outline"><i class="bi bi-box-arrow-in-right me-1"></i>Ingresar al sistema</a>
-            <a href="#precios" class="btn-hero btn-hero-outline"><i class="bi bi-tag me-1"></i>Ver planes</a>
+            <a href="/login" class="btn-hero btn-hero-primary"><i class="bi bi-box-arrow-in-right me-2"></i>Ingresar al sistema</a>
+            <a href="#precios" class="btn-hero btn-hero-outline"><i class="bi bi-tag me-1"></i>Ver precios</a>
           </div>
         </div>
         <div class="col-lg-6 hero-visual">
@@ -393,21 +392,21 @@
 
       <div class="row g-4 justify-content-center align-items-stretch">
 
-        <!-- GRATIS -->
-        <div class="col-6 col-lg">
+        <!-- PRUEBA GRATIS -->
+        <div class="col-md-5 col-lg-4">
           <div class="pricing-card">
-            <div class="plan-name">Gratis</div>
-            <div class="plan-desc">Prueba sin compromiso</div>
+            <div class="plan-name">Prueba Gratis</div>
+            <div class="plan-desc">Conoce el sistema sin compromiso</div>
             <div class="plan-price plan-price-free">
               <span class="currency">S/</span>
               <span class="amount">0</span>
-              <span class="period"> · 5-15 dias</span>
+              <span class="period"> · 5 dias</span>
             </div>
             <hr class="plan-divider">
             <ul class="plan-features">
-              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> 5 dias sin tarjeta</li>
-              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> 15 dias con tarjeta</li>
+              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> 5 dias completos</li>
               <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Todas las funciones</li>
+              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Sin tarjeta de credito</li>
               <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Sin compromiso</li>
             </ul>
             <a href="/setup?plan=gratis" class="btn-plan btn-plan-free">
@@ -416,83 +415,11 @@
           </div>
         </div>
 
-        <!-- MENSUAL -->
-        <div class="col-6 col-lg">
-          <div class="pricing-card">
-            <div class="plan-name">Mensual</div>
-            <div class="plan-desc">Cancela cuando quieras</div>
-            <div class="plan-price">
-              <span class="currency">S/</span>
-              <span class="amount">150</span>
-              <span class="period"> /mes</span>
-            </div>
-            <hr class="plan-divider">
-            <ul class="plan-features">
-              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Usuarios ilimitados</li>
-              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Facturas ilimitadas</li>
-              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> DalIA asistente IA</li>
-              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Almacen + Cocina</li>
-              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Soporte prioritario</li>
-            </ul>
-            <button class="btn-plan btn-plan-pro" onclick="abrirPagoIzipay('mensual','Mensual','S/ 150 / mes')">
-              <i class="bi bi-credit-card me-2"></i>Suscribirme
-            </button>
-          </div>
-        </div>
-
-        <!-- ANUAL (highlighted) -->
-        <div class="col-6 col-lg">
+        <!-- ENTERPRISE -->
+        <div class="col-md-5 col-lg-4">
           <div class="pricing-card destacado">
-            <div class="plan-badge-popular"><i class="bi bi-lightning-charge-fill me-1"></i>Mas popular</div>
-            <div class="plan-name">Anual</div>
-            <div class="plan-desc">Ahorra S/ 300 al ano</div>
-            <div class="plan-price">
-              <span class="currency">S/</span>
-              <span class="amount">1,500</span>
-              <span class="period"> /ano</span>
-            </div>
-            <hr class="plan-divider">
-            <ul class="plan-features">
-              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Todo lo del Mensual</li>
-              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> 2 meses gratis</li>
-              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> DalIA tokens extendidos</li>
-              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Redes sociales</li>
-              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Soporte 24/7</li>
-            </ul>
-            <button class="btn-plan btn-plan-pro" onclick="abrirPagoIzipay('anual','Anual','S/ 1,500 / ano')">
-              <i class="bi bi-credit-card me-2"></i>Contratar Anual
-            </button>
-          </div>
-        </div>
-
-        <!-- 2 ANOS -->
-        <div class="col-6 col-lg">
-          <div class="pricing-card">
-            <div class="plan-name">2 Anos</div>
-            <div class="plan-desc">Incluye almacenamiento</div>
-            <div class="plan-price">
-              <span class="currency">S/</span>
-              <span class="amount">2,500</span>
-              <span class="period"> /2 anos</span>
-            </div>
-            <hr class="plan-divider">
-            <ul class="plan-features">
-              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Todo lo del Anual</li>
-              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Almacenamiento extra</li>
-              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> DalIA sin limite</li>
-              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> SUNAT / OSE</li>
-              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Onboarding personal</li>
-            </ul>
-            <button class="btn-plan btn-plan-enterprise" onclick="abrirPagoIzipay('2anos','2 Anos','S/ 2,500')">
-              <i class="bi bi-credit-card me-2"></i>Contratar 2 Anos
-            </button>
-          </div>
-        </div>
-
-        <!-- DE POR VIDA -->
-        <div class="col-6 col-lg">
-          <div class="pricing-card">
-            <div class="plan-name">De por Vida</div>
+            <div class="plan-badge-popular"><i class="bi bi-lightning-charge-fill me-1"></i>Licencia de por vida</div>
+            <div class="plan-name">Enterprise</div>
             <div class="plan-desc">Pago unico, para siempre</div>
             <div class="plan-price">
               <span class="currency">S/</span>
@@ -502,13 +429,18 @@
             <hr class="plan-divider">
             <ul class="plan-features">
               <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Acceso de por vida</li>
-              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Actualizaciones incluidas</li>
+              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Usuarios ilimitados</li>
+              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Facturas ilimitadas</li>
+              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> DalIA asistente IA</li>
+              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Almacen + Cocina</li>
+              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> SUNAT / OSE</li>
               <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Multi-local (5 sedes)</li>
-              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> API + webhooks</li>
-              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Gerente dedicado</li>
+              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Actualizaciones incluidas</li>
+              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Soporte prioritario</li>
+              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> S/ 700/ano mantenimiento</li>
             </ul>
-            <button class="btn-plan btn-plan-enterprise" onclick="abrirPagoIzipay('vida','De por Vida','S/ 3,200')">
-              <i class="bi bi-credit-card me-2"></i>Comprar de por Vida
+            <button class="btn-plan btn-plan-enterprise" onclick="abrirPagoIzipay('enterprise','Enterprise','S/ 3,200')">
+              <i class="bi bi-credit-card me-2"></i>Contratar Enterprise
             </button>
           </div>
         </div>
@@ -556,7 +488,7 @@
             </div>
             <div style="display:flex;gap:1rem;align-items:flex-start;">
               <div style="width:44px;height:44px;border-radius:12px;background:rgba(34,197,94,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="bi bi-arrow-repeat" style="color:#22c55e;font-size:1.2rem;"></i></div>
-              <div><h6 style="color:#fff;font-weight:700;margin-bottom:2px;">Actualizaciones incluidas</h6><p style="color:rgba(255,255,255,0.5);font-size:0.85rem;margin:0;">Nuevas funciones, mejoras de seguridad y optimizaciones. Todo incluido en tu plan anual.</p></div>
+              <div><h6 style="color:#fff;font-weight:700;margin-bottom:2px;">Actualizaciones incluidas</h6><p style="color:rgba(255,255,255,0.5);font-size:0.85rem;margin:0;">Nuevas funciones, mejoras de seguridad y optimizaciones. Todo incluido en tu licencia Enterprise.</p></div>
             </div>
             <div style="display:flex;gap:1rem;align-items:flex-start;">
               <div style="width:44px;height:44px;border-radius:12px;background:rgba(249,115,22,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="bi bi-cloud-arrow-up" style="color:#f97316;font-size:1.2rem;"></i></div>
@@ -590,7 +522,7 @@
         </div>
         <div class="accordion-item" style="border:1px solid #e2e8f0;border-radius:12px;margin-bottom:0.75rem;overflow:hidden;">
           <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq4" style="font-weight:600;">Puedo probar antes de pagar?</button></h2>
-          <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion"><div class="accordion-body" style="color:#64748b;">Si. Tienes dos opciones: (1) Prueba de 5 dias sin tarjeta de credito, o (2) Prueba extendida de 15 dias agregando tu tarjeta. Sin compromisos en ambos casos. Si te convence, eliges tu plan pagado y te ayudamos con la implementacion.</div></div>
+          <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion"><div class="accordion-body" style="color:#64748b;">Si. Tienes 5 dias de prueba gratis sin tarjeta de credito, con acceso a todas las funciones del sistema. Sin compromiso. Si te convence, adquieres la licencia Enterprise y te ayudamos con la implementacion.</div></div>
         </div>
         <div class="accordion-item" style="border:1px solid #e2e8f0;border-radius:12px;margin-bottom:0.75rem;overflow:hidden;">
           <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq5" style="font-weight:600;">Que incluye la implementacion de 5 dias?</button></h2>
@@ -606,7 +538,7 @@
         </div>
         <div class="accordion-item" style="border:1px solid #e2e8f0;border-radius:12px;margin-bottom:0.75rem;overflow:hidden;">
           <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq8" style="font-weight:600;">Que es DalIA?</button></h2>
-          <div id="faq8" class="accordion-collapse collapse" data-bs-parent="#faqAccordion"><div class="accordion-body" style="color:#64748b;">DalIA es tu asistente de inteligencia artificial integrado en el sistema. Te saluda cada dia, te da tareas, analiza tus ventas, te alerta sobre inventario bajo y te ayuda a tomar mejores decisiones. Cada plan incluye 2 millones de tokens de IA al ano (~2,000 consultas).</div></div>
+          <div id="faq8" class="accordion-collapse collapse" data-bs-parent="#faqAccordion"><div class="accordion-body" style="color:#64748b;">DalIA es tu asistente de inteligencia artificial integrado en el sistema. Te saluda cada dia, te da tareas, analiza tus ventas, te alerta sobre inventario bajo y te ayuda a tomar mejores decisiones. Incluye 2 millones de tokens de IA al ano (~2,000 consultas).</div></div>
         </div>
       </div>
     </div>
@@ -630,7 +562,7 @@
   <section class="cta">
     <div class="container text-center position-relative" style="z-index:2;">
       <h2>Listo para modernizar tu restaurante?</h2>
-      <p>Prueba 5 dias sin tarjeta, o 15 dias con tarjeta. Si no funciona, te devolvemos tu dinero.</p>
+      <p>Prueba 5 dias gratis, sin tarjeta de credito. Si te convence, adquiere tu licencia Enterprise de por vida.</p>
       <a href="/login" class="btn-hero btn-hero-primary"><i class="bi bi-rocket-takeoff me-2"></i>Comenzar ahora</a>
     </div>
   </section>
@@ -638,7 +570,7 @@
   <!-- FOOTER -->
   <footer class="landing-footer">
     <div class="container text-center">
-      <span>&copy; <%= new Date().getFullYear() %> <span class="brand"><i class="bi bi-fire me-1 accent"></i>restaurante<span class="accent">.dignita.tech</span></span> &middot; Sistema de Gestion de Restaurantes</span>
+      <span>&copy; <%= new Date().getFullYear() %> <span class="brand"><i class="bi bi-fire me-1 accent"></i>MiRestcon<span class="accent">IA</span></span> &middot; Sistema de Gestion de Restaurantes</span>
     </div>
   </footer>
 
@@ -679,11 +611,11 @@
           </a>
 
           <!-- Email -->
-          <a id="modalEmail" href="mailto:ventas@dignita.tech?subject=Quiero+contratar+plan" class="contact-option">
+          <a id="modalEmail" href="mailto:ventas@mirestconia.com?subject=Quiero+contratar+plan" class="contact-option">
             <div class="co-icon co-email"><i class="bi bi-envelope-fill"></i></div>
             <div class="co-text">
               <strong>Email</strong>
-              <span>ventas@dignita.tech</span>
+              <span>ventas@mirestconia.com</span>
             </div>
             <i class="bi bi-arrow-right ms-auto text-muted"></i>
           </a>
@@ -781,14 +713,14 @@
 
       const msg = encodeURIComponent(
         'Hola! Quiero contratar el plan ' + planNombre +
-        ' de restaurante.dignita.tech (' + planPrecio + '). ¿Me pueden ayudar?'
+        ' de restaurante.mirestconia.com (' + planPrecio + '). ¿Me pueden ayudar?'
       );
       document.getElementById('modalWhatsApp').href =
         'https://wa.me/' + WHATSAPP_NUMBER + '?text=' + msg;
 
       document.getElementById('modalEmail').href =
-        'mailto:ventas@dignita.tech?subject=' +
-        encodeURIComponent('Contratar plan ' + planNombre + ' - dignita.tech') +
+        'mailto:ventas@mirestconia.com?subject=' +
+        encodeURIComponent('Contratar plan ' + planNombre + ' - mirestconia.com') +
         '&body=' + encodeURIComponent(
           'Hola,\n\nMe interesa contratar el plan ' + planNombre +
           ' (' + planPrecio + ').\n\nNombre de mi restaurante:\nTelefono de contacto:\n\nGracias.'

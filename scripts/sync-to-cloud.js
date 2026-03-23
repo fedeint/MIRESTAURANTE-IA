@@ -198,7 +198,7 @@ async function syncTable(tableName, localClient, cloudClient, since, hasUpdatedA
 async function main() {
     const startTime = new Date();
     console.log('============================================');
-    console.log('  dignita.tech - Sincronizar a la Nube');
+    console.log('  mirestconia.com - Sincronizar a la Nube');
     console.log(`  Iniciado: ${startTime.toLocaleString()}`);
     console.log('============================================');
 

@@ -35,8 +35,8 @@ function attachTenant(req, res, next) {
     const hostname = req.hostname || '';
     const parts = hostname.split('.');
 
-    if (parts.length >= 3 && parts[1] === 'dignita' && parts[2] === 'tech') {
-        // subdominio.dignita.tech
+    if (parts.length >= 3 && parts[1] === 'mirestconia' && parts[2] === 'com') {
+        // subdominio.mirestconia.com
         const subdominio = parts[0];
         resolveTenant(subdominio).then(tenant => {
             if (tenant) {

@@ -1064,7 +1064,7 @@ Fecha                              Fecha
 **Canales:**
 - WhatsApp Business de dignita.tech (numero oficial).
 - Correo electronico: soporte@dignita.tech.
-- Portal de tickets: https://mirestconia.dignita.tech/soporte.
+- Portal de tickets: https://mirestconia.com/soporte.
 
 **Tiempos de respuesta:**
 
@@ -1100,7 +1100,7 @@ Fecha                              Fecha
 **Soporte General:**
 - WhatsApp Business: _______________________________________________
 - Email: soporte@dignita.tech
-- Portal de Tickets: https://mirestconia.dignita.tech/soporte
+- Portal de Tickets: https://mirestconia.com/soporte
 
 **Equipo de dignita.tech:**
 - Gerente de Cuenta: _______________________________________________

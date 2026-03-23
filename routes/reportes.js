@@ -85,7 +85,7 @@ router.get('/diario', async (req, res) => {
         // Titulo
         doc.fontSize(18).font('Helvetica-Bold').text('REPORTE DIARIO', { align: 'center' });
         doc.fontSize(12).font('Helvetica').text(`Fecha: ${fecha}`, { align: 'center' });
-        doc.fontSize(10).text('restaurante.dignita.tech', { align: 'center' });
+        doc.fontSize(10).text('restaurante.mirestconia.com', { align: 'center' });
         doc.moveDown(1.5);
 
         // 1. CAJA
@@ -169,7 +169,7 @@ router.get('/diario', async (req, res) => {
         doc.text(`(=) GANANCIA NETA:       S/ ${ganancia.toFixed(2)}`);
 
         doc.moveDown(2);
-        doc.fontSize(8).font('Helvetica').text('Generado por dignita.tech | Creado por Leonidas Yauri, CEO', { align: 'center' });
+        doc.fontSize(8).font('Helvetica').text('Generado por mirestconia.com | Creado por Leonidas Yauri, CEO', { align: 'center' });
 
         doc.end();
     } catch (e) {
@@ -309,7 +309,7 @@ function drawFooter(doc) {
     doc.rect(x, y - 4, w, 22).fill(ORANGE);
     doc.fillColor(WHITE).fontSize(8).font('Helvetica')
         .text(
-            `Generado por dignita.tech  |  ${new Date().toLocaleString('es-PE', { timeZone: 'America/Lima' })}`,
+            `Generado por mirestconia.com  |  ${new Date().toLocaleString('es-PE', { timeZone: 'America/Lima' })}`,
             x + 4, y + 2, { width: w - 8, align: 'center' }
         );
 }

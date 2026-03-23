@@ -2,7 +2,7 @@
 
 /**
  * routes/legal.js
- * Legal routes for dignita.tech restaurant management SaaS.
+ * Legal routes for mirestconia.com restaurant management SaaS.
  *
  * PUBLIC routes - no authentication required.
  *
