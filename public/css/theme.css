@@ -181,7 +181,7 @@ h1, h2, h3, h4, h5, h6 {
 
 .dg-sidebar {
   position: fixed;
-  z-index: 1050;
+  z-index: 1030;
   background: var(--dg-nav-bg);
   display: flex;
   flex-direction: column;
@@ -349,7 +349,7 @@ h1, h2, h3, h4, h5, h6 {
   position: fixed;
   top: 0;
   left: 64px;
-  z-index: 1049;
+  z-index: 1029;
   background: var(--dg-nav-panel);
   padding: 16px 10px;
   display: flex;
@@ -479,7 +479,7 @@ h1, h2, h3, h4, h5, h6 {
   display: flex;
   align-items: center;
   padding: 0 1rem;
-  z-index: 1040;
+  z-index: 1028;
   gap: 0.75rem;
   box-shadow: 0 2px 12px rgba(0,0,0,0.15);
 }
@@ -527,7 +527,7 @@ h1, h2, h3, h4, h5, h6 {
   inset: 0;
   background: rgba(0,0,0,0.5);
   backdrop-filter: blur(4px);
-  z-index: 1045;
+  z-index: 1025;
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.3s ease;
@@ -587,7 +587,7 @@ h1, h2, h3, h4, h5, h6 {
   display: flex;
   flex-direction: column;
   position: relative;
-  z-index: 1;
+  z-index: auto;
 }
 
 @media (max-width: 991.98px) {
