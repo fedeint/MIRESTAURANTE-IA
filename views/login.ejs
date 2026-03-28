@@ -95,6 +95,25 @@
     }
     .btn-signin:hover { background: rgba(255,255,255,0.18); }
 
+    .btn-google {
+      width: 100%;
+      padding: 0.75rem;
+      border-radius: 2rem;
+      border: none;
+      background: linear-gradient(to bottom, #232526, #2d2e30);
+      color: #fff;
+      font-size: 0.875rem;
+      font-weight: 500;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      transition: filter 0.15s;
+    }
+    .btn-google:hover { filter: brightness(1.15); }
+    .btn-google img { width: 1.25rem; height: 1.25rem; }
+
     .login-hint {
       margin-top: 0.75rem;
       font-size: 0.72rem;
@@ -128,6 +147,22 @@
     }
     .tagline strong { color: #fff; font-weight: 600; }
     .tagline .brand { color: #FF6B35; }
+
+    /* Client avatars */
+    .avatars {
+      display: flex;
+      justify-content: center;
+      margin-top: 0.75rem;
+    }
+    .avatars img {
+      width: 2.25rem;
+      height: 2.25rem;
+      border-radius: 50%;
+      border: 2px solid #1e1e2e;
+      object-fit: cover;
+      margin-left: -0.5rem;
+    }
+    .avatars img:first-child { margin-left: 0; }
   </style>
 </head>
 <body>
@@ -135,7 +170,7 @@
   <!-- Glass login card -->
   <div class="glass-card">
     <div class="logo-wrap">
-      <img src="/logo.svg" alt="MiRest con IA">
+      <img src="/isotipo.png" alt="MiRest con IA">
     </div>
     <h2>Mi<span style="color:#FF6B35;">Rest</span> con <span style="color:#ff7846;">IA</span></h2>
 
@@ -150,6 +185,10 @@
       <button type="submit" class="btn-signin">
         <i class="bi bi-box-arrow-in-right me-1"></i> Entrar
       </button>
+      <button type="button" class="btn-google" onclick="alert('Google Sign-In proximamente')">
+        <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google">
+        Continuar con Google
+      </button>
     </form>
 
     <div class="login-hint">
@@ -158,9 +197,16 @@
     </div>
   </div>
 
-  <!-- Tagline -->
+  <!-- Tagline + avatars -->
   <div class="tagline">
     <strong>Cientos de restaurantes</strong> ya usan <span class="brand">MiRest con IA</span>.
+    <div class="avatars">
+      <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="cliente">
+      <img src="https://randomuser.me/api/portraits/women/44.jpg" alt="cliente">
+      <img src="https://randomuser.me/api/portraits/men/54.jpg" alt="cliente">
+      <img src="https://randomuser.me/api/portraits/women/68.jpg" alt="cliente">
+      <img src="https://randomuser.me/api/portraits/men/75.jpg" alt="cliente">
+    </div>
   </div>
 
   <%- include('partials/footer') %>
