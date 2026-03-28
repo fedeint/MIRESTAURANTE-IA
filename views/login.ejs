@@ -8,67 +8,162 @@
   <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/css/theme.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #121212;
+      overflow: hidden;
+      padding: 1rem;
+    }
+
+    /* Glass card */
+    .glass-card {
+      position: relative;
+      z-index: 10;
+      width: 100%;
+      max-width: 24rem;
+      border-radius: 1.5rem;
+      background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, #121212 100%);
+      backdrop-filter: blur(12px);
+      box-shadow: 0 25px 50px rgba(0,0,0,0.6);
+      padding: 2.5rem 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* Logo circle */
+    .logo-circle {
+      width: 3.5rem;
+      height: 3.5rem;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.15);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.25rem;
+      box-shadow: 0 8px 24px rgba(255,107,53,0.25);
+    }
+    .logo-circle img { width: 2.25rem; height: 2.25rem; border-radius: 0.5rem; }
+
+    /* Title */
+    .glass-card h2 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 1.5rem;
+      text-align: center;
+      letter-spacing: -0.02em;
+    }
+
+    /* Form */
+    .login-form { width: 100%; display: flex; flex-direction: column; gap: 0.75rem; }
+
+    .glass-input {
+      width: 100%;
+      padding: 0.75rem 1.25rem;
+      border-radius: 0.75rem;
+      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(255,255,255,0.08);
+      color: #fff;
+      font-size: 0.875rem;
+      outline: none;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .glass-input::placeholder { color: #9ca3af; }
+    .glass-input:focus { border-color: #FF6B35; box-shadow: 0 0 0 3px rgba(255,107,53,0.2); }
+
+    .divider { border: none; border-top: 1px solid rgba(255,255,255,0.08); margin: 0.5rem 0; }
+
+    .btn-signin {
+      width: 100%;
+      padding: 0.75rem;
+      border-radius: 2rem;
+      border: none;
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .btn-signin:hover { background: rgba(255,255,255,0.18); }
+
+    .login-hint {
+      margin-top: 0.75rem;
+      font-size: 0.72rem;
+      color: #6b7280;
+      background: rgba(255,255,255,0.04);
+      padding: 0.6rem 0.75rem;
+      border-radius: 0.5rem;
+      width: 100%;
+      text-align: center;
+    }
+    .login-hint strong { color: #d1d5db; }
+
+    .alert-glass {
+      width: 100%;
+      background: rgba(239,68,68,0.15);
+      border: 1px solid rgba(239,68,68,0.3);
+      color: #fca5a5;
+      padding: 0.5rem 0.75rem;
+      border-radius: 0.5rem;
+      font-size: 0.8rem;
+    }
+
+    /* Tagline below card */
+    .tagline {
+      position: relative;
+      z-index: 10;
+      margin-top: 2rem;
+      text-align: center;
+      color: #6b7280;
+      font-size: 0.85rem;
+    }
+    .tagline strong { color: #fff; font-weight: 600; }
+    .tagline .brand { color: #FF6B35; }
+  </style>
 </head>
-<body style="min-height:100vh; display:flex; flex-direction:column;">
-  <main style="flex:1 0 auto; display:flex; align-items:center;">
-    <div class="container">
-      <div class="row justify-content-center">
-        <div class="col-12 col-md-5 col-lg-4">
-          <!-- Brand header -->
-          <div class="text-center mb-4">
-            <img src="/favicon.png" alt="MiRest con IA" style="width:60px;height:60px;border-radius:1rem;box-shadow:0 8px 24px rgba(249,115,22,0.3);margin-bottom:0.75rem;">
-            <h4 style="font-weight:800;letter-spacing:-0.03em;color:#1e293b;">Mi<span style="color:#f97316;">Rest</span> con <span style="color:#ff7846;">IA</span></h4>
-            <p class="text-muted small">Sistema de Gestión de Restaurantes</p>
-          </div>
-          <!-- Card -->
-          <div class="card">
-            <div class="card-body p-4">
-              <div class="d-flex align-items-center mb-3">
-                <div class="me-2" style="color:#6366f1;"><i class="bi bi-shield-lock-fill fs-3"></i></div>
-                <div>
-                  <div class="fw-bold">Iniciar sesion</div>
-                  <div class="text-muted small">Accede segun tu rol (admin / mesero / cocinero).</div>
-                </div>
-              </div>
+<body>
 
-              <% if (error) { %>
-                <div class="alert alert-danger py-2 small"><%= error %></div>
-              <% } %>
-
-              <form method="POST" action="/login" autocomplete="off">
-                <div class="mb-3">
-                  <label class="form-label">Usuario</label>
-                  <div class="input-group">
-                    <span class="input-group-text"><i class="bi bi-person-fill"></i></span>
-                    <input name="usuario" class="form-control" required autofocus placeholder="Tu usuario">
-                  </div>
-                </div>
-                <div class="mb-3">
-                  <label class="form-label">Contrasena</label>
-                  <div class="input-group">
-                    <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
-                    <input name="password" type="password" class="form-control" required placeholder="Tu contrasena">
-                  </div>
-                </div>
-                <button class="btn btn-primary w-100 py-2" type="submit">
-                  <i class="bi bi-box-arrow-in-right me-1"></i> Entrar
-                </button>
-              </form>
-
-              <div class="text-muted small mt-3" style="background:rgba(99,102,241,0.04);padding:0.75rem;border-radius:0.625rem;">
-                <i class="bi bi-info-circle me-1"></i>
-                Primer acceso: <strong>admin</strong> / <strong>admin123</strong>. Cambia la contrasena despues.
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+  <!-- Glass login card -->
+  <div class="glass-card">
+    <div class="logo-circle">
+      <img src="/favicon.png" alt="MiRest con IA">
     </div>
-  </main>
+    <h2>Mi<span style="color:#FF6B35;">Rest</span> con <span style="color:#ff7846;">IA</span></h2>
+
+    <% if (error) { %>
+      <div class="alert-glass mb-3"><%= error %></div>
+    <% } %>
+
+    <form method="POST" action="/login" autocomplete="off" class="login-form">
+      <input name="usuario" class="glass-input" required autofocus placeholder="Usuario">
+      <input name="password" type="password" class="glass-input" required placeholder="Contrasena">
+      <hr class="divider">
+      <button type="submit" class="btn-signin">
+        <i class="bi bi-box-arrow-in-right me-1"></i> Entrar
+      </button>
+    </form>
+
+    <div class="login-hint">
+      <i class="bi bi-info-circle me-1"></i>
+      Primer acceso: <strong>admin</strong> / <strong>admin123</strong>
+    </div>
+  </div>
+
+  <!-- Tagline -->
+  <div class="tagline">
+    <strong>Cientos de restaurantes</strong> ya usan <span class="brand">MiRest con IA</span>.
+  </div>
 
   <%- include('partials/footer') %>
-
   <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
