@@ -38,19 +38,19 @@
       align-items: center;
     }
 
-    /* Logo circle */
-    .logo-circle {
-      width: 3.5rem;
-      height: 3.5rem;
-      border-radius: 50%;
-      background: rgba(255,255,255,0.15);
+    /* Logo */
+    .logo-wrap {
+      width: 5rem;
+      height: 5rem;
+      border-radius: 1.25rem;
+      background: rgba(255,255,255,0.12);
       display: flex;
       align-items: center;
       justify-content: center;
       margin-bottom: 1.25rem;
       box-shadow: 0 8px 24px rgba(255,107,53,0.25);
     }
-    .logo-circle img { width: 2.25rem; height: 2.25rem; border-radius: 0.5rem; }
+    .logo-wrap img { width: 3.5rem; height: 3.5rem; border-radius: 0.75rem; object-fit: contain; }
 
     /* Title */
     .glass-card h2 {
@@ -134,8 +134,8 @@
 
   <!-- Glass login card -->
   <div class="glass-card">
-    <div class="logo-circle">
-      <img src="/favicon.png" alt="MiRest con IA">
+    <div class="logo-wrap">
+      <img src="/logo.svg" alt="MiRest con IA">
     </div>
     <h2>Mi<span style="color:#FF6B35;">Rest</span> con <span style="color:#ff7846;">IA</span></h2>
 
