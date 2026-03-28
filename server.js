@@ -836,6 +836,11 @@ app.get('/ranking', requireRole('administrador'), async (req, res) => {
 // Observabilidad panel (superadmin only)
 app.use('/superadmin/observabilidad', requireAuth, requireRole('superadmin'), observabilidadRoutes);
 
+// Cotizador (superadmin only) — must be before generic /superadmin mount
+const cotizacionesRoutes = require('./routes/cotizaciones');
+app.use('/superadmin/cotizador', requireAuth, requireRole('superadmin'), cotizacionesRoutes);
+app.use('/api/superadmin/cotizador', requireAuth, requireRole('superadmin'), cotizacionesRoutes);
+
 // Superadmin panel (superadmin role only - cross-tenant)
 app.use('/superadmin', requireAuth, requireRole('superadmin'), superadminRoutes);
 app.use('/api/superadmin', requireAuth, requireRole('superadmin'), superadminRoutes);

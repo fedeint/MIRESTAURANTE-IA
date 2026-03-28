@@ -95,7 +95,7 @@ router.get('/', async (req, res) => {
   try {
     await ensurePermisosColumn();
     const [usuarios] = await db.query(
-      'SELECT id, usuario, nombre, rol, activo, last_login, created_at, permisos FROM usuarios ORDER BY created_at DESC, id DESC'
+      "SELECT id, usuario, nombre, rol, activo, last_login, created_at, permisos FROM usuarios WHERE rol != 'superadmin' ORDER BY created_at DESC, id DESC"
     );
     // Traer mesas asignadas a cada mesero
     let mesasAsignadas = [];
@@ -134,7 +134,7 @@ router.get('/listar', async (req, res) => {
   try {
     await ensurePermisosColumn();
     const [usuarios] = await db.query(
-      'SELECT id, usuario, nombre, rol, activo, last_login, created_at, permisos FROM usuarios ORDER BY created_at DESC, id DESC'
+      "SELECT id, usuario, nombre, rol, activo, last_login, created_at, permisos FROM usuarios WHERE rol != 'superadmin' ORDER BY created_at DESC, id DESC"
     );
     const result = (usuarios || []).map(u => ({
       ...u,
@@ -231,6 +231,8 @@ router.put('/:id(\\d+)', async (req, res) => {
     const current = rows?.[0];
     if (!current) return res.status(404).json({ error: 'Usuario no encontrado' });
 
+    if (String(current.rol) === 'superadmin') return res.status(403).json({ error: 'No se puede modificar un usuario superadmin' });
+
     const wasAdminActive = String(current.rol) === 'administrador' && Number(current.activo) === 1;
     const willBeAdminActive = rol === 'administrador' && activo === 1;
     if (wasAdminActive && !willBeAdminActive) {
@@ -299,6 +301,8 @@ router.delete('/:id(\\d+)', async (req, res) => {
     const [rows] = await db.query('SELECT id, rol, activo FROM usuarios WHERE id = ? LIMIT 1', [id]);
     const u = rows?.[0];
     if (!u) return res.status(404).json({ error: 'Usuario no encontrado' });
+
+    if (String(u.rol) === 'superadmin') return res.status(403).json({ error: 'No se puede eliminar un usuario superadmin' });
 
     const isAdminActive = String(u.rol) === 'administrador' && Number(u.activo) === 1;
     if (isAdminActive) {
