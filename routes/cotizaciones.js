@@ -19,20 +19,41 @@ const PLANES = {
   vida:    { label: 'De Por Vida', precio: 3200 },
 };
 
-const MODULOS = [
-  { key: 'mesas',        label: 'Mesas y Pedidos',               precio: 0,  icon: 'bi-grid-3x3-gap-fill' },
-  { key: 'cocina',       label: 'Cocina',                        precio: 0,  icon: 'bi-fire' },
-  { key: 'almacen',      label: 'Almacén / Inventario',          precio: 30, icon: 'bi-box-seam' },
-  { key: 'sunat',        label: 'SUNAT / Facturación electrónica', precio: 50, icon: 'bi-building' },
-  { key: 'delivery',     label: 'Delivery',                      precio: 30, icon: 'bi-bicycle' },
-  { key: 'reservas',     label: 'Reservas',                      precio: 20, icon: 'bi-calendar-check' },
-  { key: 'facturacion',  label: 'Facturación rápida',            precio: 0,  icon: 'bi-receipt-cutoff' },
-  { key: 'caja',         label: 'Caja y Turnos',                 precio: 0,  icon: 'bi-wallet2' },
-  { key: 'reportes',     label: 'Reportes y Analítica',          precio: 20, icon: 'bi-bar-chart-line-fill' },
-  { key: 'chat_ia',      label: 'Chat IA (DalIA)',               precio: 40, icon: 'bi-stars' },
-  { key: 'recetas',      label: 'Recetas',                       precio: 25, icon: 'bi-journal-text' },
-  { key: 'promociones',  label: 'Promociones',                   precio: 20, icon: 'bi-megaphone' },
+// Módulos incluidos en todos los planes (S/ 0)
+const MODULOS_INCLUIDOS = [
+  { key: 'mesas',        label: 'Mesas y Pedidos',               precio: 0, icon: 'bi-grid-3x3-gap-fill', incluido: true },
+  { key: 'cocina',       label: 'Cocina',                        precio: 0, icon: 'bi-fire',              incluido: true },
+  { key: 'almacen',      label: 'Almacén / Inventario',          precio: 0, icon: 'bi-box-seam',          incluido: true },
+  { key: 'sunat',        label: 'SUNAT / Facturación electrónica', precio: 0, icon: 'bi-building',       incluido: true },
+  { key: 'delivery',     label: 'Delivery',                      precio: 0, icon: 'bi-bicycle',           incluido: true },
+  { key: 'reservas',     label: 'Reservas',                      precio: 0, icon: 'bi-calendar-check',    incluido: true },
+  { key: 'facturacion',  label: 'Facturación rápida',            precio: 0, icon: 'bi-receipt-cutoff',    incluido: true },
+  { key: 'caja',         label: 'Caja y Turnos',                 precio: 0, icon: 'bi-wallet2',           incluido: true },
+  { key: 'reportes',     label: 'Reportes y Analítica',          precio: 0, icon: 'bi-bar-chart-line-fill', incluido: true },
+  { key: 'recetas',      label: 'Recetas',                       precio: 0, icon: 'bi-journal-text',      incluido: true },
+  { key: 'promociones',  label: 'Promociones',                   precio: 0, icon: 'bi-megaphone',         incluido: true },
 ];
+
+// Extras y módulos V2 (cotizables)
+const EXTRAS = [
+  { key: 'ia_dalia',     label: 'IA DalIA + 2M tokens',          precio: 50, icon: 'bi-stars',           incluido: false },
+  { key: 'ia_tokens',    label: 'Tokens IA adicionales (2M)',     precio: 50, icon: 'bi-lightning-charge', incluido: false },
+];
+
+// Módulos V2 — próximamente (cotizables cuando estén listos)
+const MODULOS_V2 = [
+  { key: 'crm',          label: 'CRM — Pipeline de ventas',       precio: 80, icon: 'bi-funnel',          incluido: false },
+  { key: 'ops',          label: 'Centro de OPS',                  precio: 60, icon: 'bi-sliders',         incluido: false },
+  { key: 'estrategia',   label: 'Estrategia y Objetivos (SOSTAC)', precio: 70, icon: 'bi-bullseye',      incluido: false },
+  { key: 'agentes_ia',   label: 'Agentes IA especialistas',       precio: 100, icon: 'bi-robot',         incluido: false },
+  { key: 'contenido',    label: 'Gestión de Contenido',           precio: 40, icon: 'bi-pencil-square',   incluido: false },
+  { key: 'calendario',   label: 'Calendario inteligente',         precio: 30, icon: 'bi-calendar3',       incluido: false },
+  { key: 'redes',        label: 'Redes sociales',                 precio: 40, icon: 'bi-share',           incluido: false },
+  { key: 'fidelizacion', label: 'Fidelización',                   precio: 35, icon: 'bi-heart',           incluido: false },
+  { key: 'resultados',   label: 'Dashboard de Resultados',        precio: 30, icon: 'bi-speedometer2',    incluido: false },
+];
+
+const MODULOS = [...MODULOS_INCLUIDOS, ...EXTRAS, ...MODULOS_V2];
 
 // ---------------------------------------------------------------------------
 // GET /superadmin/cotizador — Render page
@@ -41,6 +62,9 @@ const MODULOS = [
 router.get('/', (req, res) => {
   res.render('superadmin/cotizador', {
     planes: PLANES,
+    modulosIncluidos: MODULOS_INCLUIDOS,
+    extras: EXTRAS,
+    modulosV2: MODULOS_V2,
     modulos: MODULOS,
     pageTitle: 'Cotizador',
   });

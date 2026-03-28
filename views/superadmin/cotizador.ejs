@@ -102,15 +102,48 @@
                 </div>
               </div>
 
-              <!-- Modules -->
-              <div class="section-title mt-4"><i class="bi bi-grid me-1"></i> Módulos</div>
-              <div class="mb-3" id="modulosContainer">
-                <% modulos.forEach((m, i) => { %>
+              <!-- Módulos incluidos -->
+              <div class="section-title mt-4"><i class="bi bi-check-circle me-1"></i> Incluido en el plan</div>
+              <div class="mb-3">
+                <% modulosIncluidos.forEach((m) => { %>
+                  <div class="mod-row" style="opacity:0.7;">
+                    <div class="form-check form-switch mb-0">
+                      <input class="form-check-input mod-check" type="checkbox" id="mod_<%= m.key %>" data-key="<%= m.key %>" data-label="<%= m.label %>" data-category="incluido" style="width:36px;height:20px;" checked disabled>
+                    </div>
+                    <label for="mod_<%= m.key %>"><i class="bi <%= m.icon %>" style="color:#22c55e;width:16px;text-align:center;"></i> <%= m.label %></label>
+                    <span style="font-size:0.75rem;color:#22c55e;font-weight:600;padding:4px 10px;">Incluido</span>
+                    <input type="hidden" class="mod-price" data-key="<%= m.key %>" value="0">
+                  </div>
+                <% }); %>
+              </div>
+
+              <!-- IA y tokens -->
+              <div class="section-title mt-4"><i class="bi bi-stars me-1"></i> Inteligencia Artificial</div>
+              <div class="mb-3">
+                <% extras.forEach((m) => { %>
                   <div class="mod-row">
                     <div class="form-check form-switch mb-0">
-                      <input class="form-check-input mod-check" type="checkbox" id="mod_<%= m.key %>" data-key="<%= m.key %>" data-label="<%= m.label %>" style="width:36px;height:20px;" onchange="updatePreview()">
+                      <input class="form-check-input mod-check" type="checkbox" id="mod_<%= m.key %>" data-key="<%= m.key %>" data-label="<%= m.label %>" data-category="extra" style="width:36px;height:20px;" onchange="updatePreview()">
                     </div>
                     <label for="mod_<%= m.key %>"><i class="bi <%= m.icon %>" style="color:#f97316;width:16px;text-align:center;"></i> <%= m.label %></label>
+                    <div class="input-group" style="width:110px;">
+                      <span class="input-group-text" style="background:#0f172a;border-color:rgba(255,255,255,0.1);color:#64748b;font-size:0.75rem;padding:2px 6px;">S/</span>
+                      <input type="number" class="form-control mod-price" data-key="<%= m.key %>" value="<%= m.precio %>" min="0" step="0.01" style="padding:4px 6px;" oninput="updatePreview()">
+                    </div>
+                  </div>
+                <% }); %>
+              </div>
+
+              <!-- Módulos V2 -->
+              <div class="section-title mt-4"><i class="bi bi-rocket-takeoff me-1"></i> Módulos V2 — Premium</div>
+              <div style="font-size:0.72rem;color:#64748b;margin-bottom:8px;">CRM, Estrategia, Agentes IA y más — próximamente</div>
+              <div class="mb-3">
+                <% modulosV2.forEach((m) => { %>
+                  <div class="mod-row">
+                    <div class="form-check form-switch mb-0">
+                      <input class="form-check-input mod-check" type="checkbox" id="mod_<%= m.key %>" data-key="<%= m.key %>" data-label="<%= m.label %>" data-category="v2" style="width:36px;height:20px;" onchange="updatePreview()">
+                    </div>
+                    <label for="mod_<%= m.key %>"><i class="bi <%= m.icon %>" style="color:#a78bfa;width:16px;text-align:center;"></i> <%= m.label %></label>
                     <div class="input-group" style="width:110px;">
                       <span class="input-group-text" style="background:#0f172a;border-color:rgba(255,255,255,0.1);color:#64748b;font-size:0.75rem;padding:2px 6px;">S/</span>
                       <input type="number" class="form-control mod-price" data-key="<%= m.key %>" value="<%= m.precio %>" min="0" step="0.01" style="padding:4px 6px;" oninput="updatePreview()">
@@ -236,8 +269,11 @@
       document.querySelectorAll('.mod-check').forEach(cb => {
         const key = cb.dataset.key;
         const label = cb.dataset.label;
+        const category = cb.dataset.category || '';
         const priceInput = document.querySelector('.mod-price[data-key="' + key + '"]');
-        mods.push({ key: key, label: label, incluido: cb.checked, precio: Number(priceInput.value) || 0 });
+        // Módulos incluidos siempre van como activos
+        const isIncluido = category === 'incluido';
+        mods.push({ key: key, label: label, incluido: isIncluido || cb.checked, precio: Number(priceInput.value) || 0, category: category });
       });
 
       const usersQty = Math.max(1, Number(document.getElementById('q_users').value) || 1);
@@ -284,10 +320,23 @@
 
       html += '<div class="preview-line"><span>Plan: ' + planLabel + '</span><span>S/ ' + d.plan_precio.toFixed(2) + '</span></div>';
 
-      var activeMods = d.modulos.filter(function(m) { return m.incluido; });
-      activeMods.forEach(function(m) {
-        html += '<div class="preview-line" style="font-size:0.78rem;color:#94a3b8;"><span>&nbsp;&nbsp;' + m.label + '</span><span>S/ ' + m.precio.toFixed(2) + '</span></div>';
-      });
+      // Módulos incluidos
+      var included = d.modulos.filter(function(m) { return m.category === 'incluido'; });
+      if (included.length > 0) {
+        html += '<div style="font-size:0.68rem;color:#22c55e;text-transform:uppercase;letter-spacing:1px;margin-top:8px;font-weight:700;">Incluido</div>';
+        included.forEach(function(m) {
+          html += '<div class="preview-line" style="font-size:0.78rem;color:#64748b;"><span>&nbsp;&nbsp;<i class="bi bi-check" style="color:#22c55e;"></i> ' + m.label + '</span><span style="color:#22c55e;">✓</span></div>';
+        });
+      }
+
+      // Extras e IA
+      var paidMods = d.modulos.filter(function(m) { return m.category !== 'incluido' && m.incluido && m.precio > 0; });
+      if (paidMods.length > 0) {
+        html += '<div style="font-size:0.68rem;color:#f97316;text-transform:uppercase;letter-spacing:1px;margin-top:8px;font-weight:700;">Extras</div>';
+        paidMods.forEach(function(m) {
+          html += '<div class="preview-line" style="font-size:0.78rem;color:#cbd5e1;"><span>&nbsp;&nbsp;' + m.label + '</span><span>S/ ' + m.precio.toFixed(2) + '</span></div>';
+        });
+      }
 
       if (d.usuarios_qty > 1 && d.usuario_precio_unit > 0) {
         html += '<div class="preview-line"><span>Usuarios extra: ' + (d.usuarios_qty - 1) + ' × S/ ' + d.usuario_precio_unit.toFixed(2) + '</span><span>S/ ' + d._usersTotal.toFixed(2) + '</span></div>';
