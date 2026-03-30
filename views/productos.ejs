@@ -640,7 +640,9 @@
                            title="Teclas rapidas: Ctrl+B o /">
                 </div>
 
-                <!-- Excel tools -->
+                <% const userRol = (typeof user !== 'undefined' && user) ? String(user.rol || '').toLowerCase() : ''; %>
+                <% if (userRol === 'administrador') { %>
+                <!-- Excel tools (solo admin) -->
                 <button id="btnDescargarPlantilla" class="btn-excel-outline" title="Descargar plantilla Excel">
                     <i class="bi bi-file-earmark-excel"></i>
                     <span class="d-none d-sm-inline">Plantilla</span>
@@ -651,7 +653,7 @@
                 </button>
                 <input type="file" id="archivoImport" accept=".xlsx" class="d-none">
 
-                <!-- New product -->
+                <!-- New product (solo admin) -->
                 <button class="btn-nuevo-producto"
                         data-bs-toggle="modal"
                         data-bs-target="#nuevoProductoModal"
@@ -659,6 +661,7 @@
                     <i class="bi bi-plus-lg"></i>
                     Nuevo Producto
                 </button>
+                <% } %>
             </div>
         </div>
 
@@ -792,6 +795,7 @@
 
                 <!-- Footer action buttons -->
                 <div class="producto-card-footer">
+                    <% if (userRol === 'administrador') { %>
                     <button class="card-action-btn hijos"
                             data-id="<%= producto.id %>"
                             data-nombre="<%= producto.nombre %>"
@@ -811,6 +815,7 @@
                             title="Eliminar producto">
                         <i class="bi bi-trash"></i>
                     </button>
+                    <% } %>
                 </div>
                 </div><!-- /producto-card-inner -->
             </div>

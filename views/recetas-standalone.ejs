@@ -369,6 +369,7 @@
                     <th>Porciones</th>
                     <th>Ingredientes</th>
                     <th>Estado</th>
+                    <th></th>
                 </tr>
             </thead>
             <tbody id="recetasBody">
@@ -425,10 +426,18 @@
                         <span class="fc-badge status-inactiva"><i class="bi bi-circle" style="font-size:0.55rem;"></i> Inactiva</span>
                         <% } %>
                     </td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-warning btn-editar-receta"
+                                data-producto-id="<%= r.producto_id %>"
+                                data-producto-nombre="<%= r.producto_nombre %>"
+                                onclick="event.stopPropagation(); abrirEditorReceta(<%= r.producto_id %>, '<%= String(r.producto_nombre || '').replace(/'/g, "\\'") %>')">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                    </td>
                 </tr>
                 <!-- Expandable detail row (hidden by default) -->
                 <tr class="receta-detail-row d-none" id="detail-<%= r.id %>">
-                    <td colspan="9">
+                    <td colspan="10">
                         <div class="receta-detail-inner" id="detail-content-<%= r.id %>">
                             <div class="text-muted text-center py-2">
                                 <div class="spinner-border spinner-border-sm me-2"></div>Cargando ingredientes...
@@ -440,7 +449,7 @@
 
                 <% if (recetas.length === 0) { %>
                 <tr id="emptyRow">
-                    <td colspan="9">
+                    <td colspan="10">
                         <div class="recetas-empty">
                             <i class="bi bi-journal-x d-block"></i>
                             <p>No hay recetas registradas.<br>
@@ -620,7 +629,215 @@
     }
 
 })();
+
+// ── Editor de recetas ─────────────────────────────────────────────────────
+var editItems = [];
+var ingredientesCache = [];
+
+async function cargarIngredientesCache() {
+    if (ingredientesCache.length > 0) return;
+    try {
+        var r = await fetch('/almacen/api/ingredientes');
+        if (!r.ok) return;
+        var data = await r.json();
+        ingredientesCache = Array.isArray(data) ? data : (data.ingredientes || []);
+    } catch(e) {}
+}
+
+async function abrirEditorReceta(productoId, productoNombre) {
+    await cargarIngredientesCache();
+    document.getElementById('editRecetaTitulo').textContent = 'Editar Receta: ' + productoNombre;
+    document.getElementById('editRecetaProductoId').value = productoId;
+
+    // Cargar receta actual
+    try {
+        var r = await fetch('/api/recetas/' + productoId);
+        var data = await r.json();
+        editItems = [];
+        if (data.items && data.items.length > 0) {
+            data.items.forEach(function(it) {
+                editItems.push({
+                    ingrediente_id: it.ingrediente_id,
+                    sub_receta_id: it.sub_receta_id || null,
+                    tipo: it.tipo || 'ingrediente',
+                    nombre: it.ingrediente_nombre || it.sub_receta_nombre || 'Item',
+                    cantidad: Number(it.cantidad),
+                    unidad_medida: it.unidad_medida || 'g',
+                    costo: Number(it.ingrediente_costo || it.sub_receta_costo || 0)
+                });
+            });
+        }
+        document.getElementById('editRendimiento').value = data.receta?.rendimiento_porciones || 1;
+        document.getElementById('editTiempoPrep').value = data.receta?.tiempo_preparacion_min || '';
+        document.getElementById('editFoodCostObj').value = data.receta?.food_cost_objetivo_pct || '';
+    } catch(e) {
+        editItems = [];
+    }
+
+    // Llenar select de ingredientes
+    var sel = document.getElementById('editIngredienteSelect');
+    sel.innerHTML = '<option value="">-- Seleccionar ingrediente --</option>';
+    ingredientesCache.forEach(function(i) {
+        var opt = document.createElement('option');
+        opt.value = i.id;
+        opt.textContent = i.nombre + ' (' + i.unidad_medida + ' - S/' + Number(i.costo_unitario||0).toFixed(2) + ')';
+        opt.dataset.costo = i.costo_unitario || 0;
+        opt.dataset.unidad = i.unidad_medida || 'g';
+        opt.dataset.nombre = i.nombre;
+        sel.appendChild(opt);
+    });
+
+    renderEditItems();
+    new bootstrap.Modal(document.getElementById('modalEditReceta')).show();
+}
+
+function renderEditItems() {
+    var body = document.getElementById('editRecetaBody');
+    body.innerHTML = '';
+    var total = 0;
+    editItems.forEach(function(item, idx) {
+        var costoUnit = item.costo || 0;
+        var cant = item.cantidad || 0;
+        var costo;
+        if ((item.unidad_medida === 'g' || item.unidad_medida === 'ml') && costoUnit > 1) {
+            costo = (costoUnit / 1000) * cant;
+        } else {
+            costo = costoUnit * cant;
+        }
+        total += costo;
+        var tr = document.createElement('tr');
+        tr.innerHTML = '<td>' + escapeHtml(item.nombre) + (item.tipo === 'sub_receta' ? ' <span class="badge bg-info" style="font-size:0.65rem;">sub-receta</span>' : '') + '</td>'
+            + '<td class="text-end">' + cant + '</td>'
+            + '<td>' + item.unidad_medida + '</td>'
+            + '<td class="text-end">S/ ' + costo.toFixed(2) + '</td>'
+            + '<td><button type="button" class="btn btn-sm btn-outline-danger" onclick="editItems.splice(' + idx + ',1);renderEditItems();"><i class="bi bi-x"></i></button></td>';
+        body.appendChild(tr);
+    });
+    document.getElementById('editCostoTotal').textContent = 'S/ ' + total.toFixed(2);
+}
+
+document.getElementById('btnAddEditIngrediente')?.addEventListener('click', function() {
+    var sel = document.getElementById('editIngredienteSelect');
+    var opt = sel.options[sel.selectedIndex];
+    if (!opt || !opt.value) return;
+    var cant = Number(document.getElementById('editCantidad').value) || 0;
+    if (cant <= 0) return alert('Ingresa una cantidad');
+    var unidad = document.getElementById('editUnidad').value || 'g';
+    editItems.push({
+        ingrediente_id: Number(opt.value),
+        sub_receta_id: null,
+        tipo: 'ingrediente',
+        nombre: opt.dataset.nombre,
+        cantidad: cant,
+        unidad_medida: unidad,
+        costo: Number(opt.dataset.costo) || 0
+    });
+    renderEditItems();
+    document.getElementById('editCantidad').value = '';
+    sel.selectedIndex = 0;
+});
+
+document.getElementById('btnGuardarReceta')?.addEventListener('click', async function() {
+    var pid = document.getElementById('editRecetaProductoId').value;
+    if (!pid || editItems.length === 0) return alert('Agrega al menos un ingrediente');
+    var body = {
+        items: editItems.map(function(it) {
+            return {
+                ingrediente_id: it.tipo === 'ingrediente' ? it.ingrediente_id : null,
+                sub_receta_id: it.tipo === 'sub_receta' ? it.sub_receta_id : null,
+                cantidad: it.cantidad,
+                unidad_medida: it.unidad_medida
+            };
+        }),
+        rendimiento_porciones: Number(document.getElementById('editRendimiento').value) || 1,
+        tiempo_preparacion_min: Number(document.getElementById('editTiempoPrep').value) || null,
+        food_cost_objetivo_pct: Number(document.getElementById('editFoodCostObj').value) || null
+    };
+    try {
+        var r = await fetch('/api/recetas/' + pid, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+        });
+        var data = await r.json();
+        if (r.ok) {
+            bootstrap.Modal.getInstance(document.getElementById('modalEditReceta')).hide();
+            window.location.reload();
+        } else {
+            alert(data.error || 'Error al guardar');
+        }
+    } catch(e) {
+        alert('Error de conexion');
+    }
+});
 </script>
+
+<!-- Modal Editar Receta -->
+<div class="modal fade" id="modalEditReceta" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="editRecetaTitulo">Editar Receta</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="editRecetaProductoId">
+        <div class="row g-2 mb-3">
+          <div class="col-md-4">
+            <label class="form-label small">Porciones</label>
+            <input type="number" id="editRendimiento" class="form-control form-control-sm" value="1" min="1" step="1">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label small">Tiempo prep (min)</label>
+            <input type="number" id="editTiempoPrep" class="form-control form-control-sm" min="0">
+          </div>
+          <div class="col-md-4">
+            <label class="form-label small">Food Cost Obj %</label>
+            <input type="number" id="editFoodCostObj" class="form-control form-control-sm" step="0.1" min="0" max="100">
+          </div>
+        </div>
+        <hr>
+        <h6 class="fw-bold mb-2"><i class="bi bi-egg-fried me-1" style="color:#F97316;"></i> Ingredientes</h6>
+        <div class="row g-2 mb-2 align-items-end">
+          <div class="col">
+            <select id="editIngredienteSelect" class="form-select form-select-sm">
+              <option value="">-- Seleccionar ingrediente --</option>
+            </select>
+          </div>
+          <div class="col-3">
+            <input type="number" id="editCantidad" class="form-control form-control-sm" placeholder="Cantidad" step="0.1" min="0">
+          </div>
+          <div class="col-2">
+            <select id="editUnidad" class="form-select form-select-sm">
+              <option value="g">g</option><option value="kg">kg</option>
+              <option value="ml">ml</option><option value="lt">lt</option>
+              <option value="und">und</option>
+            </select>
+          </div>
+          <div class="col-auto">
+            <button type="button" class="btn btn-sm btn-success" id="btnAddEditIngrediente"><i class="bi bi-plus-lg"></i></button>
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-sm">
+            <thead class="table-light">
+              <tr><th>Ingrediente</th><th class="text-end">Cantidad</th><th>Unidad</th><th class="text-end">Costo</th><th></th></tr>
+            </thead>
+            <tbody id="editRecetaBody"></tbody>
+            <tfoot><tr class="fw-bold"><td colspan="3">Costo total</td><td class="text-end" id="editCostoTotal">S/ 0.00</td><td></td></tr></tfoot>
+          </table>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-primary" id="btnGuardarReceta" style="background:#F97316;border-color:#F97316;">
+          <i class="bi bi-save me-1"></i> Guardar Receta
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 </div>
 <%- include('partials/footer') %>
 </body>
