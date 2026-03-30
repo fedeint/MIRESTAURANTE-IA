@@ -326,12 +326,27 @@ router.post('/', async (req, res) => {
 // PUT /productos/:id - Actualizar producto
 router.put('/:id', async (req, res) => {
     try {
+        const tid = req.tenantId || 1;
         const { codigo, nombre, precio_kg, precio_unidad, precio_libra, imagen } = req.body;
 
         // Validar datos
         if (!codigo || !nombre) {
             return res.status(400).json({ error: 'El código y nombre son requeridos' });
         }
+
+        // Historial de precios
+        try {
+          const [[oldProd]] = await db.query('SELECT precio_unidad FROM productos WHERE id=? AND tenant_id=?', [req.params.id, tid]);
+          const oldPrice = Number(oldProd?.precio_unidad || 0);
+          const newPrice = Number(precio_unidad || 0);
+          if (oldProd && oldPrice !== newPrice && newPrice > 0) {
+            await db.query(
+              `INSERT INTO historial_precios (tenant_id, entidad_tipo, entidad_id, precio_anterior, precio_nuevo, campo, usuario_id)
+               VALUES (?, 'producto', ?, ?, ?, 'precio_unidad', ?)`,
+              [tid, req.params.id, oldPrice, newPrice, req.session?.user?.id || null]
+            );
+          }
+        } catch (_) {}
 
         const [result] = await db.query(
             'UPDATE productos SET codigo = ?, nombre = ?, precio_kg = ?, precio_unidad = ?, precio_libra = ?, imagen = ? WHERE id = ?',
@@ -341,6 +356,18 @@ router.put('/:id', async (req, res) => {
         if ((result?.affectedRows || 0) === 0) {
             return res.status(404).json({ error: 'Producto no encontrado' });
         }
+
+        // Trigger costeo recalculation
+        try {
+          const [[receta]] = await db.query(
+            'SELECT id FROM recetas WHERE producto_id=? AND tenant_id=? AND activa=true LIMIT 1',
+            [req.params.id, tid]
+          );
+          if (receta) {
+            const { recalcularCostoReceta } = require('../services/costeo-recetas');
+            await recalcularCostoReceta(tid, receta.id);
+          }
+        } catch (_) {}
 
         res.json({ message: 'Producto actualizado exitosamente' });
     } catch (error) {

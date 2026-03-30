@@ -195,6 +195,15 @@ router.post('/login', async (req, res) => {
         await checkSuspiciousLogin(req.tenantId || 1, u.id, u.usuario, req.geo?.country, req.geo?.ip);
     } catch (_) {}
 
+    // Marcación de asistencia - entrada
+    try {
+      await db.query(
+        `INSERT INTO asistencia_marcaciones (tenant_id, usuario_id, tipo, ip_address, user_agent, metodo)
+         VALUES (?, ?, 'entrada', ?, ?, 'auto_session')`,
+        [req.tenantId || 1, u.id, req.ip, String(req.headers['user-agent'] || '').substring(0, 300)]
+      );
+    } catch (_) {}
+
     res.redirect(defaultRedirectForRole(u.rol));
   } catch (e) {
     console.error('Error login:', e);
@@ -207,8 +216,18 @@ router.post('/login', async (req, res) => {
 });
 
 // POST /logout
-router.post('/logout', (req, res) => {
+router.post('/logout', async (req, res) => {
   try {
+    const user = req.session?.user;
+    if (user) {
+      try {
+        await db.query(
+          `INSERT INTO asistencia_marcaciones (tenant_id, usuario_id, tipo, ip_address, user_agent, metodo)
+           VALUES (?, ?, 'salida', ?, ?, 'auto_session')`,
+          [req.tenantId || 1, user.id, req.ip, String(req.headers['user-agent'] || '').substring(0, 300)]
+        );
+      } catch (_) {}
+    }
     req.session.destroy(() => {
       res.redirect('/login');
     });

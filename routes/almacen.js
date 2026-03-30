@@ -100,6 +100,25 @@ router.put('/api/ingredientes/:id', async (req, res) => {
     try {
         const tid = req.tenantId || 1;
         const { categoria_id, nombre, codigo, unidad_medida, stock_minimo, stock_maximo, costo_unitario, ubicacion, proveedor_id, merma_preparacion_pct } = req.body;
+
+        // Historial de precios + trigger costeo
+        try {
+          const [[oldIng]] = await db.query('SELECT costo_unitario FROM almacen_ingredientes WHERE id=? AND tenant_id=?', [req.params.id, tid]);
+          const oldCost = Number(oldIng?.costo_unitario || 0);
+          const newCost = Number(costo_unitario || 0);
+          if (oldIng && oldCost !== newCost && newCost > 0) {
+            await db.query(
+              `INSERT INTO historial_precios (tenant_id, entidad_tipo, entidad_id, precio_anterior, precio_nuevo, campo, usuario_id)
+               VALUES (?, 'ingrediente', ?, ?, ?, 'costo_unitario', ?)`,
+              [tid, req.params.id, oldCost, newCost, req.session?.user?.id || null]
+            );
+            try {
+              const { recalcularPorIngrediente } = require('../services/costeo-recetas');
+              await recalcularPorIngrediente(tid, Number(req.params.id));
+            } catch (_) {}
+          }
+        } catch (_) {}
+
         await db.query(
             `UPDATE almacen_ingredientes SET categoria_id=?, nombre=?, codigo=?, unidad_medida=?, stock_minimo=?, stock_maximo=?, costo_unitario=?, ubicacion=?, proveedor_id=?, merma_preparacion_pct=?
              WHERE id=? AND tenant_id=?`,
