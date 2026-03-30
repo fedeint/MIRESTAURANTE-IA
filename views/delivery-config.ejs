@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delivery Config - mirestconia.com</title>
+    <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/theme.css">
+</head>
+<body>
+    <%- include('partials/sidebar') %>
+    <div class="dg-main">
+    <main class="flex-grow-1">
+    <div class="container py-3">
+      <h4><i class="bi bi-gear"></i> Configuracion Delivery</h4>
+      <a href="/delivery" class="btn btn-sm btn-outline-secondary mb-3"><i class="bi bi-arrow-left"></i> Volver</a>
+
+      <% ['rappi', 'pedidosya', 'llamafood'].forEach(plat => { const c = configs[plat] || {}; %>
+      <div class="card mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <strong class="text-capitalize"><%= plat %></strong>
+          <span class="badge <%= c.activo ? 'bg-success' : 'bg-secondary' %>"><%= c.activo ? 'Activo' : 'Inactivo' %></span>
+        </div>
+        <div class="card-body">
+          <form id="form-<%= plat %>">
+            <div class="row g-2">
+              <% if (plat !== 'llamafood') { %>
+              <div class="col-md-6"><label class="form-label">Client ID</label><input name="client_id" class="form-control form-control-sm" value="<%= c.client_id || '' %>"></div>
+              <div class="col-md-6"><label class="form-label">Client Secret</label><input name="client_secret" type="password" class="form-control form-control-sm" value="<%= c.client_secret ? '........' : '' %>"></div>
+              <div class="col-md-4"><label class="form-label">Store ID</label><input name="store_id" class="form-control form-control-sm" value="<%= c.store_id || '' %>"></div>
+              <% if (plat === 'pedidosya') { %>
+              <div class="col-md-4"><label class="form-label">Chain ID</label><input name="chain_id" class="form-control form-control-sm" value="<%= c.chain_id || '' %>"></div>
+              <% } %>
+              <% if (plat === 'rappi') { %>
+              <div class="col-md-4"><label class="form-label">Webhook Secret</label><input name="webhook_secret" class="form-control form-control-sm" value="<%= c.webhook_secret || '' %>"></div>
+              <% } %>
+              <% } %>
+              <div class="col-md-3"><label class="form-label">Comision %</label><input name="comision_pct" type="number" step="0.01" class="form-control form-control-sm" value="<%= c.comision_pct || '' %>"></div>
+              <div class="col-md-3"><label class="form-label">Estado</label>
+                <select name="activo" class="form-select form-select-sm">
+                  <option value="true" <%= c.activo?'selected':'' %>>Activo</option>
+                  <option value="false" <%= !c.activo?'selected':'' %>>Inactivo</option>
+                </select>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm mt-2">Guardar</button>
+          </form>
+        </div>
+      </div>
+      <% }) %>
+    </div>
+    </main>
+    </div>
+    <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script>
+    ['rappi','pedidosya','llamafood'].forEach(plat => {
+      document.getElementById('form-'+plat).addEventListener('submit', async e => {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        const data = Object.fromEntries(fd);
+        const r = await fetch('/delivery/config/'+plat, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
+        const j = await r.json();
+        alert(j.message || j.error);
+      });
+    });
+    </script>
+    <%- include('partials/footer') %>
+</body>
+</html>

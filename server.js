@@ -845,6 +845,12 @@ app.use('/api/superadmin/cotizador', requireAuth, requireRole('superadmin'), cot
 app.use('/superadmin', requireAuth, requireRole('superadmin'), superadminRoutes);
 app.use('/api/superadmin', requireAuth, requireRole('superadmin'), superadminRoutes);
 
+// Delivery integration (admin + webhooks)
+const deliveryRoutes = require('./routes/delivery');
+app.use('/api/delivery/webhook', deliveryRoutes); // Webhooks - no auth (called by Rappi/PedidosYa)
+app.use('/delivery', requireAuth, requireRole('administrador'), deliveryRoutes);
+app.use('/api/delivery', requireAuth, requireRole('administrador'), deliveryRoutes);
+
 // Features (reservas, delivery, promos, fidelidad - admin)
 app.use('/features', requireRole('administrador'), featuresRoutes);
 app.use('/api/features', requireRole('administrador'), featuresRoutes);
