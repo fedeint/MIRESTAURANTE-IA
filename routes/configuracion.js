@@ -461,4 +461,45 @@ router.get('/diagnostico', async (req, res) => {
     }
 });
 
-module.exports = router; 
+// === CALENDARIO DE EVENTOS ===
+
+router.get('/calendario', async (req, res) => {
+  try {
+    const tid = req.tenantId || 1;
+    const [eventos] = await db.query(
+      `SELECT * FROM calendario_eventos WHERE (tenant_id=? OR tenant_id IS NULL) AND activo=true ORDER BY fecha`,
+      [tid]
+    );
+    res.json(eventos);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+router.post('/calendario', async (req, res) => {
+  try {
+    const tid = req.tenantId || 1;
+    const { nombre, tipo, fecha, recurrente, recurrencia_patron, impacto_esperado, notas } = req.body;
+    if (!nombre || !tipo || !fecha) return res.status(400).json({ error: 'nombre, tipo y fecha son requeridos' });
+    const [result] = await db.query(
+      `INSERT INTO calendario_eventos (tenant_id, nombre, tipo, fecha, recurrente, recurrencia_patron, impacto_esperado, notas)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`,
+      [tid, nombre, tipo, fecha, recurrente || false, recurrencia_patron || null, impacto_esperado || 'medio', notas || null]
+    );
+    res.status(201).json({ id: result?.insertId || result?.[0]?.id, message: 'Evento creado' });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+router.delete('/calendario/:id', async (req, res) => {
+  try {
+    const tid = req.tenantId || 1;
+    await db.query('UPDATE calendario_eventos SET activo=false WHERE id=? AND tenant_id=?', [req.params.id, tid]);
+    res.json({ message: 'Evento desactivado' });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+module.exports = router;

@@ -615,4 +615,42 @@ router.post('/solicitudes/:id/rechazar', async (req, res) => {
   }
 });
 
+// === MÓDULOS POR TENANT ===
+
+// PUT /api/superadmin/tenant/:id/modulos — Toggle modules for a tenant
+router.put('/tenant/:id/modulos', async (req, res) => {
+  try {
+    const { modulos } = req.body;
+    if (!modulos || typeof modulos !== 'object') {
+      return res.status(400).json({ error: 'modulos debe ser un objeto JSON' });
+    }
+    const [[sub]] = await db.query(
+      'SELECT modulos_habilitados FROM tenant_suscripciones WHERE tenant_id=? ORDER BY id DESC LIMIT 1',
+      [req.params.id]
+    );
+    const current = sub?.modulos_habilitados || {};
+    const merged = { ...current, ...modulos };
+    await db.query(
+      'UPDATE tenant_suscripciones SET modulos_habilitados=?::jsonb WHERE tenant_id=?',
+      [JSON.stringify(merged), req.params.id]
+    );
+    res.json({ message: 'Modulos actualizados', modulos: merged });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// GET /api/superadmin/tenant/:id/modulos — Get modules for a tenant
+router.get('/tenant/:id/modulos', async (req, res) => {
+  try {
+    const [[sub]] = await db.query(
+      'SELECT modulos_habilitados FROM tenant_suscripciones WHERE tenant_id=? ORDER BY id DESC LIMIT 1',
+      [req.params.id]
+    );
+    res.json(sub?.modulos_habilitados || {});
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 module.exports = router;

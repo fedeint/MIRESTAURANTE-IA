@@ -144,4 +144,16 @@ router.get('/:id/items', async (req, res) => {
     }
 });
 
+// POST /api/recetas-standalone/recalcular-costos — Recalculate all recipe costs
+router.post('/recalcular-costos', async (req, res) => {
+  try {
+    const tid = req.tenantId || 1;
+    const { recalcularTodas } = require('../services/costeo-recetas');
+    await recalcularTodas(tid);
+    res.json({ message: 'Costos recalculados para todas las recetas' });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 module.exports = router;
