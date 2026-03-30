@@ -327,6 +327,19 @@
                 <i class="bi bi-search"></i>
                 <input type="text" id="searchInput" class="recetas-search-input" placeholder="Buscar receta...">
             </div>
+            <button class="btn btn-sm" id="btnPlantilla"
+                style="height:40px;border-radius:10px;border:1px solid #198754;color:#198754;background:transparent;padding:0 0.9rem;"
+                title="Descargar plantilla Excel">
+                <i class="bi bi-file-earmark-excel"></i>
+                <span class="d-none d-md-inline">Plantilla</span>
+            </button>
+            <button class="btn btn-sm" id="btnImportar"
+                style="height:40px;border-radius:10px;border:1px solid #198754;color:#198754;background:transparent;padding:0 0.9rem;"
+                title="Importar recetas desde Excel">
+                <i class="bi bi-upload"></i>
+                <span class="d-none d-md-inline">Importar</span>
+            </button>
+            <input type="file" id="archivoImportRecetas" accept=".xlsx" class="d-none">
             <button class="btn btn-sm" id="btnRefresh"
                 style="height:40px;border-radius:10px;border:1px solid var(--dg-surface-border);background:var(--dg-surface);color:var(--dg-text-secondary);padding:0 0.9rem;"
                 title="Actualizar lista">
@@ -620,6 +633,39 @@
     function escapeHtml(str) {
         return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
+
+    // ── Plantilla e Importar ─────────────────────────────────────────────────
+    document.getElementById('btnPlantilla')?.addEventListener('click', function() {
+        window.open('/api/recetas-standalone/plantilla', '_blank');
+    });
+
+    document.getElementById('btnImportar')?.addEventListener('click', function() {
+        document.getElementById('archivoImportRecetas').click();
+    });
+
+    document.getElementById('archivoImportRecetas')?.addEventListener('change', async function() {
+        var file = this.files[0];
+        if (!file) return;
+        var fd = new FormData();
+        fd.append('archivo', file);
+        this.value = '';
+        try {
+            var r = await fetch('/api/recetas-standalone/importar', { method: 'POST', body: fd });
+            var data = await r.json();
+            if (r.ok) {
+                var msg = data.message;
+                if (data.errores && data.errores.length > 0) {
+                    msg += '\n\nAdvertencias:\n' + data.errores.join('\n');
+                }
+                alert(msg);
+                window.location.reload();
+            } else {
+                alert('Error: ' + (data.error || 'Error al importar'));
+            }
+        } catch(e) {
+            alert('Error de conexion al importar');
+        }
+    });
 
     // ── Bootstrap tooltips ─────────────────────────────────────────────────────
     if (typeof bootstrap !== 'undefined') {
