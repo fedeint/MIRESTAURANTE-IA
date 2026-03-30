@@ -168,7 +168,74 @@ router.get('/', async (req, res) => {
             historialMeses.push(datosMes);
         }
 
-        res.render('administracion/dashboard', { pl, gastosPorGrupo, presupuesto, historialMeses, mes, anio });
+        // Ganancia por plato (mes seleccionado)
+        const [gananciaPlatos] = await db.query(`
+            SELECT p.nombre,
+              SUM(df.cantidad) as vendidos,
+              SUM(df.subtotal) as ingreso,
+              SUM(df.costo_receta * df.cantidad) as costo,
+              SUM(df.subtotal) - SUM(df.costo_receta * df.cantidad) as ganancia,
+              CASE WHEN SUM(df.subtotal) > 0
+                THEN ROUND(((SUM(df.subtotal) - SUM(df.costo_receta * df.cantidad)) / SUM(df.subtotal) * 100)::numeric, 1)
+                ELSE 0 END as margen_pct
+            FROM detalle_factura df
+            JOIN facturas f ON f.id = df.factura_id
+            JOIN productos p ON p.id = df.producto_id
+            WHERE EXTRACT(MONTH FROM f.fecha)=? AND EXTRACT(YEAR FROM f.fecha)=?
+              AND df.costo_receta IS NOT NULL AND df.costo_receta > 0
+            GROUP BY p.id, p.nombre
+            ORDER BY ganancia DESC
+        `, [mes, anio]);
+
+        // Ventas hoy vs ayer
+        const [[ventasHoy]] = await db.query(`
+            SELECT COALESCE(SUM(total),0) as total, COUNT(*) as facturas
+            FROM facturas WHERE fecha::date = CURRENT_DATE
+        `);
+        const [[ventasAyer]] = await db.query(`
+            SELECT COALESCE(SUM(total),0) as total, COUNT(*) as facturas
+            FROM facturas WHERE fecha::date = CURRENT_DATE - INTERVAL '1 day'
+        `);
+
+        // Ventas por hora hoy (para chart)
+        const [ventasPorHora] = await db.query(`
+            SELECT EXTRACT(HOUR FROM created_at) as hora,
+              COALESCE(SUM(total),0) as total, COUNT(*) as facturas
+            FROM facturas WHERE fecha::date = CURRENT_DATE
+            GROUP BY hora ORDER BY hora
+        `);
+
+        // Ventas últimos 7 días (para chart)
+        const [ventasSemana] = await db.query(`
+            SELECT fecha::date as dia, COALESCE(SUM(total),0) as total, COUNT(*) as facturas
+            FROM facturas WHERE fecha >= CURRENT_DATE - INTERVAL '6 days'
+            GROUP BY dia ORDER BY dia
+        `);
+
+        // Top 5 productos del mes (para chart)
+        const [topProductos] = await db.query(`
+            SELECT p.nombre, SUM(df.cantidad) as vendidos, SUM(df.subtotal) as ingreso
+            FROM detalle_factura df
+            JOIN facturas f ON f.id = df.factura_id
+            JOIN productos p ON p.id = df.producto_id
+            WHERE EXTRACT(MONTH FROM f.fecha)=? AND EXTRACT(YEAR FROM f.fecha)=?
+            GROUP BY p.id, p.nombre
+            ORDER BY vendidos DESC LIMIT 5
+        `, [mes, anio]);
+
+        // Ventas por método de pago (mes)
+        const [ventasPorMetodo] = await db.query(`
+            SELECT COALESCE(forma_pago, 'efectivo') as metodo, SUM(total) as total
+            FROM facturas
+            WHERE EXTRACT(MONTH FROM fecha)=? AND EXTRACT(YEAR FROM fecha)=?
+            GROUP BY metodo ORDER BY total DESC
+        `, [mes, anio]);
+
+        res.render('administracion/dashboard', {
+            pl, gastosPorGrupo, presupuesto, historialMeses, mes, anio,
+            gananciaPlatos, ventasHoy: ventasHoy, ventasAyer: ventasAyer,
+            ventasPorHora, ventasSemana, topProductos, ventasPorMetodo
+        });
     } catch (e) {
         console.error('Admin dashboard error:', e.message);
         res.render('administracion/dashboard', { pl: {}, gastosPorGrupo: [], presupuesto: [], historialMeses: [], mes: new Date().getMonth()+1, anio: new Date().getFullYear() });

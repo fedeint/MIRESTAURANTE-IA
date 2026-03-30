@@ -384,15 +384,208 @@
             </div>
         </div>
 
+        <!-- ============ VENTAS HOY VS AYER ============ -->
+        <div class="row g-3 mt-2">
+            <div class="col-12">
+                <h5 class="mb-3"><i class="bi bi-lightning-charge me-2" style="color:#F97316;"></i>Ventas: Hoy vs Ayer</h5>
+            </div>
+            <div class="col-md-3">
+                <div class="kpi-card">
+                    <div class="kpi-label">Ventas Hoy</div>
+                    <div class="kpi-value pl-positive">S/ <%= Number(ventasHoy?.total || 0).toLocaleString('es-PE', {minimumFractionDigits:2, maximumFractionDigits:2}) %></div>
+                    <small class="text-muted"><%= ventasHoy?.facturas || 0 %> facturas</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="kpi-card">
+                    <div class="kpi-label">Ventas Ayer</div>
+                    <div class="kpi-value" style="color:#9ca3af;">S/ <%= Number(ventasAyer?.total || 0).toLocaleString('es-PE', {minimumFractionDigits:2, maximumFractionDigits:2}) %></div>
+                    <small class="text-muted"><%= ventasAyer?.facturas || 0 %> facturas</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="kpi-card">
+                    <div class="kpi-label">Variacion</div>
+                    <% const varPct = Number(ventasAyer?.total || 0) > 0 ? ((Number(ventasHoy?.total || 0) - Number(ventasAyer?.total || 0)) / Number(ventasAyer?.total) * 100).toFixed(1) : 0; %>
+                    <div class="kpi-value <%= Number(varPct) >= 0 ? 'pl-positive' : 'pl-negative' %>"><%= Number(varPct) >= 0 ? '+' : '' %><%= varPct %>%</div>
+                    <small class="text-muted">vs ayer</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="kpi-card">
+                    <div class="kpi-label">Ticket Promedio Hoy</div>
+                    <% const ticketHoy = Number(ventasHoy?.facturas || 0) > 0 ? (Number(ventasHoy.total) / Number(ventasHoy.facturas)).toFixed(2) : '0.00'; %>
+                    <div class="kpi-value" style="color:#3b82f6;">S/ <%= ticketHoy %></div>
+                    <small class="text-muted">por factura</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============ CHARTS ROW ============ -->
+        <div class="row g-3 mt-2">
+            <!-- Ventas por hora (hoy) -->
+            <div class="col-md-6">
+                <div class="card" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;">
+                    <div class="card-body">
+                        <h6 class="card-title"><i class="bi bi-clock me-1"></i> Ventas por Hora (Hoy)</h6>
+                        <canvas id="chartVentasHora" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+            <!-- Ventas últimos 7 días -->
+            <div class="col-md-6">
+                <div class="card" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;">
+                    <div class="card-body">
+                        <h6 class="card-title"><i class="bi bi-calendar-week me-1"></i> Ventas Ultimos 7 Dias</h6>
+                        <canvas id="chartVentasSemana" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-3 mt-2">
+            <!-- Top 5 productos -->
+            <div class="col-md-6">
+                <div class="card" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;">
+                    <div class="card-body">
+                        <h6 class="card-title"><i class="bi bi-trophy me-1"></i> Top 5 Productos del Mes</h6>
+                        <canvas id="chartTopProductos" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+            <!-- Ventas por método de pago -->
+            <div class="col-md-6">
+                <div class="card" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;">
+                    <div class="card-body">
+                        <h6 class="card-title"><i class="bi bi-credit-card me-1"></i> Metodo de Pago</h6>
+                        <canvas id="chartMetodoPago" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============ GANANCIA POR PLATO ============ -->
+        <div class="row g-3 mt-2">
+            <div class="col-12">
+                <div class="card" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;">
+                    <div class="card-body">
+                        <h6 class="card-title"><i class="bi bi-currency-dollar me-1" style="color:#22c55e;"></i> Ganancia por Plato
+                            <span class="badge bg-secondary bg-opacity-25 ms-2" style="font-size:0.7rem;"><%= (gananciaPlatos || []).length %> platos</span>
+                        </h6>
+                        <div class="table-responsive" style="max-height:400px;overflow-y:auto;">
+                            <table class="table table-sm table-hover mb-0">
+                                <thead class="table-dark" style="position:sticky;top:0;">
+                                    <tr>
+                                        <th>Plato</th>
+                                        <th class="text-end">Vendidos</th>
+                                        <th class="text-end">Ingreso</th>
+                                        <th class="text-end">Costo</th>
+                                        <th class="text-end">Ganancia</th>
+                                        <th class="text-end">Margen %</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% (gananciaPlatos || []).forEach(function(p) { %>
+                                    <tr>
+                                        <td><strong><%= p.nombre %></strong></td>
+                                        <td class="text-end"><%= Number(p.vendidos) %></td>
+                                        <td class="text-end">S/ <%= Number(p.ingreso).toLocaleString('es-PE', {minimumFractionDigits:2, maximumFractionDigits:2}) %></td>
+                                        <td class="text-end text-danger">S/ <%= Number(p.costo).toLocaleString('es-PE', {minimumFractionDigits:2, maximumFractionDigits:2}) %></td>
+                                        <td class="text-end text-success fw-bold">S/ <%= Number(p.ganancia).toLocaleString('es-PE', {minimumFractionDigits:2, maximumFractionDigits:2}) %></td>
+                                        <td class="text-end">
+                                            <span class="badge <%= Number(p.margen_pct) >= 60 ? 'bg-success' : Number(p.margen_pct) >= 40 ? 'bg-warning text-dark' : 'bg-danger' %> bg-opacity-25">
+                                                <%= p.margen_pct %>%
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    <% }); %>
+                                    <% if (!gananciaPlatos || gananciaPlatos.length === 0) { %>
+                                    <tr><td colspan="6" class="text-center text-muted py-3">Sin datos de costos de receta este mes. Configura recetas para ver ganancias por plato.</td></tr>
+                                    <% } %>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
     </main>
     <%- include('../partials/footer') %>
     </div>
     <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
     <script src="/vendor/sweetalert2/sweetalert2.all.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
     <script>
     var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
     tooltipTriggerList.map(function (el) { return new bootstrap.Tooltip(el); });
+
+    // Chart defaults for dark theme
+    Chart.defaults.color = '#9ca3af';
+    Chart.defaults.borderColor = 'rgba(255,255,255,0.08)';
+
+    // Ventas por hora
+    (function() {
+        var data = <%- JSON.stringify(ventasPorHora || []) %>;
+        var labels = []; var values = [];
+        for (var h = 8; h <= 23; h++) {
+            labels.push(h + ':00');
+            var found = data.find(function(d) { return Number(d.hora) === h; });
+            values.push(found ? Number(found.total) : 0);
+        }
+        new Chart(document.getElementById('chartVentasHora'), {
+            type: 'bar',
+            data: { labels: labels, datasets: [{ label: 'Ventas S/', data: values, backgroundColor: 'rgba(249,115,22,0.6)', borderRadius: 4 }] },
+            options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+        });
+    })();
+
+    // Ventas últimos 7 días
+    (function() {
+        var data = <%- JSON.stringify(ventasSemana || []) %>;
+        var diasNombres = ['Dom','Lun','Mar','Mie','Jue','Vie','Sab'];
+        var labels = data.map(function(d) {
+            var fecha = new Date(d.dia);
+            return diasNombres[fecha.getDay()] + ' ' + fecha.getDate();
+        });
+        var values = data.map(function(d) { return Number(d.total); });
+        new Chart(document.getElementById('chartVentasSemana'), {
+            type: 'line',
+            data: { labels: labels, datasets: [{
+                label: 'Ventas S/', data: values,
+                borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)',
+                fill: true, tension: 0.3, pointRadius: 5, pointBackgroundColor: '#3b82f6'
+            }] },
+            options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+        });
+    })();
+
+    // Top 5 productos
+    (function() {
+        var data = <%- JSON.stringify(topProductos || []) %>;
+        var labels = data.map(function(d) { return d.nombre; });
+        var values = data.map(function(d) { return Number(d.vendidos); });
+        var colores = ['#F97316','#3b82f6','#22c55e','#eab308','#8b5cf6'];
+        new Chart(document.getElementById('chartTopProductos'), {
+            type: 'bar',
+            data: { labels: labels, datasets: [{ label: 'Unidades', data: values, backgroundColor: colores, borderRadius: 6 }] },
+            options: { responsive: true, indexAxis: 'y', plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true } } }
+        });
+    })();
+
+    // Método de pago
+    (function() {
+        var data = <%- JSON.stringify(ventasPorMetodo || []) %>;
+        var labels = data.map(function(d) { return d.metodo.charAt(0).toUpperCase() + d.metodo.slice(1); });
+        var values = data.map(function(d) { return Number(d.total); });
+        var colores = ['#22c55e','#3b82f6','#eab308','#8b5cf6','#ef4444'];
+        new Chart(document.getElementById('chartMetodoPago'), {
+            type: 'doughnut',
+            data: { labels: labels, datasets: [{ data: values, backgroundColor: colores }] },
+            options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+        });
+    })();
     </script>
 </body>
 </html>
