@@ -875,39 +875,14 @@
                         </div>
                     </form>
 
-                    <!-- RECETA / INGREDIENTES -->
+                    <!-- RECETA / INGREDIENTES (solo lectura - editar desde /recetas) -->
                     <div id="recetaSection" style="display:none;">
                         <hr>
                         <h6 class="fw-bold">
                             <i class="bi bi-egg-fried me-1" style="color:#F97316;"></i>
                             Receta / Ingredientes
                         </h6>
-                        <p class="small text-muted">Define que ingredientes del almacen necesita este platillo. Se descuentan automaticamente al vender.</p>
-
-                        <div class="row g-2 mb-2 align-items-end">
-                            <div class="col">
-                                <select id="recetaIngredienteSelect" class="form-select form-select-sm">
-                                    <option value="">-- Seleccionar ingrediente --</option>
-                                </select>
-                            </div>
-                            <div class="col-3">
-                                <input type="number" id="recetaCantidad" class="form-control form-control-sm" placeholder="Cantidad" step="0.1" min="0">
-                            </div>
-                            <div class="col-2">
-                                <select id="recetaUnidad" class="form-select form-select-sm">
-                                    <option value="g">g</option>
-                                    <option value="kg">kg</option>
-                                    <option value="ml">ml</option>
-                                    <option value="lt">lt</option>
-                                    <option value="und">und</option>
-                                </select>
-                            </div>
-                            <div class="col-auto">
-                                <button type="button" class="btn btn-sm btn-success" id="btnAgregarIngrediente">
-                                    <i class="bi bi-plus-lg"></i>
-                                </button>
-                            </div>
-                        </div>
+                        <p class="small text-muted">Los ingredientes se gestionan desde el modulo <a href="/recetas" class="fw-bold">Recetas</a>.</p>
 
                         <div class="table-responsive">
                             <table class="table table-sm" id="recetaTabla">
@@ -917,7 +892,6 @@
                                         <th class="text-end">Cantidad</th>
                                         <th>Unidad</th>
                                         <th class="text-end">Costo</th>
-                                        <th></th>
                                     </tr>
                                 </thead>
                                 <tbody id="recetaBody"></tbody>
@@ -925,7 +899,6 @@
                                     <tr class="fw-bold">
                                         <td colspan="3">Costo total receta</td>
                                         <td class="text-end" id="recetaCostoTotal">S/ 0.00</td>
-                                        <td></td>
                                     </tr>
                                 </tfoot>
                             </table>
@@ -1182,33 +1155,13 @@
             .catch(function() {});
         cargarIngredientes();
 
-        // Agregar ingrediente a receta
-        document.getElementById('btnAgregarIngrediente')?.addEventListener('click', function() {
-            var sel = document.getElementById('recetaIngredienteSelect');
-            var opt = sel.options[sel.selectedIndex];
-            if (!opt || !opt.value) return;
-            var cant = Number(document.getElementById('recetaCantidad').value) || 0;
-            if (cant <= 0) return alert('Ingresa una cantidad');
-            var unidad = document.getElementById('recetaUnidad').value || 'g';
-
-            recetaItems.push({
-                ingrediente_id: Number(opt.value),
-                nombre: opt.dataset.nombre,
-                cantidad: cant,
-                unidad_medida: unidad,
-                costo: Number(opt.dataset.costo) || 0
-            });
-            renderReceta();
-            document.getElementById('recetaCantidad').value = '';
-            sel.selectedIndex = 0;
-        });
-
+        // Render receta (solo lectura - sin botones de edicion)
         function renderReceta() {
             var body = document.getElementById('recetaBody');
             if (!body) return;
             body.innerHTML = '';
             var total = 0;
-            recetaItems.forEach(function(item, idx) {
+            recetaItems.forEach(function(item) {
                 var costoUnit = item.costo || 0;
                 var cant = item.cantidad || 0;
                 var costo;
@@ -1222,20 +1175,11 @@
                 tr.innerHTML = '<td>' + item.nombre + '</td>'
                     + '<td class="text-end">' + item.cantidad + '</td>'
                     + '<td>' + item.unidad_medida + '</td>'
-                    + '<td class="text-end">S/ ' + costo.toFixed(2) + '</td>'
-                    + '<td><button type="button" class="btn btn-sm btn-outline-danger btn-quitar-ingr" data-idx="' + idx + '"><i class="bi bi-x"></i></button></td>';
+                    + '<td class="text-end">S/ ' + costo.toFixed(2) + '</td>';
                 body.appendChild(tr);
             });
             document.getElementById('recetaCostoTotal').textContent = 'S/ ' + total.toFixed(2);
         }
-
-        // Quitar ingrediente de receta
-        document.getElementById('recetaBody')?.addEventListener('click', function(e) {
-            var btn = e.target.closest('.btn-quitar-ingr');
-            if (!btn) return;
-            recetaItems.splice(Number(btn.dataset.idx), 1);
-            renderReceta();
-        });
 
         // Mostrar receta section cuando se abre modal para editar
         var origEditarProducto = window.editarProducto;
@@ -1274,33 +1218,7 @@
         });
 
         // Guardar receta despues de guardar producto
-        var btnGuardar = document.getElementById('guardarProducto');
-        if (btnGuardar) {
-            btnGuardar.addEventListener('click', async function() {
-                setTimeout(async function() {
-                    var pid = document.getElementById('productoId').value;
-                    if (pid && recetaItems.length > 0) {
-                        try {
-                            await fetch('/api/recetas/' + pid, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                    items: recetaItems.map(function(it) {
-                                        return {
-                                            ingrediente_id: it.ingrediente_id,
-                                            cantidad: it.cantidad,
-                                            unidad_medida: it.unidad_medida
-                                        };
-                                    })
-                                })
-                            });
-                        } catch (e) {
-                            console.error('Error guardando receta:', e);
-                        }
-                    }
-                }, 500);
-            });
-        }
+        // Receta se gestiona desde /recetas (solo lectura aqui)
     })();
     </script>
 
