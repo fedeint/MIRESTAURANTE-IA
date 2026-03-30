@@ -305,6 +305,18 @@
                   class="bi bi-box-seam"></i><span class="nav-label">Almacen</span></a>
             <% } %>
 
+            <%/* --- Delivery: solo administrador --- */%>
+            <% if (rol === 'administrador') { %>
+              <a href="/delivery" class="dg-sidebar-link <%= currentPath.startsWith('/delivery') ? 'active' : '' %>"><i
+                  class="bi bi-bicycle"></i><span>Delivery</span></a>
+            <% } %>
+
+            <%/* --- Recetas: administrador + almacenero --- */%>
+            <% if (rol === 'administrador' || rol === 'almacenero') { %>
+              <a href="/recetas" class="dg-sidebar-link <%= currentPath.startsWith('/recetas') ? 'active' : '' %>"><i
+                  class="bi bi-journal-text"></i><span>Recetas</span></a>
+            <% } %>
+
             <%/* --- Productos: administrador + mesero + almacenero --- */%>
             <% if (rol === 'administrador' || rol === 'mesero' || rol === 'almacenero') { %>
               <div class="dg-sidebar-section">GESTION</div>
@@ -433,6 +445,18 @@
                 data-submenu-title="Almacen"
                 data-submenu-icon="box-seam"><i
                   class="bi bi-box-seam"></i></a>
+            <% } %>
+
+            <%/* --- Delivery: solo administrador (icon mode) --- */%>
+            <% if (rol === 'administrador') { %>
+              <a href="/delivery" class="dg-sidebar-icon-item <%= currentPath.startsWith('/delivery') ? 'active' : '' %>"
+                title="Delivery"><i class="bi bi-bicycle"></i></a>
+            <% } %>
+
+            <%/* --- Recetas: administrador + almacenero (icon mode) --- */%>
+            <% if (rol === 'administrador' || rol === 'almacenero') { %>
+              <a href="/recetas" class="dg-sidebar-icon-item <%= currentPath.startsWith('/recetas') ? 'active' : '' %>"
+                title="Recetas"><i class="bi bi-journal-text"></i></a>
             <% } %>
 
             <%/* --- Productos: administrador + mesero + almacenero --- */%>
