@@ -37,6 +37,61 @@ function defaultModules() {
 }
 
 // ---------------------------------------------------------------------------
+// GET /superadmin/analytics/dallia (DallIA Analytics - PostHog)
+// ---------------------------------------------------------------------------
+
+router.get('/analytics/dallia', async (req, res) => {
+  try {
+    const posthogProjectId = process.env.POSTHOG_PROJECT_ID || '';
+    const posthogHost = process.env.POSTHOG_API_HOST || 'https://us.i.posthog.com';
+
+    res.render('superadmin/analytics-dallia', {
+      pageTitle: '📊 DallIA Analytics',
+      posthogHost,
+      posthogProjectId,
+      dateRange: req.query.date || '7d',
+      tenantId: req.query.tenant || 'all'
+    });
+  } catch (err) {
+    console.error('Analytics DallIA error:', err.message);
+    res.status(500).render('error', {
+      error: { message: 'Error al cargar DallIA analytics', stack: process.env.NODE_ENV === 'development' ? err.stack : '' }
+    });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// GET /superadmin/analytics/infrastructure (Grafana Dashboards)
+// ---------------------------------------------------------------------------
+
+router.get('/analytics/infrastructure', async (req, res) => {
+  try {
+    const grafanaUrl = process.env.GRAFANA_INSTANCE_URL || '';
+    const grafanaOrgSlug = process.env.GRAFANA_ORG_SLUG || 'mirestconia';
+
+    // Dashboard IDs (creados en Grafana)
+    const dashboards = {
+      http: process.env.GRAFANA_DASHBOARD_HTTP_ID || 'abc123',
+      database: process.env.GRAFANA_DASHBOARD_DB_ID || 'def456',
+      openai: process.env.GRAFANA_DASHBOARD_OPENAI_ID || 'ghi789',
+      vercel: process.env.GRAFANA_DASHBOARD_VERCEL_ID || 'jkl012'
+    };
+
+    res.render('superadmin/analytics-infrastructure', {
+      pageTitle: '🔧 Infrastructure & System Health',
+      grafanaUrl,
+      grafanaOrgSlug,
+      dashboards
+    });
+  } catch (err) {
+    console.error('Analytics Infrastructure error:', err.message);
+    res.status(500).render('error', {
+      error: { message: 'Error al cargar infrastructure analytics', stack: process.env.NODE_ENV === 'development' ? err.stack : '' }
+    });
+  }
+});
+
+// ---------------------------------------------------------------------------
 // GET /superadmin  (Dashboard)
 // ---------------------------------------------------------------------------
 
@@ -567,53 +622,10 @@ router.get('/audit-log', async (req, res) => {
 // ---------------------------------------------------------------------------
 // Solicitudes de registro (onboarding trial)
 // ---------------------------------------------------------------------------
-const { getSolicitudesPendientes, aprobarSolicitud, rechazarSolicitud } = require('../services/verificacion');
 const { enviarEmailAprobacion, enviarEmailRechazo, notificarSuperadminWhatsApp } = require('../services/notificaciones-trial');
 
-// GET /superadmin/solicitudes — List pending verification requests
-router.get('/solicitudes', async (req, res) => {
-  try {
-    const pendientes = await getSolicitudesPendientes();
-    res.json({ solicitudes: pendientes });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// POST /superadmin/solicitudes/:id/aprobar
-router.post('/solicitudes/:id/aprobar', async (req, res) => {
-  try {
-    const result = await aprobarSolicitud(Number(req.params.id), req.session.user.id);
-    if (result.error) return res.status(400).json(result);
-
-    // Send approval notification
-    if (result.email) {
-      enviarEmailAprobacion(result.email, result.nombre).catch(() => {});
-    }
-
-    res.json(result);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// POST /superadmin/solicitudes/:id/rechazar
-router.post('/solicitudes/:id/rechazar', async (req, res) => {
-  try {
-    const { motivo } = req.body;
-    const result = await rechazarSolicitud(Number(req.params.id), req.session.user.id, motivo);
-    if (result.error) return res.status(400).json(result);
-
-    // Send rejection notification
-    if (result.email) {
-      enviarEmailRechazo(result.email, result.nombre, motivo).catch(() => {});
-    }
-
-    res.json(result);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+// GET /superadmin/solicitudes — HTML panel (replaced from JSON stub)
+// POST routes below handle approve/reject/info for both /superadmin and /api/superadmin mounts
 
 // === MÓDULOS POR TENANT ===
 
@@ -650,6 +662,164 @@ router.get('/tenant/:id/modulos', async (req, res) => {
     res.json(sub?.modulos_habilitados || {});
   } catch (e) {
     res.status(500).json({ error: e.message });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// GET /superadmin/solicitudes
+// ---------------------------------------------------------------------------
+router.get('/solicitudes', async (req, res) => {
+  try {
+    const [solicitudes] = await db.query(
+      `SELECT
+         sr.id, sr.estado, sr.nombre_restaurante, sr.tipo_negocio,
+         sr.direccion, sr.dni, sr.cargo, sr.ruc, sr.latitud, sr.longitud,
+         sr.foto_local_url, sr.notas_superman, sr.plan_asignado,
+         sr.telefono_solicitante, sr.created_at, sr.intento,
+         sr.motivo_rechazo,
+         t.nombre AS tenant_nombre, t.subdominio,
+         u.nombre AS usuario_nombre, u.google_email, u.google_avatar
+       FROM solicitudes_registro sr
+       JOIN tenants t ON t.id = sr.tenant_id
+       JOIN usuarios u ON u.id = sr.usuario_id
+       ORDER BY
+         CASE sr.estado WHEN 'pendiente' THEN 0 WHEN 'revision' THEN 1 ELSE 2 END,
+         sr.created_at DESC`
+    );
+
+    const pendientes = (solicitudes || []).filter(s => s.estado === 'pendiente' || s.estado === 'revision');
+    const procesadas = (solicitudes || []).filter(s => s.estado !== 'pendiente' && s.estado !== 'revision');
+
+    res.render('superadmin/solicitudes', {
+      pendientes,
+      procesadas,
+      pageTitle: 'Solicitudes de Registro',
+    });
+  } catch (err) {
+    console.error('Superadmin solicitudes error:', err.message);
+    res.status(500).render('error', { error: { message: 'Error al cargar solicitudes', stack: process.env.NODE_ENV === 'development' ? err.stack : '' } });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// POST /superadmin/solicitudes/:id/aprobar
+// ---------------------------------------------------------------------------
+router.post('/solicitudes/:id/aprobar', async (req, res) => {
+  try {
+    const solicitudId = Number(req.params.id);
+    const { plan_asignado, notas } = req.body;
+    const plan = plan_asignado || 'free';
+
+    const [[solicitud]] = await db.query(
+      `SELECT sr.*, t.id AS tid, u.google_email, u.nombre AS unom
+       FROM solicitudes_registro sr
+       JOIN tenants t ON t.id = sr.tenant_id
+       JOIN usuarios u ON u.id = sr.usuario_id
+       WHERE sr.id = ?`, [solicitudId]
+    );
+
+    if (!solicitud) return res.status(404).json({ error: 'Solicitud no encontrada' });
+
+    const ahora = new Date();
+    const trialFin = new Date(ahora);
+    trialFin.setDate(trialFin.getDate() + 15); // 15 días de trial
+
+    const modulosFromBody = req.body.modulos || {};
+    const modulosDefault = JSON.stringify({
+      mesas: modulosFromBody.mesas !== undefined ? !!modulosFromBody.mesas : true,
+      cocina: modulosFromBody.cocina !== undefined ? !!modulosFromBody.cocina : true,
+      almacen: modulosFromBody.almacen !== undefined ? !!modulosFromBody.almacen : true,
+      sunat: modulosFromBody.sunat !== undefined ? !!modulosFromBody.sunat : false,
+      delivery: modulosFromBody.delivery !== undefined ? !!modulosFromBody.delivery : false,
+      reservas: false,
+      facturacion: modulosFromBody.facturacion !== undefined ? !!modulosFromBody.facturacion : true,
+      caja: modulosFromBody.caja !== undefined ? !!modulosFromBody.caja : true,
+      reportes: modulosFromBody.reportes !== undefined ? !!modulosFromBody.reportes : true,
+      chat_ia: modulosFromBody.chat_ia !== undefined ? !!modulosFromBody.chat_ia : true,
+    });
+
+    await db.query(
+      `UPDATE tenants SET
+         estado_trial = 'activo', plan = ?,
+         trial_inicio = ?, trial_fin = ?,
+         modulos_habilitados = COALESCE(modulos_habilitados, ?)
+       WHERE id = ?`,
+      [plan, ahora.toISOString(), trialFin.toISOString(), modulosDefault, solicitud.tid]
+    );
+
+    const revisadoPor = req.session?.user?.id || null;
+    await db.query(
+      `UPDATE solicitudes_registro SET
+         estado = 'aprobado', plan_asignado = ?, notas_superman = ?,
+         revisado_por = ?, revisado_at = NOW()
+       WHERE id = ?`,
+      [plan, notas || null, revisadoPor, solicitudId]
+    );
+
+    // Send approval email
+    try {
+      const { enviarEmailAprobacion } = require('../services/notificaciones-trial');
+      await enviarEmailAprobacion(solicitud.google_email, solicitud.unom || solicitud.nombre_restaurante);
+    } catch (_) {}
+
+    res.json({ ok: true, message: 'Solicitud aprobada. Trial activo por 15 días.' });
+  } catch (err) {
+    console.error('Aprobar solicitud error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// POST /superadmin/solicitudes/:id/rechazar
+// ---------------------------------------------------------------------------
+router.post('/solicitudes/:id/rechazar', async (req, res) => {
+  try {
+    const solicitudId = Number(req.params.id);
+    const { motivo } = req.body;
+
+    const [[solicitud]] = await db.query(
+      'SELECT sr.*, u.google_email, u.nombre AS unom FROM solicitudes_registro sr JOIN usuarios u ON u.id = sr.usuario_id WHERE sr.id = ?',
+      [solicitudId]
+    );
+    if (!solicitud) return res.status(404).json({ error: 'No encontrado' });
+
+    const revisadoPor = req.session?.user?.id || null;
+    await db.query(
+      `UPDATE solicitudes_registro SET
+         estado = 'rechazado', motivo_rechazo = ?, revisado_por = ?, revisado_at = NOW()
+       WHERE id = ?`,
+      [motivo || 'Sin motivo especificado', revisadoPor, solicitudId]
+    );
+
+    try {
+      const { enviarEmailRechazo } = require('../services/notificaciones-trial');
+      await enviarEmailRechazo(solicitud.google_email, solicitud.unom, motivo);
+    } catch (_) {}
+
+    res.json({ ok: true, message: 'Solicitud rechazada.' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ---------------------------------------------------------------------------
+// POST /superadmin/solicitudes/:id/info
+// ---------------------------------------------------------------------------
+router.post('/solicitudes/:id/info', async (req, res) => {
+  try {
+    const solicitudId = Number(req.params.id);
+    const { mensaje } = req.body;
+
+    await db.query(
+      `UPDATE solicitudes_registro SET
+         estado = 'revision', notas_superman = ?, revisado_at = NOW()
+       WHERE id = ?`,
+      [mensaje || null, solicitudId]
+    );
+
+    res.json({ ok: true, message: 'Solicitud marcada en revisión.' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 

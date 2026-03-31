@@ -2,10 +2,40 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const { buildContext } = require('../services/knowledge-base');
+const {
+  capturarPreguntaEnviada,
+  capturarRespuestaGenerada,
+  capturarErrorDallIA,
+  capturarAlertaTokens,
+  capturarChatAbierto
+} = require('../lib/posthog-events');
+
+// Helper: Detectar categoría de pregunta basada en palabras clave
+function detectarCategoria(texto) {
+  const texto_lower = (texto || '').toLowerCase();
+  const categorias = {
+    propinas: ['propina', 'tip', 'porcentaje', 'mesero'],
+    legal: ['impuesto', 'sunat', 'factura', 'boleta', 'ruc', 'permiso', 'licencia'],
+    personal: ['empleado', 'trabajador', 'personal', 'planilla', 'sueldo', 'ayudante'],
+    inventario: ['stock', 'almacen', 'ingrediente', 'producto', 'cantidad'],
+    entrega: ['delivery', 'despacho', 'envio', 'repartidor'],
+    mantenimiento: ['equipo', 'máquina', 'reparación', 'impresora'],
+    fidelidad: ['cliente', 'frecuente', 'puntos', 'descuento', 'promocion'],
+    ventas: ['venta', 'facturación', 'ingreso', 'ticket']
+  };
+
+  for (const [cat, palabras] of Object.entries(categorias)) {
+    if (palabras.some(p => texto_lower.includes(p))) {
+      return cat;
+    }
+  }
+  return 'general';
+}
 
 // GET /chat - Render chat view
 router.get('/', (req, res) => {
     const u = req.session.user || {};
+    capturarChatAbierto(req, { seccion: req.query.from || 'dashboard' });
     res.render('chat', {
         userRol: u.rol || 'administrador',
         userName: u.nombre || u.usuario || 'Usuario'
@@ -392,6 +422,14 @@ router.post('/', async (req, res) => {
     const tid    = req.tenantId || 1;
     const userId = req.session?.user?.id || null;
 
+    // 📊 Capturar evento: pregunta enviada
+    const categoria = detectarCategoria(mensaje);
+    capturarPreguntaEnviada(req, {
+        categoria,
+        preguntaTexto: mensaje,
+        fuente: 'chat'
+    });
+
     // ── Token gate ────────────────────────────────────────────────────────────
     // Fail-open: if tokenInfo is null (query failed / columns missing), allow chat.
     const tokenInfo = await getTokenInfo(tid);
@@ -423,17 +461,27 @@ router.post('/', async (req, res) => {
 
         const modelo = kimiKey ? 'kimi' : 'claude';
         let respuesta;
+        const tiempoInicio = Date.now();
         if (kimiKey) {
             respuesta = await chatWithKimi(kimiKey, systemPrompt, messages);
         } else {
             respuesta = await chatWithClaude(anthropicKey, systemPrompt, messages);
         }
+        const tiempoMs = Date.now() - tiempoInicio;
 
         // ── Token accounting ─────────────────────────────────────────────────
         // Rough estimate: ~4 chars per token (industry standard approximation)
         const promptText  = systemPrompt + messages.map(m => m.content).join(' ') + String(mensaje);
         const tokensUsed  = Math.ceil((promptText.length + respuesta.length) / 4);
         await recordTokenUsage(tid, userId, tokensUsed, modelo);
+
+        // 📊 Capturar evento: respuesta generada
+        capturarRespuestaGenerada(req, {
+            categoria,
+            tokensUsados: tokensUsed,
+            tiempoMs,
+            modelo
+        });
 
         // ── Low-token warning (< 10% remaining) ──────────────────────────────
         let advertenciaTokens = false;
@@ -443,6 +491,15 @@ router.post('/', async (req, res) => {
             if (nuevoConsumo >= total * 0.9) {
                 advertenciaTokens = true;
                 respuesta += '\n\n⚠️ *Te quedan menos del 10% de tus tokens de IA. Contacta a tu administrador para renovar tu cuota.*';
+
+                // 📊 Capturar evento: alerta de tokens bajo
+                const tokensRestantes = total - nuevoConsumo;
+                const porcentajeRestante = Math.round(((total - nuevoConsumo) / total) * 100);
+                capturarAlertaTokens(req, {
+                    porcentajeRestante,
+                    tokensRestantes,
+                    tokalesTotal: total
+                });
             }
         }
         // ─────────────────────────────────────────────────────────────────────
@@ -456,6 +513,17 @@ router.post('/', async (req, res) => {
     } catch (error) {
         console.error('Error en chat IA:', error);
         const msg = error?.message || 'Error al comunicarse con la IA';
+
+        // 📊 Capturar evento: error en DallIA
+        const tipoError = error?.message?.includes('timeout') ? 'timeout'
+                        : error?.message?.includes('rate_limit') ? 'rate_limit'
+                        : 'api_error';
+        capturarErrorDallIA(req, {
+            tipoError,
+            mensaje: msg,
+            categoria
+        });
+
         res.status(500).json({ error: msg });
     }
 });
@@ -703,5 +771,110 @@ async function obtenerContextoNegocio() {
     _contextCache.ts = Date.now();
     return result;
 }
+
+// ─── PASO 6: DallIA Chat + Voz ────────────────────────────────────────────────
+
+// GET /dallia — mobile chat view
+router.get('/dallia', async (req, res) => {
+    const tid = req.tenantId || req.session?.user?.tenant_id || 1;
+    let historial = [];
+    try {
+        const [msgs] = await db.query(
+            "SELECT role, content, metadata, created_at FROM dallia_mensajes WHERE tenant_id = ? ORDER BY created_at DESC LIMIT 30",
+            [tid]
+        );
+        historial = (msgs || []).reverse();
+    } catch(_) {}
+
+    const u = req.session.user || {};
+    res.render('dallia-chat', {
+        user: u,
+        historial,
+        userName: u.nombre || u.usuario || 'Usuario',
+        userRol: u.rol || 'administrador'
+    });
+});
+
+// GET /dallia/voz — voice orb view
+router.get('/dallia/voz', (req, res) => {
+    res.render('dallia-voz', { user: req.session.user || {} });
+});
+
+// GET /dallia/alertas — proactive alerts JSON
+router.get('/dallia/alertas', async (req, res) => {
+    const tid = req.tenantId || req.session?.user?.tenant_id || 1;
+    const alertas = [];
+
+    try {
+        const [stockBajo] = await db.query(`
+            SELECT nombre, stock_actual, stock_minimo, unidad_medida AS unidad
+            FROM almacen_ingredientes
+            WHERE tenant_id = ? AND stock_actual <= stock_minimo AND activo = true
+            ORDER BY (stock_actual - stock_minimo) ASC
+            LIMIT 3
+        `, [tid]);
+
+        for (const ing of (stockBajo || [])) {
+            const agotado = Number(ing.stock_actual) <= 0;
+            alertas.push({
+                tipo: agotado ? 'agotado' : 'bajo',
+                icono: agotado ? '⚠️' : '📉',
+                mensaje: agotado
+                    ? `${ing.nombre} agotado — revisa platos afectados`
+                    : `${ing.nombre} stock bajo (${ing.stock_actual} ${ing.unidad || ''})`,
+                accion_texto: 'Ver almacén',
+                accion_url: '/almacen'
+            });
+        }
+    } catch(_) {}
+
+    try {
+        const [demorados] = await db.query(`
+            SELECT p.id AS pedido_id, m.numero AS mesa_numero,
+                EXTRACT(EPOCH FROM (NOW() - i.preparado_at)) / 60 AS minutos
+            FROM pedido_items i
+            JOIN pedidos p ON p.id = i.pedido_id
+            JOIN mesas m ON m.id = p.mesa_id
+            WHERE i.estado = 'preparando'
+              AND p.tenant_id = ?
+              AND i.preparado_at IS NOT NULL
+              AND NOW() - i.preparado_at > INTERVAL '20 minutes'
+            GROUP BY p.id, m.numero, i.preparado_at
+            ORDER BY i.preparado_at ASC
+            LIMIT 2
+        `, [tid]);
+
+        for (const d of (demorados || [])) {
+            alertas.push({
+                tipo: 'demorado',
+                icono: '🔥',
+                mensaje: `Mesa ${d.mesa_numero} lleva ${Math.round(d.minutos)} min en cocina`,
+                accion_texto: 'Ver cocina',
+                accion_url: '/cocina-display'
+            });
+        }
+    } catch(_) {}
+
+    res.json({ alertas });
+});
+
+// POST /dallia/guardar-mensaje — persist a message
+router.post('/dallia/guardar-mensaje', async (req, res) => {
+    const tid = req.tenantId || req.session?.user?.tenant_id || 1;
+    const uid = req.session?.user?.id;
+    const { role, content, metadata } = req.body || {};
+    if (!role || !content) return res.json({ ok: false });
+    try {
+        await db.query(
+            "INSERT INTO dallia_mensajes (tenant_id, usuario_id, role, content, metadata) VALUES (?, ?, ?, ?, ?)",
+            [tid, uid || null, role, content, metadata ? JSON.stringify(metadata) : null]
+        );
+        res.json({ ok: true });
+    } catch(e) {
+        res.json({ ok: false });
+    }
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 module.exports = router;
