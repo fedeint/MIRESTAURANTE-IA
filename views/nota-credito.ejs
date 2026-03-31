@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Nota de Crédito · MiRestcon</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --orange: #ef520f; --orange2: #df2c05;
+      --dark: #0a0f24; --bg: #F0F2F8;
+      --card: #ffffff; --text2: #8B8FAD;
+      --safe-bot: env(safe-area-inset-bottom, 0px);
+    }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      min-height: 100dvh;
+      max-width: 480px;
+      margin: 0 auto;
+      padding-bottom: calc(72px + var(--safe-bot));
+    }
+
+    /* ── Header ── */
+    .header {
+      background: linear-gradient(170deg, #10152f 0%, #0a0f24 50%, #090d1d 100%);
+      padding: 52px 16px 16px;
+      border-radius: 0 0 20px 20px;
+      color: #fff;
+    }
+    .header-top { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+    .btn-back {
+      background: rgba(255,255,255,0.12); border: none; color: #fff;
+      width: 36px; height: 36px; border-radius: 10px;
+      font-size: 18px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .header-title { font-size: 18px; font-weight: 700; }
+
+    /* ── Search ── */
+    .search-wrap {
+      position: relative; margin: 0 16px 0;
+    }
+    .search-wrap input {
+      width: 100%; background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 12px; padding: 10px 16px 10px 40px;
+      color: #fff; font-size: 14px; font-family: 'DM Sans', sans-serif;
+      outline: none;
+    }
+    .search-wrap input::placeholder { color: rgba(255,255,255,0.5); }
+    .search-icon {
+      position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+      color: rgba(255,255,255,0.5); font-size: 16px; pointer-events: none;
+    }
+
+    /* ── Tabs ── */
+    .tabs {
+      display: flex; gap: 8px;
+      padding: 14px 16px;
+      overflow-x: auto; -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .tabs::-webkit-scrollbar { display: none; }
+    .tab-btn {
+      flex-shrink: 0;
+      padding: 7px 16px; border-radius: 20px;
+      font-size: 13px; font-weight: 600;
+      border: none; cursor: pointer;
+      background: #E8EAF2; color: var(--text2);
+      transition: all .2s;
+    }
+    .tab-btn.active {
+      background: var(--dark); color: #fff;
+    }
+
+    /* ── Factura rows ── */
+    .factura-row {
+      background: var(--card);
+      margin: 0 16px 10px;
+      border-radius: 14px;
+      display: flex; align-items: center;
+      padding: 14px 16px; gap: 12px;
+      text-decoration: none; color: inherit;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      transition: transform .15s;
+    }
+    .factura-row:active { transform: scale(0.98); }
+
+    .serie-badge {
+      font-size: 13px; font-weight: 700; color: var(--dark);
+      white-space: nowrap;
+    }
+    .factura-meta { flex: 1; min-width: 0; }
+    .factura-hora { font-size: 12px; color: var(--text2); margin-top: 2px; }
+    .factura-badges { display: flex; gap: 6px; margin-top: 4px; flex-wrap: wrap; }
+
+    .badge {
+      display: inline-block; padding: 2px 8px;
+      border-radius: 10px; font-size: 11px; font-weight: 600;
+    }
+    .badge-mesa     { background: #EDE9FE; color: #5B21B6; }
+    .badge-delivery { background: #FEF3C7; color: #92400E; }
+    .badge-factura  { background: #DCFCE7; color: #166534; }
+    .badge-nc       { background: #FEE2E2; color: #991B1B; }
+
+    .factura-total {
+      font-size: 16px; font-weight: 700; color: var(--dark);
+      white-space: nowrap;
+    }
+    .chevron { color: var(--text2); font-size: 18px; }
+
+    /* ── Empty ── */
+    .empty {
+      text-align: center; padding: 48px 24px;
+      color: var(--text2); font-size: 14px;
+    }
+    .empty-icon { font-size: 40px; margin-bottom: 12px; }
+
+    /* ── Bottom nav ── */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 50%;
+      transform: translateX(-50%);
+      width: 100%; max-width: 480px;
+      background: #fff; border-top: 1px solid #E8EAF2;
+      display: flex; padding-bottom: var(--safe-bot); z-index: 100;
+    }
+    .nav-item {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; padding: 10px 4px 8px;
+      text-decoration: none; color: var(--text2);
+      font-size: 10px; font-weight: 500;
+    }
+    .nav-item .icon { font-size: 22px; margin-bottom: 2px; }
+    .nav-item.active { color: var(--orange); }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="header-top">
+      <button class="btn-back" onclick="history.back()">‹</button>
+      <span class="header-title">Nota de crédito</span>
+    </div>
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input
+        type="search" id="searchInput"
+        placeholder="Buscar por número o monto…"
+        value="<%= q %>"
+        autocomplete="off"
+      >
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn <%= periodo === 'hoy'    ? 'active' : '' %>" onclick="setPeriodo('hoy')">Hoy</button>
+    <button class="tab-btn <%= periodo === 'ayer'   ? 'active' : '' %>" onclick="setPeriodo('ayer')">Ayer</button>
+    <button class="tab-btn <%= periodo === 'semana' ? 'active' : '' %>" onclick="setPeriodo('semana')">Esta semana</button>
+  </div>
+
+  <% if (facturas.length === 0) { %>
+  <div class="empty">
+    <div class="empty-icon">🧾</div>
+    No hay comprobantes en este período.
+  </div>
+  <% } else { %>
+    <% facturas.forEach(function(f) {
+      const num = (f.serie || 'B001') + '-' + String(f.correlativo || 0).padStart(8,'0');
+      const hora = new Date(f.fecha).toLocaleTimeString('es-PE', { hour:'2-digit', minute:'2-digit' });
+      const tipo = f.tipo_comprobante || 'boleta';
+    %>
+    <a class="factura-row" href="/sunat-pwa/nota-credito/<%= f.id %>">
+      <div>
+        <div class="serie-badge"><%= num %></div>
+      </div>
+      <div class="factura-meta">
+        <div class="factura-hora"><%= hora %></div>
+        <div class="factura-badges">
+          <% if (f.mesa_numero) { %><span class="badge badge-mesa">Mesa <%= f.mesa_numero %></span><% } %>
+          <% if (f.delivery_tipo === 'delivery') { %><span class="badge badge-delivery">Delivery</span><% } %>
+          <% if (tipo === 'factura') { %><span class="badge badge-factura">Factura</span><% } %>
+          <% if (Number(f.nc_count) > 0) { %><span class="badge badge-nc">Con NC</span><% } %>
+        </div>
+      </div>
+      <div class="factura-total">S/ <%= Number(f.total).toFixed(2) %></div>
+      <span class="chevron">›</span>
+    </a>
+    <% }); %>
+  <% } %>
+
+  <!-- Bottom Nav -->
+  <nav class="bottom-nav">
+    <a href="/" class="nav-item"><span class="icon">🏠</span>Inicio</a>
+    <a href="/pedidos" class="nav-item"><span class="icon">🧾</span>Pedidos</a>
+    <a href="/cocina-display" class="nav-item"><span class="icon">👨‍🍳</span>Cocina</a>
+    <a href="/caja" class="nav-item"><span class="icon">💰</span>Caja</a>
+    <a href="/mas" class="nav-item active"><span class="icon">☰</span>Más</a>
+  </nav>
+
+  <script>
+    function setPeriodo(p) {
+      const q = document.getElementById('searchInput').value.trim();
+      const params = new URLSearchParams({ periodo: p });
+      if (q) params.set('q', q);
+      window.location.href = '/sunat-pwa/nota-credito?' + params.toString();
+    }
+
+    let searchTimer;
+    document.getElementById('searchInput').addEventListener('input', function() {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => {
+        const p = '<%= periodo %>';
+        const q = this.value.trim();
+        const params = new URLSearchParams({ periodo: p });
+        if (q) params.set('q', q);
+        window.location.href = '/sunat-pwa/nota-credito?' + params.toString();
+      }, 500);
+    });
+  </script>
+  <script src="/js/dallia-fab.js"></script>
+</body>
+</html>

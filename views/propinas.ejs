@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Propinas · MiRestcon</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    :root{--orange:#ef520f;--orange2:#df2c05;--dark:#0a0f24;--bg:#F0F2F8;--card:#fff;--text2:#8B8FAD;--verde:#22C55E;--safe-bot:env(safe-area-inset-bottom,0px);}
+    body{font-family:'DM Sans',sans-serif;background:var(--bg);min-height:100dvh;max-width:480px;margin:0 auto;padding-bottom:calc(80px + var(--safe-bot));}
+    .header{background:linear-gradient(170deg,#10152f 0%,#0a0f24 50%,#090d1d 100%);padding:52px 20px 20px;border-radius:0 0 20px 20px;color:#fff;display:flex;align-items:center;justify-content:space-between;}
+    .header-left{display:flex;align-items:center;gap:12px;}
+    .btn-back{background:rgba(255,255,255,.12);border:none;color:#fff;width:36px;height:36px;border-radius:10px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+    .header-title{font-size:18px;font-weight:700;}
+    .periodo-badge{background:rgba(255,255,255,.15);border:none;color:#fff;padding:6px 14px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;}
+    /* Summary card */
+    .summary{margin:16px 16px 0;background:var(--card);border-radius:16px;padding:20px;box-shadow:0 2px 12px rgba(0,0,0,.08);text-align:center;}
+    .sum-label{font-size:13px;color:var(--text2);margin-bottom:4px;}
+    .sum-total{font-size:36px;font-weight:800;background:linear-gradient(135deg,var(--orange),var(--orange2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1.1;}
+    .sum-meta{font-size:13px;color:var(--text2);margin-top:6px;}
+    .metodos-row{display:flex;gap:10px;margin-top:14px;}
+    .met-chip{flex:1;background:#F8F9FE;border-radius:12px;padding:10px 8px;text-align:center;}
+    .met-num{font-size:16px;font-weight:700;color:var(--dark);}
+    .met-lbl{font-size:11px;color:var(--text2);margin-top:1px;}
+    /* Meseros */
+    .section-label{font-size:13px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;padding:20px 16px 10px;}
+    .mesero-card{background:var(--card);margin:0 16px 10px;border-radius:14px;padding:14px 16px;display:flex;align-items:center;gap:14px;box-shadow:0 2px 8px rgba(0,0,0,.05);}
+    .mes-avatar{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,var(--orange),var(--orange2));display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:700;flex-shrink:0;}
+    .mes-info{flex:1;min-width:0;}
+    .mes-nombre{font-size:14px;font-weight:600;color:var(--dark);}
+    .mes-sub{font-size:12px;color:var(--text2);margin-top:2px;}
+    .mes-prop{font-size:16px;font-weight:700;color:var(--verde);}
+    .empty{text-align:center;padding:32px 24px;color:var(--text2);font-size:14px;}
+    .config-link{display:flex;align-items:center;justify-content:center;gap:6px;margin:8px 16px 0;font-size:13px;color:var(--text2);text-decoration:none;padding:10px;}
+    .bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:#fff;border-top:1px solid #E8EAF2;display:flex;padding-bottom:var(--safe-bot);z-index:100;}
+    .nav-item{flex:1;display:flex;flex-direction:column;align-items:center;padding:10px 4px 8px;text-decoration:none;color:var(--text2);font-size:10px;font-weight:500;}
+    .nav-item .icon{font-size:22px;margin-bottom:2px;}
+    .nav-item.active{color:var(--orange);}
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-left">
+      <button class="btn-back" onclick="history.back()">‹</button>
+      <span class="header-title">Propinas</span>
+    </div>
+    <button class="periodo-badge">Hoy</button>
+  </div>
+
+  <div class="summary">
+    <div class="sum-label">Propinas del día</div>
+    <div class="sum-total">S/ <%= total.toFixed(2) %></div>
+    <div class="sum-meta"><%= pedidos %> pedidos · Prom: S/ <%= promedio.toFixed(2) %></div>
+    <div class="metodos-row">
+      <div class="met-chip"><div class="met-num">S/ <%= efectivo.toFixed(2) %></div><div class="met-lbl">Efectivo</div></div>
+      <div class="met-chip"><div class="met-num">S/ <%= tarjeta.toFixed(2) %></div><div class="met-lbl">Tarjeta</div></div>
+      <div class="met-chip"><div class="met-num">S/ <%= otros.toFixed(2) %></div><div class="met-lbl">Yape</div></div>
+    </div>
+  </div>
+
+  <div class="section-label">Reparto por mesero</div>
+
+  <% if (meseros.length === 0) { %>
+  <div class="empty">Sin registros de propinas hoy.<br>Las propinas se asignan al cobrar pedidos.</div>
+  <% } else { %>
+    <% meseros.forEach(function(m) { %>
+    <div class="mesero-card">
+      <div class="mes-avatar"><%= m.iniciales %></div>
+      <div class="mes-info">
+        <div class="mes-nombre"><%= m.nombre %></div>
+        <div class="mes-sub"><%= m.pedidos %> pedidos</div>
+      </div>
+      <div class="mes-prop">S/ <%= Number(m.propina_total).toFixed(2) %></div>
+    </div>
+    <% }); %>
+  <% } %>
+
+  <a href="/sprint4/propinas/config" class="config-link">⚙ Configurar reparto</a>
+
+  <nav class="bottom-nav">
+    <a href="/" class="nav-item"><span class="icon">🏠</span>Inicio</a>
+    <a href="/pedidos" class="nav-item"><span class="icon">🧾</span>Pedidos</a>
+    <a href="/cocina-display" class="nav-item"><span class="icon">👨‍🍳</span>Cocina</a>
+    <a href="/caja" class="nav-item"><span class="icon">💰</span>Caja</a>
+    <a href="/mas" class="nav-item active"><span class="icon">☰</span>Más</a>
+  </nav>
+  <script src="/js/dallia-fab.js"></script>
+</body>
+</html>

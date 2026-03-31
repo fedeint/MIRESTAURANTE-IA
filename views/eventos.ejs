@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Eventos · MiRestcon</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --orange:#ef520f; --orange2:#df2c05; --dark:#0a0f24; --bg:#F0F2F8; --card:#fff; --text2:#8B8FAD; --verde:#22C55E; --safe-bot:env(safe-area-inset-bottom,0px); }
+    body { font-family:'DM Sans',sans-serif; background:var(--bg); min-height:100dvh; max-width:480px; margin:0 auto; padding-bottom:calc(100px + var(--safe-bot)); }
+    .header { background:linear-gradient(170deg,#10152f 0%,#0a0f24 50%,#090d1d 100%); padding:52px 20px 20px; border-radius:0 0 20px 20px; color:#fff; display:flex; align-items:center; justify-content:space-between; }
+    .header-left { display:flex; align-items:center; gap:12px; }
+    .btn-back { background:rgba(255,255,255,.12); border:none; color:#fff; width:36px; height:36px; border-radius:10px; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+    .header-title { font-size:18px; font-weight:700; }
+    .btn-add { background:rgba(255,255,255,.15); border:none; color:#fff; width:36px; height:36px; border-radius:10px; font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+    .list { padding:16px 16px 0; }
+    .evento-card { background:var(--card); border-radius:16px; margin-bottom:12px; padding:16px; box-shadow:0 2px 8px rgba(0,0,0,.06); cursor:pointer; transition:transform .15s; }
+    .evento-card:active{transform:scale(.98);}
+    .evento-card.pasado { opacity:.55; }
+    .ev-top { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:6px; }
+    .ev-nombre { font-size:16px; font-weight:700; color:var(--dark); }
+    .ev-sub { font-size:13px; color:var(--text2); margin-bottom:10px; }
+    .badge-confirmado { background:#DCFCE7; color:#166534; font-size:11px; font-weight:700; padding:3px 10px; border-radius:20px; }
+    .badge-pasado     { background:#F3F4F6; color:var(--text2); font-size:11px; font-weight:700; padding:3px 10px; border-radius:20px; }
+    .ev-menu { background:#F8F9FE; border-radius:10px; padding:10px 12px; margin-bottom:8px; }
+    .ev-menu-label { font-size:11px; font-weight:600; color:var(--text2); text-transform:uppercase; margin-bottom:2px; }
+    .ev-menu-txt { font-size:14px; color:var(--dark); }
+    .ev-precio { font-size:20px; font-weight:800; color:var(--orange); }
+    .ev-alerta { display:flex; align-items:center; gap:6px; margin-top:8px; background:#FFF3E0; border-left:3px solid #F97316; border-radius:8px; padding:8px 10px; font-size:12px; color:#92400E; }
+    .empty { text-align:center; padding:48px 24px; color:var(--text2); font-size:14px; }
+    .empty-icon { font-size:40px; margin-bottom:12px; }
+    /* CTA fijo */
+    .fab-cta { position:fixed; bottom:calc(80px + var(--safe-bot)); left:50%; transform:translateX(-50%); width:calc(100% - 32px); max-width:448px; background:linear-gradient(135deg,var(--orange),var(--orange2)); color:#fff; border:none; border-radius:14px; padding:16px; font-size:16px; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 4px 16px rgba(239,82,15,.35); }
+    /* sheet */
+    .sheet-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:flex-end;justify-content:center;}
+    .sheet-overlay.show{display:flex;}
+    .sheet{background:var(--card);border-radius:20px 20px 0 0;width:100%;max-width:480px;max-height:88dvh;overflow-y:auto;padding:8px 20px calc(20px + var(--safe-bot));animation:slideUp .25s ease;}
+    @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+    .sheet-handle{width:40px;height:4px;background:#E0E2EE;border-radius:2px;margin:12px auto 20px;}
+    .sheet-title{font-size:17px;font-weight:700;color:var(--dark);margin-bottom:20px;}
+    .field-label{font-size:13px;font-weight:600;color:var(--text2);margin-bottom:6px;}
+    .field-input{width:100%;border:1.5px solid #E0E2EE;border-radius:12px;padding:11px 14px;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;color:var(--dark);margin-bottom:14px;transition:border-color .2s;resize:vertical;}
+    .field-input:focus{border-color:var(--orange);}
+    .row-fields{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+    .sheet-cta{width:100%;background:linear-gradient(135deg,var(--orange),var(--orange2));color:#fff;border:none;border-radius:14px;padding:15px;font-size:15px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;}
+    .bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:#fff;border-top:1px solid #E8EAF2;display:flex;padding-bottom:var(--safe-bot);z-index:100;}
+    .nav-item{flex:1;display:flex;flex-direction:column;align-items:center;padding:10px 4px 8px;text-decoration:none;color:var(--text2);font-size:10px;font-weight:500;}
+    .nav-item .icon{font-size:22px;margin-bottom:2px;}
+    .nav-item.active{color:var(--orange);}
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-left">
+      <button class="btn-back" onclick="history.back()">‹</button>
+      <span class="header-title">Eventos</span>
+    </div>
+    <button class="btn-add" onclick="abrirSheet()">+</button>
+  </div>
+
+  <div class="list">
+    <% if (eventos.length === 0) { %>
+    <div class="empty"><div class="empty-icon">🎉</div>No hay eventos registrados.<br>Crea tu primer evento o catering.</div>
+    <% } %>
+    <% eventos.forEach(function(ev) { %>
+    <div class="evento-card <%= ev.pasado ? 'pasado' : '' %>" onclick="detalleEvento(<%= JSON.stringify(ev) %>)">
+      <div class="ev-top">
+        <div>
+          <div class="ev-nombre"><%= ev.nombre %></div>
+          <div class="ev-sub"><%= ev.fechaFmt %><% if(ev.hora_inicio){%> · <%= ev.hora_inicio %><% } %> · <%= ev.personas %> personas</div>
+        </div>
+        <span class="<%= ev.pasado ? 'badge-pasado' : 'badge-confirmado' %>"><%= ev.pasado ? 'Pasado' : 'Confirmado' %></span>
+      </div>
+      <% if (ev.menu_descripcion) { %>
+      <div class="ev-menu">
+        <div class="ev-menu-label">Menú</div>
+        <div class="ev-menu-txt"><%= ev.menu_descripcion %></div>
+      </div>
+      <% } %>
+      <% if (ev.presupuesto) { %>
+      <div class="ev-precio">S/ <%= Number(ev.presupuesto).toLocaleString('es-PE',{minimumFractionDigits:0}) %></div>
+      <% } %>
+      <% if (ev.notas_insumos && !ev.pasado) { %>
+      <div class="ev-alerta">🛒 <%= ev.notas_insumos %></div>
+      <% } %>
+    </div>
+    <% }); %>
+  </div>
+
+  <button class="fab-cta" onclick="abrirSheet()">+ Crear evento</button>
+
+  <div class="sheet-overlay" id="crearSheet" onclick="cerrar(event)">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title">Nuevo evento</div>
+      <div class="field-label">Nombre del evento *</div>
+      <input class="field-input" id="evNombre" placeholder="Ej: Cumpleaños Fam. Pérez" autocomplete="off">
+      <div class="row-fields">
+        <div>
+          <div class="field-label">Fecha *</div>
+          <input class="field-input" type="date" id="evFecha">
+        </div>
+        <div>
+          <div class="field-label">Hora inicio</div>
+          <input class="field-input" type="time" id="evHora">
+        </div>
+      </div>
+      <div class="row-fields">
+        <div>
+          <div class="field-label">Personas</div>
+          <input class="field-input" type="number" id="evPersonas" placeholder="15" value="10">
+        </div>
+        <div>
+          <div class="field-label">Presupuesto S/</div>
+          <input class="field-input" type="number" id="evPresupuesto" placeholder="0.00">
+        </div>
+      </div>
+      <div class="field-label">Menú / descripción</div>
+      <textarea class="field-input" id="evMenu" rows="2" placeholder="Ej: Buffet criollo, ceviche, lomo saltado…"></textarea>
+      <div class="field-label">Insumos a pedir / notas</div>
+      <textarea class="field-input" id="evNotas" rows="2" placeholder="Ej: Pedir 5kg pollo extra…"></textarea>
+      <button class="sheet-cta" onclick="guardarEvento()">Crear evento</button>
+    </div>
+  </div>
+
+  <nav class="bottom-nav">
+    <a href="/" class="nav-item"><span class="icon">🏠</span>Inicio</a>
+    <a href="/pedidos" class="nav-item"><span class="icon">🧾</span>Pedidos</a>
+    <a href="/cocina-display" class="nav-item"><span class="icon">👨‍🍳</span>Cocina</a>
+    <a href="/caja" class="nav-item"><span class="icon">💰</span>Caja</a>
+    <a href="/mas" class="nav-item active"><span class="icon">☰</span>Más</a>
+  </nav>
+
+  <script>
+    function abrirSheet(){ document.getElementById('crearSheet').classList.add('show'); }
+    function cerrar(e){ if(e.target.classList.contains('sheet-overlay')) document.getElementById('crearSheet').classList.remove('show'); }
+    function detalleEvento(ev){ /* futuro detalle */ }
+    async function guardarEvento(){
+      const nombre = document.getElementById('evNombre').value.trim();
+      const fecha  = document.getElementById('evFecha').value;
+      if(!nombre||!fecha){ alert('Nombre y fecha requeridos'); return; }
+      const body = {
+        nombre, fecha,
+        hora_inicio: document.getElementById('evHora').value || null,
+        personas:    document.getElementById('evPersonas').value || 1,
+        presupuesto: document.getElementById('evPresupuesto').value || null,
+        menu_descripcion: document.getElementById('evMenu').value.trim() || null,
+        notas_insumos:    document.getElementById('evNotas').value.trim() || null
+      };
+      const r = await fetch('/sprint4/eventos',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+      const d = await r.json();
+      if(d.ok) location.reload(); else alert(d.error||'Error');
+    }
+  </script>
+  <script src="/js/dallia-fab.js"></script>
+</body>
+</html>

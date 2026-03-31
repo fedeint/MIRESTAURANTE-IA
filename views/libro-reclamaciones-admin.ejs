@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Libro de Reclamaciones · MiRestcon</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --orange: #ef520f; --orange2: #df2c05;
+      --dark: #0a0f24; --bg: #F0F2F8;
+      --card: #ffffff; --text2: #8B8FAD;
+      --verde:   #22C55E;
+      --naranja: #F97316;
+      --rojo:    #EF4444;
+      --safe-bot: env(safe-area-inset-bottom, 0px);
+    }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      min-height: 100dvh;
+      max-width: 480px;
+      margin: 0 auto;
+      padding-bottom: calc(80px + var(--safe-bot));
+    }
+
+    /* ── Header ── */
+    .header {
+      background: linear-gradient(170deg, #10152f 0%, #0a0f24 50%, #090d1d 100%);
+      padding: 52px 20px 20px;
+      border-radius: 0 0 20px 20px;
+      color: #fff;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .btn-back {
+      background: rgba(255,255,255,0.12); border: none; color: #fff;
+      width: 36px; height: 36px; border-radius: 10px;
+      font-size: 18px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .header-title { font-size: 18px; font-weight: 700; }
+    .btn-public-link {
+      background: rgba(255,255,255,0.15); border: none; color: #fff;
+      padding: 6px 12px; border-radius: 10px;
+      font-size: 12px; font-weight: 600; cursor: pointer;
+      text-decoration: none; white-space: nowrap;
+    }
+
+    /* ── Stats ── */
+    .stats-row { display: flex; gap: 10px; padding: 16px 16px 0; }
+    .stat-chip {
+      flex: 1; background: var(--card);
+      border-radius: 12px; padding: 10px 12px;
+      text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .stat-num  { font-size: 22px; font-weight: 800; }
+    .stat-lbl  { font-size: 11px; color: var(--text2); margin-top: 1px; }
+    .num-rojo  { color: var(--rojo); }
+    .num-verde { color: var(--verde); }
+    .num-dark  { color: var(--dark); }
+
+    /* ── Lista ── */
+    .list { padding: 14px 16px 0; }
+
+    .rec-card {
+      background: var(--card);
+      border-radius: 14px;
+      margin-bottom: 10px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      display: flex; align-items: stretch;
+      cursor: pointer;
+      transition: transform .15s;
+    }
+    .rec-card:active { transform: scale(0.98); }
+
+    .border-strip { width: 4px; flex-shrink: 0; }
+    .strip-pendiente { background: var(--rojo); }
+    .strip-resuelto  { background: var(--verde); }
+    .strip-proceso   { background: var(--naranja); }
+
+    .rec-inner {
+      flex: 1; padding: 14px;
+      display: flex; align-items: flex-start; gap: 10px;
+    }
+    .rec-info { flex: 1; min-width: 0; }
+    .rec-top  { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+    .rec-num  { font-size: 14px; font-weight: 700; color: var(--dark); }
+
+    .estado-badge {
+      font-size: 10px; font-weight: 700;
+      padding: 2px 8px; border-radius: 10px;
+      text-transform: capitalize;
+    }
+    .badge-pendiente { background: #FEE2E2; color: var(--rojo); }
+    .badge-resuelto  { background: #DCFCE7; color: #166534; }
+    .badge-proceso   { background: #FFF3E0; color: #92400E; }
+
+    .rec-detalle {
+      font-size: 14px; color: var(--dark);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .rec-fecha {
+      font-size: 12px; margin-top: 3px;
+    }
+    .fecha-normal  { color: var(--text2); }
+    .fecha-urgente { color: var(--rojo); font-weight: 600; }
+    .fecha-aviso   { color: var(--naranja); }
+
+    .chevron { color: var(--text2); font-size: 18px; flex-shrink: 0; margin-top: 4px; }
+
+    /* ── Footer note ── */
+    .footer-note {
+      margin: 4px 16px 0;
+      display: flex; align-items: center; gap: 6px;
+      font-size: 12px; color: var(--text2);
+    }
+
+    /* ── Empty ── */
+    .empty {
+      text-align: center; padding: 48px 24px;
+      color: var(--text2); font-size: 14px;
+    }
+    .empty-icon { font-size: 40px; margin-bottom: 12px; }
+
+    /* ── Bottom sheet responder ── */
+    .sheet-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.45); z-index: 200;
+      align-items: flex-end; justify-content: center;
+    }
+    .sheet-overlay.show { display: flex; }
+    .sheet {
+      background: var(--card);
+      border-radius: 20px 20px 0 0;
+      width: 100%; max-width: 480px;
+      max-height: 88dvh; overflow-y: auto;
+      padding: 8px 20px calc(20px + var(--safe-bot));
+      animation: slideUp .25s ease;
+    }
+    @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+    .sheet-handle {
+      width: 40px; height: 4px;
+      background: #E0E2EE; border-radius: 2px;
+      margin: 12px auto 20px;
+    }
+    .sheet-title { font-size: 17px; font-weight: 700; color: var(--dark); margin-bottom: 4px; }
+    .sheet-sub   { font-size: 13px; color: var(--text2); margin-bottom: 16px; }
+
+    .detalle-bloque {
+      background: #F8F9FE; border-radius: 12px;
+      padding: 12px 14px; margin-bottom: 14px;
+    }
+    .detalle-bloque-titulo { font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; margin-bottom: 6px; }
+    .detalle-bloque-texto  { font-size: 14px; color: var(--dark); line-height: 1.5; }
+
+    .field-label { font-size: 13px; font-weight: 600; color: var(--text2); margin-bottom: 6px; }
+    .field-input {
+      width: 100%; border: 1.5px solid #E0E2EE;
+      border-radius: 12px; padding: 11px 14px;
+      font-size: 14px; font-family: 'DM Sans', sans-serif;
+      outline: none; color: var(--dark); resize: vertical;
+      transition: border-color .2s; margin-bottom: 12px;
+    }
+    .field-input:focus { border-color: var(--orange); }
+
+    .estado-seg { display: flex; gap: 6px; margin-bottom: 14px; }
+    .seg-btn {
+      flex: 1; padding: 8px; border-radius: 10px;
+      border: 1.5px solid #E0E2EE;
+      font-size: 12px; font-weight: 600;
+      cursor: pointer; background: #fff; color: var(--text2);
+      font-family: 'DM Sans', sans-serif; transition: all .2s;
+    }
+    .seg-btn.active { border-color: var(--orange); background: #FFF8F5; color: var(--orange); }
+
+    .sheet-cta {
+      width: 100%;
+      background: linear-gradient(135deg, var(--orange), var(--orange2));
+      color: #fff; border: none; border-radius: 14px;
+      padding: 15px; font-size: 15px; font-weight: 700;
+      cursor: pointer; font-family: 'DM Sans', sans-serif;
+    }
+
+    /* ── Bottom nav ── */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 50%;
+      transform: translateX(-50%);
+      width: 100%; max-width: 480px;
+      background: #fff; border-top: 1px solid #E8EAF2;
+      display: flex; padding-bottom: var(--safe-bot); z-index: 100;
+    }
+    .nav-item {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; padding: 10px 4px 8px;
+      text-decoration: none; color: var(--text2);
+      font-size: 10px; font-weight: 500;
+    }
+    .nav-item .icon { font-size: 22px; margin-bottom: 2px; }
+    .nav-item.active { color: var(--orange); }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="header-left">
+      <button class="btn-back" onclick="history.back()">‹</button>
+      <span class="header-title">Libro de Reclamaciones</span>
+    </div>
+    <a href="/libro-reclamaciones" target="_blank" class="btn-public-link">🔗 Enlace público</a>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-chip">
+      <div class="stat-num num-rojo"><%= pendientes %></div>
+      <div class="stat-lbl">Pendientes</div>
+    </div>
+    <div class="stat-chip">
+      <div class="stat-num num-verde"><%= resueltos %></div>
+      <div class="stat-lbl">Resueltos</div>
+    </div>
+    <div class="stat-chip">
+      <div class="stat-num num-dark"><%= promResp %>d</div>
+      <div class="stat-lbl">Prom. resp.</div>
+    </div>
+  </div>
+
+  <div class="list">
+    <% if (reclamaciones.length === 0) { %>
+    <div class="empty">
+      <div class="empty-icon">📝</div>
+      No hay reclamaciones registradas.
+    </div>
+    <% } %>
+
+    <% reclamaciones.forEach(function(r) {
+      const stripClass  = r.estado === 'resuelto' ? 'strip-resuelto' : r.estado === 'en_proceso' ? 'strip-proceso' : 'strip-pendiente';
+      const badgeClass  = r.estado === 'resuelto' ? 'badge-resuelto' : r.estado === 'en_proceso' ? 'badge-proceso' : 'badge-pendiente';
+      const badgeLabel  = r.estado === 'resuelto' ? 'Resuelto' : r.estado === 'en_proceso' ? 'En proceso' : 'Pendiente';
+      let fechaClass = 'fecha-normal';
+      let fechaTxt = r.fechaFmt;
+      if (r.estado !== 'resuelto') {
+        if (r.plazo_restante <= 5) { fechaClass = 'fecha-urgente'; fechaTxt = r.fechaFmt + ' · Vence en ' + r.plazo_restante + ' días'; }
+        else if (r.plazo_restante <= 10) { fechaClass = 'fecha-aviso'; fechaTxt = r.fechaFmt + ' · ' + r.plazo_restante + ' días'; }
+        else { fechaTxt = r.fechaFmt + ' · ' + r.dias_transcurridos + ' días'; }
+      } else {
+        const dResuelto = r.fecha_respuesta ? Math.ceil((new Date(r.fecha_respuesta) - new Date(r.created_at)) / (1000*60*60*24)) : r.dias_transcurridos;
+        fechaTxt = r.fechaFmt + ' · Resuelto en ' + dResuelto + ' días';
+      }
+    %>
+    <div class="rec-card" onclick="abrirDetalle(<%= JSON.stringify(r).replace(/</g,'\\u003c') %>)">
+      <div class="border-strip <%= stripClass %>"></div>
+      <div class="rec-inner">
+        <div class="rec-info">
+          <div class="rec-top">
+            <span class="rec-num">#<%= r.numero %></span>
+            <span class="estado-badge <%= badgeClass %>"><%= badgeLabel %></span>
+          </div>
+          <div class="rec-detalle"><%= r.detalle %></div>
+          <div class="rec-fecha <%= fechaClass %>"><%= fechaTxt %></div>
+        </div>
+        <span class="chevron">›</span>
+      </div>
+    </div>
+    <% }); %>
+  </div>
+
+  <div class="footer-note">
+    ⊙ Plazo INDECOPI: 30 días calendario para responder
+  </div>
+
+  <!-- ── Sheet responder ── -->
+  <div class="sheet-overlay" id="responderSheet" onclick="cerrarSheet(event)">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title" id="sheetTitulo">Reclamo #—</div>
+      <div class="sheet-sub" id="sheetSub"></div>
+
+      <div class="detalle-bloque" id="sheetDetalle"></div>
+
+      <div class="field-label">Cambiar estado</div>
+      <div class="estado-seg">
+        <button class="seg-btn" data-val="en_proceso" onclick="setEstado(this)">En proceso</button>
+        <button class="seg-btn active" data-val="resuelto" onclick="setEstado(this)">Resuelto</button>
+        <button class="seg-btn" data-val="rechazado" onclick="setEstado(this)">Rechazado</button>
+      </div>
+      <input type="hidden" id="estadoInput" value="resuelto">
+
+      <div class="field-label">Respuesta al cliente *</div>
+      <textarea class="field-input" id="respuestaInput" rows="4"
+        placeholder="Describe la solución o acción tomada…"></textarea>
+
+      <button class="sheet-cta" onclick="enviarRespuesta()">Guardar respuesta</button>
+    </div>
+  </div>
+
+  <!-- Bottom Nav -->
+  <nav class="bottom-nav">
+    <a href="/" class="nav-item"><span class="icon">🏠</span>Inicio</a>
+    <a href="/pedidos" class="nav-item"><span class="icon">🧾</span>Pedidos</a>
+    <a href="/cocina-display" class="nav-item"><span class="icon">👨‍🍳</span>Cocina</a>
+    <a href="/caja" class="nav-item"><span class="icon">💰</span>Caja</a>
+    <a href="/mas" class="nav-item active"><span class="icon">☰</span>Más</a>
+  </nav>
+
+  <script>
+    let currentRecId = null;
+
+    function abrirDetalle(r) {
+      currentRecId = r.id;
+      document.getElementById('sheetTitulo').textContent = '#' + r.numero + ' · ' + r.nombre;
+      document.getElementById('sheetSub').textContent    = r.tipo.charAt(0).toUpperCase() + r.tipo.slice(1) + ' · ' + r.fechaFmt;
+
+      document.getElementById('sheetDetalle').innerHTML = `
+        <div class="detalle-bloque-titulo">Detalle del hecho</div>
+        <div class="detalle-bloque-texto">${r.detalle || '—'}</div>
+      `;
+
+      // Pre-fill respuesta if already answered
+      document.getElementById('respuestaInput').value = r.respuesta || '';
+
+      // Reset estado seg
+      document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
+      const cur = document.querySelector(`.seg-btn[data-val="${r.estado}"]`);
+      if (cur) cur.classList.add('active');
+      document.getElementById('estadoInput').value = r.estado === 'resuelto' ? 'resuelto' : 'en_proceso';
+
+      document.getElementById('responderSheet').classList.add('show');
+    }
+
+    function cerrarSheet(e) {
+      if (e.target.classList.contains('sheet-overlay')) {
+        document.getElementById('responderSheet').classList.remove('show');
+      }
+    }
+
+    function setEstado(btn) {
+      document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('estadoInput').value = btn.dataset.val;
+    }
+
+    async function enviarRespuesta() {
+      const respuesta = document.getElementById('respuestaInput').value.trim();
+      if (!respuesta) { alert('Escribe una respuesta'); return; }
+      if (!currentRecId) return;
+
+      try {
+        const r = await fetch('/legal-pwa/reclamaciones/' + currentRecId + '/responder', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            respuesta,
+            estado: document.getElementById('estadoInput').value
+          })
+        });
+        const data = await r.json();
+        if (data.ok) location.reload();
+        else alert(data.error || 'Error guardando');
+      } catch (e) { alert('Error de conexión'); }
+    }
+  </script>
+  <script src="/js/dallia-fab.js"></script>
+</body>
+</html>

@@ -16,7 +16,7 @@ router.get('/', requireRole(['cocinero', 'mesero', 'administrador']), async (req
             JOIN pedidos p ON p.id = i.pedido_id
             JOIN mesas m ON m.id = p.mesa_id
             JOIN productos pr ON pr.id = i.producto_id
-            WHERE i.estado IN ('enviado','preparando','listo')
+            WHERE i.estado IN ('preparando','listo')
             ORDER BY COALESCE(i.enviado_at, i.created_at) ASC, i.id ASC
         `);
 
@@ -36,7 +36,7 @@ router.get('/cola', requireRole(['cocinero', 'mesero', 'administrador']), async 
             JOIN pedidos p ON p.id = i.pedido_id
             JOIN mesas m ON m.id = p.mesa_id
             JOIN productos pr ON pr.id = i.producto_id
-            WHERE i.estado IN ('enviado','preparando','listo')
+            WHERE i.estado IN ('preparando','listo')
             ORDER BY COALESCE(i.enviado_at, i.created_at) ASC, i.id ASC
         `);
         res.json(items);
@@ -151,12 +151,12 @@ router.put('/item/:id/estado', requireRole(['cocinero', 'administrador']), async
     try {
         const id = req.params.id;
         const { estado } = req.body || {};
-        const permitidos = ['preparando','listo'];
+        const permitidos = ['preparando','listo','entregado'];
         if (!permitidos.includes(estado)) return res.status(400).json({ error: 'Estado inválido' });
 
-        const timestampField = estado === 'preparando' ? 'preparado_at' : 'listo_at';
+        const timestampField = estado === 'preparando' ? 'preparado_at' : estado === 'listo' ? 'listo_at' : 'servido_at';
         const [result] = await db.query(
-            `UPDATE pedido_items SET estado = ?, ${timestampField} = NOW() WHERE id = ? AND estado IN ('enviado','preparando')`,
+            `UPDATE pedido_items SET estado = ?, ${timestampField} = NOW() WHERE id = ? AND estado IN ('preparando','listo')`,
             [estado, id]
         );
         if ((result?.affectedRows || 0) === 0) return res.status(404).json({ error: 'Item no encontrado o en estado no válido' });
@@ -182,7 +182,7 @@ router.put('/mesa/:mesaId/preparar', requireRole(['cocinero', 'administrador']),
         const [result] = await db.query(
             `UPDATE pedido_items
              SET estado = 'preparando', preparado_at = NOW()
-             WHERE estado = 'enviado'
+             WHERE estado = 'pendiente'
                AND pedido_id IN (SELECT id FROM pedidos WHERE mesa_id = ?)`,
             [mesaId]
         );
@@ -211,7 +211,7 @@ router.put('/item/:id/rechazar', requireRole(['cocinero', 'administrador']), asy
         const [result] = await db.query(
             `UPDATE pedido_items
              SET estado = 'rechazado'
-             WHERE id = ? AND estado IN ('enviado','preparando','listo')`,
+             WHERE id = ? AND estado IN ('preparando','listo')`,
             [id]
         );
 

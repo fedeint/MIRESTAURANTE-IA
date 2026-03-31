@@ -242,7 +242,8 @@ const almacenRoutes = require('./routes/almacen');
 const recetasRoutes = require('./routes/recetas');
 const recetasStandaloneRoutes = require('./routes/recetas-standalone');
 const cajaRoutes = require('./routes/caja');
-const sunatRoutes = require('./routes/sunat');
+const sunatRoutes    = require('./routes/sunat');
+const sunatPwaRoutes = require('./routes/sunat-pwa');
 const administracionRoutes = require('./routes/administracion');
 const canalesRoutes = require('./routes/canales');
 const reportesRoutes = require('./routes/reportes');
@@ -255,11 +256,13 @@ const backupsRoutes    = require('./routes/backups');
 const soporteRoutes    = require('./routes/soporte');
 const pagosRoutes      = require('./routes/pagos');
 const legalRoutes      = require('./routes/legal');
+const legalPwaRoutes   = require('./routes/legal-pwa');
 const contratosRoutes  = require('./routes/contratos');
 const firmarRoutes     = require('./routes/firmar');
 const cronRoutes       = require('./routes/cron');
 const observabilidadRoutes = require('./routes/observabilidad');
 const sostacRoutes         = require('./routes/sostac');
+const sprint4Routes        = require('./routes/sprint4');
 
 // Cron endpoints (Vercel Cron Jobs — auth via CRON_SECRET header)
 app.use('/api/cron', cronRoutes);
@@ -295,6 +298,9 @@ app.use('/api/', trialApiLimiter);
 // Libro de Reclamaciones (Ley 32495, Peru - INDECOPI required)
 app.use('/libro-reclamaciones', legalRoutes);
 app.use('/api/legal', legalRoutes);
+
+// ── Legal PWA — admin panel (requireAuth + admin only) ────────────────────
+app.use('/legal-pwa', requireAuth, requireRole('administrador'), legalPwaRoutes);
 // Politica de Privacidad (Ley 29733, Peru)
 app.get('/privacidad', (req, res) => res.render('legal/privacidad'));
 // Terminos de Servicio
@@ -309,6 +315,18 @@ app.use('/firmar', firmaLimiter, firmarRoutes);
 
 // Onboarding wizard (admin only, before the main dashboard guard)
 app.use('/onboarding', requireAuth, requireRole('administrador'), onboardingRoutes);
+
+// Solicitud de registro (public — before trial guard)
+const solicitudRoutes = require('./routes/solicitud');
+app.use('/solicitud', requireAuth, solicitudRoutes);
+
+// Onboarding DallIA (post-approval, requiere auth)
+const onboardingDalliaRoutes = require('./routes/onboarding-dallia');
+app.use('/onboarding-dallia', requireAuth, onboardingDalliaRoutes);
+
+// Setup del sistema (post-onboarding, requiere auth + trial activo)
+const setupSistemaRoutes = require('./routes/setup-sistema');
+app.use('/setup-sistema', requireAuth, setupSistemaRoutes);
 
 // Pantallas de estado del trial (requieren auth pero NO trial activo)
 app.get('/espera-verificacion', requireAuth, async (req, res) => {
@@ -777,6 +795,26 @@ app.use('/api/mesas', requireRole(['mesero', 'administrador']), mesasRoutes);
 app.use('/cocina', requireRole(['cocinero', 'mesero', 'administrador']), requireCajaAbierta, cocinaRoutes);
 app.use('/api/cocina', requireRole(['cocinero', 'mesero', 'administrador']), requireCajaAbierta, cocinaRoutes);
 
+// Mobile PWA routes — PASO 4
+const pedidoNuevoRoutes = require('./routes/pedido-nuevo');
+app.use('/pedido-nuevo', requireAuth, pedidoNuevoRoutes);
+
+const cocinaDisplayRoutes = require('./routes/cocina-display');
+app.use('/cocina-display', requireAuth, cocinaDisplayRoutes);
+
+const pedidosListaRoutes = require('./routes/pedidos-lista');
+app.use('/pedidos', requireAuth, pedidosListaRoutes);
+
+// PASO 5 — Mesa Abierta + Para Llevar + Cortesías
+const mesaCuentaRoutes = require('./routes/mesa-cuenta');
+app.use('/mesa', requireAuth, mesaCuentaRoutes);
+
+const paraLlevarRoutes = require('./routes/para-llevar');
+app.use('/para-llevar', requireAuth, paraLlevarRoutes);
+
+const cortesiasRoutes = require('./routes/cortesias');
+app.use('/cortesias', requireAuth, cortesiasRoutes);
+
 // Almacen (admin + almacenero)
 app.use('/almacen', requireRole(['administrador', 'almacenero']), almacenRoutes);
 
@@ -790,6 +828,22 @@ app.use('/api/recetas-standalone', requireAuth, requireRole(['administrador', 'a
 // SUNAT (admin)
 app.use('/sunat', requireRole('administrador'), sunatRoutes);
 app.use('/api/sunat', requireRole('administrador'), sunatRoutes);
+
+// SUNAT PWA — mobile views (admin + cajero)
+app.use('/sunat-pwa', requireAuth, requireRole(['administrador', 'cajero']), sunatPwaRoutes);
+
+// Sprint 4 — Mantenimiento, Eventos, Gastos, Fidelidad, Promociones, Propinas
+app.use('/sprint4', requireAuth, requireRole(['administrador', 'cajero', 'mesero']), sprint4Routes);
+
+// Hub "Más" — menú PWA con todos los módulos
+app.get('/mas', requireAuth, (req, res) => {
+  res.render('mas', { user: req.session.user });
+});
+
+// DallIA shorthand redirects
+app.get('/dallia',     requireAuth, (req, res) => res.redirect('/api/chat/dallia'));
+app.get('/dallia/voz', requireAuth, (req, res) => res.redirect('/api/chat/dallia/voz'));
+app.get('/dallia/alertas', requireAuth, (req, res) => res.redirect('/api/chat/dallia/alertas'));
 
 // Caja (admin + cajero)
 app.use('/caja', requireRole(['administrador', 'cajero']), cajaRoutes);

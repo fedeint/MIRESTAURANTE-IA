@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Solicitudes - MiRestcon IA</title>
+  <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+  <link rel="stylesheet" href="/css/theme.css">
+  <style>
+    body { background: #0f172a; }
+    .dg-main { background: #0f172a; }
+    .sa-card { background: #1e2235; border: 1px solid rgba(255,255,255,0.07); border-radius: 16px; color: #e2e8f0; }
+    .sa-section-title { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: #64748b; }
+    .sa-table th { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #64748b; border-bottom: 1px solid rgba(255,255,255,0.06); padding: 10px 12px; }
+    .sa-table td { font-size: 0.83rem; color: #cbd5e1; padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: middle; }
+    .sa-table tr:hover td { background: rgba(255,255,255,0.03); }
+    .badge-pendiente { background: rgba(249,115,22,0.15); color: #f97316; border-radius: 20px; padding: 3px 10px; font-size: 0.72rem; font-weight: 700; }
+    .badge-aprobado { background: rgba(34,197,94,0.15); color: #22c55e; border-radius: 20px; padding: 3px 10px; font-size: 0.72rem; font-weight: 700; }
+    .badge-rechazado { background: rgba(239,68,68,0.15); color: #ef4444; border-radius: 20px; padding: 3px 10px; font-size: 0.72rem; font-weight: 700; }
+    .badge-revision { background: rgba(99,102,241,0.15); color: #818cf8; border-radius: 20px; padding: 3px 10px; font-size: 0.72rem; font-weight: 700; }
+    .form-control, .form-select { background: #0f172a; border: 1px solid rgba(255,255,255,0.1); color: #e2e8f0; border-radius: 8px; }
+    .form-control:focus, .form-select:focus { background: #0f172a; color: #e2e8f0; border-color: #f97316; box-shadow: 0 0 0 3px rgba(249,115,22,0.15); }
+    .form-label { font-size: 0.78rem; font-weight: 600; color: #94a3b8; }
+    .modal-content { background: #1e2235; border: 1px solid rgba(255,255,255,0.08); color: #e2e8f0; }
+    .modal-header { border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .modal-footer { border-top: 1px solid rgba(255,255,255,0.06); }
+    .btn-close { filter: invert(1) brightness(0.6); }
+    .action-btn { width: 30px; height: 30px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.8rem; cursor: pointer; border: none; }
+    .btn-aprobar { background: rgba(34,197,94,0.12); color: #22c55e; }
+    .btn-rechazar { background: rgba(239,68,68,0.12); color: #ef4444; }
+    .btn-info { background: rgba(99,102,241,0.12); color: #818cf8; }
+    .detail-row { background: rgba(255,255,255,0.02) !important; }
+    .detail-row td { padding: 12px !important; }
+    .detail-tag { display: inline-block; background: rgba(255,255,255,0.06); border-radius: 6px; padding: 3px 10px; font-size: 0.75rem; color: #94a3b8; margin: 2px; }
+    .foto-thumb { width: 80px; height: 60px; object-fit: cover; border-radius: 8px; cursor: pointer; }
+    .count-badge { background: #f97316; color: #fff; border-radius: 50%; width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; margin-left: 6px; }
+  </style>
+</head>
+<body>
+  <%- include('../partials/sidebar') %>
+  <div class="dg-main">
+    <main class="flex-grow-1">
+      <div class="container-fluid" style="max-width:1300px;padding:1.5rem 1.5rem 3rem;">
+
+        <!-- Header -->
+        <div class="d-flex align-items-center justify-content-between mb-4">
+          <div>
+            <div class="sa-section-title mb-1">Panel Superman</div>
+            <h4 class="fw-bold mb-0" style="color:#e2e8f0">
+              Solicitudes de Registro
+              <% if (pendientes.length > 0) { %>
+                <span class="count-badge"><%= pendientes.length %></span>
+              <% } %>
+            </h4>
+          </div>
+        </div>
+
+        <!-- Pendientes -->
+        <div class="sa-card p-3 mb-4">
+          <div class="sa-section-title mb-3">Pendientes de revisión</div>
+          <% if (pendientes.length === 0) { %>
+            <div class="text-center py-4" style="color:#475569">
+              <i class="bi bi-check-circle fs-2 mb-2 d-block"></i>
+              <span style="font-size:0.85rem">Sin solicitudes pendientes</span>
+            </div>
+          <% } else { %>
+          <div class="table-responsive">
+            <table class="sa-table table w-100 mb-0">
+              <thead>
+                <tr>
+                  <th>Restaurante</th>
+                  <th>Tipo</th>
+                  <th>Solicitante</th>
+                  <th>Ubicación</th>
+                  <th>Fecha</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+              <% pendientes.forEach(s => { %>
+                <tr class="sol-row" data-id="<%= s.id %>">
+                  <td>
+                    <div class="d-flex align-items-center gap-2">
+                      <% if (s.google_avatar) { %>
+                        <img src="<%= s.google_avatar %>" style="width:28px;height:28px;border-radius:50%;object-fit:cover" alt="">
+                      <% } %>
+                      <div>
+                        <div style="font-weight:600;color:#e2e8f0"><%= s.nombre_restaurante || s.tenant_nombre %></div>
+                        <div style="font-size:0.72rem;color:#64748b"><%= s.google_email %></div>
+                      </div>
+                    </div>
+                  </td>
+                  <td><span style="font-size:0.8rem"><%= s.tipo_negocio || '—' %></span></td>
+                  <td>
+                    <div style="font-size:0.8rem"><%= s.usuario_nombre %></div>
+                    <div style="font-size:0.72rem;color:#64748b"><%= s.cargo || '' %></div>
+                  </td>
+                  <td style="font-size:0.8rem;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><%= s.direccion || '—' %></td>
+                  <td style="font-size:0.78rem;color:#64748b;white-space:nowrap"><%= new Date(s.created_at).toLocaleDateString('es-PE') %></td>
+                  <td>
+                    <% if (s.estado === 'revision') { %>
+                      <span class="badge-revision">En revisión</span>
+                    <% } else { %>
+                      <span class="badge-pendiente">Pendiente</span>
+                    <% } %>
+                  </td>
+                  <td>
+                    <div class="d-flex gap-1">
+                      <button class="action-btn btn-aprobar" title="Aprobar" onclick="abrirAprobar(<%= s.id %>, '<%= (s.nombre_restaurante || s.tenant_nombre).replace(/'/g, "\\'") %>')">
+                        <i class="bi bi-check-lg"></i>
+                      </button>
+                      <button class="action-btn btn-rechazar" title="Rechazar" onclick="abrirRechazar(<%= s.id %>)">
+                        <i class="bi bi-x-lg"></i>
+                      </button>
+                      <button class="action-btn btn-info" title="Pedir más info" onclick="abrirInfo(<%= s.id %>)">
+                        <i class="bi bi-question-lg"></i>
+                      </button>
+                      <button class="action-btn" style="background:rgba(100,116,139,0.1);color:#94a3b8" title="Ver detalle" onclick="toggleDetalle(<%= s.id %>)">
+                        <i class="bi bi-eye"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+                <!-- Detail row -->
+                <tr id="detalle-<%= s.id %>" class="detail-row" style="display:none">
+                  <td colspan="7">
+                    <div class="row g-3">
+                      <div class="col-md-6">
+                        <div style="font-size:0.72rem;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Datos personales</div>
+                        <div class="d-flex flex-wrap gap-1">
+                          <% if (s.dni) { %><span class="detail-tag">DNI: <%= s.dni %></span><% } %>
+                          <% if (s.cargo) { %><span class="detail-tag">Cargo: <%= s.cargo %></span><% } %>
+                          <% if (s.ruc) { %><span class="detail-tag">RUC: <%= s.ruc %></span><% } %>
+                          <% if (s.telefono_solicitante) { %><span class="detail-tag">Tel: <%= s.telefono_solicitante %></span><% } %>
+                        </div>
+                        <% if (s.notas_superman) { %>
+                          <div class="mt-2" style="font-size:0.8rem;color:#818cf8">Nota: <%= s.notas_superman %></div>
+                        <% } %>
+                      </div>
+                      <div class="col-md-3">
+                        <% if (s.foto_local_url) { %>
+                          <div style="font-size:0.72rem;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Foto del local</div>
+                          <img src="<%= s.foto_local_url %>" class="foto-thumb" onclick="window.open('<%= s.foto_local_url %>','_blank')" alt="Foto local">
+                        <% } %>
+                      </div>
+                      <div class="col-md-3">
+                        <% if (s.latitud && s.longitud) { %>
+                          <div style="font-size:0.72rem;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Mapa</div>
+                          <a href="https://www.google.com/maps?q=<%= s.latitud %>,<%= s.longitud %>" target="_blank">
+                            <img
+                              src="https://maps.googleapis.com/maps/api/staticmap?center=<%= s.latitud %>,<%= s.longitud %>&zoom=16&size=200x120&markers=color:red%7C<%= s.latitud %>,<%= s.longitud %>&key=<%= process.env.GOOGLE_MAPS_API_KEY || '' %>"
+                              style="width:200px;height:120px;border-radius:8px;object-fit:cover;display:block"
+                              alt="Mapa del local"
+                              onerror="this.style.display='none';this.nextElementSibling.style.display='block'"
+                            >
+                            <span style="display:none;font-size:0.8rem;color:#f97316;"><i class='bi bi-geo-alt me-1'></i>Ver en Google Maps</span>
+                          </a>
+                        <% } %>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              <% }) %>
+              </tbody>
+            </table>
+          </div>
+          <% } %>
+        </div>
+
+        <!-- Procesadas -->
+        <% if (procesadas.length > 0) { %>
+        <div class="sa-card p-3">
+          <div class="sa-section-title mb-3">Procesadas</div>
+          <div class="table-responsive">
+            <table class="sa-table table w-100 mb-0">
+              <thead>
+                <tr>
+                  <th>Restaurante</th>
+                  <th>Tipo</th>
+                  <th>Solicitante</th>
+                  <th>Fecha</th>
+                  <th>Estado</th>
+                </tr>
+              </thead>
+              <tbody>
+              <% procesadas.forEach(s => { %>
+                <tr>
+                  <td>
+                    <div style="font-weight:600;color:#e2e8f0"><%= s.nombre_restaurante || s.tenant_nombre %></div>
+                    <div style="font-size:0.72rem;color:#64748b"><%= s.google_email %></div>
+                  </td>
+                  <td style="font-size:0.8rem"><%= s.tipo_negocio || '—' %></td>
+                  <td style="font-size:0.8rem"><%= s.usuario_nombre %></td>
+                  <td style="font-size:0.78rem;color:#64748b"><%= new Date(s.created_at).toLocaleDateString('es-PE') %></td>
+                  <td>
+                    <% if (s.estado === 'aprobado') { %>
+                      <span class="badge-aprobado">Aprobado</span>
+                    <% } else if (s.estado === 'rechazado') { %>
+                      <span class="badge-rechazado">Rechazado</span>
+                    <% } else { %>
+                      <span class="detail-tag"><%= s.estado %></span>
+                    <% } %>
+                  </td>
+                </tr>
+              <% }) %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <% } %>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal Aprobar -->
+  <div class="modal fade" id="modalAprobar" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h6 class="modal-title fw-bold">Aprobar solicitud</h6>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <p style="font-size:0.85rem;color:#94a3b8" id="aprobarNombre"></p>
+          <div class="mb-3">
+            <label class="form-label">Plan a asignar</label>
+            <select class="form-select" id="planAsignado">
+              <option value="free">Free (sin costo)</option>
+              <option value="starter">Starter</option>
+              <option value="pro">Pro</option>
+            </select>
+            <div class="mt-1" style="font-size:0.75rem;color:#64748b">El tenant tendrá 15 días de trial activo.</div>
+          </div>
+          <div class="mb-0">
+            <label class="form-label">Módulos a activar</label>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px">
+              <label style="display:flex;align-items:center;gap:6px;font-size:0.8rem;color:#94a3b8;padding:4px 0;cursor:pointer">
+                <input type="checkbox" id="mod_mesas" class="mod-check" value="mesas" checked> Mesas
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;font-size:0.8rem;color:#94a3b8;padding:4px 0;cursor:pointer">
+                <input type="checkbox" id="mod_cocina" class="mod-check" value="cocina" checked> Cocina
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;font-size:0.8rem;color:#94a3b8;padding:4px 0;cursor:pointer">
+                <input type="checkbox" id="mod_almacen" class="mod-check" value="almacen" checked> Almacén
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;font-size:0.8rem;color:#94a3b8;padding:4px 0;cursor:pointer">
+                <input type="checkbox" id="mod_caja" class="mod-check" value="caja" checked> Caja
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;font-size:0.8rem;color:#94a3b8;padding:4px 0;cursor:pointer">
+                <input type="checkbox" id="mod_facturacion" class="mod-check" value="facturacion" checked> Facturación
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;font-size:0.8rem;color:#94a3b8;padding:4px 0;cursor:pointer">
+                <input type="checkbox" id="mod_reportes" class="mod-check" value="reportes" checked> Reportes
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;font-size:0.8rem;color:#94a3b8;padding:4px 0;cursor:pointer">
+                <input type="checkbox" id="mod_sunat" class="mod-check" value="sunat"> SUNAT
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;font-size:0.8rem;color:#94a3b8;padding:4px 0;cursor:pointer">
+                <input type="checkbox" id="mod_delivery" class="mod-check" value="delivery"> Delivery
+              </label>
+              <label style="display:flex;align-items:center;gap:6px;font-size:0.8rem;color:#94a3b8;padding:4px 0;cursor:pointer">
+                <input type="checkbox" id="mod_chat_ia" class="mod-check" value="chat_ia" checked> Chat IA
+              </label>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button class="btn btn-sm" style="background:#22c55e;color:#fff;font-weight:600" onclick="confirmarAprobar()">
+            <i class="bi bi-check-lg me-1"></i>Aprobar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Rechazar -->
+  <div class="modal fade" id="modalRechazar" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h6 class="modal-title fw-bold">Rechazar solicitud</h6>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <label class="form-label">Motivo del rechazo</label>
+          <textarea class="form-control" id="motivoRechazo" rows="3" placeholder="Explica por qué se rechaza..."></textarea>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button class="btn btn-sm" style="background:#ef4444;color:#fff;font-weight:600" onclick="confirmarRechazar()">
+            <i class="bi bi-x-lg me-1"></i>Rechazar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Más info -->
+  <div class="modal fade" id="modalInfo" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h6 class="modal-title fw-bold">Pedir más información</h6>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <label class="form-label">Mensaje para el solicitante</label>
+          <textarea class="form-control" id="mensajeInfo" rows="3" placeholder="¿Qué información adicional necesitas?"></textarea>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+          <button class="btn btn-sm" style="background:#818cf8;color:#fff;font-weight:600" onclick="confirmarInfo()">
+            <i class="bi bi-question-lg me-1"></i>Enviar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script>
+    let currentId = null;
+
+    function abrirAprobar(id, nombre) {
+      currentId = id;
+      document.getElementById('aprobarNombre').textContent = 'Aprobar: ' + nombre;
+      new bootstrap.Modal(document.getElementById('modalAprobar')).show();
+    }
+
+    function abrirRechazar(id) {
+      currentId = id;
+      document.getElementById('motivoRechazo').value = '';
+      new bootstrap.Modal(document.getElementById('modalRechazar')).show();
+    }
+
+    function abrirInfo(id) {
+      currentId = id;
+      document.getElementById('mensajeInfo').value = '';
+      new bootstrap.Modal(document.getElementById('modalInfo')).show();
+    }
+
+    function toggleDetalle(id) {
+      const row = document.getElementById('detalle-' + id);
+      row.style.display = row.style.display === 'none' ? 'table-row' : 'none';
+    }
+
+    async function confirmarAprobar() {
+      const plan = document.getElementById('planAsignado').value;
+      const modulos = {};
+      document.querySelectorAll('.mod-check').forEach(cb => {
+        modulos[cb.value] = cb.checked;
+      });
+      const res = await fetch('/api/superadmin/solicitudes/' + currentId + '/aprobar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ plan_asignado: plan, modulos })
+      });
+      const data = await res.json();
+      if (data.ok) { location.reload(); }
+      else { alert('Error: ' + data.error); }
+    }
+
+    async function confirmarRechazar() {
+      const motivo = document.getElementById('motivoRechazo').value;
+      const res = await fetch('/api/superadmin/solicitudes/' + currentId + '/rechazar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ motivo })
+      });
+      const data = await res.json();
+      if (data.ok) { location.reload(); }
+      else { alert('Error: ' + data.error); }
+    }
+
+    async function confirmarInfo() {
+      const mensaje = document.getElementById('mensajeInfo').value;
+      const res = await fetch('/api/superadmin/solicitudes/' + currentId + '/info', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mensaje })
+      });
+      const data = await res.json();
+      if (data.ok) { location.reload(); }
+      else { alert('Error: ' + data.error); }
+    }
+  </script>
+</body>
+</html>

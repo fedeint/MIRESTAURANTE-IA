@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Fidelidad · MiRestcon</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    :root{--orange:#ef520f;--orange2:#df2c05;--dark:#0a0f24;--bg:#F0F2F8;--card:#fff;--text2:#8B8FAD;--safe-bot:env(safe-area-inset-bottom,0px);}
+    body{font-family:'DM Sans',sans-serif;background:var(--bg);min-height:100dvh;max-width:480px;margin:0 auto;padding-bottom:calc(80px + var(--safe-bot));}
+    .header{background:linear-gradient(170deg,#10152f 0%,#0a0f24 50%,#090d1d 100%);padding:52px 20px 20px;border-radius:0 0 20px 20px;color:#fff;display:flex;align-items:center;justify-content:space-between;}
+    .header-left{display:flex;align-items:center;gap:12px;}
+    .btn-back{background:rgba(255,255,255,.12);border:none;color:#fff;width:36px;height:36px;border-radius:10px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+    .header-title{font-size:18px;font-weight:700;}
+    .btn-dash{background:rgba(255,255,255,.15);border:none;color:#fff;width:36px;height:36px;border-radius:10px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;text-decoration:none;}
+    /* QR area */
+    .qr-area{margin:24px 16px 0;background:var(--card);border-radius:20px;padding:28px 20px;text-align:center;box-shadow:0 2px 12px rgba(0,0,0,.08);}
+    .qr-box{width:140px;height:140px;background:#F0F2F8;border-radius:16px;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;font-size:72px;}
+    .qr-hint{font-size:13px;color:var(--text2);}
+    .separator{font-size:13px;color:var(--text2);margin:16px 0;position:relative;text-align:center;}
+    .separator::before,.separator::after{content:'';position:absolute;top:50%;width:38%;height:1px;background:#E0E2EE;}
+    .separator::before{left:0;} .separator::after{right:0;}
+    /* Phone input */
+    .phone-wrap{position:relative;margin:0 16px;}
+    .phone-prefix{position:absolute;left:14px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--text2);}
+    .phone-input{width:100%;border:1.5px solid #E0E2EE;border-radius:12px;padding:12px 14px 12px 36px;font-size:15px;font-family:'DM Sans',sans-serif;outline:none;color:var(--dark);transition:border-color .2s;}
+    .phone-input:focus{border-color:var(--orange);}
+    /* Ultimos */
+    .ultimos-label{font-size:13px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;padding:20px 16px 10px;}
+    .ultimo-row{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;background:var(--card);margin:0 16px 8px;border-radius:12px;box-shadow:0 1px 4px rgba(0,0,0,.05);}
+    .ultimo-info{font-size:14px;color:var(--dark);}
+    .ultimo-tel{font-size:12px;color:var(--text2);}
+    .ultimo-pts{font-size:14px;font-weight:700;color:var(--orange);}
+    /* CTA */
+    .cta-wrap{position:fixed;bottom:calc(72px + var(--safe-bot));left:50%;transform:translateX(-50%);width:100%;max-width:480px;padding:0 16px;}
+    .cta-btn{width:100%;background:linear-gradient(135deg,var(--orange),var(--orange2));color:#fff;border:none;border-radius:14px;padding:16px;font-size:16px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;box-shadow:0 4px 16px rgba(239,82,15,.35);}
+    /* bottom nav */
+    .bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:#fff;border-top:1px solid #E8EAF2;display:flex;padding-bottom:var(--safe-bot);z-index:100;}
+    .nav-item{flex:1;display:flex;flex-direction:column;align-items:center;padding:10px 4px 8px;text-decoration:none;color:var(--text2);font-size:10px;font-weight:500;}
+    .nav-item .icon{font-size:22px;margin-bottom:2px;}
+    .nav-item.active{color:var(--orange);}
+    /* sheet */
+    .sheet-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:flex-end;justify-content:center;}
+    .sheet-overlay.show{display:flex;}
+    .sheet{background:var(--card);border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:8px 20px calc(20px + var(--safe-bot));animation:slideUp .25s ease;}
+    @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+    .sheet-handle{width:40px;height:4px;background:#E0E2EE;border-radius:2px;margin:12px auto 20px;}
+    .sheet-title{font-size:17px;font-weight:700;color:var(--dark);margin-bottom:20px;}
+    .field-label{font-size:13px;font-weight:600;color:var(--text2);margin-bottom:6px;}
+    .field-input{width:100%;border:1.5px solid #E0E2EE;border-radius:12px;padding:11px 14px;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;color:var(--dark);margin-bottom:14px;transition:border-color .2s;}
+    .field-input:focus{border-color:var(--orange);}
+    .sheet-cta{width:100%;background:linear-gradient(135deg,var(--orange),var(--orange2));color:#fff;border:none;border-radius:14px;padding:15px;font-size:15px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;}
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-left">
+      <button class="btn-back" onclick="history.back()">‹</button>
+      <span class="header-title">Fidelidad</span>
+    </div>
+    <a href="/sprint4/fidelidad/dashboard" class="btn-dash" title="Dashboard">📊</a>
+  </div>
+
+  <div class="qr-area">
+    <div class="qr-box">📱</div>
+    <div class="qr-hint">El cliente escanea para acumular puntos</div>
+    <div class="separator">o</div>
+  </div>
+
+  <div class="phone-wrap" style="margin-top:16px;">
+    <span class="phone-prefix">📞</span>
+    <input class="phone-input" id="phoneInput" type="tel" placeholder="+51 987 654 321" autocomplete="off">
+  </div>
+
+  <% if (ultimos.length > 0) { %>
+  <div class="ultimos-label">Últimos registros</div>
+  <% ultimos.forEach(function(u) { %>
+  <div class="ultimo-row">
+    <div>
+      <div class="ultimo-info"><%= u.nombre %></div>
+      <div class="ultimo-tel"><%= u.telefono ? u.telefono.slice(0,8)+'…' : '' %></div>
+    </div>
+    <div class="ultimo-pts"><%= u.puntos %> pts</div>
+  </div>
+  <% }); %>
+  <% } %>
+
+  <div class="cta-wrap">
+    <button class="cta-btn" onclick="abrirRegistrar()">Registrar cliente</button>
+  </div>
+
+  <div class="sheet-overlay" id="regSheet" onclick="cerrar(event)">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title">Registrar cliente</div>
+      <div class="field-label">Teléfono *</div>
+      <input class="field-input" id="regTel" type="tel" placeholder="+51 987 654 321">
+      <div class="field-label">Nombre</div>
+      <input class="field-input" id="regNombre" placeholder="Ej: María López" autocomplete="off">
+      <div class="field-label">Puntos a agregar (S/ compra × <%= config.puntos_por_sol %> pts)</div>
+      <input class="field-input" id="regPuntos" type="number" placeholder="0" value="0">
+      <button class="sheet-cta" onclick="registrar()">Registrar y sumar puntos</button>
+    </div>
+  </div>
+
+  <nav class="bottom-nav">
+    <a href="/" class="nav-item"><span class="icon">🏠</span>Inicio</a>
+    <a href="/pedidos" class="nav-item"><span class="icon">🧾</span>Pedidos</a>
+    <a href="/cocina-display" class="nav-item"><span class="icon">👨‍🍳</span>Cocina</a>
+    <a href="/caja" class="nav-item"><span class="icon">💰</span>Caja</a>
+    <a href="/mas" class="nav-item active"><span class="icon">☰</span>Más</a>
+  </nav>
+
+  <script>
+    function abrirRegistrar(){
+      const tel = document.getElementById('phoneInput').value.trim();
+      if(tel) document.getElementById('regTel').value = tel;
+      document.getElementById('regSheet').classList.add('show');
+    }
+    function cerrar(e){ if(e.target.classList.contains('sheet-overlay')) document.getElementById('regSheet').classList.remove('show'); }
+    async function registrar(){
+      const telefono = document.getElementById('regTel').value.trim();
+      if(!telefono){ alert('Teléfono requerido'); return; }
+      const body = { telefono, nombre: document.getElementById('regNombre').value.trim(), puntos_agregar: parseInt(document.getElementById('regPuntos').value)||0 };
+      const r = await fetch('/sprint4/fidelidad/registrar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+      const d = await r.json();
+      if(d.ok){ alert('✓ Cliente registrado'); location.reload(); } else alert(d.error||'Error');
+    }
+  </script>
+  <script src="/js/dallia-fab.js"></script>
+</body>
+</html>

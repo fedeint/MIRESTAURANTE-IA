@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0a0f24">
+  <title>Solicitud Enviada - MiRestcon IA</title>
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'DM Sans', system-ui, sans-serif;
+      background: #F0F2F8;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .conf-card {
+      background: #fff;
+      border-radius: 20px;
+      padding: 32px 24px;
+      max-width: 380px;
+      width: 100%;
+      text-align: center;
+      box-shadow: 0 4px 24px rgba(10,15,36,0.08);
+    }
+    .conf-icon {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #ef520f, #df2c05);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      font-size: 2rem;
+    }
+    .conf-title {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #0a0f24;
+      margin-bottom: 8px;
+    }
+    .conf-subtitle {
+      font-size: 0.9rem;
+      color: #8B8FAD;
+      line-height: 1.5;
+      margin-bottom: 24px;
+    }
+    .conf-box {
+      background: #F0F2F8;
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 24px;
+    }
+    .conf-box p {
+      font-size: 0.83rem;
+      color: #0a0f24;
+      margin: 0;
+      line-height: 1.5;
+    }
+    .conf-box .step {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 8px;
+    }
+    .conf-box .step:last-child { margin-bottom: 0; }
+    .step-dot {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #ef520f, #df2c05);
+      color: #fff;
+      font-size: 0.65rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .btn-logout {
+      display: block;
+      width: 100%;
+      padding: 12px;
+      background: transparent;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 10px;
+      color: #8B8FAD;
+      font-family: 'DM Sans', system-ui, sans-serif;
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      text-decoration: none;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="conf-card">
+    <div class="conf-icon">✓</div>
+    <div class="conf-title">¡Solicitud enviada!</div>
+    <div class="conf-subtitle">
+      Recibimos tu solicitud. Te notificaremos cuando sea aprobada.
+    </div>
+
+    <div class="conf-box">
+      <div class="step">
+        <div class="step-dot">1</div>
+        <p>Revisamos tu información en <strong>24 horas</strong></p>
+      </div>
+      <div class="step">
+        <div class="step-dot">2</div>
+        <p>Te notificamos por <strong>email y WhatsApp</strong></p>
+      </div>
+      <div class="step">
+        <div class="step-dot">3</div>
+        <p>Accedes a tu sistema para gestionar tu restaurante</p>
+      </div>
+    </div>
+
+    <a href="/espera-verificacion" class="btn-logout">Ver estado de mi solicitud</a>
+  </div>
+</body>
+</html>

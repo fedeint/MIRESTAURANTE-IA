@@ -1,3 +1,4 @@
+
 # KICK-OFF DE IMPLEMENTACIÓN
 ## MiRestconIA — dignita.tech
 ### Plan Enterprise
@@ -1064,7 +1065,7 @@ Fecha                              Fecha
 **Canales:**
 - WhatsApp Business de dignita.tech (numero oficial).
 - Correo electronico: soporte@dignita.tech.
-- Portal de tickets: https://mirestconia.com/soporte.
+- Portal de tickets: https://mirestconia.dignita.tech/soporte.
 
 **Tiempos de respuesta:**
 
@@ -1100,7 +1101,7 @@ Fecha                              Fecha
 **Soporte General:**
 - WhatsApp Business: _______________________________________________
 - Email: soporte@dignita.tech
-- Portal de Tickets: https://mirestconia.com/soporte
+- Portal de Tickets: https://mirestconia.dignita.tech/soporte
 
 **Equipo de dignita.tech:**
 - Gerente de Cuenta: _______________________________________________

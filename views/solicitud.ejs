@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0a0f24">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Solicitud de Acceso - MiRestcon IA</title>
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'DM Sans', system-ui, sans-serif;
+      background: #F0F2F8;
+      min-height: 100vh;
+      margin: 0;
+    }
+    .sol-header {
+      background: linear-gradient(180deg, #10152f 0%, #0a0f24 100%);
+      border-radius: 0 0 20px 20px;
+      padding: 20px 16px 24px;
+      color: #fff;
+    }
+    .sol-header .back-btn {
+      color: rgba(255,255,255,0.7);
+      font-size: 0.85rem;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-bottom: 12px;
+    }
+    .sol-header h1 {
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin: 0 0 4px;
+    }
+    .sol-header p {
+      font-size: 0.85rem;
+      color: rgba(255,255,255,0.6);
+      margin: 0;
+    }
+    .sol-body {
+      padding: 16px;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+    .sol-card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .sol-card-title {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: #8B8FAD;
+      margin-bottom: 12px;
+    }
+    .user-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .user-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      object-fit: cover;
+      background: #e2e8f0;
+    }
+    .user-avatar-placeholder {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #ef520f, #df2c05);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+    .form-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #0a0f24;
+      margin-bottom: 4px;
+    }
+    .form-label .badge-opcional {
+      font-size: 0.65rem;
+      font-weight: 500;
+      color: #8B8FAD;
+      background: #f1f3f9;
+      border-radius: 4px;
+      padding: 1px 6px;
+      margin-left: 4px;
+    }
+    .form-control, .form-select {
+      border: 1.5px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 0.9rem;
+      font-family: 'DM Sans', system-ui, sans-serif;
+      color: #0a0f24;
+      background: #fff;
+      transition: border-color 0.2s;
+    }
+    .form-control:focus, .form-select:focus {
+      border-color: #ef520f;
+      box-shadow: 0 0 0 3px rgba(239,82,15,0.12);
+      outline: none;
+    }
+    .form-hint {
+      font-size: 0.72rem;
+      color: #8B8FAD;
+      margin-top: 4px;
+    }
+    .sol-divider {
+      height: 1px;
+      background: #f1f3f9;
+      margin: 12px 0;
+    }
+    .btn-submit {
+      display: block;
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #ef520f, #df2c05);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-family: 'DM Sans', system-ui, sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: opacity 0.2s;
+    }
+    .btn-submit:active { opacity: 0.85; }
+    .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+    .alert-error {
+      background: rgba(239,68,68,0.08);
+      border: 1px solid rgba(239,68,68,0.2);
+      color: #dc2626;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 0.85rem;
+      margin-bottom: 12px;
+    }
+    .foto-preview {
+      width: 100%;
+      max-height: 160px;
+      object-fit: cover;
+      border-radius: 10px;
+      display: none;
+      margin-top: 8px;
+    }
+    .upload-area {
+      border: 2px dashed #e2e8f0;
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    .upload-area:hover { border-color: #ef520f; }
+    .upload-area input { display: none; }
+    .upload-icon { font-size: 1.5rem; color: #8B8FAD; }
+    .upload-text { font-size: 0.8rem; color: #8B8FAD; margin-top: 4px; }
+    #map-container {
+      height: 180px;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-top: 8px;
+      display: none;
+    }
+    .pb-safe { padding-bottom: max(16px, env(safe-area-inset-bottom)); }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <div class="sol-header">
+    <a href="/logout" class="back-btn">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg>
+      Salir
+    </a>
+    <h1>Solicitud de acceso</h1>
+    <p>Cuéntanos sobre tu restaurante</p>
+  </div>
+
+  <div class="sol-body">
+    <% if (error) { %>
+      <div class="alert-error">⚠️ <%= error %></div>
+    <% } %>
+
+    <form action="/solicitud" method="POST" enctype="multipart/form-data" id="solicitudForm">
+
+      <!-- Google profile (read-only) -->
+      <div class="sol-card">
+        <div class="sol-card-title">Tu cuenta Google</div>
+        <div class="user-row">
+          <% if (user.google_avatar) { %>
+            <img src="<%= user.google_avatar %>" alt="Avatar" class="user-avatar">
+          <% } else { %>
+            <div class="user-avatar-placeholder"><%= (user.nombre || 'U')[0].toUpperCase() %></div>
+          <% } %>
+          <div>
+            <div style="font-weight:600;font-size:0.95rem;color:#0a0f24"><%= user.nombre %></div>
+            <div style="font-size:0.8rem;color:#8B8FAD"><%= user.google_email || user.usuario %></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Personal info -->
+      <div class="sol-card">
+        <div class="sol-card-title">Tus datos</div>
+
+        <div class="mb-3">
+          <label class="form-label">DNI *</label>
+          <input type="text" name="dni" class="form-control" placeholder="12345678" maxlength="8" inputmode="numeric" pattern="\d{8}" required>
+          <div class="form-hint">8 dígitos de tu documento de identidad</div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Tu cargo en el negocio *</label>
+          <select name="cargo" class="form-select" required>
+            <option value="">Selecciona...</option>
+            <option value="Dueño">Dueño</option>
+            <option value="Administrador">Administrador</option>
+            <option value="Socio">Socio</option>
+            <option value="Gerente">Gerente</option>
+            <option value="Otro">Otro</option>
+          </select>
+        </div>
+
+        <div class="mb-0">
+          <label class="form-label">Teléfono <span class="badge-opcional">Opcional</span></label>
+          <input type="tel" name="telefono_solicitante" class="form-control" placeholder="987 654 321" inputmode="tel">
+        </div>
+      </div>
+
+      <!-- Restaurant info -->
+      <div class="sol-card">
+        <div class="sol-card-title">Tu restaurante</div>
+
+        <div class="mb-3">
+          <label class="form-label">Nombre del restaurante *</label>
+          <input type="text" name="nombre_restaurante" class="form-control" placeholder="Ej: Cevichería El Peruano" required>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">RUC <span class="badge-opcional">Opcional</span></label>
+          <input type="text" name="ruc" class="form-control" placeholder="20123456789" maxlength="11" inputmode="numeric" id="rucInput">
+          <div class="form-hint">Solo si tienes RUC — muchos negocios informales no tienen</div>
+          <div id="rucError" style="font-size:0.72rem;color:#dc2626;display:none;margin-top:4px">El RUC debe tener 11 dígitos</div>
+        </div>
+
+        <div class="mb-0">
+          <label class="form-label">Tipo de negocio *</label>
+          <select name="tipo_negocio" class="form-select" required>
+            <option value="">Selecciona...</option>
+            <option value="Restaurante con salón">Restaurante con salón</option>
+            <option value="Solo delivery">Solo delivery</option>
+            <option value="Cafetería">Cafetería</option>
+            <option value="Bar">Bar</option>
+            <option value="Food truck">Food truck</option>
+            <option value="Otro">Otro</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Location -->
+      <div class="sol-card">
+        <div class="sol-card-title">Ubicación</div>
+
+        <label class="form-label">Dirección del local</label>
+        <input type="text" id="direccionInput" name="direccion" class="form-control" placeholder="Busca tu dirección...">
+        <input type="hidden" name="latitud" id="latInput">
+        <input type="hidden" name="longitud" id="lngInput">
+        <div id="map-container"><div id="map" style="width:100%;height:100%"></div></div>
+      </div>
+
+      <!-- Photo -->
+      <div class="sol-card">
+        <div class="sol-card-title">Foto del local <span style="font-size:0.65rem;color:#8B8FAD;text-transform:none;letter-spacing:0">(Opcional)</span></div>
+
+        <div class="upload-area" onclick="document.getElementById('fotoInput').click()">
+          <input type="file" name="foto_local" id="fotoInput" accept="image/jpeg,image/png,image/webp" onchange="previewFoto(event)">
+          <div class="upload-icon">📷</div>
+          <div class="upload-text">Toca para subir una foto de tu local</div>
+        </div>
+        <img id="fotoPreview" class="foto-preview" alt="Vista previa">
+      </div>
+
+      <div class="pb-safe">
+        <button type="submit" class="btn-submit" id="submitBtn">
+          Enviar solicitud →
+        </button>
+        <p style="font-size:0.75rem;color:#8B8FAD;text-align:center;margin-top:10px">
+          Revisamos tu solicitud en 24 horas
+        </p>
+      </div>
+
+    </form>
+  </div>
+
+  <script>
+    // RUC validation on blur
+    document.getElementById('rucInput').addEventListener('blur', function() {
+      const val = this.value.trim();
+      const err = document.getElementById('rucError');
+      if (val && !/^\d{11}$/.test(val)) {
+        err.style.display = 'block';
+        this.style.borderColor = '#ef4444';
+      } else {
+        err.style.display = 'none';
+        this.style.borderColor = '';
+      }
+    });
+
+    // Photo preview
+    function previewFoto(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = document.getElementById('fotoPreview');
+        img.src = e.target.result;
+        img.style.display = 'block';
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // Submit loading state
+    document.getElementById('solicitudForm').addEventListener('submit', function() {
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.textContent = 'Enviando...';
+    });
+
+    <% if (googleMapsApiKey) { %>
+    // Google Maps Places Autocomplete
+    function initMap() {
+      const input = document.getElementById('direccionInput');
+      const autocomplete = new google.maps.places.Autocomplete(input, {
+        componentRestrictions: { country: 'pe' },
+        fields: ['geometry', 'formatted_address']
+      });
+
+      let map, marker;
+
+      autocomplete.addListener('place_changed', function() {
+        const place = autocomplete.getPlace();
+        if (!place.geometry) return;
+
+        const lat = place.geometry.location.lat();
+        const lng = place.geometry.location.lng();
+        document.getElementById('latInput').value = lat;
+        document.getElementById('lngInput').value = lng;
+
+        const mapContainer = document.getElementById('map-container');
+        mapContainer.style.display = 'block';
+
+        if (!map) {
+          map = new google.maps.Map(document.getElementById('map'), {
+            center: { lat, lng },
+            zoom: 16,
+            disableDefaultUI: true
+          });
+          marker = new google.maps.Marker({ map, position: { lat, lng } });
+        } else {
+          map.setCenter({ lat, lng });
+          marker.setPosition({ lat, lng });
+        }
+      });
+    }
+    <% } %>
+  </script>
+
+  <% if (googleMapsApiKey) { %>
+  <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=<%= googleMapsApiKey %>&libraries=places&callback=initMap">
+  </script>
+  <% } %>
+</body>
+</html>

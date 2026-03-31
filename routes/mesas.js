@@ -806,14 +806,12 @@ router.put('/items/:itemId/enviar', async (req, res) => {
             }
 
             const pedidoId = Number(itemRows[0].pedido_id);
-            const conf = await getEnvioCocinaConfig(connection);
-            const autoListoComanda = !!conf.auto_listo_comanda;
-            const targetEstado = autoListoComanda ? 'listo' : 'enviado';
+            const targetEstado = 'preparando';
             await connection.query(
                 `UPDATE pedido_items
-                 SET estado = ?, enviado_at = NOW(), listo_at = CASE WHEN ? = 'listo' THEN NOW() ELSE listo_at END
+                 SET estado = 'preparando', enviado_at = NOW(), preparado_at = NOW()
                  WHERE id = ?`,
-                [targetEstado, targetEstado, itemId]
+                [itemId]
             );
 
             // === DESCUENTO AUTOMATICO DE ALMACEN al enviar a cocina ===
@@ -870,9 +868,8 @@ router.put('/items/:itemId/enviar', async (req, res) => {
             await connection.commit();
             connection.release();
             res.json({
-                message: autoListoComanda ? 'Item enviado e iniciado como listo' : 'Item enviado a cocina',
-                estado: targetEstado,
-                auto_listo_comanda: autoListoComanda
+                message: 'Item enviado a cocina',
+                estado: targetEstado
             });
         } catch (err) {
             await connection.rollback();

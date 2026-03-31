@@ -12,7 +12,8 @@ function wantsJson(req) {
 // Paths que no requieren trial activo
 const EXCLUDED_PATHS = [
   '/login', '/logout', '/setup', '/landing', '/auth/',
-  '/espera-verificacion', '/trial-expirado', '/onboarding',
+  '/espera-verificacion', '/trial-expirado', '/onboarding', '/solicitud',
+  '/onboarding-dallia', '/setup-sistema',
   '/api/cron', '/firmar', '/libro-reclamaciones', '/privacidad',
   '/terminos', '/api/pagos', '/api/health', '/sw.js',
   '/vendor/', '/static/'

@@ -40,11 +40,23 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
 
       // Check if user already exists with this google_id
       const [[existingUser]] = await db.query(
-        'SELECT id, usuario, nombre, rol, tenant_id, auth_provider, google_email FROM usuarios WHERE google_id = ?',
+        'SELECT id, usuario, nombre, rol, tenant_id, auth_provider, google_email, google_avatar FROM usuarios WHERE google_id = ?',
         [googleId]
       );
 
       if (existingUser) {
+        // Check onboarding status for existing users
+        const [[tenantData]] = await db.query(
+          'SELECT estado_trial, onboarding_completado FROM tenants WHERE id = ?',
+          [existingUser.tenant_id]
+        );
+
+        const needsOnboarding = !!(
+          tenantData &&
+          tenantData.estado_trial === 'activo' &&
+          !tenantData.onboarding_completado
+        );
+
         // Login existente
         return done(null, {
           id: existingUser.id,
@@ -53,7 +65,9 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
           rol: existingUser.rol,
           tenant_id: existingUser.tenant_id,
           auth_provider: existingUser.auth_provider,
-          google_email: existingUser.google_email
+          google_email: existingUser.google_email,
+          google_avatar: existingUser.google_avatar,
+          needs_onboarding: needsOnboarding
         });
       }
 
@@ -100,6 +114,7 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
         tenant_id: tenantId,
         auth_provider: 'google',
         google_email: googleEmail,
+        google_avatar: profile.photos?.[0]?.value || null,
         is_new: true  // Flag para redirigir a onboarding
       });
     } catch (err) {
@@ -138,7 +153,11 @@ router.get('/google/callback',
     req.session.user = req.user;
     req.session.save(() => {
       if (req.user.is_new) {
-        return res.redirect('/onboarding');
+        return res.redirect('/solicitud');
+      }
+      // Approved user with onboarding pending — redirect to DallIA onboarding
+      if (req.user.needs_onboarding) {
+        return res.redirect('/onboarding-dallia');
       }
       // Existing user — middleware requireTrialActivo handles redirection
       res.redirect('/');
