@@ -7,9 +7,11 @@ const path = require('path');
 const fs = require('fs');
 const { notificarSuperadminWhatsApp, notificarSuperadminEmail } = require('../services/notificaciones-trial');
 
-// Multer for foto_local
-const uploadDir = path.join(__dirname, '../public/uploads/solicitudes');
-if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
+// Multer for foto_local — use /tmp on Vercel (read-only filesystem)
+const uploadDir = process.env.VERCEL
+  ? path.join('/tmp', 'uploads', 'solicitudes')
+  : path.join(__dirname, '../public/uploads/solicitudes');
+try { if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true }); } catch (_) {}
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => cb(null, uploadDir),
   filename: (_req, file, cb) => cb(null, Date.now() + '-' + file.originalname.replace(/[^a-zA-Z0-9.]/g, '_'))

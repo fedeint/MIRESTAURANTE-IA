@@ -70,7 +70,7 @@ const trialApiLimiter = rateLimit({
     max: 30,
     message: { error: 'Demasiadas solicitudes. Intenta en un minuto.' },
     keyGenerator: (req) => `trial-${req.tenantId || req.ip}`,
-    validate: { keyGeneratorIpFallback: false },
+    validate: false,
     skip: (req) => {
         const user = req.session?.user;
         if (!user || user.auth_provider === 'local' || !user.auth_provider) return true;
