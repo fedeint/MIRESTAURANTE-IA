@@ -1,8 +1,6 @@
 <!-- Footer removido - diseño flotante sin footer -->
 
-<!-- PWA: Service Worker + Manifest -->
-<link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#1e1b4b">
+<!-- PWA: Service Worker -->
 <script>
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('/sw.js').catch(function(){});
