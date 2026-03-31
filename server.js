@@ -190,6 +190,7 @@ app.use('/vendor/select2', express.static(path.join(__dirname, 'node_modules', '
 app.use('/vendor/select2-bootstrap-5-theme', express.static(path.join(__dirname, 'node_modules', 'select2-bootstrap-5-theme', 'dist'), vendorOptions));
 // bootstrap-icons usa fuentes (woff/woff2) -> servir carpeta font completa
 app.use('/vendor/bootstrap-icons', express.static(path.join(__dirname, 'node_modules', 'bootstrap-icons', 'font'), vendorOptions));
+app.use('/vendor/chartjs', express.static(path.join(__dirname, 'node_modules', 'chart.js', 'dist'), vendorOptions));
 
 // HTTPS redirect en produccion (solo en la nube, nunca en modo local LAN)
 if (process.env.NODE_ENV === 'production' && !IS_LOCAL_MODE) {
