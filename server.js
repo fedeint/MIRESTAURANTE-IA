@@ -728,7 +728,10 @@ app.get('/', requireAuth, async (req, res) => {
         dashboard.iaInsights = iaInsights;
     } catch (e) { console.error('Dashboard error:', e.message); }
 
-    res.render('dashboard', { dashboard });
+    // Detectar mobile vs desktop por User-Agent
+    const ua = req.headers['user-agent'] || '';
+    const isMobile = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+    res.render(isMobile ? 'dashboard' : 'dashboard-desktop', { dashboard });
 });
 
 // API: Completar/descompletar tarea del dashboard
