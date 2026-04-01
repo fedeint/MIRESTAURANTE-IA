@@ -565,6 +565,162 @@
     </div>
   </section>
 
+  <!-- DALLIA CAROUSEL -->
+  <section style="padding:5rem 0;background:linear-gradient(180deg,#0a0f24 0%,#10152f 100%);">
+    <div class="container">
+      <div class="text-center mb-4">
+        <div style="display:inline-flex;align-items:center;gap:.5rem;background:rgba(239,82,15,0.1);border:1px solid rgba(239,82,15,0.25);border-radius:2rem;padding:.35rem 1rem;font-size:.8rem;font-weight:600;color:#ef520f;margin-bottom:1rem;">
+          <i class="bi bi-robot"></i> DallIA
+        </div>
+        <h2 style="font-size:2rem;font-weight:800;color:#fff;letter-spacing:-0.03em;margin-bottom:.5rem;">Tu asistente con IA para restaurantes</h2>
+        <p style="color:rgba(255,255,255,0.5);font-size:1rem;max-width:500px;margin:0 auto;">DallIA te ayuda a gestionar alertas, pedidos y reportes con texto o voz.</p>
+      </div>
+
+      <div style="position:relative;max-width:320px;margin:0 auto;">
+        <!-- Carousel container -->
+        <div id="dalliaCarousel" style="overflow:hidden;border-radius:24px;">
+          <div id="dalliaTrack" style="display:flex;transition:transform 0.5s ease;">
+
+            <!-- Slide 1: Chat Mejorado -->
+            <div style="min-width:100%;padding:0 10px;box-sizing:border-box;">
+              <div style="background:#141a36;border:1.5px solid rgba(239,82,15,0.2);border-radius:24px;padding:20px 16px;max-width:280px;margin:0 auto;font-family:'DM Sans',sans-serif;min-height:380px;">
+                <div style="text-align:center;margin-bottom:16px;">
+                  <span style="background:rgba(239,82,15,0.15);color:#ef520f;font-size:0.65rem;font-weight:700;padding:3px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:0.5px;">Chat Mejorado</span>
+                </div>
+                <!-- DallIA message -->
+                <div style="display:flex;gap:8px;margin-bottom:12px;">
+                  <div style="width:28px;height:28px;min-width:28px;border-radius:50%;background:linear-gradient(135deg,#ef520f,#df2c05);display:flex;align-items:center;justify-content:center;font-size:0.7rem;color:#fff;">IA</div>
+                  <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:12px 12px 12px 4px;padding:10px 12px;flex:1;">
+                    <div style="color:rgba(255,255,255,0.9);font-size:0.8rem;line-height:1.5;">Hola! Te detecte 2 alertas importantes:</div>
+                  </div>
+                </div>
+                <!-- Alert 1 -->
+                <div style="background:rgba(249,115,22,0.08);border:1px solid rgba(249,115,22,0.2);border-radius:10px;padding:10px 12px;margin-bottom:8px;margin-left:36px;">
+                  <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">
+                    <span style="font-size:0.75rem;">&#9888;&#65039;</span>
+                    <span style="color:#f97316;font-size:0.75rem;font-weight:700;">Limon agotado</span>
+                  </div>
+                  <div style="color:rgba(255,255,255,0.5);font-size:0.7rem;">4 platos afectados</div>
+                </div>
+                <!-- Alert 2 -->
+                <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:10px;padding:10px 12px;margin-bottom:14px;margin-left:36px;">
+                  <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">
+                    <span style="font-size:0.75rem;">&#128666;</span>
+                    <span style="color:#ef4444;font-size:0.75rem;font-weight:700;">Delivery #039</span>
+                  </div>
+                  <div style="color:rgba(255,255,255,0.5);font-size:0.7rem;">Lleva 32 min en cocina</div>
+                </div>
+                <!-- Action buttons -->
+                <div style="display:flex;gap:8px;margin-left:36px;">
+                  <div style="background:linear-gradient(135deg,#ef520f,#df2c05);color:#fff;font-size:0.72rem;font-weight:700;padding:7px 14px;border-radius:20px;cursor:default;">Resolver limon</div>
+                  <div style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);color:rgba(255,255,255,0.8);font-size:0.72rem;font-weight:600;padding:7px 14px;border-radius:20px;cursor:default;">Ver delivery</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slide 2: Modo Voz -->
+            <div style="min-width:100%;padding:0 10px;box-sizing:border-box;">
+              <div style="background:#141a36;border:1.5px solid rgba(239,82,15,0.2);border-radius:24px;padding:20px 16px;max-width:280px;margin:0 auto;font-family:'DM Sans',sans-serif;min-height:380px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;">
+                <span style="background:rgba(239,82,15,0.15);color:#ef520f;font-size:0.65rem;font-weight:700;padding:3px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:24px;">Modo Voz</span>
+                <!-- Voice orb -->
+                <div style="width:100px;height:100px;border-radius:50%;background:linear-gradient(135deg,#ef520f,#df2c05);display:flex;align-items:center;justify-content:center;margin-bottom:20px;box-shadow:0 0 40px rgba(239,82,15,0.35),0 0 80px rgba(239,82,15,0.15);animation:orbPulse 2s ease-in-out infinite;">
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+                </div>
+                <!-- Quote -->
+                <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:12px 14px;margin-bottom:16px;max-width:240px;">
+                  <div style="color:rgba(255,255,255,0.85);font-size:0.8rem;line-height:1.5;font-style:italic;">"Tienes 2 delivery pendientes en zona norte, los priorizo?"</div>
+                </div>
+                <!-- Listening indicator -->
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <div style="width:6px;height:6px;border-radius:50%;background:#22c55e;animation:listenBlink 1.2s ease-in-out infinite;"></div>
+                  <span style="color:#22c55e;font-size:0.75rem;font-weight:600;">Escuchando...</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slide 3: Reportes por Voz -->
+            <div style="min-width:100%;padding:0 10px;box-sizing:border-box;">
+              <div style="background:#141a36;border:1.5px solid rgba(239,82,15,0.2);border-radius:24px;padding:20px 16px;max-width:280px;margin:0 auto;font-family:'DM Sans',sans-serif;min-height:380px;">
+                <div style="text-align:center;margin-bottom:16px;">
+                  <span style="background:rgba(239,82,15,0.15);color:#ef520f;font-size:0.65rem;font-weight:700;padding:3px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:0.5px;">Reportes por Voz</span>
+                </div>
+                <!-- DallIA report -->
+                <div style="display:flex;gap:8px;margin-bottom:12px;">
+                  <div style="width:28px;height:28px;min-width:28px;border-radius:50%;background:linear-gradient(135deg,#ef520f,#df2c05);display:flex;align-items:center;justify-content:center;font-size:0.7rem;color:#fff;">IA</div>
+                  <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:12px 12px 12px 4px;padding:10px 12px;flex:1;">
+                    <div style="color:rgba(255,255,255,0.9);font-size:0.78rem;line-height:1.5;">Las ventas van bien hoy, llevas <strong style="color:#22d3ee;">S/ 552</strong> con 8 pedidos. El ticket promedio es <strong style="color:#22d3ee;">S/ 69</strong>.</div>
+                  </div>
+                </div>
+                <!-- User voice bubble -->
+                <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
+                  <div style="background:linear-gradient(135deg,#ef520f,#df2c05);border-radius:12px 12px 4px 12px;padding:10px 14px;max-width:85%;">
+                    <div style="color:#fff;font-size:0.78rem;display:flex;align-items:center;gap:6px;">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/></svg>
+                      Y que plato se vendio mas?
+                    </div>
+                  </div>
+                </div>
+                <!-- DallIA ranking -->
+                <div style="display:flex;gap:8px;">
+                  <div style="width:28px;height:28px;min-width:28px;border-radius:50%;background:linear-gradient(135deg,#ef520f,#df2c05);display:flex;align-items:center;justify-content:center;font-size:0.7rem;color:#fff;">IA</div>
+                  <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:12px 12px 12px 4px;padding:10px 12px;flex:1;">
+                    <div style="color:rgba(255,255,255,0.6);font-size:0.7rem;margin-bottom:8px;">Top ventas hoy:</div>
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                      <span style="background:rgba(239,82,15,0.2);color:#ef520f;font-size:0.65rem;font-weight:800;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;">1</span>
+                      <span style="color:rgba(255,255,255,0.85);font-size:0.78rem;flex:1;">Ceviche Clasico</span>
+                      <span style="color:#22d3ee;font-size:0.75rem;font-weight:700;">12 uds</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                      <span style="background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.5);font-size:0.65rem;font-weight:800;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;">2</span>
+                      <span style="color:rgba(255,255,255,0.85);font-size:0.78rem;flex:1;">Lomo Saltado</span>
+                      <span style="color:#22d3ee;font-size:0.75rem;font-weight:700;">9 uds</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div><!-- /track -->
+        </div><!-- /carousel -->
+
+        <!-- Dots -->
+        <div style="display:flex;justify-content:center;gap:8px;margin-top:20px;">
+          <div class="dallia-dot active" onclick="goToDalliaSlide(0)" style="width:10px;height:10px;border-radius:50%;background:#ef520f;cursor:pointer;transition:all 0.3s;"></div>
+          <div class="dallia-dot" onclick="goToDalliaSlide(1)" style="width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,0.2);cursor:pointer;transition:all 0.3s;"></div>
+          <div class="dallia-dot" onclick="goToDalliaSlide(2)" style="width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,0.2);cursor:pointer;transition:all 0.3s;"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <style>
+    @keyframes orbPulse{0%,100%{box-shadow:0 0 40px rgba(239,82,15,0.35),0 0 80px rgba(239,82,15,0.15)}50%{box-shadow:0 0 60px rgba(239,82,15,0.5),0 0 120px rgba(239,82,15,0.25)}}
+    @keyframes listenBlink{0%,100%{opacity:1}50%{opacity:0.3}}
+  </style>
+  <script>
+  (function(){
+    var current=0,total=3,timer;
+    function go(i){
+      current=i;
+      document.getElementById('dalliaTrack').style.transform='translateX(-'+(current*100)+'%)';
+      document.querySelectorAll('.dallia-dot').forEach(function(d,idx){
+        d.style.background=idx===current?'#ef520f':'rgba(255,255,255,0.2)';
+      });
+    }
+    window.goToDalliaSlide=go;
+    function auto(){timer=setInterval(function(){go((current+1)%total)},4000);}
+    auto();
+    // Touch swipe support
+    var track=document.getElementById('dalliaCarousel'),sx=0;
+    track.addEventListener('touchstart',function(e){sx=e.touches[0].clientX;clearInterval(timer);},{passive:true});
+    track.addEventListener('touchend',function(e){
+      var dx=e.changedTouches[0].clientX-sx;
+      if(Math.abs(dx)>40){dx<0?go(Math.min(current+1,total-1)):go(Math.max(current-1,0));}
+      auto();
+    },{passive:true});
+  })();
+  </script>
+
   <!-- CTA -->
   <section class="cta">
     <div class="container text-center position-relative" style="z-index:2;">
