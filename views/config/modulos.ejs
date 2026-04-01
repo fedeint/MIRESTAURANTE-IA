@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#10152f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Módulos del Sistema · MiRestcon</title>
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="manifest" href="/manifest.json">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --orange: #ef520f; --orange2: #df2c05;
+      --dark: #0a0f24; --bg: #F0F2F8;
+      --card: #fff; --text2: #8B8FAD;
+      --safe-bot: env(safe-area-inset-bottom, 0px);
+    }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      min-height: 100dvh;
+      max-width: 480px;
+      margin: 0 auto;
+      padding-bottom: calc(80px + var(--safe-bot));
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .header {
+      background: linear-gradient(170deg, #10152f 0%, #0a0f24 50%, #090d1d 100%);
+      padding: calc(52px + env(safe-area-inset-top, 0px)) 20px 20px;
+      border-radius: 0 0 20px 20px;
+      color: #fff;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .header-left { display: flex; align-items: center; gap: 12px; }
+    .btn-back {
+      background: rgba(255,255,255,0.12); border: none; color: #fff;
+      width: 36px; height: 36px; border-radius: 10px;
+      font-size: 20px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      text-decoration: none;
+    }
+    .header-title { font-size: 18px; font-weight: 700; }
+    .btn-save {
+      background: linear-gradient(135deg, var(--orange), var(--orange2));
+      border: none; color: #fff;
+      padding: 8px 16px; border-radius: 10px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+
+    .content { padding: 16px; }
+
+    .section-label {
+      font-size: 11px; font-weight: 700; color: var(--text2);
+      text-transform: uppercase; letter-spacing: .8px;
+      margin: 16px 0 8px 2px;
+    }
+    .section-label:first-child { margin-top: 0; }
+
+    .card {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 4px 16px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+
+    .mod-row {
+      display: flex; align-items: center;
+      padding: 13px 0;
+      border-bottom: 1px solid #F0F2F8;
+      gap: 12px;
+    }
+    .mod-row:last-child { border-bottom: none; }
+
+    .mod-icon {
+      width: 36px; height: 36px; border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 17px; flex-shrink: 0;
+    }
+    .ic-blue   { background: #EFF6FF; }
+    .ic-orange { background: #FFF7ED; }
+    .ic-green  { background: #F0FDF4; }
+    .ic-purple { background: #F5F3FF; }
+    .ic-red    { background: #FEF2F2; }
+    .ic-teal   { background: #F0FDFA; }
+    .ic-yellow { background: #FEFCE8; }
+    .ic-dark   { background: #F1F5F9; }
+
+    .mod-info { flex: 1; }
+    .mod-title { font-size: 14px; font-weight: 600; color: var(--dark); }
+    .mod-sub { font-size: 12px; color: var(--text2); margin-top: 1px; }
+    .mod-badge {
+      font-size: 10px; font-weight: 700;
+      padding: 2px 7px; border-radius: 50px;
+      margin-left: 6px; vertical-align: middle;
+    }
+    .badge-core { background: #EFF6FF; color: #3B82F6; }
+
+    /* Toggle */
+    .toggle { position: relative; width: 44px; height: 26px; flex-shrink: 0; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .toggle-track {
+      position: absolute; inset: 0; border-radius: 13px;
+      background: #E5E7EB; cursor: pointer; transition: background .2s;
+    }
+    .toggle-dot {
+      position: absolute; top: 3px; left: 3px;
+      width: 20px; height: 20px; border-radius: 50%;
+      background: #fff; transition: transform .2s;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+    .toggle input:checked ~ .toggle-track { background: linear-gradient(135deg, var(--orange), var(--orange2)); }
+    .toggle input:checked ~ .toggle-track .toggle-dot { transform: translateX(18px); }
+    .toggle-locked .toggle-track { cursor: not-allowed; opacity: .5; }
+
+    /* Bottom nav */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+      width: 100%; max-width: 480px;
+      padding: 8px 12px calc(8px + var(--safe-bot));
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-top: 1px solid rgba(0,0,0,0.06);
+      display: flex; justify-content: space-around; align-items: center;
+      z-index: 100;
+    }
+    .nav-tab {
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+      text-decoration: none; color: var(--text2);
+      font-size: 10px; font-weight: 600; letter-spacing: .3px;
+      padding: 6px 10px; border-radius: 10px; flex: 1;
+    }
+    .nav-tab.active { color: var(--orange); }
+    .nav-tab svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="header-left">
+      <a href="/mas" class="btn-back">&#8592;</a>
+      <div class="header-title">Módulos del Sistema</div>
+    </div>
+    <button class="btn-save" onclick="guardar()">Guardar</button>
+  </div>
+
+  <div class="content">
+
+    <!-- OPERACIONES -->
+    <div class="section-label">Operaciones</div>
+    <div class="card">
+      <% const ops = [
+        { key:'pedidos',      icon:'🛒', ic:'ic-blue',   title:'Pedidos',         sub:'Tomar · Enviar a cocina',    core:true },
+        { key:'cocina',       icon:'👨‍🍳', ic:'ic-orange', title:'Cocina Display',  sub:'Timers · Estados en vivo',   core:false },
+        { key:'caja_ventas',  icon:'💰', ic:'ic-green',  title:'Caja y Ventas',   sub:'Cobros · Comprobantes',      core:true },
+        { key:'para_llevar',  icon:'🛍️', ic:'ic-orange', title:'Para Llevar',     sub:'Pedidos · Despacho',         core:false },
+        { key:'delivery',     icon:'🛵', ic:'ic-blue',   title:'Delivery',        sub:'Canal externo · Apps',       core:false },
+        { key:'cortesias',    icon:'🎁', ic:'ic-purple', title:'Cortesías',       sub:'Registrar · Límites',        core:false },
+        { key:'propinas',     icon:'💵', ic:'ic-green',  title:'Propinas',        sub:'Reparto por mesero',         core:false },
+        { key:'eventos',      icon:'🎉', ic:'ic-teal',   title:'Eventos',         sub:'Catering · Reservas',        core:false },
+      ]; %>
+      <% ops.forEach(m => { %>
+        <div class="mod-row">
+          <div class="mod-icon <%= m.ic %>"><%= m.icon %></div>
+          <div class="mod-info">
+            <div class="mod-title"><%= m.title %><% if(m.core){ %><span class="mod-badge badge-core">CORE</span><% } %></div>
+            <div class="mod-sub"><%= m.sub %></div>
+          </div>
+          <label class="toggle <%= m.core ? 'toggle-locked' : '' %>">
+            <input type="checkbox" name="mod_<%= m.key %>" <%= m.core ? 'checked disabled' : (modulos[m.key] !== false ? 'checked' : '') %>>
+            <div class="toggle-track"><div class="toggle-dot"></div></div>
+          </label>
+        </div>
+      <% }); %>
+    </div>
+
+    <!-- GESTIÓN -->
+    <div class="section-label">Gestión</div>
+    <div class="card">
+      <% const gestion = [
+        { key:'almacen',    icon:'📦', ic:'ic-blue',   title:'Almacén',     sub:'Stock · Insumos · Alertas' },
+        { key:'productos',  icon:'🍽️', ic:'ic-orange', title:'Productos',   sub:'Carta · Categorías · Fotos' },
+        { key:'recetas',    icon:'📋', ic:'ic-green',  title:'Recetas',     sub:'Food cost · Ingredientes' },
+        { key:'clientes',   icon:'👥', ic:'ic-purple', title:'Clientes',    sub:'Base de datos · Historial' },
+        { key:'promociones',icon:'🏷️', ic:'ic-yellow', title:'Promociones', sub:'Códigos · Descuentos · ROI' },
+        { key:'fidelidad',  icon:'⭐', ic:'ic-purple', title:'Fidelidad',   sub:'Puntos · Canjes · QR' },
+      ]; %>
+      <% gestion.forEach(m => { %>
+        <div class="mod-row">
+          <div class="mod-icon <%= m.ic %>"><%= m.icon %></div>
+          <div class="mod-info">
+            <div class="mod-title"><%= m.title %></div>
+            <div class="mod-sub"><%= m.sub %></div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" name="mod_<%= m.key %>" <%= modulos[m.key] !== false ? 'checked' : '' %>>
+            <div class="toggle-track"><div class="toggle-dot"></div></div>
+          </label>
+        </div>
+      <% }); %>
+    </div>
+
+    <!-- ADMINISTRACIÓN -->
+    <div class="section-label">Administración</div>
+    <div class="card">
+      <% const admin = [
+        { key:'administracion_general', icon:'⚙️', ic:'ic-dark',   title:'Administración', sub:'Panel · Config general' },
+        { key:'facturacion_sunat',       icon:'🧾', ic:'ic-blue',   title:'Facturación',    sub:'Boletas · Facturas electrónicas' },
+        { key:'sunat_igv',               icon:'📊', ic:'ic-red',    title:'SUNAT / IGV',    sub:'Declaración · IGV neto' },
+        { key:'reportes',                icon:'📈', ic:'ic-green',  title:'Reportes',        sub:'PDF · Exportar · Análisis' },
+        { key:'personal',                icon:'👷', ic:'ic-dark',   title:'Personal',        sub:'Empleados · Asistencia' },
+        { key:'planilla',                icon:'💼', ic:'ic-purple', title:'Planilla',        sub:'ESSALUD · AFP · CTS' },
+        { key:'gastos_fijos',            icon:'🏠', ic:'ic-orange', title:'Gastos Fijos',   sub:'Alquiler · Luz · Equilibrio' },
+        { key:'mantenimiento',           icon:'🔧', ic:'ic-dark',   title:'Mantenimiento',  sub:'Equipos · Calendario' },
+      ]; %>
+      <% admin.forEach(m => { %>
+        <div class="mod-row">
+          <div class="mod-icon <%= m.ic %>"><%= m.icon %></div>
+          <div class="mod-info">
+            <div class="mod-title"><%= m.title %></div>
+            <div class="mod-sub"><%= m.sub %></div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" name="mod_<%= m.key %>" <%= modulos[m.key] !== false ? 'checked' : '' %>>
+            <div class="toggle-track"><div class="toggle-dot"></div></div>
+          </label>
+        </div>
+      <% }); %>
+    </div>
+
+    <!-- INTEGRACIONES -->
+    <div class="section-label">Integraciones</div>
+    <div class="card">
+      <% const integ = [
+        { key:'int_whatsapp',     icon:'💬', ic:'ic-green',  title:'WhatsApp',         sub:'Pedidos · Notificaciones' },
+        { key:'int_sunat_ose',    icon:'🏛️', ic:'ic-blue',   title:'SUNAT / OSE',      sub:'Nubefact · eSunat' },
+        { key:'int_impresora',    icon:'🖨️', ic:'ic-dark',   title:'Impresora',        sub:'Comandas · Tickets · Red LAN' },
+        { key:'int_rappi',        icon:'🔴', ic:'ic-red',    title:'Rappi',            sub:'Pedidos online integrados' },
+        { key:'int_pedidosya',    icon:'🟡', ic:'ic-yellow', title:'PedidosYa',        sub:'Pedidos online integrados' },
+        { key:'int_pagos',        icon:'💳', ic:'ic-purple', title:'Pagos de servicios',sub:'Yape · Plin · Tarjeta' },
+        { key:'int_audio',        icon:'🎙️', ic:'ic-teal',   title:'Acceso a audio',   sub:'Modo voz · DallIA' },
+        { key:'int_camara',       icon:'📷', ic:'ic-orange', title:'Fotos / Cámara',   sub:'Productos · Permisos' },
+      ]; %>
+      <% integ.forEach(m => { %>
+        <div class="mod-row">
+          <div class="mod-icon <%= m.ic %>"><%= m.icon %></div>
+          <div class="mod-info">
+            <div class="mod-title"><%= m.title %></div>
+            <div class="mod-sub"><%= m.sub %></div>
+          </div>
+          <label class="toggle">
+            <input type="checkbox" name="mod_<%= m.key %>" <%= modulos[m.key] !== false ? 'checked' : '' %>>
+            <div class="toggle-track"><div class="toggle-dot"></div></div>
+          </label>
+        </div>
+      <% }); %>
+    </div>
+
+    <!-- SISTEMA -->
+    <div class="section-label">Sistema</div>
+    <div class="card">
+      <% const sistema = [
+        { key:'usuarios',       icon:'👤', ic:'ic-blue',   title:'Usuarios',      sub:'Roles · Permisos · Acceso', core:false },
+        { key:'configuracion',  icon:'⚙️', ic:'ic-dark',   title:'Configuración', sub:'Ajustes generales',          core:true },
+        { key:'soporte',        icon:'🆘', ic:'ic-red',    title:'Soporte',        sub:'Tickets · Ayuda · Chat',    core:true },
+        { key:'legal_permisos', icon:'📋', ic:'ic-orange', title:'Legal y Permisos',sub:'Licencias · Semáforo',    core:false },
+        { key:'libro_reclamaciones',icon:'📝',ic:'ic-red', title:'Libro de Reclamaciones',sub:'INDECOPI · Reclamos',core:false },
+      ]; %>
+      <% sistema.forEach(m => { %>
+        <div class="mod-row">
+          <div class="mod-icon <%= m.ic %>"><%= m.icon %></div>
+          <div class="mod-info">
+            <div class="mod-title"><%= m.title %><% if(m.core){ %><span class="mod-badge badge-core">CORE</span><% } %></div>
+            <div class="mod-sub"><%= m.sub %></div>
+          </div>
+          <label class="toggle <%= m.core ? 'toggle-locked' : '' %>">
+            <input type="checkbox" name="mod_<%= m.key %>" <%= m.core ? 'checked disabled' : (modulos[m.key] !== false ? 'checked' : '') %>>
+            <div class="toggle-track"><div class="toggle-dot"></div></div>
+          </label>
+        </div>
+      <% }); %>
+    </div>
+
+  </div>
+
+  <!-- Bottom Nav -->
+  <nav class="bottom-nav">
+    <a href="/dashboard" class="nav-tab">
+      <span><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
+      <span>INICIO</span>
+    </a>
+    <a href="/mesas" class="nav-tab">
+      <span><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span>
+      <span>MESAS</span>
+    </a>
+    <a href="/cocina-display" class="nav-tab">
+      <span><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6 2 10.5c0 3 2 5.5 5 7v2.5a2 2 0 002 2h6a2 2 0 002-2V17.5c3-1.5 5-4 5-7C22 6 17.52 2 12 2z"/></svg></span>
+      <span>COCINA</span>
+    </a>
+    <a href="/ventas" class="nav-tab">
+      <span><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></span>
+      <span>VENTAS</span>
+    </a>
+    <a href="/mas" class="nav-tab active">
+      <span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg></span>
+      <span>MÁS</span>
+    </a>
+  </nav>
+
+<script>
+  async function guardar() {
+    const checks = document.querySelectorAll('input[name^="mod_"]:not([disabled])');
+    const payload = {};
+    checks.forEach(c => { payload[c.name.replace('mod_','')] = c.checked; });
+    try {
+      const r = await fetch('/config/modulos', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+      if (r.ok) {
+        const btn = document.querySelector('.btn-save');
+        btn.textContent = '✓ Guardado';
+        btn.style.background = '#22C55E';
+        setTimeout(() => { btn.textContent = 'Guardar'; btn.style.background = ''; }, 2000);
+      }
+    } catch(e) { alert('Error al guardar'); }
+  }
+</script>
+</body>
+</html>

@@ -234,6 +234,7 @@ const facturasRoutes = require('./routes/facturas');
 const mesasRoutes = require('./routes/mesas');
 const cocinaRoutes = require('./routes/cocina');
 const configuracionRoutes = require('./routes/configuracion');
+const configPwaRoutes = require('./routes/config-pwa');
 const ventasRoutes = require('./routes/ventas');
 const authRoutes = require('./routes/auth');
 const usuariosRoutes = require('./routes/usuarios');
@@ -960,6 +961,7 @@ app.use('/api/soporte', requireAuth, soporteRoutes);
 
 // Configuración y ventas (admin)
 app.use('/configuracion', requireRole('administrador'), configuracionRoutes);
+app.use('/config', requireAuth, configPwaRoutes);
 app.use('/ventas', requireRole('administrador'), ventasRoutes);
 
 // Manejo de errores 404
