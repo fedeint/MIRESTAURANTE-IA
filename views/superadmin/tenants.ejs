@@ -158,10 +158,10 @@
                       </td>
                       <td>
                         <div class="d-flex gap-1">
-                          <button class="action-btn action-btn-edit" onclick="openEditModal(<%= JSON.stringify(t).replace(/"/g,'&quot;') %>)" title="Editar">
+                          <button class="action-btn action-btn-edit" data-tenant='<%- JSON.stringify({id:t.id,nombre:t.nombre||"",email_admin:t.email_admin||"",plan:t.plan||"free",precio_mensual:t.precio_mensual||"",telefono:t.telefono||"",ruc:t.ruc||""}) %>' onclick="openEditModal(JSON.parse(this.dataset.tenant))" title="Editar">
                             <i class="bi bi-pencil"></i>
                           </button>
-                          <button class="action-btn action-btn-module" onclick="openModulesModal(<%= t.id %>, '<%= t.nombre %>', <%= JSON.stringify(modulos).replace(/"/g,'&quot;') %>)" title="Modulos">
+                          <button class="action-btn action-btn-module" data-tid="<%= t.id %>" data-tname="<%= (t.nombre||'').replace(/"/g,'') %>" data-mods='<%- JSON.stringify(modulos) %>' onclick="openModulesModal(Number(this.dataset.tid), this.dataset.tname, JSON.parse(this.dataset.mods))" title="Modulos">
                             <i class="bi bi-grid"></i>
                           </button>
                           <button class="action-btn action-btn-toggle <%= t.activo ? 'is-active' : '' %>" onclick="toggleTenant(<%= t.id %>, this)" title="<%= t.activo ? 'Desactivar' : 'Activar' %>">
