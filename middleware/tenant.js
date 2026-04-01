@@ -29,46 +29,67 @@ const PLAN_LIMITS = {
     enterprise: { usuarios: -1, mesas: -1, productos: -1, almacen: true, recetas: true, caja: true, reportes_pdf: true, ia_voz: true, canales: true }
 };
 
+async function resolveTenantById(id) {
+    const cached = tenantCache['id_' + id];
+    if (cached && (Date.now() - cached.ts) < CACHE_TTL) return cached.data;
+    try {
+        const [[tenant]] = await db.query(
+            'SELECT id, nombre, subdominio, plan, activo, estado_trial, trial_inicio, trial_fin FROM tenants WHERE id = ? LIMIT 1',
+            [id]
+        );
+        if (tenant) tenantCache['id_' + id] = { data: tenant, ts: Date.now() };
+        return tenant || null;
+    } catch (e) { return null; }
+}
+
+function setTenantOnReq(req, res, tenant) {
+    req.tenantId = tenant.id;
+    req.tenant = tenant;
+    req.planLimits = PLAN_LIMITS[tenant.plan] || PLAN_LIMITS.free;
+    res.locals.tenantId = tenant.id;
+    res.locals.tenant = tenant;
+    res.locals.planLimits = req.planLimits;
+}
+
 function attachTenant(req, res, next) {
-    // En desarrollo: tenant_id = 1
-    // En produccion: resolver desde subdominio
     const hostname = req.hostname || '';
     const parts = hostname.split('.');
+    const userTenantId = req.session?.user?.tenant_id;
+    const userRole = req.session?.user?.rol;
 
-    if (parts.length >= 3 && parts[1] === 'mirestconia' && parts[2] === 'com') {
-        // subdominio.mirestconia.com
-        const subdominio = parts[0];
-        resolveTenant(subdominio).then(tenant => {
-            if (tenant) {
-                req.tenantId = tenant.id;
-                req.tenant = tenant;
-                req.planLimits = PLAN_LIMITS[tenant.plan] || PLAN_LIMITS.free;
-                res.locals.tenantId = tenant.id;
-                res.locals.tenant = tenant;
-                res.locals.planLimits = req.planLimits;
-            } else {
-                // Tenant not found by subdomain — fallback to tenant 1 (main instance)
-                req.tenantId = 1;
-                req.planLimits = PLAN_LIMITS.pro;
-                res.locals.tenantId = 1;
-                res.locals.planLimits = PLAN_LIMITS.pro;
-            }
-            next();
-        }).catch((err) => {
-            console.error('Tenant resolution error:', err);
-            // Fail open to tenant 1 on DB errors so the app stays usable
-            req.tenantId = 1;
-            req.planLimits = PLAN_LIMITS.pro;
-            res.locals.tenantId = 1;
-            res.locals.planLimits = PLAN_LIMITS.pro;
-            next();
-        });
-    } else {
-        // Desarrollo local: tenant_id = 1
+    // Superadmin: always tenant 1 with pro limits, no trial restriction
+    if (userRole === 'superadmin') {
         req.tenantId = 1;
-        req.planLimits = PLAN_LIMITS.pro;
+        req.tenant = { id: 1, plan: 'enterprise', estado_trial: 'activo', activo: true };
+        req.planLimits = PLAN_LIMITS.enterprise;
         res.locals.tenantId = 1;
-        res.locals.planLimits = PLAN_LIMITS.pro;
+        res.locals.tenant = req.tenant;
+        res.locals.planLimits = req.planLimits;
+        return next();
+    }
+
+    // Check if accessing via subdomain (tenant-slug.mirestconia.com)
+    const isSubdomain = parts.length >= 3 && parts[1] === 'mirestconia' && parts[2] === 'com' && parts[0] !== 'www';
+
+    if (isSubdomain) {
+        resolveTenant(parts[0]).then(tenant => {
+            if (tenant) { setTenantOnReq(req, res, tenant); }
+            else { req.tenantId = userTenantId || 1; req.planLimits = PLAN_LIMITS.free; res.locals.tenantId = req.tenantId; res.locals.planLimits = req.planLimits; }
+            next();
+        }).catch(() => { req.tenantId = userTenantId || 1; req.planLimits = PLAN_LIMITS.free; res.locals.tenantId = req.tenantId; next(); });
+    } else if (userTenantId) {
+        // Main domain (www.mirestconia.com) — resolve from logged-in user's tenant
+        resolveTenantById(userTenantId).then(tenant => {
+            if (tenant) { setTenantOnReq(req, res, tenant); }
+            else { req.tenantId = userTenantId; req.planLimits = PLAN_LIMITS.free; res.locals.tenantId = userTenantId; res.locals.planLimits = req.planLimits; }
+            next();
+        }).catch(() => { req.tenantId = userTenantId; req.planLimits = PLAN_LIMITS.free; res.locals.tenantId = userTenantId; next(); });
+    } else {
+        // No user logged in — default tenant 1 for public pages
+        req.tenantId = 1;
+        req.planLimits = PLAN_LIMITS.free;
+        res.locals.tenantId = 1;
+        res.locals.planLimits = req.planLimits;
         next();
     }
 }
