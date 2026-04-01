@@ -18,7 +18,7 @@ const storage = multer.diskStorage({
 });
 const upload = multer({
   storage,
-  limits: { fileSize: 100 * 1024 * 1024 }, // 100 MB for video support
+  limits: { fileSize: 30 * 1024 * 1024 }, // 30 MB max per file
   fileFilter: (_req, file, cb) => {
     if (file.fieldname === 'foto_local') {
       if (/\.(jpg|jpeg|png|webp)$/i.test(file.originalname)) cb(null, true);
@@ -32,9 +32,9 @@ const upload = multer({
   }
 });
 
-// Accept both foto and video fields
+// Accept multiple fotos (2-3) and 1 video
 const uploadFields = upload.fields([
-  { name: 'foto_local', maxCount: 1 },
+  { name: 'foto_local', maxCount: 3 },
   { name: 'video_local', maxCount: 1 }
 ]);
 
@@ -100,18 +100,23 @@ router.post('/', (req, res, next) => {
       return res.render('solicitud', { user, googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || '', error: 'Selecciona el tipo de negocio' });
     }
 
-    // File uploads
-    const fotoFile = req.files?.foto_local?.[0];
+    // File uploads — 2-3 fotos + 1 video
+    const fotoFiles = req.files?.foto_local || [];
     const videoFile = req.files?.video_local?.[0];
 
-    if (!fotoFile) {
-      return res.render('solicitud', { user, googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || '', error: 'Debes subir una foto de tu local' });
+    if (fotoFiles.length === 0) {
+      return res.render('solicitud', { user, googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || '', error: 'Debes subir al menos 2 fotos de tu local' });
+    }
+    if (fotoFiles.length < 2) {
+      return res.render('solicitud', { user, googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || '', error: 'Sube entre 2 y 3 fotos de tu local' });
     }
     if (!videoFile) {
       return res.render('solicitud', { user, googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || '', error: 'Debes subir un video de tu local (15-30 segundos)' });
     }
 
-    const foto_local_url = '/uploads/solicitudes/' + fotoFile.filename;
+    const fotosUrls = fotoFiles.map(f => '/uploads/solicitudes/' + f.filename);
+    const foto_local_url = fotosUrls[0]; // primary
+    const fotosJson = JSON.stringify(fotosUrls);
     const video_local_url = '/uploads/solicitudes/' + videoFile.filename;
 
     // Check for existing pending solicitud
@@ -121,36 +126,34 @@ router.post('/', (req, res, next) => {
     );
 
     if (existing) {
-      // Update existing
       await db.query(
         `UPDATE solicitudes_registro SET
            nombre_representante = ?, dni = ?, cargo = ?, nombre_restaurante = ?, ruc = ?, tipo_negocio = ?,
-           foto_local_url = COALESCE(?, foto_local_url), video_local_url = COALESCE(?, video_local_url),
+           foto_local_url = ?, fotos = ?::jsonb, video_local_url = ?,
            latitud = ?, longitud = ?, direccion = ?, telefono_solicitante = ?, updated_at = NOW()
          WHERE id = ?`,
         [
           nombre_representante.trim(), dni.trim(), cargo, nombre_restaurante.trim(),
           ruc ? ruc.trim() : null, tipo_negocio,
-          foto_local_url, video_local_url,
+          foto_local_url, fotosJson, video_local_url,
           latitud || null, longitud || null,
           direccion || null, telefono_solicitante || null, existing.id
         ]
       );
-      console.log(`[Solicitud] Updated existing solicitud id=${existing.id} for tenant=${tenantId}`);
+      console.log(`[Solicitud] Updated solicitud id=${existing.id} for tenant=${tenantId}`);
     } else {
-      // Insert new
       const [result] = await db.query(
         `INSERT INTO solicitudes_registro
            (tenant_id, usuario_id, estado, nombre_representante, dni, cargo, nombre_restaurante, ruc, tipo_negocio,
-            foto_local_url, video_local_url, latitud, longitud, direccion, telefono_solicitante, intento)
-         VALUES (?, ?, 'pendiente', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
+            foto_local_url, fotos, video_local_url, latitud, longitud, direccion, telefono_solicitante, intento)
+         VALUES (?, ?, 'pendiente', ?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?, ?, ?, ?, ?, 1)`,
         [
           tenantId, userId, nombre_representante.trim(), dni.trim(), cargo, nombre_restaurante.trim(),
-          ruc ? ruc.trim() : null, tipo_negocio, foto_local_url, video_local_url,
+          ruc ? ruc.trim() : null, tipo_negocio, foto_local_url, fotosJson, video_local_url,
           latitud || null, longitud || null, direccion || null, telefono_solicitante || null
         ]
       );
-      console.log(`[Solicitud] Created new solicitud id=${result.insertId} for tenant=${tenantId}`);
+      console.log(`[Solicitud] Created solicitud id=${result.insertId} for tenant=${tenantId}`);
     }
 
     // Update tenant nombre with restaurant name
