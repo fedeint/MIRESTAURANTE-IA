@@ -156,19 +156,16 @@
                         <% } %>
                       </div>
                       <div class="col-md-4">
+                        <div style="font-size:0.72rem;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Ubicación</div>
+                        <% if (s.direccion) { %>
+                          <div style="font-size:0.8rem;color:#e2e8f0;margin-bottom:6px"><%= s.direccion %></div>
+                        <% } %>
                         <% if (s.latitud && s.longitud) { %>
-                          <div style="font-size:0.72rem;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Mapa</div>
-                          <a href="https://www.google.com/maps?q=<%= s.latitud %>,<%= s.longitud %>" target="_blank">
-                            <img
-                              src="https://maps.googleapis.com/maps/api/staticmap?center=<%= s.latitud %>,<%= s.longitud %>&zoom=16&size=200x120&markers=color:red%7C<%= s.latitud %>,<%= s.longitud %>&key=<%= process.env.GOOGLE_MAPS_API_KEY || '' %>"
-                              style="width:200px;height:120px;border-radius:8px;object-fit:cover;display:block"
-                              alt="Mapa"
-                              onerror="this.style.display='none';this.nextElementSibling.style.display='block'"
-                            >
-                            <span style="display:none;font-size:0.8rem;color:#f97316;"><i class='bi bi-geo-alt me-1'></i>Ver en Google Maps</span>
+                          <a href="https://www.google.com/maps/search/<%= encodeURIComponent(s.nombre_restaurante || s.direccion || '') %>/@<%= s.latitud %>,<%= s.longitud %>,17z" target="_blank"
+                             style="display:inline-flex;align-items:center;gap:6px;background:rgba(249,115,22,0.12);color:#f97316;padding:6px 12px;border-radius:8px;font-size:0.8rem;font-weight:600;text-decoration:none">
+                            <i class="bi bi-geo-alt-fill"></i> Ver en Google Maps
                           </a>
                         <% } else { %>
-                          <div style="font-size:0.72rem;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Mapa</div>
                           <span style="font-size:0.8rem;color:#475569">Sin ubicación</span>
                         <% } %>
                       </div>

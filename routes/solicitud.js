@@ -51,14 +51,28 @@ router.post('/upload', (req, res) => {
       try {
         publicUrl = await uploadFile(file.buffer, storagePath, file.mimetype);
       } catch (uploadErr) {
-        console.warn('[Solicitud/upload] Supabase upload failed, using fallback:', uploadErr.message);
+        console.warn('[Solicitud/upload] Supabase upload failed:', uploadErr.message);
       }
 
-      // Fallback: save to disk if Supabase is not configured or failed
+      // Fallback: store as base64 data URL in a DB table (persistent on Vercel)
       if (!publicUrl) {
-        const localPath = path.join(fallbackDir, safeName);
-        fs.writeFileSync(localPath, file.buffer);
-        publicUrl = '/uploads/solicitudes/' + safeName;
+        try {
+          // Save to uploads table for persistence
+          const base64 = file.buffer.toString('base64');
+          const dataUrl = `data:${file.mimetype};base64,${base64}`;
+          const [result] = await db.query(
+            `INSERT INTO uploads_temp (tenant_id, filename, mimetype, data_url, created_at)
+             VALUES (?, ?, ?, ?, NOW()) RETURNING id`,
+            [user.tenant_id, safeName, file.mimetype, dataUrl]
+          );
+          publicUrl = '/solicitud/file/' + result.insertId;
+        } catch (dbErr) {
+          console.warn('[Solicitud/upload] DB fallback failed, using disk:', dbErr.message);
+          // Last resort: disk (ephemeral on Vercel)
+          const localPath = path.join(fallbackDir, safeName);
+          fs.writeFileSync(localPath, file.buffer);
+          publicUrl = '/uploads/solicitudes/' + safeName;
+        }
       }
 
       return res.json({ url: publicUrl });
@@ -199,6 +213,26 @@ router.post('/', express.json(), async (req, res) => {
   } catch (err) {
     console.error('[Solicitud] Error saving solicitud:', err.message, err.stack);
     res.status(500).json({ error: 'Error al guardar. Intenta nuevamente.' });
+  }
+});
+
+// GET /solicitud/file/:id — serve uploaded file from DB
+router.get('/file/:id', async (req, res) => {
+  try {
+    const [[row]] = await db.query('SELECT mimetype, data_url FROM uploads_temp WHERE id = ?', [req.params.id]);
+    if (!row || !row.data_url) return res.status(404).send('Not found');
+
+    // data_url format: data:mime;base64,XXXX
+    const matches = row.data_url.match(/^data:([^;]+);base64,(.+)$/);
+    if (!matches) return res.status(400).send('Invalid data');
+
+    const buffer = Buffer.from(matches[2], 'base64');
+    res.set('Content-Type', row.mimetype);
+    res.set('Cache-Control', 'public, max-age=86400');
+    res.send(buffer);
+  } catch (err) {
+    console.error('[Solicitud/file] Error:', err.message);
+    res.status(500).send('Error loading file');
   }
 });
 
