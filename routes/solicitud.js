@@ -159,6 +159,14 @@ router.post('/', (req, res, next) => {
     // Update tenant nombre with restaurant name
     await db.query('UPDATE tenants SET nombre = ? WHERE id = ?', [nombre_restaurante.trim(), tenantId]);
 
+    // Send confirmation email to user
+    try {
+      const { enviarEmailSolicitudRecibida } = require('../services/notificaciones-trial');
+      await enviarEmailSolicitudRecibida(user.google_email || user.usuario, nombre_representante.trim());
+    } catch (emailErr) {
+      console.warn('[Solicitud] User email failed (non-blocking):', emailErr.message);
+    }
+
     // Notify superadmin
     try {
       const linkPanel = (process.env.APP_URL || '') + '/superadmin/solicitudes';
@@ -169,7 +177,7 @@ router.post('/', (req, res, next) => {
         distrito: direccion || ''
       });
     } catch (notifErr) {
-      console.warn('[Solicitud] Notification failed (non-blocking):', notifErr.message);
+      console.warn('[Solicitud] Superadmin notification failed (non-blocking):', notifErr.message);
     }
 
     res.redirect('/solicitud/confirmacion');
