@@ -95,7 +95,7 @@
                   </td>
                   <td><span style="font-size:0.8rem"><%= s.tipo_negocio || '—' %></span></td>
                   <td>
-                    <div style="font-size:0.8rem"><%= s.usuario_nombre %></div>
+                    <div style="font-size:0.8rem"><%= s.nombre_representante || s.usuario_nombre %></div>
                     <div style="font-size:0.72rem;color:#64748b"><%= s.cargo || '' %></div>
                   </td>
                   <td style="font-size:0.8rem;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><%= s.direccion || '—' %></td>
@@ -128,9 +128,10 @@
                 <tr id="detalle-<%= s.id %>" class="detail-row" style="display:none">
                   <td colspan="7">
                     <div class="row g-3">
-                      <div class="col-md-6">
+                      <div class="col-md-4">
                         <div style="font-size:0.72rem;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Datos personales</div>
                         <div class="d-flex flex-wrap gap-1">
+                          <% if (s.nombre_representante) { %><span class="detail-tag"><i class="bi bi-person me-1"></i><%= s.nombre_representante %></span><% } %>
                           <% if (s.dni) { %><span class="detail-tag">DNI: <%= s.dni %></span><% } %>
                           <% if (s.cargo) { %><span class="detail-tag">Cargo: <%= s.cargo %></span><% } %>
                           <% if (s.ruc) { %><span class="detail-tag">RUC: <%= s.ruc %></span><% } %>
@@ -140,24 +141,35 @@
                           <div class="mt-2" style="font-size:0.8rem;color:#818cf8">Nota: <%= s.notas_superman %></div>
                         <% } %>
                       </div>
-                      <div class="col-md-3">
-                        <% if (s.foto_local_url) { %>
-                          <div style="font-size:0.72rem;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Foto del local</div>
-                          <img src="<%= s.foto_local_url %>" class="foto-thumb" onclick="window.open('<%= s.foto_local_url %>','_blank')" alt="Foto local">
+                      <div class="col-md-4">
+                        <div style="font-size:0.72rem;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Fotos del local</div>
+                        <div class="d-flex gap-2 flex-wrap">
+                          <% const fotosArr = s.fotos ? (typeof s.fotos === 'string' ? JSON.parse(s.fotos) : s.fotos) : (s.foto_local_url ? [s.foto_local_url] : []); %>
+                          <% fotosArr.forEach(function(url) { %>
+                            <img src="<%= url %>" class="foto-thumb" onclick="window.open('<%= url %>','_blank')" alt="Foto" onerror="this.style.display='none'">
+                          <% }); %>
+                          <% if (fotosArr.length === 0) { %><span style="font-size:0.8rem;color:#475569">Sin fotos</span><% } %>
+                        </div>
+                        <% if (s.video_local_url) { %>
+                          <div style="font-size:0.72rem;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin:12px 0 8px">Video del local</div>
+                          <video src="<%= s.video_local_url %>" controls style="width:200px;border-radius:8px;max-height:140px" onerror="this.outerHTML='<a href=\'<%= s.video_local_url %>\' target=\'_blank\' style=\'font-size:0.8rem;color:#f97316\'><i class=\'bi bi-play-circle me-1\'></i>Ver video</a>'"></video>
                         <% } %>
                       </div>
-                      <div class="col-md-3">
+                      <div class="col-md-4">
                         <% if (s.latitud && s.longitud) { %>
                           <div style="font-size:0.72rem;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Mapa</div>
                           <a href="https://www.google.com/maps?q=<%= s.latitud %>,<%= s.longitud %>" target="_blank">
                             <img
                               src="https://maps.googleapis.com/maps/api/staticmap?center=<%= s.latitud %>,<%= s.longitud %>&zoom=16&size=200x120&markers=color:red%7C<%= s.latitud %>,<%= s.longitud %>&key=<%= process.env.GOOGLE_MAPS_API_KEY || '' %>"
                               style="width:200px;height:120px;border-radius:8px;object-fit:cover;display:block"
-                              alt="Mapa del local"
+                              alt="Mapa"
                               onerror="this.style.display='none';this.nextElementSibling.style.display='block'"
                             >
                             <span style="display:none;font-size:0.8rem;color:#f97316;"><i class='bi bi-geo-alt me-1'></i>Ver en Google Maps</span>
                           </a>
+                        <% } else { %>
+                          <div style="font-size:0.72rem;color:#64748b;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">Mapa</div>
+                          <span style="font-size:0.8rem;color:#475569">Sin ubicación</span>
                         <% } %>
                       </div>
                     </div>

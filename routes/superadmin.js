@@ -672,9 +672,9 @@ router.get('/solicitudes', async (req, res) => {
   try {
     const [solicitudes] = await db.query(
       `SELECT
-         sr.id, sr.estado, sr.nombre_restaurante, sr.tipo_negocio,
+         sr.id, sr.estado, sr.nombre_restaurante, sr.nombre_representante, sr.tipo_negocio,
          sr.direccion, sr.dni, sr.cargo, sr.ruc, sr.latitud, sr.longitud,
-         sr.foto_local_url, sr.notas_superman, sr.plan_asignado,
+         sr.foto_local_url, sr.fotos, sr.video_local_url, sr.notas_superman, sr.plan_asignado,
          sr.telefono_solicitante, sr.created_at, sr.intento,
          sr.motivo_rechazo,
          t.nombre AS tenant_nombre, t.subdominio,
