@@ -456,6 +456,58 @@
     }
 
     .pb-safe { padding-bottom: max(16px, env(safe-area-inset-bottom)); }
+
+    /* Upload progress */
+    .upload-progress-wrap {
+      margin-top: 8px;
+    }
+    .upload-progress-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 0;
+      font-size: 0.78rem;
+      color: #0a0f24;
+    }
+    .upload-progress-item .upi-name {
+      flex: 1;
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .upload-progress-item .upi-status {
+      flex-shrink: 0;
+      font-weight: 600;
+    }
+    .upload-progress-item .upi-status.uploading { color: #ef520f; }
+    .upload-progress-item .upi-status.done { color: #22C55E; }
+    .upload-progress-item .upi-status.error { color: #EF4444; }
+    .upload-progress-bar {
+      width: 100%;
+      height: 4px;
+      background: #e2e8f0;
+      border-radius: 2px;
+      overflow: hidden;
+      margin-top: 2px;
+    }
+    .upload-progress-bar .bar {
+      height: 100%;
+      background: linear-gradient(90deg, #ef520f, #df2c05);
+      border-radius: 2px;
+      transition: width 0.3s ease;
+      width: 0%;
+    }
+    .alert-error-js {
+      background: rgba(239,68,68,0.08);
+      border: 1px solid rgba(239,68,68,0.2);
+      color: #dc2626;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 0.85rem;
+      margin-bottom: 12px;
+      display: none;
+    }
   </style>
 </head>
 <body>
@@ -474,7 +526,8 @@
       <div class="alert-error"><%= error %></div>
     <% } %>
 
-    <form action="/solicitud" method="POST" enctype="multipart/form-data" id="solicitudForm">
+    <div class="alert-error-js" id="jsError"></div>
+    <form id="solicitudForm">
 
       <!-- Google profile (read-only) -->
       <div class="sol-card">
@@ -612,12 +665,13 @@
         <div class="sol-card-title">Fotos del local <span class="badge-required">2 a 3 fotos</span></div>
 
         <div class="upload-area" id="fotoUploadArea" onclick="document.getElementById('fotoInput').click()">
-          <input type="file" name="foto_local" id="fotoInput" accept="image/jpeg,image/png,image/webp" multiple required onchange="previewFotos(event)">
+          <input type="file" id="fotoInput" accept="image/jpeg,image/png,image/webp" multiple onchange="handleFotoSelect(event)">
           <div class="upload-icon">📷</div>
           <div class="upload-text">Toca para subir 2-3 fotos de tu local</div>
-          <div class="form-hint" style="margin-top:4px">JPG, PNG o WebP — máximo 30 MB cada una</div>
+          <div class="form-hint" style="margin-top:4px">JPG, PNG o WebP — maximo 30 MB cada una</div>
         </div>
         <div id="fotoPreviews" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"></div>
+        <div class="upload-progress-wrap" id="fotoProgress"></div>
       </div>
 
       <!-- Video (REQUIRED) -->
@@ -625,7 +679,7 @@
         <div class="sol-card-title">Video del local <span class="badge-required">Obligatorio</span></div>
 
         <div class="upload-area" id="videoUploadArea" onclick="document.getElementById('videoInput').click()">
-          <input type="file" name="video_local" id="videoInput" accept="video/mp4,video/mov,video/quicktime,video/webm" required onchange="previewVideo(event)">
+          <input type="file" id="videoInput" accept="video/mp4,video/mov,video/quicktime,video/webm" onchange="handleVideoSelect(event)">
           <div class="upload-icon">🎬</div>
           <div class="upload-text">Toca para subir un video de tu local</div>
           <div class="form-hint" style="margin-top:4px">15-30 segundos — MP4, MOV o WebM — máximo 30 MB</div>
@@ -633,6 +687,7 @@
         <video id="videoPreview" class="video-preview" controls></video>
         <div id="videoFilename" class="upload-filename" style="display:none"></div>
         <div id="videoError" style="font-size:0.72rem;color:#dc2626;display:none;margin-top:4px"></div>
+        <div class="upload-progress-wrap" id="videoProgress"></div>
       </div>
 
       <div class="pb-safe">
@@ -648,10 +703,22 @@
   </div>
 
   <script>
+    // ── State for uploaded file URLs ──
+    var uploadedFotoUrls = [];
+    var uploadedVideoUrl = null;
+    var isUploading = false;
+
+    function showJsError(msg) {
+      var el = document.getElementById('jsError');
+      el.textContent = msg;
+      el.style.display = msg ? 'block' : 'none';
+      if (msg) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
     // RUC validation on blur
     document.getElementById('rucInput').addEventListener('blur', function() {
-      const val = this.value.trim();
-      const err = document.getElementById('rucError');
+      var val = this.value.trim();
+      var err = document.getElementById('rucError');
       if (val && !/^\d{11}$/.test(val)) {
         err.style.display = 'block';
         this.style.borderColor = '#ef4444';
@@ -661,49 +728,140 @@
       }
     });
 
-    // Photos preview (multiple)
-    function previewFotos(event) {
-      const files = event.target.files;
+    // ── Upload a single file to the server ──
+    function uploadSingleFile(file, progressContainer, index) {
+      return new Promise(function(resolve, reject) {
+        var itemId = 'upload-item-' + Date.now() + '-' + index;
+        var div = document.createElement('div');
+        div.className = 'upload-progress-item';
+        div.id = itemId;
+        div.innerHTML =
+          '<span class="upi-name">' + escFileName(file.name) + '</span>' +
+          '<span class="upi-status uploading">Subiendo...</span>' +
+          '<div class="upload-progress-bar"><div class="bar" id="bar-' + itemId + '"></div></div>';
+        progressContainer.appendChild(div);
+
+        var formData = new FormData();
+        formData.append('file', file);
+
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '/solicitud/upload');
+
+        xhr.upload.addEventListener('progress', function(e) {
+          if (e.lengthComputable) {
+            var pct = Math.round((e.loaded / e.total) * 100);
+            var bar = document.getElementById('bar-' + itemId);
+            if (bar) bar.style.width = pct + '%';
+          }
+        });
+
+        xhr.onload = function() {
+          var statusEl = div.querySelector('.upi-status');
+          if (xhr.status === 200) {
+            try {
+              var data = JSON.parse(xhr.responseText);
+              statusEl.textContent = 'Listo';
+              statusEl.className = 'upi-status done';
+              var bar = document.getElementById('bar-' + itemId);
+              if (bar) bar.style.width = '100%';
+              resolve(data.url);
+            } catch (e) {
+              statusEl.textContent = 'Error';
+              statusEl.className = 'upi-status error';
+              reject(new Error('Respuesta invalida del servidor'));
+            }
+          } else {
+            var errMsg = 'Error al subir';
+            try { errMsg = JSON.parse(xhr.responseText).error || errMsg; } catch (_) {}
+            statusEl.textContent = 'Error';
+            statusEl.className = 'upi-status error';
+            reject(new Error(errMsg));
+          }
+        };
+
+        xhr.onerror = function() {
+          var statusEl = div.querySelector('.upi-status');
+          statusEl.textContent = 'Error de red';
+          statusEl.className = 'upi-status error';
+          reject(new Error('Error de red al subir archivo'));
+        };
+
+        xhr.send(formData);
+      });
+    }
+
+    function escFileName(s) { var d = document.createElement('span'); d.textContent = s; return d.innerHTML; }
+
+    // ── Handle photo selection: preview + upload immediately ──
+    function handleFotoSelect(event) {
+      var files = event.target.files;
       if (!files || files.length === 0) return;
       if (files.length > 3) {
-        alert('Máximo 3 fotos permitidas.');
+        alert('Maximo 3 fotos permitidas.');
         event.target.value = '';
         return;
       }
-      const container = document.getElementById('fotoPreviews');
+
+      // Show previews
+      var container = document.getElementById('fotoPreviews');
       container.innerHTML = '';
-      for (let i = 0; i < files.length; i++) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          const img = document.createElement('img');
-          img.src = e.target.result;
-          img.style.cssText = 'width:90px;height:90px;object-fit:cover;border-radius:8px;border:2px solid #e2e8f0;';
-          container.appendChild(img);
-        };
-        reader.readAsDataURL(files[i]);
+      for (var i = 0; i < files.length; i++) {
+        (function(f) {
+          var reader = new FileReader();
+          reader.onload = function(e) {
+            var img = document.createElement('img');
+            img.src = e.target.result;
+            img.style.cssText = 'width:90px;height:90px;object-fit:cover;border-radius:8px;border:2px solid #e2e8f0;';
+            container.appendChild(img);
+          };
+          reader.readAsDataURL(f);
+        })(files[i]);
       }
       document.getElementById('fotoUploadArea').classList.add('has-file');
+
+      // Upload each photo
+      var progressEl = document.getElementById('fotoProgress');
+      progressEl.innerHTML = '';
+      uploadedFotoUrls = [];
+      isUploading = true;
+      updateSubmitButton();
+
+      var promises = [];
+      for (var j = 0; j < files.length; j++) {
+        promises.push(uploadSingleFile(files[j], progressEl, j));
+      }
+
+      Promise.all(promises).then(function(urls) {
+        uploadedFotoUrls = urls;
+        isUploading = false;
+        updateSubmitButton();
+      }).catch(function(err) {
+        showJsError('Error al subir fotos: ' + err.message);
+        isUploading = false;
+        uploadedFotoUrls = [];
+        updateSubmitButton();
+      });
     }
 
-    // Video preview
-    function previewVideo(event) {
-      const file = event.target.files[0];
-      const errorEl = document.getElementById('videoError');
-      const filenameEl = document.getElementById('videoFilename');
+    // ── Handle video selection: preview + upload immediately ──
+    function handleVideoSelect(event) {
+      var file = event.target.files[0];
+      var errorEl = document.getElementById('videoError');
+      var filenameEl = document.getElementById('videoFilename');
       errorEl.style.display = 'none';
 
       if (!file) return;
 
       // Validate file size (30 MB max)
       if (file.size > 30 * 1024 * 1024) {
-        errorEl.textContent = 'El video es demasiado grande. Máximo 30 MB.';
+        errorEl.textContent = 'El video es demasiado grande. Maximo 30 MB.';
         errorEl.style.display = 'block';
         event.target.value = '';
         return;
       }
 
-      const video = document.getElementById('videoPreview');
-      const url = URL.createObjectURL(file);
+      var video = document.getElementById('videoPreview');
+      var url = URL.createObjectURL(file);
       video.src = url;
       video.style.display = 'block';
       filenameEl.textContent = file.name;
@@ -713,32 +871,101 @@
       // Validate duration when metadata loads
       video.onloadedmetadata = function() {
         if (video.duration > 60) {
-          errorEl.textContent = 'El video es muy largo. Máximo 60 segundos (recomendado: 15-30 seg).';
+          errorEl.textContent = 'El video es muy largo. Maximo 60 segundos (recomendado: 15-30 seg).';
           errorEl.style.display = 'block';
         }
       };
+
+      // Upload video
+      var progressEl = document.getElementById('videoProgress');
+      progressEl.innerHTML = '';
+      uploadedVideoUrl = null;
+      isUploading = true;
+      updateSubmitButton();
+
+      uploadSingleFile(file, progressEl, 0).then(function(fileUrl) {
+        uploadedVideoUrl = fileUrl;
+        isUploading = false;
+        updateSubmitButton();
+      }).catch(function(err) {
+        showJsError('Error al subir video: ' + err.message);
+        isUploading = false;
+        uploadedVideoUrl = null;
+        updateSubmitButton();
+      });
     }
 
-    // Form validation before submit
+    function updateSubmitButton() {
+      var btn = document.getElementById('submitBtn');
+      if (isUploading) {
+        btn.disabled = true;
+        btn.textContent = 'Subiendo archivos...';
+      } else {
+        btn.disabled = false;
+        btn.textContent = 'Enviar solicitud';
+      }
+    }
+
+    // ── Form submission via fetch (JSON, no files) ──
     document.getElementById('solicitudForm').addEventListener('submit', function(e) {
-      const fotoInput = document.getElementById('fotoInput');
-      const videoInput = document.getElementById('videoInput');
+      e.preventDefault();
+      showJsError('');
 
-      if (!fotoInput.files || fotoInput.files.length < 2) {
-        e.preventDefault();
-        alert('Debes subir entre 2 y 3 fotos de tu local.');
+      if (isUploading) {
+        showJsError('Espera a que terminen de subir los archivos.');
         return;
       }
 
-      if (!videoInput.files || videoInput.files.length === 0) {
-        e.preventDefault();
-        alert('Debes subir un video de tu local (15-30 segundos).');
+      if (uploadedFotoUrls.length < 2) {
+        showJsError('Debes subir entre 2 y 3 fotos de tu local.');
         return;
       }
 
-      const btn = document.getElementById('submitBtn');
+      if (!uploadedVideoUrl) {
+        showJsError('Debes subir un video de tu local (15-30 segundos).');
+        return;
+      }
+
+      var btn = document.getElementById('submitBtn');
       btn.disabled = true;
-      btn.textContent = 'Enviando...';
+      btn.textContent = 'Enviando solicitud...';
+
+      var form = document.getElementById('solicitudForm');
+      var body = {
+        nombre_representante: form.querySelector('[name="nombre_representante"]').value,
+        dni: form.querySelector('[name="dni"]').value,
+        cargo: form.querySelector('[name="cargo"]').value,
+        nombre_restaurante: form.querySelector('[name="nombre_restaurante"]').value,
+        ruc: form.querySelector('[name="ruc"]').value,
+        tipo_negocio: form.querySelector('[name="tipo_negocio"]').value,
+        direccion: form.querySelector('[name="direccion"]').value,
+        latitud: form.querySelector('[name="latitud"]').value || null,
+        longitud: form.querySelector('[name="longitud"]').value || null,
+        telefono_solicitante: form.querySelector('[name="telefono_solicitante"]').value,
+        foto_urls: uploadedFotoUrls,
+        video_url: uploadedVideoUrl
+      };
+
+      fetch('/solicitud', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      })
+      .then(function(resp) { return resp.json().then(function(data) { return { ok: resp.ok, data: data }; }); })
+      .then(function(result) {
+        if (result.ok && result.data.redirect) {
+          window.location.href = result.data.redirect;
+        } else {
+          showJsError(result.data.error || 'Error al enviar. Intenta nuevamente.');
+          btn.disabled = false;
+          btn.textContent = 'Enviar solicitud';
+        }
+      })
+      .catch(function(err) {
+        showJsError('Error de conexion. Verifica tu internet e intenta nuevamente.');
+        btn.disabled = false;
+        btn.textContent = 'Enviar solicitud';
+      });
     });
 
     <% if (googleMapsApiKey) { %>

@@ -6,37 +6,68 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const { notificarSuperadminWhatsApp, notificarSuperadminEmail } = require('../services/notificaciones-trial');
+const { uploadFile } = require('../services/supabase-storage');
 
-// Multer for foto_local + video_local — use /tmp on Vercel (read-only filesystem)
-const uploadDir = process.env.VERCEL
+// ── Single-file multer for the /upload endpoint (browser uploads one file at a time) ──
+const singleUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 30 * 1024 * 1024 }, // 30 MB max
+  fileFilter: (_req, file, cb) => {
+    if (/\.(jpg|jpeg|png|webp)$/i.test(file.originalname)) cb(null, true);
+    else if (/\.(mp4|mov|webm)$/i.test(file.originalname)) cb(null, true);
+    else cb(new Error('Formato no permitido. Solo JPG/PNG/WebP o MP4/MOV/WebM'));
+  }
+}).single('file');
+
+// Fallback: disk storage for when Supabase is not configured
+const fallbackDir = process.env.VERCEL
   ? path.join('/tmp', 'uploads', 'solicitudes')
   : path.join(__dirname, '../public/uploads/solicitudes');
-try { if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true }); } catch (_) {}
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, uploadDir),
-  filename: (_req, file, cb) => cb(null, Date.now() + '-' + file.originalname.replace(/[^a-zA-Z0-9.]/g, '_'))
-});
-const upload = multer({
-  storage,
-  limits: { fileSize: 30 * 1024 * 1024 }, // 30 MB max per file
-  fileFilter: (_req, file, cb) => {
-    if (file.fieldname === 'foto_local') {
-      if (/\.(jpg|jpeg|png|webp)$/i.test(file.originalname)) cb(null, true);
-      else cb(new Error('Solo se permiten imágenes JPG/PNG/WebP'));
-    } else if (file.fieldname === 'video_local') {
-      if (/\.(mp4|mov|webm)$/i.test(file.originalname)) cb(null, true);
-      else cb(new Error('Solo se permiten videos MP4/MOV/WebM'));
-    } else {
-      cb(null, false);
-    }
-  }
-});
+try { if (!fs.existsSync(fallbackDir)) fs.mkdirSync(fallbackDir, { recursive: true }); } catch (_) {}
 
-// Accept multiple fotos (2-3) and 1 video
-const uploadFields = upload.fields([
-  { name: 'foto_local', maxCount: 3 },
-  { name: 'video_local', maxCount: 1 }
-]);
+// POST /solicitud/upload — upload a single file (photo or video) to Supabase Storage
+// The browser sends files one at a time; we return the public URL.
+router.post('/upload', (req, res) => {
+  const user = req.session?.user;
+  if (!user) return res.status(401).json({ error: 'No autenticado' });
+
+  singleUpload(req, res, async (err) => {
+    if (err instanceof multer.MulterError) {
+      const msg = err.code === 'LIMIT_FILE_SIZE'
+        ? 'El archivo es demasiado grande. Maximo 30 MB.'
+        : 'Error al subir archivo.';
+      return res.status(400).json({ error: msg });
+    }
+    if (err) return res.status(400).json({ error: err.message });
+    if (!req.file) return res.status(400).json({ error: 'No se recibio archivo' });
+
+    try {
+      const file = req.file;
+      const safeName = Date.now() + '-' + file.originalname.replace(/[^a-zA-Z0-9.]/g, '_');
+      const storagePath = `solicitudes/tenant-${user.tenant_id}/${safeName}`;
+
+      // Try Supabase Storage first
+      let publicUrl = null;
+      try {
+        publicUrl = await uploadFile(file.buffer, storagePath, file.mimetype);
+      } catch (uploadErr) {
+        console.warn('[Solicitud/upload] Supabase upload failed, using fallback:', uploadErr.message);
+      }
+
+      // Fallback: save to disk if Supabase is not configured or failed
+      if (!publicUrl) {
+        const localPath = path.join(fallbackDir, safeName);
+        fs.writeFileSync(localPath, file.buffer);
+        publicUrl = '/uploads/solicitudes/' + safeName;
+      }
+
+      return res.json({ url: publicUrl });
+    } catch (e) {
+      console.error('[Solicitud/upload] Error:', e.message);
+      return res.status(500).json({ error: 'Error al subir archivo. Intenta nuevamente.' });
+    }
+  });
+});
 
 // GET /solicitud — show form
 router.get('/', (req, res) => {
@@ -49,27 +80,10 @@ router.get('/', (req, res) => {
   });
 });
 
-// POST /solicitud — save form
-router.post('/', (req, res, next) => {
-  uploadFields(req, res, (err) => {
-    if (err instanceof multer.MulterError) {
-      console.error('Multer error:', err.message, err.code);
-      const user = req.session?.user;
-      if (!user) return res.redirect('/login');
-      let msg = 'Error al subir archivo.';
-      if (err.code === 'LIMIT_FILE_SIZE') msg = 'El archivo es demasiado grande. Máximo 100 MB.';
-      return res.render('solicitud', { user, googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || '', error: msg });
-    } else if (err) {
-      console.error('Upload error:', err.message);
-      const user = req.session?.user;
-      if (!user) return res.redirect('/login');
-      return res.render('solicitud', { user, googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || '', error: err.message });
-    }
-    next();
-  });
-}, async (req, res) => {
+// POST /solicitud — save form (now accepts JSON body with pre-uploaded file URLs)
+router.post('/', express.json(), async (req, res) => {
   const user = req.session?.user;
-  if (!user) return res.redirect('/login');
+  if (!user) return res.status(401).json({ error: 'No autenticado' });
 
   const tenantId = user.tenant_id;
   const userId = user.id;
@@ -77,47 +91,48 @@ router.post('/', (req, res, next) => {
   try {
     const {
       nombre_representante, dni, cargo, nombre_restaurante, ruc, tipo_negocio,
-      direccion, latitud, longitud, telefono_solicitante
+      direccion, latitud, longitud, telefono_solicitante,
+      foto_urls, video_url
     } = req.body;
+
+    // Helper to return JSON errors
+    const jsonError = (msg) => res.status(400).json({ error: msg });
 
     // Validations
     if (!nombre_representante || nombre_representante.trim().length < 2) {
-      return res.render('solicitud', { user, googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || '', error: 'Ingresa el nombre del representante' });
+      return jsonError('Ingresa el nombre del representante');
     }
     if (!dni || !/^\d{8}$/.test(dni.trim())) {
-      return res.render('solicitud', { user, googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || '', error: 'El DNI debe tener 8 dígitos' });
+      return jsonError('El DNI debe tener 8 digitos');
     }
     if (!cargo) {
-      return res.render('solicitud', { user, googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || '', error: 'Selecciona tu cargo' });
+      return jsonError('Selecciona tu cargo');
     }
     if (!nombre_restaurante || nombre_restaurante.trim().length < 2) {
-      return res.render('solicitud', { user, googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || '', error: 'Ingresa el nombre del restaurante' });
+      return jsonError('Ingresa el nombre del restaurante');
     }
     if (ruc && !/^\d{11}$/.test(ruc.trim())) {
-      return res.render('solicitud', { user, googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || '', error: 'El RUC debe tener 11 dígitos' });
+      return jsonError('El RUC debe tener 11 digitos');
     }
     if (!tipo_negocio) {
-      return res.render('solicitud', { user, googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || '', error: 'Selecciona el tipo de negocio' });
+      return jsonError('Selecciona el tipo de negocio');
     }
 
-    // File uploads — 2-3 fotos + 1 video
-    const fotoFiles = req.files?.foto_local || [];
-    const videoFile = req.files?.video_local?.[0];
-
-    if (fotoFiles.length === 0) {
-      return res.render('solicitud', { user, googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || '', error: 'Debes subir al menos 2 fotos de tu local' });
+    // Validate file URLs (already uploaded via POST /solicitud/upload)
+    if (!Array.isArray(foto_urls) || foto_urls.length < 2) {
+      return jsonError('Debes subir al menos 2 fotos de tu local');
     }
-    if (fotoFiles.length < 2) {
-      return res.render('solicitud', { user, googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || '', error: 'Sube entre 2 y 3 fotos de tu local' });
+    if (foto_urls.length > 3) {
+      return jsonError('Maximo 3 fotos permitidas');
     }
-    if (!videoFile) {
-      return res.render('solicitud', { user, googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || '', error: 'Debes subir un video de tu local (15-30 segundos)' });
+    if (!video_url || typeof video_url !== 'string') {
+      return jsonError('Debes subir un video de tu local (15-30 segundos)');
     }
 
-    const fotosUrls = fotoFiles.map(f => '/uploads/solicitudes/' + f.filename);
+    const fotosUrls = foto_urls;
     const foto_local_url = fotosUrls[0]; // primary
     const fotosJson = JSON.stringify(fotosUrls);
-    const video_local_url = '/uploads/solicitudes/' + videoFile.filename;
+    const video_local_url = video_url;
 
     // Check for existing pending solicitud
     const [[existing]] = await db.query(
@@ -180,10 +195,10 @@ router.post('/', (req, res, next) => {
       console.warn('[Solicitud] Superadmin notification failed (non-blocking):', notifErr.message);
     }
 
-    res.redirect('/solicitud/confirmacion');
+    res.json({ ok: true, redirect: '/solicitud/confirmacion' });
   } catch (err) {
     console.error('[Solicitud] Error saving solicitud:', err.message, err.stack);
-    res.render('solicitud', { user, googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY || '', error: 'Error al guardar. Intenta nuevamente.' });
+    res.status(500).json({ error: 'Error al guardar. Intenta nuevamente.' });
   }
 });
 
