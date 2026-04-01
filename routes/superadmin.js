@@ -760,7 +760,10 @@ router.post('/solicitudes/:id/aprobar', async (req, res) => {
     try {
       const { enviarEmailAprobacion } = require('../services/notificaciones-trial');
       await enviarEmailAprobacion(solicitud.google_email, solicitud.unom || solicitud.nombre_restaurante);
-    } catch (_) {}
+      console.log('[Superadmin] Approval email sent to', solicitud.google_email);
+    } catch (emailErr) {
+      console.error('[Superadmin] Approval email failed:', emailErr.message);
+    }
 
     res.json({ ok: true, message: 'Solicitud aprobada. Trial activo por 15 días.' });
   } catch (err) {
