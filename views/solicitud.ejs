@@ -196,6 +196,226 @@
       margin-top: 8px;
       display: none;
     }
+
+    /* Location picker styles */
+    .location-search-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .location-search-wrap .search-input-wrap {
+      flex: 1;
+      position: relative;
+    }
+    .location-search-wrap .search-input-wrap .search-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #8B8FAD;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .location-search-wrap #direccionInput {
+      padding-left: 36px;
+      padding-right: 12px;
+    }
+    .btn-map-pin {
+      width: 44px;
+      height: 44px;
+      min-width: 44px;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 10px;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1.2rem;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .btn-map-pin:active {
+      border-color: #ef520f;
+      background: rgba(239,82,15,0.06);
+    }
+
+    /* Selected place chip */
+    .selected-place {
+      display: none;
+      margin-top: 8px;
+      padding: 10px 12px;
+      background: #f8f9fc;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 10px;
+      position: relative;
+    }
+    .selected-place.active { display: block; }
+    .selected-place .sp-name {
+      font-weight: 600;
+      font-size: 0.88rem;
+      color: #0a0f24;
+    }
+    .selected-place .sp-address {
+      font-size: 0.78rem;
+      color: #8B8FAD;
+      margin-top: 2px;
+    }
+    .selected-place .sp-rating {
+      font-size: 0.72rem;
+      color: #ef520f;
+      margin-top: 2px;
+    }
+    .selected-place .sp-clear {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 22px;
+      height: 22px;
+      border: none;
+      background: #e2e8f0;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 0.7rem;
+      color: #8B8FAD;
+    }
+
+    /* Map preview after selection */
+    .map-preview-container {
+      display: none;
+      margin-top: 8px;
+      border-radius: 10px;
+      overflow: hidden;
+      height: 140px;
+    }
+    .map-preview-container.active { display: block; }
+
+    /* Fullscreen map overlay */
+    .map-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      z-index: 999;
+      background: rgba(0,0,0,0.7);
+      flex-direction: column;
+      animation: fadeIn 0.25s ease;
+    }
+    .map-overlay.active {
+      display: flex;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .map-overlay .map-overlay-header {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      z-index: 1001;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      padding-top: max(12px, env(safe-area-inset-top));
+      background: linear-gradient(180deg, rgba(10,15,36,0.85) 0%, transparent 100%);
+    }
+    .map-overlay .overlay-address {
+      flex: 1;
+      color: #fff;
+      font-size: 0.82rem;
+      font-weight: 500;
+      padding: 0 12px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .map-overlay .btn-close-map {
+      width: 36px;
+      height: 36px;
+      min-width: 36px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(8px);
+      color: #fff;
+      font-size: 1.1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .map-overlay #fullscreenMap {
+      flex: 1;
+      width: 100%;
+    }
+    .map-overlay .center-pin {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -100%);
+      z-index: 1000;
+      font-size: 2rem;
+      filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4));
+      pointer-events: none;
+      transition: transform 0.15s ease;
+    }
+    .map-overlay .center-pin.bouncing {
+      transform: translate(-50%, -110%);
+    }
+    .map-overlay .center-dot {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 999;
+      width: 6px;
+      height: 6px;
+      background: rgba(0,0,0,0.25);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+    .map-overlay .map-overlay-footer {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      z-index: 1001;
+      padding: 16px;
+      padding-bottom: max(16px, env(safe-area-inset-bottom));
+      background: linear-gradient(0deg, rgba(10,15,36,0.9) 0%, transparent 100%);
+    }
+    .map-overlay .btn-confirm-loc {
+      display: block;
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #ef520f, #df2c05);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-family: 'DM Sans', system-ui, sans-serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .map-overlay .btn-confirm-loc:active { opacity: 0.85; }
+    .map-overlay .btn-my-location {
+      position: absolute;
+      bottom: 90px;
+      right: 16px;
+      z-index: 1001;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: none;
+      background: #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
     .pb-safe { padding-bottom: max(16px, env(safe-area-inset-bottom)); }
   </style>
 </head>
@@ -320,10 +540,47 @@
         <div class="sol-card-title">Ubicación</div>
 
         <label class="form-label">Dirección del local</label>
-        <input type="text" id="direccionInput" name="direccion" class="form-control" placeholder="Busca tu dirección...">
+        <div class="location-search-wrap">
+          <div class="search-input-wrap">
+            <svg class="search-icon" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+            <input type="text" id="direccionInput" name="direccion" class="form-control" placeholder="Busca tu restaurante..." autocomplete="off">
+          </div>
+          <button type="button" class="btn-map-pin" id="btnOpenMap" title="Elegir en mapa">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef520f" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          </button>
+        </div>
         <input type="hidden" name="latitud" id="latInput">
         <input type="hidden" name="longitud" id="lngInput">
-        <div id="map-container"><div id="map" style="width:100%;height:100%"></div></div>
+
+        <!-- Selected place info -->
+        <div class="selected-place" id="selectedPlace">
+          <button type="button" class="sp-clear" id="clearPlace">&times;</button>
+          <div class="sp-name" id="spName"></div>
+          <div class="sp-address" id="spAddress"></div>
+          <div class="sp-rating" id="spRating"></div>
+        </div>
+
+        <!-- Small map preview after selection -->
+        <div class="map-preview-container" id="mapPreviewContainer">
+          <div id="mapPreview" style="width:100%;height:100%"></div>
+        </div>
+      </div>
+
+      <!-- Fullscreen map overlay -->
+      <div class="map-overlay" id="mapOverlay">
+        <div class="map-overlay-header">
+          <div class="overlay-address" id="overlayAddress">Mueve el mapa para elegir ubicación</div>
+          <button type="button" class="btn-close-map" id="btnCloseMap">&times;</button>
+        </div>
+        <div id="fullscreenMap"></div>
+        <div class="center-pin" id="centerPin">📍</div>
+        <div class="center-dot"></div>
+        <button type="button" class="btn-my-location" id="btnMyLocation" title="Mi ubicación">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0a0f24" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2"/><circle cx="12" cy="12" r="8"/></svg>
+        </button>
+        <div class="map-overlay-footer">
+          <button type="button" class="btn-confirm-loc" id="btnConfirmLoc">Confirmar ubicación</button>
+        </div>
       </div>
 
       <!-- Photo (REQUIRED) -->
@@ -451,15 +708,44 @@
     });
 
     <% if (googleMapsApiKey) { %>
-    // Google Maps Places Autocomplete
+    // ── Location Picker ──
     function initMap() {
       const input = document.getElementById('direccionInput');
+      const PERU_CENTER = { lat: -12.04, lng: -77.03 };
+
+      // State
+      let previewMap = null, previewMarker = null;
+      let fullMap = null;
+      let userLocation = null;
+      let selectedLat = null, selectedLng = null;
+      let geocoder = null;
+      let overlayDragTimeout = null;
+
+      // DOM refs
+      const latInput = document.getElementById('latInput');
+      const lngInput = document.getElementById('lngInput');
+      const selectedPlace = document.getElementById('selectedPlace');
+      const spName = document.getElementById('spName');
+      const spAddress = document.getElementById('spAddress');
+      const spRating = document.getElementById('spRating');
+      const clearPlaceBtn = document.getElementById('clearPlace');
+      const mapPreviewContainer = document.getElementById('mapPreviewContainer');
+      const mapOverlay = document.getElementById('mapOverlay');
+      const overlayAddress = document.getElementById('overlayAddress');
+      const centerPin = document.getElementById('centerPin');
+      const btnOpenMap = document.getElementById('btnOpenMap');
+      const btnCloseMap = document.getElementById('btnCloseMap');
+      const btnConfirmLoc = document.getElementById('btnConfirmLoc');
+      const btnMyLocation = document.getElementById('btnMyLocation');
+
+      geocoder = new google.maps.Geocoder();
+
+      // ── 1. Autocomplete with establishment search ──
       const autocomplete = new google.maps.places.Autocomplete(input, {
         componentRestrictions: { country: 'pe' },
-        fields: ['geometry', 'formatted_address']
+        fields: ['geometry', 'formatted_address', 'name', 'rating', 'user_ratings_total', 'place_id'],
+        types: ['establishment']
       });
-
-      let map, marker;
 
       autocomplete.addListener('place_changed', function() {
         const place = autocomplete.getPlace();
@@ -467,23 +753,171 @@
 
         const lat = place.geometry.location.lat();
         const lng = place.geometry.location.lng();
-        document.getElementById('latInput').value = lat;
-        document.getElementById('lngInput').value = lng;
+        setLocation(lat, lng, place.name || '', place.formatted_address || '', place.rating || 0, place.user_ratings_total || 0);
+      });
 
-        const mapContainer = document.getElementById('map-container');
-        mapContainer.style.display = 'block';
+      // ── Set location helper ──
+      function setLocation(lat, lng, name, address, rating, ratingsCount) {
+        selectedLat = lat;
+        selectedLng = lng;
+        latInput.value = lat;
+        lngInput.value = lng;
 
-        if (!map) {
-          map = new google.maps.Map(document.getElementById('map'), {
-            center: { lat, lng },
-            zoom: 16,
-            disableDefaultUI: true
-          });
-          marker = new google.maps.Marker({ map, position: { lat, lng } });
+        // Update search input value
+        if (name) {
+          input.value = name + ' - ' + address;
         } else {
-          map.setCenter({ lat, lng });
-          marker.setPosition({ lat, lng });
+          input.value = address;
         }
+
+        // Show selected place chip
+        spName.textContent = name || 'Ubicación seleccionada';
+        spAddress.textContent = address;
+        if (rating && rating > 0) {
+          const stars = '★'.repeat(Math.round(rating)) + '☆'.repeat(5 - Math.round(rating));
+          spRating.textContent = stars + ' ' + rating.toFixed(1) + (ratingsCount ? ' (' + ratingsCount + ')' : '');
+          spRating.style.display = 'block';
+        } else {
+          spRating.style.display = 'none';
+        }
+        selectedPlace.classList.add('active');
+
+        // Show map preview
+        mapPreviewContainer.classList.add('active');
+        const pos = { lat, lng };
+        if (!previewMap) {
+          previewMap = new google.maps.Map(document.getElementById('mapPreview'), {
+            center: pos,
+            zoom: 16,
+            disableDefaultUI: true,
+            gestureHandling: 'none',
+            clickableIcons: false
+          });
+          previewMarker = new google.maps.Marker({
+            map: previewMap,
+            position: pos,
+            icon: {
+              path: google.maps.SymbolPath.CIRCLE,
+              scale: 8,
+              fillColor: '#ef520f',
+              fillOpacity: 1,
+              strokeColor: '#fff',
+              strokeWeight: 2
+            }
+          });
+        } else {
+          previewMap.setCenter(pos);
+          previewMarker.setPosition(pos);
+        }
+      }
+
+      // ── Clear selected place ──
+      clearPlaceBtn.addEventListener('click', function() {
+        selectedPlace.classList.remove('active');
+        mapPreviewContainer.classList.remove('active');
+        input.value = '';
+        latInput.value = '';
+        lngInput.value = '';
+        selectedLat = null;
+        selectedLng = null;
+      });
+
+      // ── 2. Fullscreen Map Overlay ──
+      function openMapOverlay() {
+        mapOverlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+
+        const center = selectedLat ? { lat: selectedLat, lng: selectedLng } : (userLocation || PERU_CENTER);
+
+        if (!fullMap) {
+          fullMap = new google.maps.Map(document.getElementById('fullscreenMap'), {
+            center: center,
+            zoom: 16,
+            disableDefaultUI: true,
+            zoomControl: false,
+            mapTypeControl: false,
+            streetViewControl: false,
+            fullscreenControl: false,
+            gestureHandling: 'greedy',
+            styles: [
+              { featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] }
+            ]
+          });
+
+          // Reverse geocode on drag
+          fullMap.addListener('center_changed', function() {
+            centerPin.classList.add('bouncing');
+            clearTimeout(overlayDragTimeout);
+            overlayDragTimeout = setTimeout(function() {
+              centerPin.classList.remove('bouncing');
+              reverseGeocodeCenter();
+            }, 400);
+          });
+        } else {
+          fullMap.setCenter(center);
+        }
+
+        // Try to get user location on first open
+        if (!userLocation) {
+          getUserLocation(function(pos) {
+            userLocation = pos;
+            if (!selectedLat) {
+              fullMap.setCenter(pos);
+            }
+          });
+        }
+
+        setTimeout(function() {
+          google.maps.event.trigger(fullMap, 'resize');
+          reverseGeocodeCenter();
+        }, 300);
+      }
+
+      function closeMapOverlay() {
+        mapOverlay.classList.remove('active');
+        document.body.style.overflow = '';
+      }
+
+      function reverseGeocodeCenter() {
+        if (!fullMap || !geocoder) return;
+        const center = fullMap.getCenter();
+        geocoder.geocode({ location: { lat: center.lat(), lng: center.lng() } }, function(results, status) {
+          if (status === 'OK' && results && results[0]) {
+            overlayAddress.textContent = results[0].formatted_address;
+          } else {
+            overlayAddress.textContent = center.lat().toFixed(5) + ', ' + center.lng().toFixed(5);
+          }
+        });
+      }
+
+      function getUserLocation(cb) {
+        if (!navigator.geolocation) return;
+        navigator.geolocation.getCurrentPosition(
+          function(pos) { cb({ lat: pos.coords.latitude, lng: pos.coords.longitude }); },
+          function() { /* silent fail */ },
+          { enableHighAccuracy: true, timeout: 8000 }
+        );
+      }
+
+      // ── Confirm location from fullscreen map ──
+      btnConfirmLoc.addEventListener('click', function() {
+        const center = fullMap.getCenter();
+        const lat = center.lat();
+        const lng = center.lng();
+        const address = overlayAddress.textContent || '';
+
+        setLocation(lat, lng, '', address, 0, 0);
+        closeMapOverlay();
+      });
+
+      btnOpenMap.addEventListener('click', openMapOverlay);
+      btnCloseMap.addEventListener('click', closeMapOverlay);
+
+      btnMyLocation.addEventListener('click', function() {
+        getUserLocation(function(pos) {
+          userLocation = pos;
+          if (fullMap) fullMap.panTo(pos);
+        });
       });
     }
     <% } %>
