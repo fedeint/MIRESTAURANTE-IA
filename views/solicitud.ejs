@@ -240,6 +240,41 @@
       background: rgba(239,82,15,0.06);
     }
 
+    /* Places search results */
+    .places-results {
+      display: none;
+      background: #fff;
+      border: 1.5px solid #e2e8f0;
+      border-top: none;
+      border-radius: 0 0 10px 10px;
+      max-height: 240px;
+      overflow-y: auto;
+      margin-top: -4px;
+    }
+    .places-results.active { display: block; }
+    .place-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      cursor: pointer;
+      border-bottom: 1px solid #f0f2f8;
+      transition: background 0.15s;
+    }
+    .place-item:last-child { border-bottom: none; }
+    .place-item:active { background: #f8f9fc; }
+    .place-item .pi-icon {
+      width: 32px; height: 32px; min-width: 32px;
+      border-radius: 8px;
+      background: #FFF3EC;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.9rem;
+    }
+    .place-item .pi-info { flex: 1; min-width: 0; }
+    .place-item .pi-name { font-size: 0.85rem; font-weight: 600; color: #0a0f24; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .place-item .pi-addr { font-size: 0.72rem; color: #8B8FAD; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .place-item .pi-dist { font-size: 0.7rem; color: #8B8FAD; white-space: nowrap; flex-shrink: 0; }
+
     /* Selected place chip */
     .selected-place {
       display: none;
@@ -543,16 +578,18 @@
       <div class="sol-card">
         <div class="sol-card-title">Ubicación</div>
 
-        <label class="form-label">Dirección del local</label>
+        <label class="form-label">Busca tu restaurante o dirección</label>
         <div class="location-search-wrap">
           <div class="search-input-wrap">
             <svg class="search-icon" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-            <input type="text" id="direccionInput" name="direccion" class="form-control" placeholder="Busca tu restaurante..." autocomplete="off">
+            <input type="text" id="direccionInput" name="direccion" class="form-control" placeholder="Ej: Corkys, Av. Universitaria..." autocomplete="off">
           </div>
           <button type="button" class="btn-map-pin" id="btnOpenMap" title="Elegir en mapa">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef520f" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
           </button>
         </div>
+        <!-- Search results dropdown -->
+        <div class="places-results" id="placesResults"></div>
         <input type="hidden" name="latitud" id="latInput">
         <input type="hidden" name="longitud" id="lngInput">
 
@@ -695,20 +732,18 @@
     });
 
     <% if (googleMapsApiKey) { %>
-    // ── Location Picker ──
+    // ── Location Picker (New Places API) ──
     function initMap() {
       const input = document.getElementById('direccionInput');
-      const PERU_CENTER = { lat: -12.04, lng: -77.03 };
+      const placesResults = document.getElementById('placesResults');
+      const PERU_CENTER = { lat: -9.19, lng: -75.01 }; // Center of Peru
 
-      // State
       let previewMap = null, previewMarker = null;
       let fullMap = null;
       let userLocation = null;
       let selectedLat = null, selectedLng = null;
-      let geocoder = null;
-      let overlayDragTimeout = null;
+      let searchTimeout = null;
 
-      // DOM refs
       const latInput = document.getElementById('latInput');
       const lngInput = document.getElementById('lngInput');
       const selectedPlace = document.getElementById('selectedPlace');
@@ -725,23 +760,112 @@
       const btnConfirmLoc = document.getElementById('btnConfirmLoc');
       const btnMyLocation = document.getElementById('btnMyLocation');
 
-      geocoder = new google.maps.Geocoder();
+      // Try to get user location early
+      getUserLocation(function(pos) { userLocation = pos; });
 
-      // ── 1. Autocomplete with establishment search ──
-      const autocomplete = new google.maps.places.Autocomplete(input, {
-        componentRestrictions: { country: 'pe' },
-        fields: ['geometry', 'formatted_address', 'name', 'rating', 'user_ratings_total', 'place_id'],
-        types: ['establishment']
+      // ── 1. Text search using Places (New) via google.maps.places.Place ──
+      input.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        const q = input.value.trim();
+        if (q.length < 2) { placesResults.classList.remove('active'); return; }
+        searchTimeout = setTimeout(function() { searchPlaces(q); }, 350);
+      });
+      input.addEventListener('focus', function() {
+        if (placesResults.children.length > 0) placesResults.classList.add('active');
+      });
+      document.addEventListener('click', function(e) {
+        if (!e.target.closest('.location-search-wrap') && !e.target.closest('.places-results'))
+          placesResults.classList.remove('active');
       });
 
-      autocomplete.addListener('place_changed', function() {
-        const place = autocomplete.getPlace();
-        if (!place.geometry) return;
+      async function searchPlaces(query) {
+        try {
+          const { Place } = await google.maps.importLibrary('places');
+          const request = {
+            textQuery: query,
+            fields: ['displayName', 'formattedAddress', 'location', 'rating', 'userRatingCount'],
+            locationBias: userLocation
+              ? { lat: userLocation.lat, lng: userLocation.lng, radius: 50000 }
+              : { lat: PERU_CENTER.lat, lng: PERU_CENTER.lng, radius: 500000 },
+            maxResultCount: 5,
+            region: 'pe',
+            language: 'es'
+          };
+          const { places } = await Place.searchByText(request);
+          renderResults(places || []);
+        } catch (err) {
+          console.warn('Places search error:', err);
+          // Fallback: try Geocoding
+          try {
+            const geocoder = new google.maps.Geocoder();
+            geocoder.geocode({ address: query + ', Peru' }, function(results, status) {
+              if (status === 'OK' && results) {
+                const fallback = results.slice(0, 5).map(function(r) {
+                  return {
+                    displayName: r.formatted_address.split(',')[0],
+                    formattedAddress: r.formatted_address,
+                    location: r.geometry.location,
+                    rating: 0,
+                    userRatingCount: 0
+                  };
+                });
+                renderResults(fallback);
+              }
+            });
+          } catch (_) {}
+        }
+      }
 
-        const lat = place.geometry.location.lat();
-        const lng = place.geometry.location.lng();
-        setLocation(lat, lng, place.name || '', place.formatted_address || '', place.rating || 0, place.user_ratings_total || 0);
-      });
+      function renderResults(places) {
+        placesResults.innerHTML = '';
+        if (places.length === 0) {
+          placesResults.classList.remove('active');
+          return;
+        }
+        places.forEach(function(p) {
+          const name = p.displayName || p.Eg?.displayName || '';
+          const addr = p.formattedAddress || p.Eg?.formattedAddress || '';
+          const loc = p.location || p.Eg?.location;
+          const rating = p.rating || p.Eg?.rating || 0;
+          const count = p.userRatingCount || p.Eg?.userRatingCount || 0;
+
+          // Distance from user
+          let distText = '';
+          if (userLocation && loc) {
+            const lat2 = typeof loc.lat === 'function' ? loc.lat() : loc.lat;
+            const lng2 = typeof loc.lng === 'function' ? loc.lng() : loc.lng;
+            const d = haversine(userLocation.lat, userLocation.lng, lat2, lng2);
+            distText = d < 1 ? Math.round(d * 1000) + 'm' : d.toFixed(1) + 'km';
+          }
+
+          const div = document.createElement('div');
+          div.className = 'place-item';
+          div.innerHTML =
+            '<div class="pi-icon">📍</div>' +
+            '<div class="pi-info">' +
+              '<div class="pi-name">' + escHtml(name) + '</div>' +
+              '<div class="pi-addr">' + escHtml(addr) + '</div>' +
+            '</div>' +
+            (distText ? '<div class="pi-dist">' + distText + '</div>' : '');
+
+          div.addEventListener('click', function() {
+            const lat = typeof loc.lat === 'function' ? loc.lat() : loc.lat;
+            const lng = typeof loc.lng === 'function' ? loc.lng() : loc.lng;
+            setLocation(lat, lng, name, addr, rating, count);
+            placesResults.classList.remove('active');
+          });
+          placesResults.appendChild(div);
+        });
+        placesResults.classList.add('active');
+      }
+
+      function escHtml(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+      function haversine(lat1, lon1, lat2, lon2) {
+        var R = 6371, dLat = (lat2-lat1)*Math.PI/180, dLon = (lon2-lon1)*Math.PI/180;
+        var a = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      }
 
       // ── Set location helper ──
       function setLocation(lat, lng, name, address, rating, ratingsCount) {
@@ -749,89 +873,51 @@
         selectedLng = lng;
         latInput.value = lat;
         lngInput.value = lng;
+        input.value = name ? name + ' — ' + address : address;
 
-        // Update search input value
-        if (name) {
-          input.value = name + ' - ' + address;
-        } else {
-          input.value = address;
-        }
-
-        // Show selected place chip
         spName.textContent = name || 'Ubicación seleccionada';
         spAddress.textContent = address;
-        if (rating && rating > 0) {
-          const stars = '★'.repeat(Math.round(rating)) + '☆'.repeat(5 - Math.round(rating));
+        if (rating > 0) {
+          var stars = '★'.repeat(Math.round(rating)) + '☆'.repeat(5 - Math.round(rating));
           spRating.textContent = stars + ' ' + rating.toFixed(1) + (ratingsCount ? ' (' + ratingsCount + ')' : '');
           spRating.style.display = 'block';
-        } else {
-          spRating.style.display = 'none';
-        }
+        } else { spRating.style.display = 'none'; }
         selectedPlace.classList.add('active');
 
-        // Show map preview
         mapPreviewContainer.classList.add('active');
-        const pos = { lat, lng };
+        var pos = { lat: lat, lng: lng };
         if (!previewMap) {
           previewMap = new google.maps.Map(document.getElementById('mapPreview'), {
-            center: pos,
-            zoom: 16,
-            disableDefaultUI: true,
-            gestureHandling: 'none',
-            clickableIcons: false
+            center: pos, zoom: 16, disableDefaultUI: true, gestureHandling: 'none', clickableIcons: false
           });
-          previewMarker = new google.maps.Marker({
-            map: previewMap,
-            position: pos,
-            icon: {
-              path: google.maps.SymbolPath.CIRCLE,
-              scale: 8,
-              fillColor: '#ef520f',
-              fillOpacity: 1,
-              strokeColor: '#fff',
-              strokeWeight: 2
-            }
-          });
-        } else {
-          previewMap.setCenter(pos);
-          previewMarker.setPosition(pos);
-        }
+          previewMarker = new google.maps.Marker({ map: previewMap, position: pos, icon: {
+            path: google.maps.SymbolPath.CIRCLE, scale: 8, fillColor: '#ef520f', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2
+          }});
+        } else { previewMap.setCenter(pos); previewMarker.setPosition(pos); }
       }
 
-      // ── Clear selected place ──
+      // ── Clear ──
       clearPlaceBtn.addEventListener('click', function() {
         selectedPlace.classList.remove('active');
         mapPreviewContainer.classList.remove('active');
         input.value = '';
-        latInput.value = '';
-        lngInput.value = '';
-        selectedLat = null;
-        selectedLng = null;
+        latInput.value = ''; lngInput.value = '';
+        selectedLat = null; selectedLng = null;
       });
 
       // ── 2. Fullscreen Map Overlay ──
+      var overlayDragTimeout = null;
       function openMapOverlay() {
         mapOverlay.classList.add('active');
         document.body.style.overflow = 'hidden';
-
-        const center = selectedLat ? { lat: selectedLat, lng: selectedLng } : (userLocation || PERU_CENTER);
+        var center = selectedLat ? { lat: selectedLat, lng: selectedLng } : (userLocation || PERU_CENTER);
 
         if (!fullMap) {
           fullMap = new google.maps.Map(document.getElementById('fullscreenMap'), {
-            center: center,
-            zoom: 16,
-            disableDefaultUI: true,
-            zoomControl: false,
-            mapTypeControl: false,
-            streetViewControl: false,
-            fullscreenControl: false,
-            gestureHandling: 'greedy',
-            styles: [
-              { featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] }
-            ]
+            center: center, zoom: selectedLat ? 16 : (userLocation ? 15 : 6),
+            disableDefaultUI: true, gestureHandling: 'greedy',
+            styles: [{ featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] }]
           });
-
-          // Reverse geocode on drag
           fullMap.addListener('center_changed', function() {
             centerPin.classList.add('bouncing');
             clearTimeout(overlayDragTimeout);
@@ -840,40 +926,20 @@
               reverseGeocodeCenter();
             }, 400);
           });
-        } else {
-          fullMap.setCenter(center);
-        }
+        } else { fullMap.setCenter(center); }
 
-        // Try to get user location on first open
-        if (!userLocation) {
-          getUserLocation(function(pos) {
-            userLocation = pos;
-            if (!selectedLat) {
-              fullMap.setCenter(pos);
-            }
-          });
-        }
-
-        setTimeout(function() {
-          google.maps.event.trigger(fullMap, 'resize');
-          reverseGeocodeCenter();
-        }, 300);
+        if (!userLocation) getUserLocation(function(pos) { userLocation = pos; if (!selectedLat) fullMap.setCenter(pos); fullMap.setZoom(15); });
+        setTimeout(function() { google.maps.event.trigger(fullMap, 'resize'); reverseGeocodeCenter(); }, 300);
       }
 
-      function closeMapOverlay() {
-        mapOverlay.classList.remove('active');
-        document.body.style.overflow = '';
-      }
+      function closeMapOverlay() { mapOverlay.classList.remove('active'); document.body.style.overflow = ''; }
 
       function reverseGeocodeCenter() {
-        if (!fullMap || !geocoder) return;
-        const center = fullMap.getCenter();
+        if (!fullMap) return;
+        var center = fullMap.getCenter();
+        var geocoder = new google.maps.Geocoder();
         geocoder.geocode({ location: { lat: center.lat(), lng: center.lng() } }, function(results, status) {
-          if (status === 'OK' && results && results[0]) {
-            overlayAddress.textContent = results[0].formatted_address;
-          } else {
-            overlayAddress.textContent = center.lat().toFixed(5) + ', ' + center.lng().toFixed(5);
-          }
+          overlayAddress.textContent = (status === 'OK' && results && results[0]) ? results[0].formatted_address : center.lat().toFixed(5) + ', ' + center.lng().toFixed(5);
         });
       }
 
@@ -881,30 +947,20 @@
         if (!navigator.geolocation) return;
         navigator.geolocation.getCurrentPosition(
           function(pos) { cb({ lat: pos.coords.latitude, lng: pos.coords.longitude }); },
-          function() { /* silent fail */ },
+          function() {},
           { enableHighAccuracy: true, timeout: 8000 }
         );
       }
 
-      // ── Confirm location from fullscreen map ──
       btnConfirmLoc.addEventListener('click', function() {
-        const center = fullMap.getCenter();
-        const lat = center.lat();
-        const lng = center.lng();
-        const address = overlayAddress.textContent || '';
-
-        setLocation(lat, lng, '', address, 0, 0);
+        var center = fullMap.getCenter();
+        setLocation(center.lat(), center.lng(), '', overlayAddress.textContent || '', 0, 0);
         closeMapOverlay();
       });
-
       btnOpenMap.addEventListener('click', openMapOverlay);
       btnCloseMap.addEventListener('click', closeMapOverlay);
-
       btnMyLocation.addEventListener('click', function() {
-        getUserLocation(function(pos) {
-          userLocation = pos;
-          if (fullMap) fullMap.panTo(pos);
-        });
+        getUserLocation(function(pos) { userLocation = pos; if (fullMap) { fullMap.panTo(pos); fullMap.setZoom(16); } });
       });
     }
     <% } %>
