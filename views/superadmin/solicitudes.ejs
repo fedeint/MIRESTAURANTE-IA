@@ -296,13 +296,29 @@
           <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
         </div>
         <div class="modal-body">
-          <label class="form-label">Motivo del rechazo</label>
-          <textarea class="form-control" id="motivoRechazo" rows="3" placeholder="Explica por qué se rechaza..."></textarea>
+          <label class="form-label mb-2">Motivo del rechazo</label>
+          <div class="d-flex flex-column gap-2 mb-3">
+            <label style="display:flex;align-items:center;gap:8px;font-size:0.82rem;color:#e2e8f0;cursor:pointer;padding:8px 12px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid rgba(255,255,255,0.06)">
+              <input type="checkbox" class="rechazo-check" value="La foto no muestra el local correctamente. Sube una foto clara del frente de tu restaurante."> Foto no válida
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:0.82rem;color:#e2e8f0;cursor:pointer;padding:8px 12px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid rgba(255,255,255,0.06)">
+              <input type="checkbox" class="rechazo-check" value="El video no muestra el local o no cumple con el formato requerido (15-30 segundos)."> Video no válido
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:0.82rem;color:#e2e8f0;cursor:pointer;padding:8px 12px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid rgba(255,255,255,0.06)">
+              <input type="checkbox" class="rechazo-check" value="La ubicación no coincide con un local de comida registrado. Selecciona tu restaurante en Google Maps."> Ubicación incorrecta
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:0.82rem;color:#e2e8f0;cursor:pointer;padding:8px 12px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid rgba(255,255,255,0.06)">
+              <input type="checkbox" class="rechazo-check" value="Los datos del representante o del negocio están incompletos o son incorrectos."> Datos incompletos
+            </label>
+          </div>
+          <label class="form-label">Mensaje adicional (opcional)</label>
+          <textarea class="form-control" id="motivoRechazo" rows="2" placeholder="Detalle adicional..."></textarea>
+          <div class="mt-2" style="font-size:0.72rem;color:#64748b">El usuario recibirá un email con los motivos y podrá reenviar su solicitud corregida.</div>
         </div>
         <div class="modal-footer">
           <button class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
           <button class="btn btn-sm" style="background:#ef4444;color:#fff;font-weight:600" onclick="confirmarRechazar()">
-            <i class="bi bi-x-lg me-1"></i>Rechazar
+            <i class="bi bi-x-lg me-1"></i>Rechazar y notificar
           </button>
         </div>
       </div>
@@ -375,7 +391,13 @@
     }
 
     async function confirmarRechazar() {
-      const motivo = document.getElementById('motivoRechazo').value;
+      const checks = Array.from(document.querySelectorAll('.rechazo-check:checked')).map(c => c.value);
+      const adicional = document.getElementById('motivoRechazo').value.trim();
+      if (checks.length === 0 && !adicional) {
+        alert('Selecciona al menos un motivo de rechazo.');
+        return;
+      }
+      const motivo = checks.join('\n') + (adicional ? '\n' + adicional : '');
       const res = await fetch('/api/superadmin/solicitudes/' + currentId + '/rechazar', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
