@@ -668,7 +668,7 @@
           <input type="file" id="fotoInput" accept="image/jpeg,image/png,image/webp" multiple onchange="handleFotoSelect(event)">
           <div class="upload-icon">📷</div>
           <div class="upload-text">Toca para subir 2-3 fotos de tu local</div>
-          <div class="form-hint" style="margin-top:4px">JPG, PNG o WebP — maximo 30 MB cada una</div>
+          <div class="form-hint" style="margin-top:4px">JPG, PNG o WebP — se comprimen automaticamente</div>
         </div>
         <div id="fotoPreviews" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"></div>
         <div class="upload-progress-wrap" id="fotoProgress"></div>
@@ -682,7 +682,7 @@
           <input type="file" id="videoInput" accept="video/mp4,video/mov,video/quicktime,video/webm" onchange="handleVideoSelect(event)">
           <div class="upload-icon">🎬</div>
           <div class="upload-text">Toca para subir un video de tu local</div>
-          <div class="form-hint" style="margin-top:4px">15-30 segundos — MP4, MOV o WebM — máximo 30 MB</div>
+          <div class="form-hint" style="margin-top:4px">15-30 segundos — MP4, MOV o WebM — maximo 10 MB</div>
         </div>
         <video id="videoPreview" class="video-preview" controls></video>
         <div id="videoFilename" class="upload-filename" style="display:none"></div>
@@ -708,6 +708,24 @@
     var uploadedVideoUrl = null;
     var isUploading = false;
 
+    // ── Compress image using canvas before upload ──
+    function compressImage(file, maxWidth, quality) {
+      return new Promise(function(resolve) {
+        var img = new Image();
+        img.onload = function() {
+          var canvas = document.createElement('canvas');
+          var w = img.width, h = img.height;
+          if (w > maxWidth) { h = Math.round(h * maxWidth / w); w = maxWidth; }
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          canvas.toBlob(function(blob) {
+            resolve(blob);
+          }, 'image/jpeg', quality);
+        };
+        img.src = URL.createObjectURL(file);
+      });
+    }
+
     function showJsError(msg) {
       var el = document.getElementById('jsError');
       el.textContent = msg;
@@ -728,21 +746,40 @@
       }
     });
 
-    // ── Upload a single file to the server ──
-    function uploadSingleFile(file, progressContainer, index) {
-      return new Promise(function(resolve, reject) {
-        var itemId = 'upload-item-' + Date.now() + '-' + index;
-        var div = document.createElement('div');
-        div.className = 'upload-progress-item';
-        div.id = itemId;
-        div.innerHTML =
-          '<span class="upi-name">' + escFileName(file.name) + '</span>' +
-          '<span class="upi-status uploading">Subiendo...</span>' +
-          '<div class="upload-progress-bar"><div class="bar" id="bar-' + itemId + '"></div></div>';
-        progressContainer.appendChild(div);
+    // ── Upload a single file to the server (compresses images first) ──
+    async function uploadSingleFile(file, progressContainer, index) {
+      var itemId = 'upload-item-' + Date.now() + '-' + index;
+      var div = document.createElement('div');
+      div.className = 'upload-progress-item';
+      div.id = itemId;
+      div.innerHTML =
+        '<span class="upi-name">' + escFileName(file.name) + '</span>' +
+        '<span class="upi-status uploading">Comprimiendo...</span>' +
+        '<div class="upload-progress-bar"><div class="bar" id="bar-' + itemId + '"></div></div>';
+      progressContainer.appendChild(div);
 
+      // Compress images before uploading
+      var fileToUpload = file;
+      var uploadName = file.name;
+      if (file.type && file.type.startsWith('image/')) {
+        try {
+          var compressed = await compressImage(file, 800, 0.7);
+          if (compressed) {
+            fileToUpload = compressed;
+            // Change extension to .jpg since we export as JPEG
+            uploadName = file.name.replace(/\.[^.]+$/, '.jpg');
+          }
+        } catch (compErr) {
+          console.warn('Image compression failed, uploading original:', compErr);
+        }
+      }
+
+      var statusEl = div.querySelector('.upi-status');
+      statusEl.textContent = 'Subiendo...';
+
+      return new Promise(function(resolve, reject) {
         var formData = new FormData();
-        formData.append('file', file);
+        formData.append('file', fileToUpload, uploadName);
 
         var xhr = new XMLHttpRequest();
         xhr.open('POST', '/solicitud/upload');
@@ -756,7 +793,6 @@
         });
 
         xhr.onload = function() {
-          var statusEl = div.querySelector('.upi-status');
           if (xhr.status === 200) {
             try {
               var data = JSON.parse(xhr.responseText);
@@ -780,7 +816,6 @@
         };
 
         xhr.onerror = function() {
-          var statusEl = div.querySelector('.upi-status');
           statusEl.textContent = 'Error de red';
           statusEl.className = 'upi-status error';
           reject(new Error('Error de red al subir archivo'));
@@ -852,9 +887,9 @@
 
       if (!file) return;
 
-      // Validate file size (30 MB max)
-      if (file.size > 30 * 1024 * 1024) {
-        errorEl.textContent = 'El video es demasiado grande. Maximo 30 MB.';
+      // Validate file size (10 MB max for DB storage on Vercel)
+      if (file.size > 10 * 1024 * 1024) {
+        errorEl.textContent = 'El video es demasiado grande. Maximo 10 MB. Graba en menor resolucion o recorta el video.';
         errorEl.style.display = 'block';
         event.target.value = '';
         return;
