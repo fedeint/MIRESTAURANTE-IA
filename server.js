@@ -337,12 +337,23 @@ app.get('/espera-verificacion', requireAuth, async (req, res) => {
             `SELECT estado, motivo_rechazo, intento, created_at FROM solicitudes_registro
              WHERE tenant_id = ? ORDER BY created_at DESC LIMIT 1`, [tenantId]
         );
+        // Si no hay solicitud, redirigir al formulario
+        if (!solicitud) return res.redirect('/solicitud');
+        // Si fue rechazada, permitir reenvío
+        if (solicitud.estado === 'rechazado') {
+            return res.render('espera-verificacion', {
+                solicitud,
+                email: req.session?.user?.google_email || req.session?.user?.usuario,
+                rechazado: true
+            });
+        }
         res.render('espera-verificacion', {
-            solicitud: solicitud || {},
-            email: req.session?.user?.google_email || req.session?.user?.usuario
+            solicitud,
+            email: req.session?.user?.google_email || req.session?.user?.usuario,
+            rechazado: false
         });
     } catch (e) {
-        res.render('espera-verificacion', { solicitud: {}, email: req.session?.user?.usuario });
+        res.redirect('/solicitud');
     }
 });
 
