@@ -100,6 +100,15 @@
       padding: 1px 6px;
       margin-left: 4px;
     }
+    .form-label .badge-required {
+      font-size: 0.65rem;
+      font-weight: 500;
+      color: #dc2626;
+      background: rgba(239,68,68,0.08);
+      border-radius: 4px;
+      padding: 1px 6px;
+      margin-left: 4px;
+    }
     .form-control, .form-select {
       border: 1.5px solid #e2e8f0;
       border-radius: 10px;
@@ -159,6 +168,13 @@
       display: none;
       margin-top: 8px;
     }
+    .video-preview {
+      width: 100%;
+      max-height: 200px;
+      border-radius: 10px;
+      display: none;
+      margin-top: 8px;
+    }
     .upload-area {
       border: 2px dashed #e2e8f0;
       border-radius: 10px;
@@ -168,9 +184,11 @@
       transition: border-color 0.2s;
     }
     .upload-area:hover { border-color: #ef520f; }
+    .upload-area.has-file { border-color: #22C55E; background: rgba(34,197,94,0.04); }
     .upload-area input { display: none; }
     .upload-icon { font-size: 1.5rem; color: #8B8FAD; }
     .upload-text { font-size: 0.8rem; color: #8B8FAD; margin-top: 4px; }
+    .upload-filename { font-size: 0.75rem; color: #22C55E; margin-top: 4px; font-weight: 600; }
     #map-container {
       height: 180px;
       border-radius: 10px;
@@ -194,7 +212,7 @@
 
   <div class="sol-body">
     <% if (error) { %>
-      <div class="alert-error">⚠️ <%= error %></div>
+      <div class="alert-error"><%= error %></div>
     <% } %>
 
     <form action="/solicitud" method="POST" enctype="multipart/form-data" id="solicitudForm">
@@ -220,6 +238,12 @@
         <div class="sol-card-title">Tus datos</div>
 
         <div class="mb-3">
+          <label class="form-label">Nombre del representante *</label>
+          <input type="text" name="nombre_representante" class="form-control" placeholder="Ej: Juan Pérez López" required>
+          <div class="form-hint">Nombre completo de quien gestiona la solicitud</div>
+        </div>
+
+        <div class="mb-3">
           <label class="form-label">DNI *</label>
           <input type="text" name="dni" class="form-control" placeholder="12345678" maxlength="8" inputmode="numeric" pattern="\d{8}" required>
           <div class="form-hint">8 dígitos de tu documento de identidad</div>
@@ -233,6 +257,8 @@
             <option value="Administrador">Administrador</option>
             <option value="Socio">Socio</option>
             <option value="Gerente">Gerente</option>
+            <option value="Marketing">Marketing</option>
+            <option value="Consultor">Consultor</option>
             <option value="Otro">Otro</option>
           </select>
         </div>
@@ -263,11 +289,27 @@
           <label class="form-label">Tipo de negocio *</label>
           <select name="tipo_negocio" class="form-select" required>
             <option value="">Selecciona...</option>
-            <option value="Restaurante con salón">Restaurante con salón</option>
-            <option value="Solo delivery">Solo delivery</option>
-            <option value="Cafetería">Cafetería</option>
-            <option value="Bar">Bar</option>
-            <option value="Food truck">Food truck</option>
+            <optgroup label="Tipo de local">
+              <option value="Restaurante con salón">Restaurante con salón</option>
+              <option value="Solo delivery">Solo delivery</option>
+              <option value="Food truck">Food truck</option>
+            </optgroup>
+            <optgroup label="Tipo de restaurante">
+              <option value="Criolla">Criolla</option>
+              <option value="Solo vendo un plato">Solo vendo un plato</option>
+              <option value="Fast Food">Fast Food</option>
+              <option value="Comida oriental">Comida oriental</option>
+              <option value="Fusión">Fusión</option>
+              <option value="Cevichería">Cevichería</option>
+              <option value="Pollería">Pollería</option>
+              <option value="Chifa">Chifa</option>
+              <option value="Sanguchería">Sanguchería</option>
+              <option value="Cafetería">Cafetería</option>
+              <option value="Bar/Pub">Bar/Pub</option>
+              <option value="Parrilla">Parrilla</option>
+              <option value="Pastelería">Pastelería</option>
+              <option value="Juguerías">Juguerías</option>
+            </optgroup>
             <option value="Otro">Otro</option>
           </select>
         </div>
@@ -284,21 +326,37 @@
         <div id="map-container"><div id="map" style="width:100%;height:100%"></div></div>
       </div>
 
-      <!-- Photo -->
+      <!-- Photo (REQUIRED) -->
       <div class="sol-card">
-        <div class="sol-card-title">Foto del local <span style="font-size:0.65rem;color:#8B8FAD;text-transform:none;letter-spacing:0">(Opcional)</span></div>
+        <div class="sol-card-title">Foto del local <span class="badge-required">Obligatorio</span></div>
 
-        <div class="upload-area" onclick="document.getElementById('fotoInput').click()">
-          <input type="file" name="foto_local" id="fotoInput" accept="image/jpeg,image/png,image/webp" onchange="previewFoto(event)">
+        <div class="upload-area" id="fotoUploadArea" onclick="document.getElementById('fotoInput').click()">
+          <input type="file" name="foto_local" id="fotoInput" accept="image/jpeg,image/png,image/webp" required onchange="previewFoto(event)">
           <div class="upload-icon">📷</div>
           <div class="upload-text">Toca para subir una foto de tu local</div>
+          <div class="form-hint" style="margin-top:4px">JPG, PNG o WebP — máximo 10 MB</div>
         </div>
         <img id="fotoPreview" class="foto-preview" alt="Vista previa">
       </div>
 
+      <!-- Video (REQUIRED) -->
+      <div class="sol-card">
+        <div class="sol-card-title">Video del local <span class="badge-required">Obligatorio</span></div>
+
+        <div class="upload-area" id="videoUploadArea" onclick="document.getElementById('videoInput').click()">
+          <input type="file" name="video_local" id="videoInput" accept="video/mp4,video/mov,video/quicktime,video/webm" required onchange="previewVideo(event)">
+          <div class="upload-icon">🎬</div>
+          <div class="upload-text">Toca para subir un video de tu local</div>
+          <div class="form-hint" style="margin-top:4px">15-30 segundos — MP4, MOV o WebM — máximo 100 MB</div>
+        </div>
+        <video id="videoPreview" class="video-preview" controls></video>
+        <div id="videoFilename" class="upload-filename" style="display:none"></div>
+        <div id="videoError" style="font-size:0.72rem;color:#dc2626;display:none;margin-top:4px"></div>
+      </div>
+
       <div class="pb-safe">
         <button type="submit" class="btn-submit" id="submitBtn">
-          Enviar solicitud →
+          Enviar solicitud
         </button>
         <p style="font-size:0.75rem;color:#8B8FAD;text-align:center;margin-top:10px">
           Revisamos tu solicitud en 24 horas
@@ -331,12 +389,62 @@
         const img = document.getElementById('fotoPreview');
         img.src = e.target.result;
         img.style.display = 'block';
+        document.getElementById('fotoUploadArea').classList.add('has-file');
       };
       reader.readAsDataURL(file);
     }
 
-    // Submit loading state
-    document.getElementById('solicitudForm').addEventListener('submit', function() {
+    // Video preview
+    function previewVideo(event) {
+      const file = event.target.files[0];
+      const errorEl = document.getElementById('videoError');
+      const filenameEl = document.getElementById('videoFilename');
+      errorEl.style.display = 'none';
+
+      if (!file) return;
+
+      // Validate file size (100 MB max)
+      if (file.size > 100 * 1024 * 1024) {
+        errorEl.textContent = 'El video es demasiado grande. Máximo 100 MB.';
+        errorEl.style.display = 'block';
+        event.target.value = '';
+        return;
+      }
+
+      const video = document.getElementById('videoPreview');
+      const url = URL.createObjectURL(file);
+      video.src = url;
+      video.style.display = 'block';
+      filenameEl.textContent = file.name;
+      filenameEl.style.display = 'block';
+      document.getElementById('videoUploadArea').classList.add('has-file');
+
+      // Validate duration when metadata loads
+      video.onloadedmetadata = function() {
+        if (video.duration > 60) {
+          errorEl.textContent = 'El video es muy largo. Máximo 60 segundos (recomendado: 15-30 seg).';
+          errorEl.style.display = 'block';
+        }
+      };
+    }
+
+    // Form validation before submit
+    document.getElementById('solicitudForm').addEventListener('submit', function(e) {
+      const fotoInput = document.getElementById('fotoInput');
+      const videoInput = document.getElementById('videoInput');
+
+      if (!fotoInput.files || fotoInput.files.length === 0) {
+        e.preventDefault();
+        alert('Debes subir una foto de tu local.');
+        return;
+      }
+
+      if (!videoInput.files || videoInput.files.length === 0) {
+        e.preventDefault();
+        alert('Debes subir un video de tu local (15-30 segundos).');
+        return;
+      }
+
       const btn = document.getElementById('submitBtn');
       btn.disabled = true;
       btn.textContent = 'Enviando...';
