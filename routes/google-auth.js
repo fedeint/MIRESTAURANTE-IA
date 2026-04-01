@@ -81,8 +81,8 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
 
       // Crear tenant
       const [[newTenant]] = await db.query(
-        `INSERT INTO tenants (nombre, subdominio, plan, activo, estado_trial)
-         VALUES (?, ?, 'free', true, 'pendiente') RETURNING id`,
+        `INSERT INTO tenants (nombre, subdominio, plan, activo, estado_trial, fecha_inicio)
+         VALUES (?, ?, 'free', true, 'pendiente', CURRENT_DATE) RETURNING id`,
         [nombre, subdominio]
       );
       const tenantId = newTenant.id;
