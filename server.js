@@ -116,12 +116,13 @@ app.use(session({
     secret: process.env.SESSION_SECRET || 'dev-only-insecure-default',
     resave: false,
     saveUninitialized: false,
+    rolling: true,
     cookie: {
         httpOnly: true,
         sameSite: 'lax',
         // In local mode we run plain HTTP on the LAN — never set secure=true there
         secure: process.env.NODE_ENV === 'production' && !IS_LOCAL_MODE,
-        maxAge: 1000 * 60 * 60 * 2 // 2 horas
+        maxAge: 1000 * 60 * 60 * 24 // 24h absolute max
     }
 }));
 
