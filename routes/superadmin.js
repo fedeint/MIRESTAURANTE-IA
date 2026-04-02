@@ -429,6 +429,35 @@ router.post('/tenants/:id/modules', async (req, res) => {
 });
 
 // ---------------------------------------------------------------------------
+// DELETE /api/superadmin/tenants/:id  (Soft-delete: deactivate tenant)
+// ---------------------------------------------------------------------------
+
+router.delete('/tenants/:id', async (req, res) => {
+  try {
+    const tenantId = Number(req.params.id);
+    const [[tenant]] = await db.query('SELECT id, nombre, activo FROM tenants WHERE id = ?', [tenantId]);
+    if (!tenant) return res.status(404).json({ error: 'Tenant no encontrado' });
+
+    // Soft-delete: deactivate and mark as expirado
+    await db.query(
+      `UPDATE tenants SET activo = false, estado_trial = 'expirado', updated_at = NOW() WHERE id = ?`,
+      [tenantId]
+    );
+
+    // Deactivate subscription
+    await db.query(
+      `UPDATE tenant_suscripciones SET estado = 'cancelada' WHERE tenant_id = ? AND estado IN ('activa', 'prueba')`,
+      [tenantId]
+    );
+
+    res.json({ ok: true, message: 'Tenant desactivado exitosamente' });
+  } catch (err) {
+    console.error('Delete tenant error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ---------------------------------------------------------------------------
 // GET /api/superadmin/tenants/:id  (Get single tenant detail — for edit modal)
 // ---------------------------------------------------------------------------
 
