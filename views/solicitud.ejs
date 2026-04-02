@@ -687,7 +687,7 @@
           <input type="file" id="videoInput" accept="video/mp4,video/mov,video/quicktime,video/webm" onchange="handleVideoSelect(event)">
           <div class="upload-icon">🎬</div>
           <div class="upload-text">Toca para subir un video de tu local</div>
-          <div class="form-hint" style="margin-top:4px">15-30 segundos — MP4, MOV o WebM — maximo 10 MB</div>
+          <div class="form-hint" style="margin-top:4px">15-30 segundos — MP4, MOV o WebM — maximo 30 MB</div>
         </div>
         <video id="videoPreview" class="video-preview" controls></video>
         <div id="videoFilename" class="upload-filename" style="display:none"></div>
@@ -892,9 +892,9 @@
 
       if (!file) return;
 
-      // Validate file size (10 MB max for DB storage on Vercel)
-      if (file.size > 10 * 1024 * 1024) {
-        errorEl.textContent = 'El video es demasiado grande. Maximo 10 MB. Graba en menor resolucion o recorta el video.';
+      // Validate file size (30 MB max)
+      if (file.size > 30 * 1024 * 1024) {
+        errorEl.textContent = 'El video es demasiado grande. Maximo 30 MB. Graba en menor resolucion o recorta el video.';
         errorEl.style.display = 'block';
         event.target.value = '';
         return;

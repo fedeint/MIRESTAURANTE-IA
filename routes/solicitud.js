@@ -11,7 +11,7 @@ const { uploadFile } = require('../services/supabase-storage');
 // ── Single-file multer for the /upload endpoint (browser uploads one file at a time) ──
 const singleUpload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB max (images compressed in browser, videos limited)
+  limits: { fileSize: 30 * 1024 * 1024 }, // 30 MB max (images compressed in browser, videos limited)
   fileFilter: (_req, file, cb) => {
     if (/\.(jpg|jpeg|png|webp)$/i.test(file.originalname)) cb(null, true);
     else if (/\.(mp4|mov|webm)$/i.test(file.originalname)) cb(null, true);
@@ -34,7 +34,7 @@ router.post('/upload', (req, res) => {
   singleUpload(req, res, async (err) => {
     if (err instanceof multer.MulterError) {
       const msg = err.code === 'LIMIT_FILE_SIZE'
-        ? 'El archivo es demasiado grande. Maximo 10 MB.'
+        ? 'El archivo es demasiado grande. Maximo 30 MB.'
         : 'Error al subir archivo.';
       return res.status(400).json({ error: msg });
     }
@@ -56,10 +56,10 @@ router.post('/upload', (req, res) => {
 
       // Primary fallback: store as base64 in DB (persistent on Vercel, unlike /tmp)
       if (!publicUrl) {
-        const MAX_DB_FILE_SIZE = 10 * 1024 * 1024; // 10 MB limit for DB storage
+        const MAX_DB_FILE_SIZE = 30 * 1024 * 1024; // 30 MB limit for DB storage
         if (file.buffer.length > MAX_DB_FILE_SIZE) {
           return res.status(400).json({
-            error: 'El archivo es demasiado grande para almacenar (' + Math.round(file.buffer.length / 1024 / 1024) + ' MB). Maximo 10 MB. Comprime el archivo e intenta de nuevo.'
+            error: 'El archivo es demasiado grande para almacenar (' + Math.round(file.buffer.length / 1024 / 1024) + ' MB). Maximo 30 MB. Comprime el archivo e intenta de nuevo.'
           });
         }
         try {
