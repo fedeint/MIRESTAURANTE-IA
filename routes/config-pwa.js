@@ -2,6 +2,13 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 
+// JSONB columns return objects in PG, strings in MySQL — handle both
+function parseJson(val, fallback) {
+  if (!val) return fallback;
+  if (typeof val === 'object') return val;
+  try { return JSON.parse(val); } catch (_) { return fallback; }
+}
+
 // ─── GET /config/dallia ─────────────────────────────────────────────────────
 router.get('/dallia', async (req, res) => {
   try {
@@ -10,10 +17,10 @@ router.get('/dallia', async (req, res) => {
       'SELECT config_json FROM tenant_dallia_config WHERE tenant_id = ? LIMIT 1',
       [tenantId]
     );
-    const config = row ? JSON.parse(row.config_json) : {
+    const config = parseJson(row?.config_json, {
       nombre: 'DallIA', trato: 'tu', personalidad: 'amigable',
       cap_alertas: true, cap_pregunta: true, cap_rutina: true, cap_voz: true, cap_fab: true,
-    };
+    });
     res.render('config/dallia', { config });
   } catch (e) {
     console.error(e);
@@ -35,9 +42,9 @@ router.post('/dallia', async (req, res) => {
     const json = JSON.stringify(data);
     await db.query(
       `INSERT INTO tenant_dallia_config (tenant_id, config_json, updated_at)
-       VALUES (?, ?, NOW())
-       ON DUPLICATE KEY UPDATE config_json = ?, updated_at = NOW()`,
-      [tenantId, json, json]
+       VALUES (?, ?::jsonb, NOW())
+       ON CONFLICT (tenant_id) DO UPDATE SET config_json = EXCLUDED.config_json, updated_at = NOW()`,
+      [tenantId, json]
     );
     res.json({ ok: true });
   } catch (e) {
@@ -54,11 +61,11 @@ router.get('/alertas', async (req, res) => {
       'SELECT config_json FROM tenant_alertas_config WHERE tenant_id = ? LIMIT 1',
       [tenantId]
     );
-    const alertas = row ? JSON.parse(row.config_json) : {
+    const alertas = parseJson(row?.config_json, {
       push: true, whatsapp: false, email: true,
       stock: true, retraso: true, cierre: true,
       dnd_activo: false, dnd_inicio: '22:00', dnd_fin: '07:00',
-    };
+    });
     res.render('config/alertas', { alertas });
   } catch (e) {
     console.error(e);
@@ -81,9 +88,9 @@ router.post('/alertas', async (req, res) => {
     const json = JSON.stringify(data);
     await db.query(
       `INSERT INTO tenant_alertas_config (tenant_id, config_json, updated_at)
-       VALUES (?, ?, NOW())
-       ON DUPLICATE KEY UPDATE config_json = ?, updated_at = NOW()`,
-      [tenantId, json, json]
+       VALUES (?, ?::jsonb, NOW())
+       ON CONFLICT (tenant_id) DO UPDATE SET config_json = EXCLUDED.config_json, updated_at = NOW()`,
+      [tenantId, json]
     );
     res.json({ ok: true });
   } catch (e) {
@@ -100,7 +107,7 @@ router.get('/modulos', async (req, res) => {
       'SELECT config_json FROM tenant_modulos WHERE tenant_id = ? LIMIT 1',
       [tenantId]
     );
-    const modulos = row ? JSON.parse(row.config_json) : {};
+    const modulos = parseJson(row?.config_json, {});
     res.render('config/modulos', { modulos });
   } catch (e) {
     console.error(e);
@@ -121,9 +128,9 @@ router.post('/modulos', async (req, res) => {
     const json = JSON.stringify(data);
     await db.query(
       `INSERT INTO tenant_modulos (tenant_id, config_json, updated_at)
-       VALUES (?, ?, NOW())
-       ON DUPLICATE KEY UPDATE config_json = ?, updated_at = NOW()`,
-      [tenantId, json, json]
+       VALUES (?, ?::jsonb, NOW())
+       ON CONFLICT (tenant_id) DO UPDATE SET config_json = EXCLUDED.config_json, updated_at = NOW()`,
+      [tenantId, json]
     );
     res.json({ ok: true });
   } catch (e) {
@@ -149,7 +156,7 @@ router.get('/horarios', async (req, res) => {
       'SELECT config_json FROM tenant_horarios WHERE tenant_id = ? LIMIT 1',
       [tenantId]
     );
-    const horarios = row ? { ...defaultHorarios, ...JSON.parse(row.config_json) } : defaultHorarios;
+    const horarios = row ? { ...defaultHorarios, ...parseJson(row.config_json, {}) } : defaultHorarios;
     res.render('config/horarios', { horarios });
   } catch (e) {
     console.error(e);
@@ -176,9 +183,9 @@ router.post('/horarios', async (req, res) => {
     const json = JSON.stringify(data);
     await db.query(
       `INSERT INTO tenant_horarios (tenant_id, config_json, updated_at)
-       VALUES (?, ?, NOW())
-       ON DUPLICATE KEY UPDATE config_json = ?, updated_at = NOW()`,
-      [tenantId, json, json]
+       VALUES (?, ?::jsonb, NOW())
+       ON CONFLICT (tenant_id) DO UPDATE SET config_json = EXCLUDED.config_json, updated_at = NOW()`,
+      [tenantId, json]
     );
     res.json({ ok: true });
   } catch (e) {
@@ -210,8 +217,8 @@ router.post('/tour/avanzar', async (req, res) => {
     await db.query(
       `INSERT INTO tenant_tour_estado (tenant_id, completados, updated_at)
        VALUES (?, 1, NOW())
-       ON DUPLICATE KEY UPDATE
-         completados = LEAST(completados + 1, 10),
+       ON CONFLICT (tenant_id) DO UPDATE SET
+         completados = LEAST(tenant_tour_estado.completados + 1, 10),
          updated_at = NOW()`,
       [tenantId]
     );

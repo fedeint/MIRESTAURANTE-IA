@@ -411,6 +411,40 @@ async function ensureSchema() {
             await pgNativeQuery(`CREATE INDEX IF NOT EXISTS idx_sostac_objetivos_brief ON sostac_objetivos(brief_id, tenant_id)`);
         } catch (_) {}
 
+        // ── Config PWA tables (5 pantallas de configuración mobile) ──────
+        try {
+            await pgNativeQuery(`CREATE TABLE IF NOT EXISTS tenant_dallia_config (
+                tenant_id   INT          NOT NULL PRIMARY KEY,
+                config_json JSONB        NOT NULL DEFAULT '{}',
+                updated_at  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+            )`);
+            await pgNativeQuery(`CREATE TABLE IF NOT EXISTS tenant_alertas_config (
+                tenant_id   INT          NOT NULL PRIMARY KEY,
+                config_json JSONB        NOT NULL DEFAULT '{}',
+                updated_at  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+            )`);
+            await pgNativeQuery(`CREATE TABLE IF NOT EXISTS tenant_modulos (
+                tenant_id   INT          NOT NULL PRIMARY KEY,
+                config_json JSONB        NOT NULL DEFAULT '{}',
+                updated_at  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+            )`);
+            await pgNativeQuery(`CREATE TABLE IF NOT EXISTS tenant_horarios (
+                tenant_id   INT          NOT NULL PRIMARY KEY,
+                config_json JSONB        NOT NULL DEFAULT '{}',
+                updated_at  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+            )`);
+            await pgNativeQuery(`CREATE TABLE IF NOT EXISTS tenant_tour_estado (
+                tenant_id   INT          NOT NULL PRIMARY KEY,
+                completados SMALLINT     NOT NULL DEFAULT 0,
+                updated_at  TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+            )`);
+        } catch (_) {}
+
     } catch (err) {
         console.error('ensureSchema() falló:', err.message || err);
     }
