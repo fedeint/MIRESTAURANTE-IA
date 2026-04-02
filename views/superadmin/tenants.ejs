@@ -106,16 +106,17 @@
                   <th>Restaurante</th>
                   <th>Plan</th>
                   <th>Estado</th>
+                  <th>Estado Trial</th>
                   <th>Usuarios</th>
                   <th>MRR</th>
-                  <th>Modulos</th>
                   <th>Creado</th>
+                  <th>Vence Trial</th>
                   <th>Acciones</th>
                 </tr>
               </thead>
               <tbody id="tenantsBody">
                 <% if (!tenants || tenants.length === 0) { %>
-                  <tr><td colspan="8" class="text-center" style="color:#64748b;padding:3rem;">Sin tenants. Crea el primero.</td></tr>
+                  <tr><td colspan="9" class="text-center" style="color:#64748b;padding:3rem;">Sin tenants. Crea el primero.</td></tr>
                 <% } else { %>
                   <% tenants.forEach(function(t) {
                     let modulos = {};
@@ -142,6 +143,20 @@
                           <span class="sa-badge-inactivo">Inactivo</span>
                         <% } %>
                       </td>
+                      <td>
+                        <% if (t.plan === 'pro' || t.plan === 'enterprise') { %>
+                          <span style="background:rgba(34,197,94,0.15);color:#22c55e;border-radius:20px;padding:3px 12px;font-size:0.72rem;font-weight:700;">Pagado</span>
+                        <% } else if (t.estado_trial === 'activo' && t.trial_fin) { %>
+                          <% const diasRestantes = Math.max(0, Math.ceil((new Date(t.trial_fin) - new Date()) / (1000*60*60*24))); %>
+                          <span style="background:rgba(251,191,36,0.15);color:#fbbf24;border-radius:20px;padding:3px 12px;font-size:0.72rem;font-weight:700;">Trial <%= diasRestantes %>d</span>
+                        <% } else if (t.estado_trial === 'expirado') { %>
+                          <span style="background:rgba(239,68,68,0.15);color:#ef4444;border-radius:20px;padding:3px 12px;font-size:0.72rem;font-weight:700;">Expirado</span>
+                        <% } else if (t.estado_trial === 'pendiente') { %>
+                          <span style="background:rgba(148,163,184,0.15);color:#94a3b8;border-radius:20px;padding:3px 12px;font-size:0.72rem;font-weight:700;">Pendiente</span>
+                        <% } else { %>
+                          <span style="color:#64748b;font-size:0.75rem;">-</span>
+                        <% } %>
+                      </td>
                       <td style="text-align:center;"><%= t.usuarios_count || 0 %></td>
                       <td>
                         <% if (Number(t.precio_mensual) > 0) { %>
@@ -150,11 +165,11 @@
                           <span style="color:#64748b;">-</span>
                         <% } %>
                       </td>
-                      <td>
-                        <span style="font-size:0.75rem;color:#94a3b8;"><%= modulosActivos %>/<%= modulosTotal %></span>
-                      </td>
                       <td style="color:#64748b;font-size:0.75rem;">
                         <%= t.created_at ? new Date(t.created_at).toLocaleDateString('es-PE') : '-' %>
+                      </td>
+                      <td style="color:#64748b;font-size:0.75rem;">
+                        <%= t.trial_fin ? new Date(t.trial_fin).toLocaleDateString('es-PE') : '-' %>
                       </td>
                       <td>
                         <div class="d-flex gap-1">
@@ -167,6 +182,11 @@
                           <button class="action-btn action-btn-toggle <%= t.activo ? 'is-active' : '' %>" onclick="toggleTenant(<%= t.id %>, this)" title="<%= t.activo ? 'Desactivar' : 'Activar' %>">
                             <i class="bi bi-<%= t.activo ? 'pause-circle' : 'play-circle' %>"></i>
                           </button>
+                          <% if (!t.activo || t.estado_trial === 'expirado') { %>
+                          <button class="action-btn" style="background:rgba(239,68,68,0.12);color:#ef4444;" onclick="deleteTenant(<%= t.id %>, '<%= (t.nombre||'').replace(/'/g, "\\'") %>')" title="Eliminar">
+                            <i class="bi bi-trash"></i>
+                          </button>
+                          <% } %>
                         </div>
                       </td>
                     </tr>
@@ -225,6 +245,23 @@
             <div class="col-md-6">
               <label class="form-label">RUC</label>
               <input type="text" class="form-control" id="c_ruc" placeholder="20xxxxxxxxx">
+            </div>
+            <div class="col-12">
+              <label class="form-label">Tipo de Tenant</label>
+              <div class="d-flex gap-4">
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="c_tipo" id="c_tipo_trial" value="trial" checked style="border-color:rgba(255,255,255,0.2);">
+                  <label class="form-check-label" for="c_tipo_trial" style="color:#e2e8f0;font-size:0.85rem;">
+                    <i class="bi bi-clock me-1" style="color:#fbbf24;"></i>Trial (15 días gratis)
+                  </label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="radio" name="c_tipo" id="c_tipo_prod" value="produccion" style="border-color:rgba(255,255,255,0.2);">
+                  <label class="form-check-label" for="c_tipo_prod" style="color:#e2e8f0;font-size:0.85rem;">
+                    <i class="bi bi-check-circle me-1" style="color:#22c55e;"></i>Producción (ya pagó)
+                  </label>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -335,6 +372,8 @@
       document.getElementById('c_precio').value = '';
       document.getElementById('c_telefono').value = '';
       document.getElementById('c_ruc').value = '';
+      const radioTrial = document.getElementById('c_tipo_trial');
+      if (radioTrial) radioTrial.checked = true;
       new bootstrap.Modal(document.getElementById('createModal')).show();
     }
 
@@ -379,6 +418,7 @@
         precio_mensual: document.getElementById('c_precio').value,
         telefono: document.getElementById('c_telefono').value.trim(),
         ruc: document.getElementById('c_ruc').value.trim(),
+        tipo: document.querySelector('input[name="c_tipo"]:checked')?.value || 'trial',
       };
       if (!data.nombre || !data.subdominio || !data.email_admin) {
         return alert('Nombre, subdominio y email son requeridos');
@@ -443,6 +483,16 @@
         const sub = row.getAttribute('data-sub') || '';
         row.style.display = (name.includes(term) || sub.includes(term)) ? '' : 'none';
       });
+    }
+
+    async function deleteTenant(id, nombre) {
+      if (!confirm('¿Eliminar el tenant "' + nombre + '"? Se desactivará el acceso y la suscripción.')) return;
+      try {
+        const res = await fetch('/api/superadmin/tenants/' + id, { method: 'DELETE', headers: { 'Content-Type': 'application/json' } });
+        const json = await res.json();
+        if (!res.ok) return alert('Error: ' + (json.error || 'desconocido'));
+        location.reload();
+      } catch (e) { alert('Error de red: ' + e.message); }
     }
 
     // Auto-fill subdominio from nombre

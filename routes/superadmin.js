@@ -187,6 +187,7 @@ router.get('/tenants', async (req, res) => {
       `SELECT
          t.id, t.nombre, t.subdominio, t.plan, t.activo,
          t.email_admin, t.telefono, t.ruc, t.created_at, t.updated_at,
+         t.estado_trial, t.trial_inicio, t.trial_fin,
          t.modulos_habilitados,
          (SELECT COUNT(*) FROM usuarios u WHERE u.tenant_id = t.id AND u.rol != 'superadmin') AS usuarios_count,
          ts.plan AS sub_plan, ts.precio_mensual, ts.estado AS suscripcion_estado,
