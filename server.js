@@ -358,8 +358,19 @@ app.get('/espera-verificacion', requireAuth, async (req, res) => {
     }
 });
 
-app.get('/trial-expirado', requireAuth, (req, res) => {
-    res.render('trial-expirado');
+app.get('/trial-expirado', requireAuth, async (req, res) => {
+    let tenant = req.tenant;
+    const user = req.session?.user;
+    if (!tenant && user?.tenant_id) {
+        try {
+            const [[t]] = await db.query('SELECT id, nombre, subdominio FROM tenants WHERE id = ?', [user.tenant_id]);
+            tenant = t || {};
+        } catch (_) { tenant = {}; }
+    }
+    res.render('trial-expirado', {
+        usuario: user || {},
+        tenant: tenant || {}
+    });
 });
 
 // Landing page (always public)
