@@ -163,7 +163,7 @@ async function enviarEmailTrialExpirado(email, nombre) {
 }
 
 // ── Email: Bienvenida con subdominio ─────────────────────────────────────────
-async function enviarEmailBienvenidaSubdominio(email, nombre, subdominio, esTrial) {
+async function enviarEmailBienvenidaSubdominio(email, nombre, subdominio, esTrial, credenciales) {
   const subdominioUrl = `https://${subdominio}.mirestconia.com`;
   const trialTexto = esTrial
     ? '<p style="font-size:14px;color:#6b7280;line-height:1.6;margin:0 0 20px;">Tienes <strong>15 días para probarlo todo, gratis.</strong> Después podrás elegir el plan que mejor se adapte a tu restaurante.</p>'
@@ -183,6 +183,15 @@ async function enviarEmailBienvenidaSubdominio(email, nombre, subdominio, esTria
         <p style="font-size:12px;color:#94a3b8;margin:8px 0 0;">Abre este link desde tu celular y guárdalo en tu pantalla de inicio</p>
       </div>
       ${trialTexto}
+      ${credenciales ? `
+      <div style="background:#0f172a;border-radius:12px;padding:20px;margin-bottom:20px;">
+        <p style="font-size:12px;color:#64748b;margin:0 0 12px;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Tus credenciales de acceso</p>
+        <table style="width:100%;font-size:14px;">
+          <tr><td style="color:#94a3b8;padding:4px 0;">Usuario:</td><td style="color:#ffffff;font-weight:700;padding:4px 0;">${credenciales.usuario}</td></tr>
+          <tr><td style="color:#94a3b8;padding:4px 0;">PIN temporal:</td><td style="color:#f97316;font-weight:700;font-size:18px;letter-spacing:2px;padding:4px 0;">${credenciales.pin}</td></tr>
+        </table>
+        <p style="font-size:12px;color:#ef4444;margin:12px 0 0;">⚠️ Este PIN expira en 48 horas. Cámbialo en tu primer ingreso.</p>
+      </div>` : ''}
       <div style="background:#FFF8F5;border-left:4px solid #ef520f;border-radius:8px;padding:16px;margin-bottom:20px;">
         <p style="font-size:14px;color:#0a0f24;margin:0 0 10px;font-weight:600;">Próximos pasos:</p>
         <p style="font-size:13px;color:#6b7280;margin:0;line-height:1.8;">
