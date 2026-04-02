@@ -8,6 +8,9 @@ const db = require('./db');
 const session = require('express-session');
 const { attachUserToLocals, requireAuth, requireRole } = require('./middleware/auth');
 const { attachTenant } = require('./middleware/tenant');
+const { subdomainGuard } = require('./middleware/subdomainGuard');
+const { sessionTimeout } = require('./middleware/sessionTimeout');
+const { requirePasswordChange } = require('./middleware/requirePasswordChange');
 const { requireCajaAbierta } = require('./middleware/requireCaja');
 const { attachGeoContext } = require('./middleware/geoContext');
 
@@ -135,6 +138,8 @@ app.use(attachGeoContext);
 
 // Tenant middleware (resuelve tenant_id por request)
 app.use(attachTenant);
+app.use(subdomainGuard);
+app.use(sessionTimeout);
 
 // Hacer disponible el usuario en EJS como "user"
 app.use(attachUserToLocals);
@@ -158,6 +163,7 @@ app.use(sessionGeo);
 // Trial guard (after tenant + user resolved)
 const { requireTrialActivo, blockTrialExports } = require('./middleware/requireTrial');
 app.use(requireTrialActivo);
+app.use(requirePasswordChange);
 app.use(blockTrialExports);
 
 // Make reqPath available in all views
@@ -292,6 +298,11 @@ app.use(authRoutes);
 const googleAuthRoutes = require('./routes/google-auth');
 const googleAuthLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 10, message: { error: 'Demasiados intentos de registro.' } });
 app.use('/auth', googleAuthLimiter, googleAuthRoutes);
+
+// WebAuthn biometric routes (public, rate limited)
+const webAuthnRoutes = require('./routes/webauthn');
+const webAuthnLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 30, message: { error: 'Demasiados intentos biométricos.' } });
+app.use('/auth/webauthn', webAuthnLimiter, webAuthnRoutes);
 
 // Global API rate limiter (+ trial rate limit for free trial tenants)
 app.use('/api/', apiLimiter);
