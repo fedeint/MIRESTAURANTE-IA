@@ -162,6 +162,55 @@ async function enviarEmailTrialExpirado(email, nombre) {
   return sendEmail(email, '⏰ Tu trial terminó — MiRestcon IA', html);
 }
 
+// ── Email: Bienvenida con subdominio ─────────────────────────────────────────
+async function enviarEmailBienvenidaSubdominio(email, nombre, subdominio, esTrial) {
+  const subdominioUrl = `https://${subdominio}.mirestconia.com`;
+  const trialTexto = esTrial
+    ? '<p style="font-size:14px;color:#6b7280;line-height:1.6;margin:0 0 20px;">Tienes <strong>15 días para probarlo todo, gratis.</strong> Después podrás elegir el plan que mejor se adapte a tu restaurante.</p>'
+    : '<p style="font-size:14px;color:#6b7280;line-height:1.6;margin:0 0 20px;"><strong>Tu plan está activo.</strong> Ya puedes empezar a usar todas las funciones.</p>';
+
+  const html = `
+  <div style="font-family:'Helvetica Neue',Arial,sans-serif;max-width:520px;margin:0 auto;background:#fff;border-radius:16px;overflow:hidden;border:1px solid #e5e7eb;">
+    <div style="background:linear-gradient(135deg,#10152f 0%,#0a0f24 100%);padding:32px 24px;text-align:center;">
+      <div style="font-size:40px;margin-bottom:8px;">🚀</div>
+      <h1 style="color:#fff;font-size:22px;margin:0 0 4px;">¡${nombre}, tu restaurante ya está en línea!</h1>
+      <p style="color:rgba(255,255,255,0.7);font-size:14px;margin:0;">Tu sistema con inteligencia artificial está listo</p>
+    </div>
+    <div style="padding:28px 24px;">
+      <div style="background:#0f172a;border-radius:12px;padding:20px;text-align:center;margin-bottom:20px;">
+        <p style="font-size:12px;color:#64748b;margin:0 0 8px;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Tu dirección exclusiva</p>
+        <a href="${subdominioUrl}" style="font-size:18px;color:#f97316;font-weight:700;text-decoration:none;">${subdominio}.mirestconia.com</a>
+        <p style="font-size:12px;color:#94a3b8;margin:8px 0 0;">Abre este link desde tu celular y guárdalo en tu pantalla de inicio</p>
+      </div>
+      ${trialTexto}
+      <div style="background:#FFF8F5;border-left:4px solid #ef520f;border-radius:8px;padding:16px;margin-bottom:20px;">
+        <p style="font-size:14px;color:#0a0f24;margin:0 0 10px;font-weight:600;">Próximos pasos:</p>
+        <p style="font-size:13px;color:#6b7280;margin:0;line-height:1.8;">
+          1️⃣ Configura tu agente DallIA<br>
+          2️⃣ Sube tu carta de productos<br>
+          3️⃣ Actualiza tu almacén<br>
+          4️⃣ Registra tus mesas<br>
+          5️⃣ Activa integraciones: WhatsApp, SUNAT, y más
+        </p>
+      </div>
+      <div style="text-align:center;margin:24px 0;">
+        <a href="${subdominioUrl}" style="display:inline-block;background:linear-gradient(135deg,#ef520f,#df2c05);color:#fff;text-decoration:none;padding:14px 32px;border-radius:12px;font-size:16px;font-weight:700;">
+          Ingresar a mi restaurante
+        </a>
+      </div>
+      <div style="text-align:center;padding:8px 0;">
+        <p style="font-size:13px;color:#8B8FAD;margin:0;">¿Dudas? Responde este email o escríbenos por WhatsApp</p>
+      </div>
+    </div>
+  </div>`;
+
+  const asunto = esTrial
+    ? `🚀 ${nombre}, tu restaurante ya está en línea — 15 días gratis`
+    : `🚀 ${nombre}, tu restaurante ya está en línea`;
+
+  return sendEmail(email, asunto, html);
+}
+
 // ── Notificar superadmin por WhatsApp ────────────────────────────────────────
 async function notificarSuperadminWhatsApp(nombreNegocio, distrito, linkPanel) {
   const accountSid = process.env.TWILIO_ACCOUNT_SID;
@@ -217,6 +266,7 @@ module.exports = {
   enviarEmailAprobacion,
   enviarEmailRechazo,
   enviarEmailTrialExpirado,
+  enviarEmailBienvenidaSubdominio,
   notificarSuperadminWhatsApp,
   notificarSuperadminEmail
 };
