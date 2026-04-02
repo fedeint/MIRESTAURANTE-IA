@@ -94,9 +94,11 @@ router.get('/login', async (req, res) => {
 
     if (total === 0) return res.redirect('/setup');
 
-    res.render('login', { error: null });
+    const expired = req.query.expired === '1' ? 'Tu sesión expiró. Inicia sesión nuevamente.' : null;
+    const changed = req.query.changed === '1' ? 'Contraseña cambiada. Inicia sesión con tu nueva contraseña.' : null;
+    res.render('login', { error: expired || changed || null, isSubdomain: res.locals.isSubdomain || false, tenant: res.locals.tenant || null });
   } catch (e) {
-    res.render('login', { error: 'No se pudo cargar el login.' });
+    res.render('login', { error: 'No se pudo cargar el login.', isSubdomain: res.locals.isSubdomain || false, tenant: res.locals.tenant || null });
   }
 });
 
@@ -105,20 +107,20 @@ router.post('/login', async (req, res) => {
   const usuario = String(req.body?.usuario || '').trim();
   const password = String(req.body?.password || '');
 
-  if (!usuario || !password) return res.status(400).render('login', { error: 'Usuario y contraseña son requeridos.' });
+  if (!usuario || !password) return res.status(400).render('login', { error: 'Usuario y contraseña son requeridos.', isSubdomain: res.locals.isSubdomain || false, tenant: res.locals.tenant || null });
 
   // Bloqueo por intentos fallidos (por usuario + IP)
   const clientIp = req.ip;
   if (checkLocked(usuario, clientIp)) {
-    return res.status(429).render('login', { error: 'Cuenta bloqueada por multiples intentos fallidos. Intenta en 15 minutos.' });
+    return res.status(429).render('login', { error: 'Cuenta bloqueada por multiples intentos fallidos. Intenta en 15 minutos.', isSubdomain: res.locals.isSubdomain || false, tenant: res.locals.tenant || null });
   }
 
   const bc = getBcrypt();
-  if (!bc) return res.status(500).render('login', { error: 'Falta dependencia bcryptjs. Instala con: npm i bcryptjs' });
+  if (!bc) return res.status(500).render('login', { error: 'Falta dependencia bcryptjs. Instala con: npm i bcryptjs', isSubdomain: res.locals.isSubdomain || false, tenant: res.locals.tenant || null });
 
   try {
     const [rows] = await db.query(
-      'SELECT id, usuario, nombre, password_hash, rol, activo FROM usuarios WHERE usuario = ? LIMIT 1',
+      'SELECT id, usuario, nombre, password_hash, rol, activo, must_change_password, tenant_id, password_expires_at FROM usuarios WHERE usuario = ? LIMIT 1',
       [usuario]
     );
     const u = rows?.[0];
@@ -132,7 +134,7 @@ router.post('/login', async (req, res) => {
           [req.tenantId || 1, 0, req.geo?.ip || req.ip, req.geo?.country || 'unknown', req.geo?.city || 'unknown', String(req.headers['user-agent'] || '').substring(0, 300)]
         );
       } catch (_) {}
-      return res.status(401).render('login', { error: 'Usuario o contraseña incorrectos.' });
+      return res.status(401).render('login', { error: 'Usuario o contraseña incorrectos.', isSubdomain: res.locals.isSubdomain || false, tenant: res.locals.tenant || null });
     }
 
     const ok = await bc.compare(password, String(u.password_hash || ''));
@@ -146,7 +148,7 @@ router.post('/login', async (req, res) => {
           [req.tenantId || 1, 0, req.geo?.ip || req.ip, req.geo?.country || 'unknown', req.geo?.city || 'unknown', String(req.headers['user-agent'] || '').substring(0, 300)]
         );
       } catch (_) {}
-      return res.status(401).render('login', { error: 'Usuario o contraseña incorrectos.' });
+      return res.status(401).render('login', { error: 'Usuario o contraseña incorrectos.', isSubdomain: res.locals.isSubdomain || false, tenant: res.locals.tenant || null });
     }
 
     // Login exitoso - limpiar intentos
@@ -163,13 +165,23 @@ router.post('/login', async (req, res) => {
       }
     } catch (_) {}
 
+    // Check if temporary password has expired
+    if (u.must_change_password && u.password_expires_at) {
+      const expiresAt = new Date(u.password_expires_at);
+      if (new Date() > expiresAt) {
+        return res.render('login', { error: 'Tu PIN temporal expiró. Contacta al administrador.', isSubdomain: res.locals.isSubdomain || false, tenant: res.locals.tenant || null });
+      }
+    }
+
     // Guardar sesión
     req.session.user = {
       id: u.id,
       usuario: u.usuario,
       nombre: u.nombre || '',
       rol: u.rol,
-      permisos: permisos
+      permisos: permisos,
+      must_change_password: !!u.must_change_password,
+      tenant_id: u.tenant_id
     };
 
     // last_login
@@ -209,9 +221,9 @@ router.post('/login', async (req, res) => {
     console.error('Error login:', e);
     // Si la tabla no existe aún, guiar a migración
     if (e && (e.code === 'ER_NO_SUCH_TABLE' || e.code === '42P01')) {
-      return res.status(500).render('login', { error: 'Falta migración: cree la tabla usuarios (ver database.sql).' });
+      return res.status(500).render('login', { error: 'Falta migración: cree la tabla usuarios (ver database.sql).', isSubdomain: res.locals.isSubdomain || false, tenant: res.locals.tenant || null });
     }
-    res.status(500).render('login', { error: 'Error interno al iniciar sesión.' });
+    res.status(500).render('login', { error: 'Error interno al iniciar sesión.', isSubdomain: res.locals.isSubdomain || false, tenant: res.locals.tenant || null });
   }
 });
 
@@ -284,6 +296,41 @@ router.post('/setup', async (req, res) => {
       return res.status(400).render('setup', { error: 'Ya existe un usuario con ese nombre.' });
     }
     res.status(500).render('setup', { error: 'Error interno creando el usuario administrador.' });
+  }
+});
+
+// GET /cambiar-contrasena
+router.get('/cambiar-contrasena', (req, res) => {
+  if (!req.session || !req.session.user) return res.redirect('/login');
+  res.render('cambiar-contrasena', { error: null });
+});
+
+// POST /cambiar-contrasena
+router.post('/cambiar-contrasena', async (req, res) => {
+  if (!req.session || !req.session.user) return res.redirect('/login');
+
+  const { nueva_contrasena } = req.body;
+  if (!nueva_contrasena || nueva_contrasena.length < 8) {
+    return res.render('cambiar-contrasena', { error: 'La contraseña debe tener al menos 8 caracteres' });
+  }
+
+  try {
+    const bcrypt = require('bcryptjs');
+    const hash = await bcrypt.hash(nueva_contrasena, 10);
+
+    await db.query(
+      `UPDATE usuarios SET password_hash = ?, must_change_password = false,
+       password_expires_at = NULL, updated_at = NOW() WHERE id = ?`,
+      [hash, req.session.user.id]
+    );
+
+    // Destroy session — force re-login with new password
+    req.session.destroy(() => {
+      res.redirect('/login?changed=1');
+    });
+  } catch (err) {
+    console.error('Change password error:', err.message);
+    res.render('cambiar-contrasena', { error: 'Error al cambiar la contraseña. Intenta de nuevo.' });
   }
 });
 
