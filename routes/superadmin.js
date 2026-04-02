@@ -284,21 +284,26 @@ router.get('/billing', async (req, res) => {
 
 router.post('/tenants', async (req, res) => {
   try {
-    const { nombre, subdominio, email_admin, plan, precio_mensual, telefono, ruc } = req.body;
+    const { nombre, subdominio, email_admin, plan, precio_mensual, telefono, ruc, tipo } = req.body;
 
     if (!nombre || !subdominio || !email_admin) {
       return res.status(400).json({ error: 'nombre, subdominio y email_admin son requeridos' });
     }
 
-    const planValue = plan || 'free';
+    const esTrial = tipo !== 'produccion';
+    const planValue = plan || (esTrial ? 'free' : 'pro');
     const precioValue = Number(precio_mensual) || 0;
+    const subdominionLimpio = subdominio.toLowerCase().replace(/[^a-z0-9-]/g, '');
+
+    const ahora = new Date();
+    const trialFin = esTrial ? new Date(ahora.getTime() + 15 * 24 * 60 * 60 * 1000) : null;
 
     // Insert tenant
     const [result] = await db.query(
-      `INSERT INTO tenants (nombre, subdominio, plan, email_admin, telefono, ruc, activo, fecha_inicio, modulos_habilitados)
-       VALUES (?, ?, ?, ?, ?, ?, true, CURRENT_DATE, ?)
+      `INSERT INTO tenants (nombre, subdominio, plan, email_admin, telefono, ruc, activo, fecha_inicio, modulos_habilitados, estado_trial, trial_inicio, trial_fin)
+       VALUES (?, ?, ?, ?, ?, ?, true, CURRENT_DATE, ?, 'activo', ?, ?)
        RETURNING id`,
-      [nombre, subdominio.toLowerCase().replace(/\s+/g, ''), planValue, email_admin, telefono || null, ruc || null, JSON.stringify(defaultModules())]
+      [nombre, subdominionLimpio, planValue, email_admin, telefono || null, ruc || null, JSON.stringify(defaultModules()), ahora.toISOString(), trialFin ? trialFin.toISOString() : null]
     );
 
     const tenantId = result.insertId;
@@ -307,8 +312,16 @@ router.post('/tenants', async (req, res) => {
     await db.query(
       `INSERT INTO tenant_suscripciones (tenant_id, plan, precio_mensual, fecha_inicio, estado)
        VALUES (?, ?, ?, CURRENT_DATE, ?)`,
-      [tenantId, planValue, precioValue, precioValue > 0 ? 'activa' : 'prueba']
+      [tenantId, planValue, precioValue, esTrial ? 'prueba' : 'activa']
     );
+
+    // Send welcome email with subdomain
+    try {
+      const { enviarEmailBienvenidaSubdominio } = require('../services/notificaciones-trial');
+      await enviarEmailBienvenidaSubdominio(email_admin, nombre, subdominionLimpio, esTrial);
+    } catch (emailErr) {
+      console.error('[Superadmin] Welcome email failed:', emailErr.message);
+    }
 
     res.status(201).json({ ok: true, id: tenantId, message: 'Tenant creado exitosamente' });
   } catch (err) {
