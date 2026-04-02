@@ -11,10 +11,52 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const bcrypt = require('bcryptjs');
+const crypto = require('crypto');
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+/**
+ * Creates an admin user for a new tenant.
+ * Returns { usuario, pin } for inclusion in welcome email.
+ */
+async function crearUsuarioAdmin(tenantId, emailAdmin, nombreRestaurante) {
+  // Generate username from email (part before @)
+  const usuario = emailAdmin.split('@')[0].toLowerCase().replace(/[^a-z0-9._-]/g, '');
+
+  // Generate 6-digit PIN
+  const pinBuffer = crypto.randomBytes(4);
+  const pin = String(pinBuffer.readUInt32BE(0) % 1000000).padStart(6, '0');
+
+  const passwordHash = await bcrypt.hash(pin, 10);
+  const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000); // 48h
+
+  // Check if user already exists for this tenant
+  const [existing] = await db.query(
+    'SELECT id, usuario FROM usuarios WHERE tenant_id = ? AND (usuario = ? OR google_email = ?)',
+    [tenantId, usuario, emailAdmin]
+  );
+
+  if (existing && existing.length > 0) {
+    // Update existing user with new PIN
+    await db.query(
+      `UPDATE usuarios SET password_hash = ?, must_change_password = true,
+       password_expires_at = ?, updated_at = NOW() WHERE id = ?`,
+      [passwordHash, expiresAt.toISOString(), existing[0].id]
+    );
+    return { usuario: existing[0].usuario || usuario, pin };
+  }
+
+  // Create new admin user
+  await db.query(
+    `INSERT INTO usuarios (tenant_id, usuario, nombre, password_hash, rol, activo, must_change_password, password_expires_at)
+     VALUES (?, ?, ?, ?, 'administrador', true, true, ?)`,
+    [tenantId, usuario, nombreRestaurante, passwordHash, expiresAt.toISOString()]
+  );
+
+  return { usuario, pin };
+}
 
 function safeNum(v, decimals = 2) {
   const n = Number(v);
@@ -316,10 +358,18 @@ router.post('/tenants', async (req, res) => {
       [tenantId, planValue, precioValue, esTrial ? 'prueba' : 'activa']
     );
 
-    // Send welcome email with subdomain
+    // Create admin user for the tenant
+    let credenciales = null;
+    try {
+      credenciales = await crearUsuarioAdmin(tenantId, email_admin, nombre);
+    } catch (userErr) {
+      console.error('[Superadmin] Create admin user failed:', userErr.message);
+    }
+
+    // Send welcome email with subdomain + credentials
     try {
       const { enviarEmailBienvenidaSubdominio } = require('../services/notificaciones-trial');
-      await enviarEmailBienvenidaSubdominio(email_admin, nombre, subdominionLimpio, esTrial);
+      await enviarEmailBienvenidaSubdominio(email_admin, nombre, subdominionLimpio, esTrial, credenciales);
     } catch (emailErr) {
       console.error('[Superadmin] Welcome email failed:', emailErr.message);
     }
@@ -799,7 +849,15 @@ router.post('/solicitudes/:id/aprobar', async (req, res) => {
       [plan, notas || null, revisadoPor, solicitudId]
     );
 
-    // Send welcome email with subdomain
+    // Create admin user for the tenant
+    let credenciales = null;
+    try {
+      credenciales = await crearUsuarioAdmin(solicitud.tid, solicitud.google_email, solicitud.nombre_restaurante || solicitud.unom);
+    } catch (userErr) {
+      console.error('[Superadmin] Create admin user failed:', userErr.message);
+    }
+
+    // Send welcome email with subdomain + credentials
     try {
       const { enviarEmailBienvenidaSubdominio } = require('../services/notificaciones-trial');
       const [[tenantData]] = await db.query('SELECT subdominio FROM tenants WHERE id = ?', [solicitud.tid]);
@@ -808,7 +866,8 @@ router.post('/solicitudes/:id/aprobar', async (req, res) => {
         solicitud.google_email,
         solicitud.unom || solicitud.nombre_restaurante,
         subdominio,
-        true // siempre trial desde solicitud
+        true, // siempre trial desde solicitud
+        credenciales
       );
       console.log('[Superadmin] Welcome email sent to', solicitud.google_email);
     } catch (emailErr) {
