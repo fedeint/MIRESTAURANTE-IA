@@ -232,7 +232,7 @@ router.get('/trial-expiration', async (req, res) => {
   try {
     // Mark expired trials
     const [expired] = await db.query(
-      `UPDATE tenants SET estado_trial = 'expirado'
+      `UPDATE tenants SET estado_trial = 'expirado', activo = false
        WHERE estado_trial = 'activo' AND trial_fin < NOW()
        RETURNING id, nombre`
     )
@@ -271,7 +271,7 @@ router.get('/trial-data-cleanup', async (req, res) => {
     const [stale] = await db.query(
       `SELECT id FROM tenants
        WHERE estado_trial = 'expirado'
-         AND trial_fin < NOW() - INTERVAL '30 days'
+         AND trial_fin < NOW() - INTERVAL '75 days'
          AND plan = 'free'
          AND activo = true`
     )
