@@ -18,10 +18,7 @@ router.get('/api/restaurantes', async (req, res) => {
       where += ` AND (t.nombre ILIKE ? OR t.subdominio ILIKE ?)`;
       params.push(`%${buscar}%`);
     }
-    if (tipo && tipo !== 'todos') {
-      params.push(tipo);
-      where += ` AND t.tipo_negocio = ?`;
-    }
+    // tipo_negocio column not yet available — filter reserved for future use
     if (ciudad) {
       params.push(`%${ciudad}%`);
       where += ` AND (t.distrito ILIKE ? OR t.departamento ILIKE ?)`;
@@ -29,8 +26,8 @@ router.get('/api/restaurantes', async (req, res) => {
     }
 
     const [restaurantes] = await db.query(
-      `SELECT t.nombre, t.subdominio, t.tipo_negocio, t.distrito, t.departamento,
-              t.latitud, t.longitud, t.foto_local_url, t.plan
+      `SELECT t.nombre, t.subdominio, t.distrito, t.departamento,
+              t.latitud, t.longitud, t.plan
        FROM tenants t ${where}
        ORDER BY t.created_at DESC
        LIMIT 50`,
