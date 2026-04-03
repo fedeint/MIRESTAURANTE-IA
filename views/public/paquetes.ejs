@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0a0f24">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <title>Planes y Precios — MiRestcon IA</title>
+  <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: #0a0f24;
+      color: #e2e8f0;
+      overflow-x: hidden;
+    }
+
+    /* ── PAGE HEADER ─────────────────────────────────────────── */
+    .page-header {
+      padding: 80px 16px 56px;
+      text-align: center;
+    }
+    .page-header .eyebrow {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 3px;
+      color: #FF6B35;
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+    .page-header h1 {
+      font-size: clamp(2rem, 6vw, 3.2rem);
+      font-weight: 900;
+      color: #ffffff;
+      line-height: 1.1;
+      margin-bottom: 18px;
+    }
+    .page-header p {
+      font-size: 1.05rem;
+      color: #94a3b8;
+      max-width: 520px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    /* ── SECTION TITLES ──────────────────────────────────────── */
+    .section-title {
+      font-size: clamp(1.1rem, 3vw, 1.4rem);
+      font-weight: 800;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+    .section-subtitle {
+      font-size: 0.95rem;
+      color: #64748b;
+      margin-bottom: 40px;
+    }
+
+    /* ── PLAN CARDS ──────────────────────────────────────────── */
+    .plans-section {
+      padding: 0 16px 64px;
+    }
+    .plans-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      max-width: 1060px;
+      margin: 0 auto;
+    }
+    @media (max-width: 900px) {
+      .plans-grid { grid-template-columns: 1fr; max-width: 480px; }
+    }
+
+    .plan-card {
+      background: #141828;
+      border: 1.5px solid #1e2540;
+      border-radius: 16px;
+      padding: 28px 24px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      position: relative;
+      transition: border-color .25s, transform .2s;
+    }
+    .plan-card:hover {
+      transform: translateY(-3px);
+    }
+    .plan-card.popular {
+      border-color: #FF6B35;
+    }
+
+    .popular-badge {
+      position: absolute;
+      top: -13px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(90deg, #FF6B35, #ff8c5a);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 4px 16px;
+      border-radius: 100px;
+      white-space: nowrap;
+    }
+
+    .plan-label {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .plan-price {
+      font-size: 32px;
+      font-weight: 900;
+      color: #ffffff;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+    .plan-period {
+      font-size: 13px;
+      color: #64748b;
+      margin-bottom: 6px;
+    }
+    .plan-detail {
+      font-size: 12px;
+      color: #475569;
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+
+    .plan-divider {
+      border: none;
+      border-top: 1px solid #1e2540;
+      margin: 0 0 20px;
+    }
+
+    .plan-features {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      flex: 1;
+      margin-bottom: 28px;
+    }
+    .plan-features li {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+    .plan-features li .feat-icon {
+      flex-shrink: 0;
+      font-size: 15px;
+      margin-top: 1px;
+    }
+    .feat-yes  { color: #22c55e; }
+    .feat-dallia { color: #22c55e; }
+    .feat-no   { color: #334155; }
+    .feat-text-no { color: #475569; }
+
+    /* Plan buttons */
+    .plan-btn {
+      display: block;
+      width: 100%;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 700;
+      text-align: center;
+      text-decoration: none;
+      transition: opacity .2s, transform .15s;
+      border: none;
+      cursor: pointer;
+    }
+    .plan-btn:hover { opacity: .88; transform: translateY(-1px); text-decoration: none; }
+
+    .btn-subtle {
+      background: #1e2540;
+      color: #94a3b8;
+      border: 1.5px solid #2a3350;
+    }
+    .btn-orange {
+      background: linear-gradient(135deg, #FF6B35 0%, #ff4500 100%);
+      color: #ffffff;
+    }
+    .btn-gold {
+      background: rgba(245, 158, 11, 0.12);
+      color: #F59E0B;
+      border: 1.5px solid rgba(245, 158, 11, 0.3);
+    }
+
+    /* ── HARDWARE SECTION ────────────────────────────────────── */
+    .hardware-section {
+      padding: 0 16px 64px;
+    }
+    .hardware-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      max-width: 1060px;
+      margin: 0 auto;
+    }
+    @media (max-width: 900px) {
+      .hardware-grid { grid-template-columns: 1fr; max-width: 480px; }
+    }
+
+    .hw-card {
+      background: #141828;
+      border: 1.5px solid #1e2540;
+      border-radius: 16px;
+      padding: 28px 24px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      transition: border-color .25s, transform .2s;
+    }
+    .hw-card:hover {
+      border-color: #FF6B35;
+      transform: translateY(-3px);
+    }
+
+    .hw-icon {
+      width: 48px;
+      height: 48px;
+      background: rgba(255, 107, 53, 0.12);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      color: #FF6B35;
+      margin-bottom: 18px;
+    }
+    .hw-name {
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: #94a3b8;
+      margin-bottom: 6px;
+    }
+    .hw-price {
+      font-size: 28px;
+      font-weight: 900;
+      color: #ffffff;
+      margin-bottom: 12px;
+    }
+    .hw-features {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      flex: 1;
+      margin-bottom: 24px;
+    }
+    .hw-features li {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13.5px;
+      color: #94a3b8;
+    }
+    .hw-features li i { color: #FF6B35; font-size: 14px; }
+
+    .hw-btn {
+      display: block;
+      width: 100%;
+      padding: 11px 20px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 700;
+      text-align: center;
+      text-decoration: none;
+      background: #1e2540;
+      color: #FF6B35;
+      border: 1.5px solid rgba(255, 107, 53, 0.3);
+      transition: background .2s, color .2s, transform .15s;
+    }
+    .hw-btn:hover {
+      background: rgba(255, 107, 53, 0.12);
+      color: #FF6B35;
+      text-decoration: none;
+      transform: translateY(-1px);
+    }
+
+    /* ── FAQ ─────────────────────────────────────────────────── */
+    .faq-section {
+      padding: 0 16px 80px;
+    }
+    .faq-wrap {
+      max-width: 720px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .faq-item {
+      background: #141828;
+      border: 1.5px solid #1e2540;
+      border-radius: 14px;
+      overflow: hidden;
+    }
+    .faq-question {
+      width: 100%;
+      background: transparent;
+      border: none;
+      padding: 20px 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      cursor: pointer;
+      text-align: left;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .faq-question span {
+      font-size: 15px;
+      font-weight: 600;
+      color: #e2e8f0;
+      line-height: 1.4;
+    }
+    .faq-question .faq-arrow {
+      flex-shrink: 0;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #1e2540;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #FF6B35;
+      font-size: 16px;
+      transition: transform .25s, background .2s;
+    }
+    .faq-item.open .faq-arrow {
+      transform: rotate(180deg);
+      background: rgba(255, 107, 53, 0.15);
+    }
+    .faq-answer {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height .35s ease, padding .35s ease;
+      padding: 0 22px;
+    }
+    .faq-item.open .faq-answer {
+      max-height: 300px;
+      padding: 0 22px 20px;
+    }
+    .faq-answer p {
+      font-size: 14px;
+      color: #64748b;
+      line-height: 1.65;
+    }
+
+    /* ── CTA STRIP ───────────────────────────────────────────── */
+    .cta-strip {
+      margin: 0 16px 72px;
+      max-width: 720px;
+      margin-left: auto;
+      margin-right: auto;
+      background: linear-gradient(135deg, rgba(255,107,53,.15) 0%, rgba(255,69,0,.08) 100%);
+      border: 1.5px solid rgba(255, 107, 53, 0.25);
+      border-radius: 20px;
+      padding: 36px 28px;
+      text-align: center;
+    }
+    .cta-strip h3 {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 10px;
+    }
+    .cta-strip p {
+      font-size: 14px;
+      color: #94a3b8;
+      margin-bottom: 22px;
+      line-height: 1.6;
+    }
+    .cta-strip a {
+      display: inline-block;
+      padding: 13px 32px;
+      background: linear-gradient(135deg, #FF6B35 0%, #ff4500 100%);
+      color: #fff;
+      font-weight: 700;
+      font-size: 15px;
+      border-radius: 10px;
+      text-decoration: none;
+      transition: opacity .2s, transform .15s;
+    }
+    .cta-strip a:hover { opacity: .88; transform: translateY(-1px); text-decoration: none; }
+
+    /* ── SECTION WRAPPER ─────────────────────────────────────── */
+    .section-header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+  </style>
+</head>
+<body>
+
+<%- include('../partials/public-header') %>
+
+<!-- ════════════════ PAGE HEADER ════════════════ -->
+<section class="page-header">
+  <span class="eyebrow">Precios transparentes</span>
+  <h1>ELIGE TU PLAN</h1>
+  <p>Sin sorpresas. Sin letra pequeña. Empieza gratis y crece a tu ritmo con MiRestcon IA.</p>
+</section>
+
+<!-- ════════════════ SOFTWARE PLANS ════════════════ -->
+<section class="plans-section">
+  <div class="section-header">
+    <p class="section-title">SOFTWARE</p>
+    <p class="section-subtitle">Acceso completo al sistema de gestión para tu restaurante</p>
+  </div>
+
+  <div class="plans-grid">
+
+    <!-- Card 1: Free Trial -->
+    <div class="plan-card">
+      <p class="plan-label" style="color:#94a3b8;">FREE TRIAL</p>
+      <p class="plan-price">Gratis</p>
+      <p class="plan-period">15 días · 3 usuarios</p>
+      <hr class="plan-divider">
+      <ul class="plan-features">
+        <li>
+          <span class="feat-icon feat-yes"><i class="bi bi-check-circle-fill"></i></span>
+          <span>Pedidos cocina y mesas</span>
+        </li>
+        <li>
+          <span class="feat-icon feat-yes"><i class="bi bi-check-circle-fill"></i></span>
+          <span>Almacén e inventario</span>
+        </li>
+        <li>
+          <span class="feat-icon feat-yes"><i class="bi bi-check-circle-fill"></i></span>
+          <span>Caja y facturación</span>
+        </li>
+        <li>
+          <span class="feat-icon feat-yes"><i class="bi bi-check-circle-fill"></i></span>
+          <span>Reportes básicos</span>
+        </li>
+        <li>
+          <span class="feat-icon feat-no"><i class="bi bi-x-circle-fill"></i></span>
+          <span class="feat-text-no">DallIA asistente IA</span>
+        </li>
+      </ul>
+      <a href="/auth/google" class="plan-btn btn-subtle">Probar gratis</a>
+    </div>
+
+    <!-- Card 2: Anual (POPULAR) -->
+    <div class="plan-card popular">
+      <span class="popular-badge">POPULAR</span>
+      <p class="plan-label" style="color:#FF6B35;">ANUAL</p>
+      <p class="plan-price">S/ 3,200</p>
+      <p class="plan-period">/año · 5 usuarios</p>
+      <p class="plan-detail">S/ 2,500 sistema + S/ 700 almacenamiento</p>
+      <hr class="plan-divider">
+      <ul class="plan-features">
+        <li>
+          <span class="feat-icon feat-yes"><i class="bi bi-check-circle-fill"></i></span>
+          <span>Todo del Free Trial</span>
+        </li>
+        <li>
+          <span class="feat-icon feat-yes"><i class="bi bi-check-circle-fill"></i></span>
+          <span>SUNAT y facturación electrónica</span>
+        </li>
+        <li>
+          <span class="feat-icon feat-yes"><i class="bi bi-check-circle-fill"></i></span>
+          <span>Delivery y reservas</span>
+        </li>
+        <li>
+          <span class="feat-icon feat-yes"><i class="bi bi-check-circle-fill"></i></span>
+          <span>Reportes avanzados</span>
+        </li>
+        <li>
+          <span class="feat-icon feat-no"><i class="bi bi-x-circle-fill"></i></span>
+          <span class="feat-text-no">DallIA asistente IA</span>
+        </li>
+      </ul>
+      <a href="#contacto" class="plan-btn btn-orange">Contratar ahora</a>
+    </div>
+
+    <!-- Card 3: De por vida -->
+    <div class="plan-card">
+      <p class="plan-label" style="color:#F59E0B;">DE POR VIDA</p>
+      <p class="plan-price">S/ 4,500</p>
+      <p class="plan-period">licencia perpetua · usuarios ilimitados</p>
+      <p class="plan-detail">+ S/ 700/año almacenamiento</p>
+      <hr class="plan-divider">
+      <ul class="plan-features">
+        <li>
+          <span class="feat-icon feat-yes"><i class="bi bi-check-circle-fill"></i></span>
+          <span>Todo del Anual</span>
+        </li>
+        <li>
+          <span class="feat-icon feat-dallia"><i class="bi bi-check-circle-fill"></i></span>
+          <span>DallIA asistente IA</span>
+        </li>
+        <li>
+          <span class="feat-icon feat-yes"><i class="bi bi-check-circle-fill"></i></span>
+          <span>Usuarios ilimitados</span>
+        </li>
+        <li>
+          <span class="feat-icon feat-yes"><i class="bi bi-check-circle-fill"></i></span>
+          <span>Servidor dedicado</span>
+        </li>
+        <li>
+          <span class="feat-icon feat-yes"><i class="bi bi-check-circle-fill"></i></span>
+          <span>Soporte prioritario</span>
+        </li>
+      </ul>
+      <a href="#contacto" class="plan-btn btn-gold">Contactar ventas</a>
+    </div>
+
+  </div>
+</section>
+
+<!-- ════════════════ HARDWARE PACKAGES ════════════════ -->
+<section class="hardware-section">
+  <div class="section-header">
+    <p class="section-title">PAQUETES CON EQUIPO</p>
+    <p class="section-subtitle">Hardware listo para usar, configurado y entregado en tu local</p>
+  </div>
+
+  <div class="hardware-grid">
+
+    <!-- Solo Software -->
+    <div class="hw-card">
+      <div class="hw-icon"><i class="bi bi-laptop"></i></div>
+      <p class="hw-name">Solo Software</p>
+      <p class="hw-price">S/ 500</p>
+      <ul class="hw-features">
+        <li><i class="bi bi-check2"></i> Demo virtual incluida</li>
+        <li><i class="bi bi-check2"></i> Acceso inmediato</li>
+        <li><i class="bi bi-check2"></i> Soporte por chat</li>
+        <li><i class="bi bi-check2"></i> Usa tus propios equipos</li>
+      </ul>
+      <a href="/demo" class="hw-btn">Agendar demo</a>
+    </div>
+
+    <!-- Básico -->
+    <div class="hw-card">
+      <div class="hw-icon"><i class="bi bi-display"></i></div>
+      <p class="hw-name">Básico</p>
+      <p class="hw-price">S/ 1,500</p>
+      <ul class="hw-features">
+        <li><i class="bi bi-check2"></i> All-in-one (PC táctil)</li>
+        <li><i class="bi bi-check2"></i> Impresora térmica 80mm</li>
+        <li><i class="bi bi-check2"></i> Instalación incluida</li>
+        <li><i class="bi bi-check2"></i> Capacitación presencial</li>
+      </ul>
+      <a href="/demo" class="hw-btn">Agendar demo</a>
+    </div>
+
+    <!-- Completo -->
+    <div class="hw-card">
+      <div class="hw-icon"><i class="bi bi-camera-video"></i></div>
+      <p class="hw-name">Completo</p>
+      <p class="hw-price">S/ 3,000</p>
+      <ul class="hw-features">
+        <li><i class="bi bi-check2"></i> Tablet Android + soporte</li>
+        <li><i class="bi bi-check2"></i> Impresora térmica 80mm</li>
+        <li><i class="bi bi-check2"></i> Cámara de seguridad IP</li>
+        <li><i class="bi bi-check2"></i> Instalación + capacitación</li>
+        <li><i class="bi bi-check2"></i> Garantía 12 meses</li>
+      </ul>
+      <a href="/demo" class="hw-btn">Agendar demo</a>
+    </div>
+
+  </div>
+</section>
+
+<!-- ════════════════ FAQ ════════════════ -->
+<section class="faq-section">
+  <div class="section-header">
+    <p class="section-title">PREGUNTAS FRECUENTES</p>
+    <p class="section-subtitle">Resolvemos tus dudas antes de que las tengas</p>
+  </div>
+
+  <div class="faq-wrap">
+
+    <div class="faq-item">
+      <button class="faq-question" onclick="toggleFaq(this)">
+        <span>¿Puedo cambiar de plan después?</span>
+        <span class="faq-arrow"><i class="bi bi-chevron-down"></i></span>
+      </button>
+      <div class="faq-answer">
+        <p>Sí, puedes hacer upgrade o downgrade en cualquier momento. Si pasas de Free Trial a Anual, el costo restante del período se descuenta automáticamente. Para pasar al plan De por Vida, contáctanos y te generamos una proforma al instante.</p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-question" onclick="toggleFaq(this)">
+        <span>¿Qué incluye el almacenamiento?</span>
+        <span class="faq-arrow"><i class="bi bi-chevron-down"></i></span>
+      </button>
+      <div class="faq-answer">
+        <p>El almacenamiento de S/ 700/año cubre el alojamiento de tu base de datos, backups diarios automáticos, imágenes de tu carta y documentos de facturación electrónica en la nube. El espacio incluido es de 50 GB, ampliable según necesidad.</p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-question" onclick="toggleFaq(this)">
+        <span>¿Cómo funciona la licencia perpetua?</span>
+        <span class="faq-arrow"><i class="bi bi-chevron-down"></i></span>
+      </button>
+      <div class="faq-answer">
+        <p>Con el plan De por Vida pagas una sola vez y el software es tuyo para siempre. Recibes todas las actualizaciones del sistema sin costo adicional. El único gasto recurrente es el almacenamiento en nube (S/ 700/año), que puedes gestionar o migrar a tu propio servidor si lo prefieres.</p>
+      </div>
+    </div>
+
+    <div class="faq-item">
+      <button class="faq-question" onclick="toggleFaq(this)">
+        <span>¿Los equipos tienen garantía?</span>
+        <span class="faq-arrow"><i class="bi bi-chevron-down"></i></span>
+      </button>
+      <div class="faq-answer">
+        <p>Sí. Todos los equipos de los paquetes Básico y Completo incluyen garantía de 12 meses contra defectos de fábrica. En caso de falla, coordinamos el reemplazo o reparación directamente contigo, sin burocracia. Adicionalmente ofrecemos soporte técnico remoto incluido durante el primer año.</p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ════════════════ CTA STRIP ════════════════ -->
+<div id="contacto" class="cta-strip" style="margin-bottom:72px;">
+  <h3>¿Tienes dudas o quieres una demo personalizada?</h3>
+  <p>Nuestro equipo te ayuda a elegir el plan correcto para tu restaurante. Sin presión, sin compromisos.</p>
+  <a href="/demo">Agendar demo gratuita</a>
+</div>
+
+<%- include('../partials/public-footer') %>
+
+<script>
+  function toggleFaq(btn) {
+    const item = btn.closest('.faq-item');
+    const isOpen = item.classList.contains('open');
+    // Close all
+    document.querySelectorAll('.faq-item.open').forEach(el => el.classList.remove('open'));
+    // Open clicked if it was closed
+    if (!isOpen) item.classList.add('open');
+  }
+</script>
+
+</body>
+</html>
