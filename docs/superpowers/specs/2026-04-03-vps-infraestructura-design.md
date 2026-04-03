@@ -199,7 +199,56 @@ Twenty es un CRM open source (alternativa a Salesforce/HubSpot) con:
 
 ---
 
-## 6. Distribución Supabase vs VPS
+## 6. Observabilidad — Indicadores VPS en superadmin
+
+Agregar al tab **Infra** del módulo de observabilidad (`/superadmin/observabilidad`) una sección "VPS Servarica":
+
+### Endpoint health en el VPS
+`GET /health` (protegido con X-Storage-Key) retorna:
+```json
+{
+  "cpu_percent": 0.24,
+  "ram_used_gb": 2.85,
+  "ram_total_gb": 8,
+  "disk_used_gb": 2.4,
+  "disk_total_gb": 242,
+  "services": {
+    "postfix": true,
+    "dovecot": true,
+    "nginx": true,
+    "storage_api": true,
+    "twenty_crm": true
+  },
+  "mail_queue": 0,
+  "fail2ban_banned": 3,
+  "last_backup": "2026-04-03T03:00:00Z",
+  "storage_by_tenant": [
+    { "tenant_id": 1, "size_mb": 45 },
+    { "tenant_id": 2, "size_mb": 12 }
+  ]
+}
+```
+
+### Visualización en superadmin
+```
+VPS Servarica ($7/mes)
+├── CPU: 0.24% ████░░░░░░ de 2 cores
+├── RAM: 2.85 / 8 GiB ████░░░░░░
+├── Disco: 2.4 / 242 GB █░░░░░░░░░
+├── Servicios: Postfix ✅ Dovecot ✅ Nginx ✅ Storage ✅ CRM ✅
+├── Cola correos: 0 pendientes
+├── IPs bloqueadas hoy: 3
+└── Último backup: hace 4h ✅
+```
+
+### Integración
+- Cron existente `/api/cron/metrics-infra` consulta `GET /health` del VPS cada 5 min
+- Guarda en `kpi_snapshots` con tipo `vps_health`
+- El tab Infra lee el snapshot y muestra indicadores verde/rojo
+
+---
+
+## 7. Distribución Supabase vs VPS
 
 | Componente | Supabase | VPS Servarica |
 |---|---|---|
