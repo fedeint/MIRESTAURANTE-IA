@@ -386,6 +386,10 @@ app.get('/trial-expirado', requireAuth, async (req, res) => {
 });
 
 // Landing page (always public)
+// Public pages (no auth required) — homepage, paquetes, demo, restaurantes, beneficios, marketplace
+const publicRoutes = require('./routes/public');
+app.use(publicRoutes);
+
 app.get('/landing', (req, res) => {
     res.render('landing');
 });
