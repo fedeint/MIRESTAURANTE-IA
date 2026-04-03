@@ -390,9 +390,8 @@ app.get('/trial-expirado', requireAuth, async (req, res) => {
 const publicRoutes = require('./routes/public');
 app.use(publicRoutes);
 
-app.get('/landing', (req, res) => {
-    res.render('landing');
-});
+// /landing removed — replaced by /home (public homepage)
+app.get('/landing', (req, res) => res.redirect('/home'));
 
 // Sync routes (status + manual trigger - admin only in local mode)
 app.use('/api/sync', requireAuth, requireRole('administrador'), syncRoutes);
