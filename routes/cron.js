@@ -156,6 +156,20 @@ router.get('/metrics-infra', async (req, res) => {
       grafana.pushMetric('tenant_storage_docs', parseInt(t.docs || 0), { tenant: t.nombre }, 'gauge')
     }
 
+    // VPS health snapshot
+    try {
+      const vpsStorage = require('../services/vps-storage')
+      const health = await vpsStorage.getHealth()
+      if (health) {
+        await db.query(
+          `INSERT INTO kpi_snapshots (tipo, datos, calculado_en)
+           VALUES ('vps_health', ?::jsonb, NOW())
+           ON CONFLICT (tipo) DO UPDATE SET datos = EXCLUDED.datos, calculado_en = NOW()`,
+          [JSON.stringify(health)]
+        )
+      }
+    } catch (_) {}
+
     logger.info('CRON_METRICS_INFRA_OK')
     res.json({ ok: true })
   } catch (err) {

@@ -338,6 +338,26 @@ router.get('/api/infra/storage', async (req, res) => {
   }
 })
 
+// VPS Health — from kpi_snapshots or live
+router.get('/api/infra/vps-health', async (req, res) => {
+  try {
+    // Try live first
+    const vpsStorage = require('../services/vps-storage')
+    const live = await vpsStorage.getHealth()
+    if (live) return res.json(live)
+
+    // Fallback to cached snapshot
+    const [[snapshot]] = await db.query(
+      "SELECT datos, calculado_en FROM kpi_snapshots WHERE tipo = 'vps_health'"
+    )
+    if (snapshot) return res.json({ ...snapshot.datos, cached: true, cached_at: snapshot.calculado_en })
+
+    res.json({ error: 'VPS health not available' })
+  } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
 // === TAB MAPA ===
 
 router.get('/api/mapa/tenants', async (req, res) => {

@@ -386,6 +386,33 @@ app.get('/trial-expirado', requireAuth, async (req, res) => {
 });
 
 // Landing page (always public)
+// File proxy — serves tenant files from VPS storage (requires auth)
+const vpsStorage = require('./services/vps-storage');
+app.get('/api/files/:tenantId/*', requireAuth, async (req, res) => {
+  const tenantId = Number(req.params.tenantId);
+  const userTenantId = req.session?.user?.tenant_id || req.tenantId;
+  const userRole = req.session?.user?.rol;
+
+  // Superadmin can access any tenant, others only their own
+  if (userRole !== 'superadmin' && tenantId !== userTenantId) {
+    return res.status(403).json({ error: 'Acceso denegado' });
+  }
+
+  const pathParts = req.params[0].split('/');
+  if (pathParts.length < 2) return res.status(400).json({ error: 'Path inválido' });
+
+  const category = pathParts[0];
+  const filename = pathParts.slice(1).join('/');
+
+  const fileRes = await vpsStorage.downloadFile(tenantId, category, filename);
+  if (!fileRes) return res.status(404).json({ error: 'Archivo no encontrado' });
+
+  const contentType = fileRes.headers.get('content-type');
+  if (contentType) res.setHeader('Content-Type', contentType);
+  const buffer = await fileRes.arrayBuffer();
+  res.send(Buffer.from(buffer));
+});
+
 // Public pages (no auth required) — homepage, paquetes, demo, restaurantes, beneficios, marketplace
 const publicRoutes = require('./routes/public');
 app.use(publicRoutes);
