@@ -342,44 +342,12 @@ function setupSync() {
   });
 }
 
-// ===== TERMINAL =====
-let termHistory = [];
-let termHistoryIdx = -1;
-let termCollapsed = true;
+// ===== TERMINAL (delegated to terminal.js) =====
 let currentPid = null;
 
-function toggleTerminal() {
-  termCollapsed = !termCollapsed;
-  $('terminalPanel').classList.toggle('collapsed', termCollapsed);
-  if (!termCollapsed) $('termInput').focus();
-}
-
-function clearTerminal() { $('termOutput').innerHTML = ''; }
-
-function appendTerm(text, cls) {
-  const output = $('termOutput');
-  const line = document.createElement('div');
-  line.className = 'term-line ' + cls;
-  line.textContent = text;
-  output.appendChild(line);
-  output.scrollTop = output.scrollHeight;
-}
-
-function handleTermKey(e) {
-  if (e.key === 'Enter') {
-    const cmd = $('termInput').value.trim();
-    if (!cmd) return;
-    termHistory.unshift(cmd);
-    if (termHistory.length > 50) termHistory.pop();
-    termHistoryIdx = -1;
-    appendTerm(cmd, 'cmd');
-    $('termInput').value = '';
-    vscode.postMessage({ type: 'run-command', command: cmd });
-  }
-  if (e.key === 'ArrowUp') { e.preventDefault(); if (termHistoryIdx < termHistory.length - 1) { termHistoryIdx++; $('termInput').value = termHistory[termHistoryIdx]; } }
-  if (e.key === 'ArrowDown') { e.preventDefault(); if (termHistoryIdx > 0) { termHistoryIdx--; $('termInput').value = termHistory[termHistoryIdx]; } else { termHistoryIdx = -1; $('termInput').value = ''; } }
-  if (e.key === 'c' && e.ctrlKey && currentPid) { vscode.postMessage({ type: 'kill-command', pid: currentPid }); appendTerm('^C', 'info'); }
-}
+function toggleTerminal() { terminalSystem.toggle(); }
+function clearTerminal() { terminalSystem.clear(); }
+function handleTermKey(event) { terminalSystem.handleKey(event); }
 
 // ===== CONNECTION =====
 async function checkConn() {
@@ -396,9 +364,9 @@ window.addEventListener('message', e => {
     case 'tour-progress': handleTourProgress(msg); break;
     case 'tour-done': case 'screenshot-done': handleTourDone(msg.results); break;
     case 'tour-error': case 'screenshot-error': stopTour(); break;
-    case 'term-started': currentPid = msg.pid; break;
-    case 'term-output': appendTerm(msg.data.replace(/\n$/, ''), msg.isError ? 'err' : 'out'); break;
-    case 'term-exit': currentPid = null; appendTerm('exit ' + msg.code, msg.code === 0 ? 'exit-ok' : 'exit-fail'); break;
+    case 'term-started': currentPid = msg.pid; terminalSystem.addLine('$ ' + msg.command, 'info'); break;
+    case 'term-output': terminalSystem.addLine(msg.data.replace(/\n$/, ''), msg.isError ? 'err' : 'out'); break;
+    case 'term-exit': currentPid = null; terminalSystem.addLine('Process exited with code ' + msg.code, msg.code === 0 ? 'exit-ok' : 'exit-fail'); break;
   }
 });
 
@@ -416,5 +384,6 @@ const state = vscode.getState();
 if (state?.comments) { comments = state.comments; }
 
 buildDevices();
+terminalSystem.init();
 setInterval(checkConn, 3000);
 checkConn();

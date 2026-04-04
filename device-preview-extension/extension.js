@@ -178,11 +178,13 @@ function getWebviewContent(context, webview, appUrl) {
   const cssUri = webview.asWebviewUri(vscode.Uri.joinPath(context.extensionUri, 'webview', 'styles.css'));
   const appJsUri = webview.asWebviewUri(vscode.Uri.joinPath(context.extensionUri, 'webview', 'app.js'));
   const commentsJsUri = webview.asWebviewUri(vscode.Uri.joinPath(context.extensionUri, 'webview', 'comments.js'));
+  const terminalJsUri = webview.asWebviewUri(vscode.Uri.joinPath(context.extensionUri, 'webview', 'terminal.js'));
 
   html = html.replace(/\{\{APP_URL\}\}/g, appUrl);
   html = html.replace(/\{\{CSS_URI\}\}/g, cssUri.toString());
   html = html.replace(/\{\{APP_JS_URI\}\}/g, appJsUri.toString());
   html = html.replace(/\{\{COMMENTS_JS_URI\}\}/g, commentsJsUri.toString());
+  html = html.replace(/\{\{TERMINAL_JS_URI\}\}/g, terminalJsUri.toString());
   html = html.replace(/\{\{CSP_SOURCE\}\}/g, webview.cspSource);
 
   return html;
