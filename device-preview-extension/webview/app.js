@@ -1,5 +1,5 @@
 const vscode = acquireVsCodeApi();
-let baseUrl = '{{APP_URL}}';
+let baseUrl = document.getElementById('urlInput')?.value || 'http://localhost:1995';
 let curPath = '/';
 let zoomVal = 50;
 let syncOn = true;
