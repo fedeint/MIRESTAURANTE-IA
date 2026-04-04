@@ -11,6 +11,30 @@ let touring = false;
 
 const $ = id => document.getElementById(id);
 
+// ===== MODE TOGGLE =====
+let currentMode = 'test';
+
+function switchMode(mode) {
+  currentMode = mode;
+  document.querySelectorAll('.mode-container').forEach(c => c.classList.remove('active'));
+  const container = document.getElementById('mode-' + mode);
+  if (container) container.classList.add('active');
+
+  document.querySelectorAll('.mode-toggle-btn').forEach(btn => {
+    btn.className = 'mode-toggle-btn';
+    if (btn.dataset.mode === mode) {
+      btn.classList.add('active-' + mode);
+    }
+  });
+
+  window._currentMode = mode;
+}
+
+// Wire mode toggle buttons (app.js loads at end of <body>, DOM is ready)
+document.querySelectorAll('.mode-toggle-btn').forEach(btn => {
+  btn.addEventListener('click', () => switchMode(btn.dataset.mode));
+});
+
 // ===== DEVICE DEFINITIONS =====
 const DEVICES = {
   iphone: {
