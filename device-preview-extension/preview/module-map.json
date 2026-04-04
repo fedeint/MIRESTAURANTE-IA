@@ -1,0 +1,325 @@
+{
+  "categories": [
+    {
+      "id": "operations",
+      "name": "Operaciones Core",
+      "color": "#00D4AA",
+      "modules": [
+        {
+          "id": "mesas",
+          "name": "Mesas",
+          "routeFile": "routes/mesas.js",
+          "status": "active",
+          "roles": ["mesero", "cajero", "administrador"],
+          "dependsOn": ["auth", "productos", "almacen", "recetas"],
+          "blocks": ["cocina", "caja", "facturas"],
+          "routes": ["/mesas", "/api/mesas"],
+          "endpointCount": 18,
+          "keyEndpoints": [
+            "GET /mesas",
+            "POST /mesas/abrir",
+            "PUT /mesas/:id/entregar",
+            "PUT /mesas/:id/liberar",
+            "POST /mesas/pedidos/:id/facturar"
+          ],
+          "screens": [
+            { "route": "/mesas", "name": "Dashboard de mesas", "status": "done" }
+          ]
+        },
+        {
+          "id": "cocina",
+          "name": "Cocina",
+          "routeFile": "routes/cocina.js",
+          "status": "active",
+          "roles": ["cocinero", "mesero", "administrador"],
+          "dependsOn": ["mesas"],
+          "blocks": [],
+          "routes": ["/cocina"],
+          "endpointCount": 7,
+          "keyEndpoints": [
+            "GET /cocina",
+            "GET /cocina/cola",
+            "PUT /cocina/item/:id/estado"
+          ],
+          "screens": [
+            { "route": "/cocina", "name": "Cola de cocina", "status": "done" }
+          ]
+        },
+        {
+          "id": "pedidos",
+          "name": "Pedidos",
+          "routeFile": "routes/pedido-nuevo.js",
+          "status": "active",
+          "roles": ["mesero", "administrador"],
+          "dependsOn": ["mesas", "productos"],
+          "blocks": ["cocina", "caja"],
+          "routes": ["/pedido-nuevo", "/pedidos", "/para-llevar"],
+          "endpointCount": 8,
+          "keyEndpoints": [
+            "GET /pedido-nuevo",
+            "POST /pedido-nuevo/confirmar",
+            "GET /pedidos"
+          ],
+          "screens": [
+            { "route": "/pedido-nuevo", "name": "Nuevo pedido", "status": "done" },
+            { "route": "/pedidos", "name": "Lista de pedidos", "status": "done" }
+          ]
+        },
+        {
+          "id": "facturas",
+          "name": "Facturación + SUNAT",
+          "routeFile": "routes/facturas.js",
+          "status": "building",
+          "roles": ["administrador", "cajero"],
+          "dependsOn": ["caja", "mesas"],
+          "blocks": [],
+          "routes": ["/facturas", "/sunat", "/sunat-pwa"],
+          "endpointCount": 16,
+          "keyEndpoints": [
+            "POST /facturas",
+            "POST /sunat/emitir/:facturaId",
+            "GET /sunat-pwa"
+          ],
+          "screens": [
+            { "route": "/facturas", "name": "Facturación", "status": "done" },
+            { "route": "/sunat", "name": "Config SUNAT", "status": "building" },
+            { "route": "/sunat-pwa", "name": "SUNAT PWA", "status": "building" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "inventory",
+      "name": "Inventario & Menú",
+      "color": "#00D4AA",
+      "modules": [
+        {
+          "id": "productos",
+          "name": "Productos",
+          "routeFile": "routes/productos.js",
+          "status": "active",
+          "roles": ["administrador", "almacenero"],
+          "dependsOn": ["recetas", "almacen"],
+          "blocks": ["mesas", "pedidos"],
+          "routes": ["/productos"],
+          "endpointCount": 12,
+          "keyEndpoints": ["GET /productos", "POST /productos", "GET /productos/carta"],
+          "screens": [{ "route": "/productos", "name": "Lista de productos", "status": "done" }]
+        },
+        {
+          "id": "almacen",
+          "name": "Almacén",
+          "routeFile": "routes/almacen.js",
+          "status": "active",
+          "roles": ["administrador", "almacenero"],
+          "dependsOn": [],
+          "blocks": ["productos", "recetas"],
+          "routes": ["/almacen"],
+          "endpointCount": 15,
+          "keyEndpoints": ["GET /almacen/inventario", "POST /almacen/api/entrada", "GET /almacen/que-comprar"],
+          "screens": [{ "route": "/almacen", "name": "Inventario", "status": "done" }]
+        },
+        {
+          "id": "recetas",
+          "name": "Recetas & Costeo",
+          "routeFile": "routes/recetas.js",
+          "status": "active",
+          "roles": ["administrador", "almacenero"],
+          "dependsOn": ["almacen"],
+          "blocks": ["productos"],
+          "routes": ["/recetas", "/api/recetas"],
+          "endpointCount": 8,
+          "keyEndpoints": ["GET /api/recetas/:id", "POST /api/recetas/:id", "POST /recetas/recalcular-costos"],
+          "screens": [{ "route": "/recetas", "name": "Lista de recetas", "status": "done" }]
+        }
+      ]
+    },
+    {
+      "id": "payments",
+      "name": "Caja & Pagos",
+      "color": "#00D4AA",
+      "modules": [
+        {
+          "id": "caja",
+          "name": "Caja",
+          "routeFile": "routes/caja.js",
+          "status": "active",
+          "roles": ["administrador", "cajero"],
+          "dependsOn": ["mesas", "pedidos"],
+          "blocks": ["facturas", "reportes"],
+          "routes": ["/caja"],
+          "endpointCount": 6,
+          "keyEndpoints": ["GET /caja", "POST /caja/abrir", "POST /caja/cerrar"],
+          "screens": [{ "route": "/caja", "name": "Caja registradora", "status": "done" }]
+        },
+        {
+          "id": "pagos",
+          "name": "Pagos & Suscripciones",
+          "routeFile": "routes/pagos.js",
+          "status": "active",
+          "roles": ["administrador"],
+          "dependsOn": ["auth"],
+          "blocks": [],
+          "routes": ["/api/pagos"],
+          "endpointCount": 5,
+          "keyEndpoints": ["GET /pagos/planes", "POST /pagos/crear-sesion"],
+          "screens": [{ "route": "/pagos/checkout", "name": "Checkout", "status": "done" }]
+        }
+      ]
+    },
+    {
+      "id": "staff",
+      "name": "Staff & Admin",
+      "color": "#FF6B35",
+      "modules": [
+        {
+          "id": "usuarios",
+          "name": "Usuarios & Roles",
+          "routeFile": "routes/usuarios.js",
+          "status": "active",
+          "roles": ["administrador"],
+          "dependsOn": ["auth"],
+          "blocks": [],
+          "routes": ["/usuarios"],
+          "endpointCount": 8,
+          "keyEndpoints": ["GET /usuarios", "POST /usuarios", "PUT /usuarios/:id/permisos"],
+          "screens": [{ "route": "/usuarios", "name": "Gestión de usuarios", "status": "done" }]
+        },
+        {
+          "id": "administracion",
+          "name": "Administración",
+          "routeFile": "routes/administracion.js",
+          "status": "building",
+          "roles": ["administrador"],
+          "dependsOn": ["usuarios"],
+          "blocks": [],
+          "routes": ["/administracion"],
+          "endpointCount": 7,
+          "keyEndpoints": ["GET /administracion", "GET /administracion/planilla", "GET /administracion/gastos"],
+          "screens": [
+            { "route": "/administracion", "name": "Dashboard admin", "status": "done" },
+            { "route": "/administracion/planilla", "name": "Planilla", "status": "building" }
+          ]
+        },
+        {
+          "id": "sprint4",
+          "name": "Sprint4 (Fidelidad+Promos)",
+          "routeFile": "routes/sprint4.js",
+          "status": "building",
+          "roles": ["administrador", "cajero", "mesero"],
+          "dependsOn": ["mesas", "caja"],
+          "blocks": [],
+          "routes": ["/sprint4"],
+          "endpointCount": 20,
+          "keyEndpoints": ["GET /sprint4/fidelidad", "GET /sprint4/promociones", "GET /sprint4/propinas"],
+          "screens": [
+            { "route": "/sprint4/fidelidad", "name": "Fidelidad", "status": "building" },
+            { "route": "/sprint4/promociones", "name": "Promociones", "status": "building" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ai",
+      "name": "IA & Canales",
+      "color": "#6366F1",
+      "modules": [
+        {
+          "id": "chat",
+          "name": "DallIA (Chat IA)",
+          "routeFile": "routes/chat.js",
+          "status": "active",
+          "roles": ["administrador"],
+          "dependsOn": ["auth"],
+          "blocks": [],
+          "routes": ["/chat"],
+          "endpointCount": 8,
+          "keyEndpoints": ["GET /chat", "POST /chat", "GET /chat/dallia/voz"],
+          "screens": [{ "route": "/chat", "name": "Chat DallIA", "status": "done" }]
+        },
+        {
+          "id": "delivery",
+          "name": "Delivery (Rappi/PedidosYa)",
+          "routeFile": "routes/delivery.js",
+          "status": "building",
+          "roles": ["administrador"],
+          "dependsOn": ["productos", "pedidos"],
+          "blocks": [],
+          "routes": ["/delivery"],
+          "endpointCount": 10,
+          "keyEndpoints": ["GET /delivery", "POST /delivery/webhook/rappi", "GET /delivery/sync-menu/:plataforma"],
+          "screens": [
+            { "route": "/delivery", "name": "Dashboard delivery", "status": "building" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "enterprise",
+      "name": "Enterprise & Super",
+      "color": "#EF4444",
+      "modules": [
+        {
+          "id": "superadmin",
+          "name": "Superadmin Panel",
+          "routeFile": "routes/superadmin.js",
+          "status": "active",
+          "roles": ["superadmin"],
+          "dependsOn": ["auth"],
+          "blocks": [],
+          "routes": ["/superadmin"],
+          "endpointCount": 20,
+          "keyEndpoints": ["GET /superadmin", "GET /superadmin/tenants", "POST /superadmin/tenants"],
+          "screens": [{ "route": "/superadmin", "name": "Dashboard SA", "status": "done" }]
+        },
+        {
+          "id": "observabilidad",
+          "name": "Observabilidad",
+          "routeFile": "routes/observabilidad.js",
+          "status": "active",
+          "roles": ["superadmin"],
+          "dependsOn": ["superadmin"],
+          "blocks": [],
+          "routes": ["/superadmin/observabilidad"],
+          "endpointCount": 25,
+          "keyEndpoints": ["GET /api/negocio/kpis", "GET /api/rendimiento/kpis", "GET /api/seguridad/kpis"],
+          "screens": [{ "route": "/superadmin/observabilidad", "name": "Observabilidad", "status": "done" }]
+        },
+        {
+          "id": "reportes",
+          "name": "Reportes & Social",
+          "routeFile": "routes/reportes.js",
+          "status": "building",
+          "roles": ["administrador"],
+          "dependsOn": ["mesas", "caja", "facturas"],
+          "blocks": [],
+          "routes": ["/reportes", "/api/social"],
+          "endpointCount": 10,
+          "keyEndpoints": ["GET /reportes", "GET /reportes/diario", "GET /api/social/ranking"],
+          "screens": [
+            { "route": "/reportes", "name": "Reportes", "status": "building" }
+          ]
+        }
+      ]
+    }
+  ],
+  "pipelines": [
+    {
+      "name": "Ciclo de Pedido",
+      "steps": ["auth", "mesas", "pedidos", "cocina", "caja", "facturas"]
+    },
+    {
+      "name": "Middleware",
+      "steps": ["security", "session", "tenant", "telemetry", "rate-limit", "handler"]
+    }
+  ],
+  "auth": {
+    "id": "auth",
+    "name": "Autenticación",
+    "routeFile": "routes/auth.js",
+    "status": "active",
+    "roles": ["all"],
+    "routes": ["/login", "/logout", "/auth/google"],
+    "endpointCount": 10
+  }
+}
