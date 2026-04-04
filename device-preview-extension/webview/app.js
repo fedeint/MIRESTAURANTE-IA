@@ -29,6 +29,10 @@ function switchMode(mode) {
     }
   });
 
+  if (mode === 'map' && window.mapMode) {
+    mapMode.init();
+  }
+
   window._currentMode = mode;
 }
 

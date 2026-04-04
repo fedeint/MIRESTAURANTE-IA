@@ -192,6 +192,7 @@ function getWebviewContent(context, webview, appUrl) {
   const commentsJsUri = webview.asWebviewUri(vscode.Uri.joinPath(context.extensionUri, 'webview', 'comments.js'));
   const terminalJsUri = webview.asWebviewUri(vscode.Uri.joinPath(context.extensionUri, 'webview', 'terminal.js'));
   const miniMapJsUri = webview.asWebviewUri(vscode.Uri.joinPath(context.extensionUri, 'webview', 'mini-map.js'));
+  const modeMapJsUri = webview.asWebviewUri(vscode.Uri.joinPath(context.extensionUri, 'webview', 'mode-map.js'));
 
   html = html.replace(/\{\{APP_URL\}\}/g, appUrl);
   html = html.replace(/\{\{CSS_URI\}\}/g, cssUri.toString());
@@ -199,6 +200,7 @@ function getWebviewContent(context, webview, appUrl) {
   html = html.replace(/\{\{COMMENTS_JS_URI\}\}/g, commentsJsUri.toString());
   html = html.replace(/\{\{TERMINAL_JS_URI\}\}/g, terminalJsUri.toString());
   html = html.replace(/\{\{MINI_MAP_JS_URI\}\}/g, miniMapJsUri.toString());
+  html = html.replace(/\{\{MODE_MAP_JS_URI\}\}/g, modeMapJsUri.toString());
   html = html.replace(/\{\{CSP_SOURCE\}\}/g, webview.cspSource);
 
   return html;

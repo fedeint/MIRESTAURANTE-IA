@@ -246,3 +246,57 @@ body.dual-mode .dual-panel { display: flex; } body.dual-mode .dc-box { display: 
 @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
 ::-webkit-scrollbar { width: 3px; height: 3px; } ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; } ::-webkit-scrollbar-thumb:hover { background: var(--subtext); }
+
+/* ===== MAP MODE ===== */
+.map-toolbar {
+  display: flex; align-items: center; gap: 8px;
+  height: 40px; padding: 0 14px; background: var(--surface);
+  border-bottom: 1px solid var(--elevated); flex-shrink: 0;
+}
+.map-workspace {
+  flex: 1; overflow: hidden; position: relative;
+  background: var(--page-bg); cursor: grab;
+}
+.map-canvas {
+  position: absolute; top: 0; left: 0;
+  transform-origin: top left; min-width: 100%; min-height: 100%;
+}
+.map-category-node {
+  position: absolute; background: var(--elevated); border-radius: 8px;
+  padding: 8px 12px; border: 2px solid var(--teal);
+}
+.map-node {
+  position: absolute; background: var(--surface); border-radius: 6px;
+  padding: 8px 10px; border: 1px solid var(--elevated); cursor: pointer;
+  transition: border-color .15s, box-shadow .15s;
+}
+.map-node:hover { border-color: var(--purple); box-shadow: 0 0 0 1px var(--purple); }
+.map-node.building { border-color: var(--orange); }
+.map-node.pending { border-color: var(--inactive); opacity: 0.6; }
+.map-node-title {
+  font-family: 'Oswald', sans-serif; font-size: 11px; font-weight: 600;
+  color: var(--text-primary); margin-bottom: 2px;
+}
+.map-node-sub { font-size: 8px; color: var(--teal); font-family: 'JetBrains Mono', monospace; margin-bottom: 2px; }
+.map-node-routes { font-size: 8px; color: var(--text-secondary); margin-bottom: 4px; }
+.map-node-progress {
+  height: 3px; background: var(--elevated); border-radius: 2px; overflow: hidden;
+}
+.map-node-progress-fill {
+  height: 100%; background: linear-gradient(90deg, var(--teal), var(--purple));
+  border-radius: 2px; transition: width .3s;
+}
+.map-detail-panel {
+  width: 260px; flex-shrink: 0; background: var(--surface);
+  border-left: 1px solid var(--elevated); flex-direction: column;
+  overflow-y: auto;
+}
+.map-detail-header {
+  display: flex; align-items: center; height: 36px; padding: 0 12px;
+  background: var(--elevated); flex-shrink: 0;
+}
+.map-detail-title {
+  font-family: 'Oswald', sans-serif; font-size: 14px; font-weight: 600;
+  color: var(--text-primary);
+}
+.map-detail-body { flex: 1; overflow-y: auto; }
