@@ -58,6 +58,12 @@ router.post('/api/demos', async (req, res) => {
       [nombre, restaurante || null, whatsapp, paquete || null, fecha_preferida || null]
     );
 
+    // Sync to CRM
+    try {
+      const crmSync = require('../services/crm-sync');
+      await crmSync.onDemoSolicitada({ nombre, restaurante, whatsapp, paquete, fecha_preferida });
+    } catch (_) {}
+
     res.json({ ok: true, message: 'Demo agendada exitosamente. Te contactaremos por WhatsApp.' });
   } catch (err) {
     console.error('Demo solicitud error:', err.message);

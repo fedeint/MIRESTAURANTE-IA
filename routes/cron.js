@@ -311,4 +311,52 @@ router.get('/trial-data-cleanup', async (req, res) => {
   }
 })
 
+// ---------------------------------------------------------------------------
+// WhatsApp trial sequence — daily at 9am Lima time (14:00 UTC)
+// ---------------------------------------------------------------------------
+router.get('/whatsapp-trial-sequence', async (req, res) => {
+  try {
+    const whatsapp = require('../services/whatsapp-api')
+    const results = { day3: 0, day7: 0, day12: 0, day14: 0 }
+
+    const [trials] = await db.query(`
+      SELECT t.id, t.nombre, t.email_admin, t.trial_inicio, t.trial_fin, t.telefono,
+             u.nombre as user_nombre,
+             EXTRACT(DAY FROM NOW() - t.trial_inicio) as trial_day
+      FROM tenants t
+      LEFT JOIN usuarios u ON u.tenant_id = t.id AND u.rol = 'administrador'
+      WHERE t.estado_trial = 'activo'
+        AND t.trial_fin > NOW()
+    `)
+
+    for (const trial of (trials || [])) {
+      const day = Math.floor(trial.trial_day)
+      const nombre = trial.user_nombre || trial.nombre
+      const phone = trial.telefono || null
+
+      if (!phone) continue
+
+      if (day === 3) {
+        await whatsapp.sendTemplate(phone, 'trial_dia3', [nombre])
+        results.day3++
+      } else if (day === 7) {
+        await whatsapp.sendTemplate(phone, 'trial_dia7', [nombre])
+        results.day7++
+      } else if (day === 12) {
+        await whatsapp.sendTemplate(phone, 'trial_dia12', [nombre])
+        results.day12++
+      } else if (day === 14) {
+        await whatsapp.sendTemplate(phone, 'trial_dia14', [nombre])
+        results.day14++
+      }
+    }
+
+    logger.info('cron_whatsapp_trial', results)
+    res.json({ ok: true, ...results })
+  } catch (err) {
+    logger.error('cron_whatsapp_trial_error', { error: err.message })
+    res.status(500).json({ error: err.message })
+  }
+})
+
 module.exports = router

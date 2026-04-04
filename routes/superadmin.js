@@ -374,6 +374,12 @@ router.post('/tenants', async (req, res) => {
       console.error('[Superadmin] Welcome email failed:', emailErr.message);
     }
 
+    // Sync to CRM
+    try {
+      const crmSync = require('../services/crm-sync');
+      await crmSync.onTenantCreado({ email_admin, nombre, subdominio: subdominionLimpio, precio: precioValue });
+    } catch (_) {}
+
     res.status(201).json({ ok: true, id: tenantId, message: 'Tenant creado exitosamente' });
   } catch (err) {
     console.error('Create tenant error:', err.message);
@@ -873,6 +879,17 @@ router.post('/solicitudes/:id/aprobar', async (req, res) => {
     } catch (emailErr) {
       console.error('[Superadmin] Welcome email failed:', emailErr.message);
     }
+
+    // Sync to CRM
+    try {
+      const crmSync = require('../services/crm-sync');
+      await crmSync.onTrialAprobado({
+        email: solicitud.google_email,
+        nombre: solicitud.unom || solicitud.nombre_restaurante,
+        restaurante: solicitud.nombre_restaurante,
+        telefono: solicitud.telefono_solicitante,
+      });
+    } catch (_) {}
 
     res.json({ ok: true, message: 'Solicitud aprobada. Trial activo por 15 días.' });
   } catch (err) {
