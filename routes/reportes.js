@@ -85,7 +85,7 @@ router.get('/diario', async (req, res) => {
         // Titulo
         doc.fontSize(18).font('Helvetica-Bold').text('REPORTE DIARIO', { align: 'center' });
         doc.fontSize(12).font('Helvetica').text(`Fecha: ${fecha}`, { align: 'center' });
-        doc.fontSize(10).text('restaurante.mirestconia.com', { align: 'center' });
+        doc.fontSize(10).text('mirestconia.com', { align: 'center' });
         doc.moveDown(1.5);
 
         // 1. CAJA

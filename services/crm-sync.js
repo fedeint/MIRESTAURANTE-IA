@@ -107,7 +107,7 @@ async function onTenantCreado(tenant) {
 
     const companyId = await twenty.upsertCompany({
       name: tenant.nombre,
-      domainName: `${tenant.subdominio}.mirestconia.com`,
+      domainName: `mirestconia.com/${tenant.subdominio}`,
     });
 
     await twenty.createOpportunity({

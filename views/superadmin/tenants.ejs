@@ -127,7 +127,7 @@
                     <tr data-name="<%= (t.nombre||'').toLowerCase() %>" data-sub="<%= (t.subdominio||'').toLowerCase() %>">
                       <td>
                         <div style="font-weight:600;color:#e2e8f0;"><%= t.nombre %></div>
-                        <div style="font-size:0.7rem;color:#64748b;"><%= t.subdominio %>.mirestconia.com</div>
+                        <div style="font-size:0.7rem;color:#64748b;">mirestconia.com/<%= t.subdominio %></div>
                         <% if (t.email_admin) { %><div style="font-size:0.7rem;color:#475569;"><%= t.email_admin %></div><% } %>
                       </td>
                       <td>
@@ -216,10 +216,10 @@
               <input type="text" class="form-control" id="c_nombre" placeholder="El Marinerito Picante">
             </div>
             <div class="col-md-6">
-              <label class="form-label">Subdominio *</label>
+              <label class="form-label">URL del Restaurante *</label>
               <div class="input-group">
+                <span class="input-group-text" style="background:#0f172a;color:#64748b;border-color:rgba(255,255,255,0.1);">mirestconia.com/</span>
                 <input type="text" class="form-control" id="c_subdominio" placeholder="elmarineritopicante">
-                <span class="input-group-text" style="background:#0f172a;color:#64748b;border-color:rgba(255,255,255,0.1);">.mirestconia.com</span>
               </div>
             </div>
             <div class="col-md-6">

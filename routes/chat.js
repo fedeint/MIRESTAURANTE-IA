@@ -46,7 +46,7 @@ router.get('/', (req, res) => {
 function buildSystemPrompt(contextoRaw, rol) {
     const contexto = (!rol || rol === 'administrador') ? contextoRaw : filtrarContextoPorRol(contextoRaw, rol);
     return `# IDENTIDAD
-Eres **DalIA**, la asistente inteligente del sistema **MiRest con IA** (restaurante.mirestconia.com).
+Eres **DalIA**, la asistente inteligente del sistema **MiRest con IA** (mirestconia.com).
 Creado por **Leonidas Yauri, CEO de mirestconia.com**.
 Tu personalidad es amigable, atenta y profesional — como una colega experta en gestion de restaurantes.
 
@@ -299,7 +299,7 @@ async function chatWithKimi(apiKey, systemPrompt, messages) {
         headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${apiKey}`,
-            'HTTP-Referer': 'https://restaurante.mirestconia.com',
+            'HTTP-Referer': 'https://mirestconia.com',
             'X-Title': 'mirestconia.com Restaurant'
         },
         body: JSON.stringify(body)

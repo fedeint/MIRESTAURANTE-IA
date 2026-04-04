@@ -164,7 +164,7 @@ async function enviarEmailTrialExpirado(email, nombre) {
 
 // ── Email: Bienvenida con subdominio ─────────────────────────────────────────
 async function enviarEmailBienvenidaSubdominio(email, nombre, subdominio, esTrial, credenciales) {
-  const subdominioUrl = `https://${subdominio}.mirestconia.com`;
+  const subdominioUrl = `https://mirestconia.com/${subdominio}`;
   const trialTexto = esTrial
     ? '<p style="font-size:14px;color:#6b7280;line-height:1.6;margin:0 0 20px;">Tienes <strong>15 días para probarlo todo, gratis.</strong> Después podrás elegir el plan que mejor se adapte a tu restaurante.</p>'
     : '<p style="font-size:14px;color:#6b7280;line-height:1.6;margin:0 0 20px;"><strong>Tu plan está activo.</strong> Ya puedes empezar a usar todas las funciones.</p>';
@@ -179,7 +179,7 @@ async function enviarEmailBienvenidaSubdominio(email, nombre, subdominio, esTria
     <div style="padding:28px 24px;">
       <div style="background:#0f172a;border-radius:12px;padding:20px;text-align:center;margin-bottom:20px;">
         <p style="font-size:12px;color:#64748b;margin:0 0 8px;text-transform:uppercase;letter-spacing:1px;font-weight:600;">Tu dirección exclusiva</p>
-        <a href="${subdominioUrl}" style="font-size:18px;color:#f97316;font-weight:700;text-decoration:none;">${subdominio}.mirestconia.com</a>
+        <a href="${subdominioUrl}" style="font-size:18px;color:#f97316;font-weight:700;text-decoration:none;">mirestconia.com/${subdominio}</a>
         <p style="font-size:12px;color:#94a3b8;margin:8px 0 0;">Abre este link desde tu celular y guárdalo en tu pantalla de inicio</p>
       </div>
       ${trialTexto}

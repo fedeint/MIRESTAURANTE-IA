@@ -338,6 +338,12 @@ router.post('/tenants', async (req, res) => {
     const precioValue = Number(precio_mensual) || 0;
     const subdominionLimpio = subdominio.toLowerCase().replace(/[^a-z0-9-]/g, '');
 
+    // Validar que el slug no colisione con rutas reservadas
+    const { RESERVED_PATHS } = require('../middleware/tenant');
+    if (RESERVED_PATHS.has(subdominionLimpio)) {
+        return res.status(400).json({ error: `El nombre "${subdominionLimpio}" está reservado. Elige otro.` });
+    }
+
     const ahora = new Date();
     const trialFin = esTrial ? new Date(ahora.getTime() + 15 * 24 * 60 * 60 * 1000) : null;
 

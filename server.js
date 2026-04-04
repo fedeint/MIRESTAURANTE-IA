@@ -8,7 +8,9 @@ const db = require('./db');
 const session = require('express-session');
 const { attachUserToLocals, requireAuth, requireRole } = require('./middleware/auth');
 const { attachTenant } = require('./middleware/tenant');
-const { subdomainGuard } = require('./middleware/subdomainGuard');
+const { tenantGuard } = require('./middleware/tenantGuard');
+const { slugRewrite } = require('./middleware/slugRouter');
+const { createTenantUrlHelper } = require('./lib/tenantUrl');
 const { sessionTimeout } = require('./middleware/sessionTimeout');
 const { requirePasswordChange } = require('./middleware/requirePasswordChange');
 const { requireCajaAbierta } = require('./middleware/requireCaja');
@@ -133,12 +135,32 @@ app.use(session({
 const { attachRequestId } = require('./middleware/requestId');
 app.use(attachRequestId);
 
+// Redirect subdomain to path (temporary backwards compat)
+app.use((req, res, next) => {
+    const parts = (req.hostname || '').split('.');
+    const isSubdomain = parts.length >= 3
+        && parts[1] === 'mirestconia'
+        && parts[2] === 'com'
+        && parts[0] !== 'www';
+    if (isSubdomain) {
+        const slug = parts[0];
+        const newUrl = `https://mirestconia.com/${slug}${req.originalUrl}`;
+        return res.redirect(301, newUrl);
+    }
+    next();
+});
+
 // Geo context middleware (reads Vercel headers + fallback to req.ip)
 app.use(attachGeoContext);
 
 // Tenant middleware (resuelve tenant_id por request)
 app.use(attachTenant);
-app.use(subdomainGuard);
+app.use(tenantGuard);
+// tenantUrl helper for EJS views
+app.use((req, res, next) => {
+    res.locals.tenantUrl = createTenantUrlHelper(res.locals.basePath || null);
+    next();
+});
 app.use(sessionTimeout);
 
 // Hacer disponible el usuario en EJS como "user"
@@ -1016,6 +1038,20 @@ app.use('/api/soporte', requireAuth, soporteRoutes);
 app.use('/configuracion', requireRole('administrador'), configuracionRoutes);
 app.use('/config', requireAuth, configPwaRoutes);
 app.use('/ventas', requireRole('administrador'), ventasRoutes);
+
+// ── Slug rewrite: /:slug/* → /* (tenant path routing) ───────────────────
+// Si el request es para un path de tenant (e.g., /chuleta/mesas),
+// reescribe la URL y re-dispatcha para que las rutas existentes funcionen.
+app.use((req, res, next) => {
+    if (res.locals.isTenantPath && res.locals.tenantSlug && !res.locals._slugRewritten) {
+        const slug = res.locals.tenantSlug;
+        res.locals.basePath = `/${slug}`;
+        req.url = req.url.replace(new RegExp(`^/${slug}`), '') || '/';
+        res.locals._slugRewritten = true; // evitar loop infinito
+        return app.handle(req, res, next);
+    }
+    next();
+});
 
 // Manejo de errores 404
 app.use((req, res, next) => {

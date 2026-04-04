@@ -1,111 +1,177 @@
+'use strict';
 const db = require('../db');
 
 // Cache de tenants (5 min)
 const tenantCache = {};
 const CACHE_TTL = 5 * 60 * 1000;
 
-async function resolveTenant(subdominio) {
-    const cached = tenantCache[subdominio];
-    if (cached && (Date.now() - cached.ts) < CACHE_TTL) return cached.data;
+// Rutas reservadas que NUNCA son slugs de tenant
+const RESERVED_PATHS = new Set([
+  'api', 'auth', 'login', 'logout', 'home', 'landing',
+  'superadmin', 'dashboard', 'mesas', 'cocina', 'caja',
+  'almacen', 'pedidos', 'reportes', 'config', 'chat',
+  'personal', 'recetas', 'productos', 'categorias',
+  'cambiar-contrasena', 'vendor', 'css', 'js', 'logo',
+  'public', 'uploads', 'favicon.ico', 'sw.js',
+  'manifest.json', 'legal', 'privacidad', 'terminos',
+  'libro-reclamaciones', 'restaurantes', 'solicitar-demo',
+  'icon-192.png', 'icon-512.png',
+  // Rutas adicionales del sistema
+  'legal-pwa', 'firmar', 'onboarding', 'solicitud',
+  'onboarding-dallia', 'setup-sistema', 'espera-verificacion',
+  'trial-expirado', 'usuarios', 'clientes', 'configuracion',
+  'ventas', 'canales', 'facturas', 'sunat', 'sunat-pwa',
+  'sprint4', 'pedido-nuevo', 'cocina-display', 'mesa',
+  'para-llevar', 'cortesias', 'soporte', 'administracion',
+  'sostac', 'contratos', 'delivery', 'features', 'static',
+  'recetas-standalone', 'backups', 'observabilidad', 'cotizador'
+]);
 
-    try {
-        const [[tenant]] = await db.query(
-            'SELECT id, nombre, subdominio, plan, activo, estado_trial, trial_inicio, trial_fin FROM tenants WHERE subdominio = ? AND activo = true LIMIT 1',
-            [subdominio]
-        );
-        if (tenant) {
-            tenantCache[subdominio] = { data: tenant, ts: Date.now() };
-        }
-        return tenant || null;
-    } catch (e) {
-        return null;
-    }
+async function resolveTenantBySlug(slug) {
+  const cached = tenantCache[slug];
+  if (cached && (Date.now() - cached.ts) < CACHE_TTL) return cached.data;
+  try {
+    const [[tenant]] = await db.query(
+      'SELECT id, nombre, subdominio, plan, activo, estado_trial, trial_inicio, trial_fin FROM tenants WHERE subdominio = ? AND activo = true LIMIT 1',
+      [slug]
+    );
+    if (tenant) tenantCache[slug] = { data: tenant, ts: Date.now() };
+    return tenant || null;
+  } catch (e) { return null; }
+}
+
+async function resolveTenantById(id) {
+  const cached = tenantCache['id_' + id];
+  if (cached && (Date.now() - cached.ts) < CACHE_TTL) return cached.data;
+  try {
+    const [[tenant]] = await db.query(
+      'SELECT id, nombre, subdominio, plan, activo, estado_trial, trial_inicio, trial_fin FROM tenants WHERE id = ? LIMIT 1',
+      [id]
+    );
+    if (tenant) tenantCache['id_' + id] = { data: tenant, ts: Date.now() };
+    return tenant || null;
+  } catch (e) { return null; }
 }
 
 // Limites por plan
 const PLAN_LIMITS = {
-    free: { usuarios: 1, mesas: 10, productos: 50, almacen: false, recetas: false, caja: false, reportes_pdf: false, ia_voz: false, canales: false },
-    pro: { usuarios: -1, mesas: -1, productos: -1, almacen: true, recetas: true, caja: true, reportes_pdf: true, ia_voz: true, canales: true },
-    enterprise: { usuarios: -1, mesas: -1, productos: -1, almacen: true, recetas: true, caja: true, reportes_pdf: true, ia_voz: true, canales: true }
+  free: { usuarios: 1, mesas: 10, productos: 50, almacen: false, recetas: false, caja: false, reportes_pdf: false, ia_voz: false, canales: false },
+  pro: { usuarios: -1, mesas: -1, productos: -1, almacen: true, recetas: true, caja: true, reportes_pdf: true, ia_voz: true, canales: true },
+  enterprise: { usuarios: -1, mesas: -1, productos: -1, almacen: true, recetas: true, caja: true, reportes_pdf: true, ia_voz: true, canales: true }
 };
 
-async function resolveTenantById(id) {
-    const cached = tenantCache['id_' + id];
-    if (cached && (Date.now() - cached.ts) < CACHE_TTL) return cached.data;
-    try {
-        const [[tenant]] = await db.query(
-            'SELECT id, nombre, subdominio, plan, activo, estado_trial, trial_inicio, trial_fin FROM tenants WHERE id = ? LIMIT 1',
-            [id]
-        );
-        if (tenant) tenantCache['id_' + id] = { data: tenant, ts: Date.now() };
-        return tenant || null;
-    } catch (e) { return null; }
-}
-
 function setTenantOnReq(req, res, tenant) {
-    req.tenantId = tenant.id;
-    req.tenant = tenant;
-    req.planLimits = PLAN_LIMITS[tenant.plan] || PLAN_LIMITS.free;
-    res.locals.tenantId = tenant.id;
-    res.locals.tenant = tenant;
-    res.locals.planLimits = req.planLimits;
+  req.tenantId = tenant.id;
+  req.tenant = tenant;
+  req.planLimits = PLAN_LIMITS[tenant.plan] || PLAN_LIMITS.free;
+  res.locals.tenantId = tenant.id;
+  res.locals.tenant = tenant;
+  res.locals.planLimits = req.planLimits;
 }
 
+/**
+ * Extrae el slug del primer segmento del path.
+ * Retorna null si es una ruta reservada o no hay segmento.
+ */
+function extractSlugFromPath(pathname) {
+  const segments = pathname.split('/').filter(Boolean);
+  if (segments.length === 0) return null;
+  const first = segments[0].toLowerCase();
+  if (RESERVED_PATHS.has(first)) return null;
+  return first;
+}
+
+/**
+ * Middleware principal: resuelve tenant desde path slug o sesión.
+ */
 function attachTenant(req, res, next) {
-    const hostname = req.hostname || '';
-    const parts = hostname.split('.');
-    const userTenantId = req.session?.user?.tenant_id;
-    const userRole = req.session?.user?.rol;
+  const userTenantId = req.session?.user?.tenant_id;
+  const userRole = req.session?.user?.rol;
 
-    // Superadmin: always tenant 1 with pro limits, no trial restriction
-    if (userRole === 'superadmin') {
-        req.tenantId = 1;
-        req.tenant = { id: 1, plan: 'enterprise', estado_trial: 'activo', activo: true };
-        req.planLimits = PLAN_LIMITS.enterprise;
-        res.locals.tenantId = 1;
-        res.locals.tenant = req.tenant;
-        res.locals.planLimits = req.planLimits;
-        return next();
-    }
+  // Superadmin: siempre tenant 1 con enterprise
+  if (userRole === 'superadmin') {
+    req.tenantId = 1;
+    req.tenant = { id: 1, plan: 'enterprise', estado_trial: 'activo', activo: true };
+    req.planLimits = PLAN_LIMITS.enterprise;
+    res.locals.tenantId = 1;
+    res.locals.tenant = req.tenant;
+    res.locals.planLimits = req.planLimits;
+    res.locals.tenantSlug = null;
+    res.locals.isTenantPath = false;
+    return next();
+  }
 
-    // Check if accessing via subdomain (tenant-slug.mirestconia.com)
-    const isSubdomain = parts.length >= 3 && parts[1] === 'mirestconia' && parts[2] === 'com' && parts[0] !== 'www';
+  const slug = extractSlugFromPath(req.path);
 
-    if (isSubdomain) {
-        resolveTenant(parts[0]).then(tenant => {
-            if (tenant) { setTenantOnReq(req, res, tenant); }
-            else { req.tenantId = userTenantId || 1; req.planLimits = PLAN_LIMITS.free; res.locals.tenantId = req.tenantId; res.locals.planLimits = req.planLimits; }
-            next();
-        }).catch(() => { req.tenantId = userTenantId || 1; req.planLimits = PLAN_LIMITS.free; res.locals.tenantId = req.tenantId; next(); });
-    } else if (userTenantId) {
-        // Main domain (www.mirestconia.com) — resolve from logged-in user's tenant
-        resolveTenantById(userTenantId).then(tenant => {
-            if (tenant) { setTenantOnReq(req, res, tenant); }
-            else { req.tenantId = userTenantId; req.planLimits = PLAN_LIMITS.free; res.locals.tenantId = userTenantId; res.locals.planLimits = req.planLimits; }
-            next();
-        }).catch(() => { req.tenantId = userTenantId; req.planLimits = PLAN_LIMITS.free; res.locals.tenantId = userTenantId; next(); });
-    } else {
-        // No user logged in — default tenant 1 for public pages
-        req.tenantId = 1;
+  if (slug) {
+    // Path-based tenant: mirestconia.com/:slug/...
+    resolveTenantBySlug(slug).then(tenant => {
+      if (tenant) {
+        setTenantOnReq(req, res, tenant);
+        res.locals.tenantSlug = slug;
+        res.locals.isTenantPath = true;
+      } else {
+        // No es un tenant válido — tratar como ruta normal
+        req.tenantId = userTenantId || 1;
         req.planLimits = PLAN_LIMITS.free;
-        res.locals.tenantId = 1;
+        res.locals.tenantId = req.tenantId;
         res.locals.planLimits = req.planLimits;
-        next();
-    }
+        res.locals.tenantSlug = null;
+        res.locals.isTenantPath = false;
+      }
+      next();
+    }).catch(() => {
+      req.tenantId = userTenantId || 1;
+      req.planLimits = PLAN_LIMITS.free;
+      res.locals.tenantId = req.tenantId;
+      res.locals.tenantSlug = null;
+      res.locals.isTenantPath = false;
+      next();
+    });
+  } else if (userTenantId) {
+    // Ruta sin slug pero user logueado — resolver desde sesión
+    resolveTenantById(userTenantId).then(tenant => {
+      if (tenant) { setTenantOnReq(req, res, tenant); }
+      else {
+        req.tenantId = userTenantId;
+        req.planLimits = PLAN_LIMITS.free;
+        res.locals.tenantId = userTenantId;
+        res.locals.planLimits = req.planLimits;
+      }
+      res.locals.tenantSlug = null;
+      res.locals.isTenantPath = false;
+      next();
+    }).catch(() => {
+      req.tenantId = userTenantId;
+      req.planLimits = PLAN_LIMITS.free;
+      res.locals.tenantId = userTenantId;
+      res.locals.tenantSlug = null;
+      res.locals.isTenantPath = false;
+      next();
+    });
+  } else {
+    // Sin slug, sin sesión — público
+    req.tenantId = 1;
+    req.planLimits = PLAN_LIMITS.free;
+    res.locals.tenantId = 1;
+    res.locals.planLimits = req.planLimits;
+    res.locals.tenantSlug = null;
+    res.locals.isTenantPath = false;
+    next();
+  }
 }
 
-// Middleware para verificar feature del plan
 function requirePlan(feature) {
-    return (req, res, next) => {
-        const limits = req.planLimits || PLAN_LIMITS.free;
-        if (limits[feature] === false) {
-            if (req.xhr || (req.headers.accept && req.headers.accept.includes('json'))) {
-                return res.status(403).json({ error: `Esta funcion requiere plan Pro. Actualiza en configuracion.` });
-            }
-            return res.status(403).render('error', { error: { message: 'Esta funcion requiere plan Pro', stack: '' } });
-        }
-        next();
-    };
+  return (req, res, next) => {
+    const limits = req.planLimits || PLAN_LIMITS.free;
+    if (limits[feature] === false) {
+      if (req.xhr || (req.headers.accept && req.headers.accept.includes('json'))) {
+        return res.status(403).json({ error: 'Esta funcion requiere plan Pro. Actualiza en configuracion.' });
+      }
+      return res.status(403).render('error', { error: { message: 'Esta funcion requiere plan Pro', stack: '' } });
+    }
+    next();
+  };
 }
 
-module.exports = { attachTenant, requirePlan, PLAN_LIMITS };
+module.exports = { attachTenant, requirePlan, PLAN_LIMITS, extractSlugFromPath, RESERVED_PATHS };

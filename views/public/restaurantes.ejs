@@ -582,7 +582,7 @@
 
     grid.innerHTML = list.map(function (r) {
       const subdomain  = r.subdominio || r.slug || r.id;
-      const url        = 'https://' + subdomain + '.mirestconia.com';
+      const url        = '/' + subdomain;
       const imgHtml    = r.foto_local_url
         ? `<img src="${escHtml(r.foto_local_url)}" alt="${escHtml(r.nombre)}" class="rest-card-img" loading="lazy">`
         : `<div class="rest-card-img-placeholder">🍽️</div>`;

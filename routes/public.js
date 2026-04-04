@@ -76,7 +76,7 @@ router.post('/api/demos', async (req, res) => {
 // ---------------------------------------------------------------------------
 router.get('/home', (req, res) => {
   // If user is logged in and not on subdomain, redirect to dashboard
-  if (req.session?.user && !res.locals.isSubdomain) {
+  if (req.session?.user && !res.locals.isTenantPath) {
     const rol = req.session.user.rol;
     if (rol === 'superadmin') return res.redirect('/superadmin');
     return res.redirect('/dashboard');
