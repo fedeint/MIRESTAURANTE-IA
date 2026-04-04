@@ -7,6 +7,7 @@ let _mapIsPanning = false;
 let _mapLastX = 0;
 let _mapLastY = 0;
 let _selectedModule = null;
+let _mapPanSetup = false;
 
 function initMapMode() {
   const container = document.getElementById('mode-map');
@@ -43,6 +44,8 @@ function initMapMode() {
 }
 
 function setupPan() {
+  if (_mapPanSetup) return;
+  _mapPanSetup = true;
   const workspace = document.getElementById('mapWorkspace');
   if (!workspace) return;
 
