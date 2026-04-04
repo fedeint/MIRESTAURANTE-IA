@@ -1,3 +1,7 @@
+// Polyfill for standalone mode (running outside VS Code)
+if (typeof acquireVsCodeApi === 'undefined') {
+  window.acquireVsCodeApi = () => ({ postMessage: () => {} });
+}
 const vscode = acquireVsCodeApi();
 window._vscode = vscode;
 let baseUrl = document.getElementById('urlInput')?.value || 'http://localhost:1995';
@@ -379,6 +383,9 @@ window.addEventListener('message', e => {
     case 'load-module-map':
       miniMapSystem.load(msg.data);
       miniMapSystem.render('mini-map-context', window._currentRoute || '/');
+      break;
+    case 'switch-mode':
+      switchMode(msg.mode);
       break;
   }
 });

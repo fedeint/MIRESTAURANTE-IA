@@ -10,6 +10,9 @@
   "categories": ["Other"],
   "activationEvents": [],
   "main": "./extension.js",
+  "dependencies": {
+    "express": "^4.18.0"
+  },
   "contributes": {
     "commands": [
       {

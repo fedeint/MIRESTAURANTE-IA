@@ -17,6 +17,15 @@ function activate(context) {
     setTimeout(() => panel?.webview.postMessage({ type: 'start-tour-ui' }), panel ? 0 : 1000);
   });
 
+  const switchModeCmd = vscode.commands.registerCommand('devicePreview.switchMode', () => {
+    if (panel) {
+      const modes = ['test', 'build', 'map'];
+      vscode.window.showQuickPick(modes, { placeHolder: 'Selecciona modo' }).then(mode => {
+        if (mode) panel.webview.postMessage({ type: 'switch-mode', mode });
+      });
+    }
+  });
+
   const saveWatcher = vscode.workspace.onDidSaveTextDocument((doc) => {
     const config = vscode.workspace.getConfiguration('devicePreview');
     if (!config.get('autoReload') || !panel) return;
@@ -25,7 +34,32 @@ function activate(context) {
     }
   });
 
-  context.subscriptions.push(openCmd, reloadCmd, tourCmd, saveWatcher);
+  const generateMapCmd = vscode.commands.registerCommand('devicePreview.generateMap', async () => {
+    const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath || '';
+    if (!workspaceRoot) {
+      vscode.window.showErrorMessage('No workspace folder open.');
+      return;
+    }
+
+    try {
+      const { parseAndUpdateMap } = require('./module-map-parser');
+      const result = parseAndUpdateMap(workspaceRoot, context.extensionPath);
+
+      vscode.window.showInformationMessage(
+        `Module map updated: ${result.updated} modules updated, ${result.added} new modules added.`
+      );
+
+      // Send updated map to open webview
+      if (panel) {
+        panel.webview.postMessage({ type: 'load-module-map', data: result.map });
+      }
+    } catch (e) {
+      vscode.window.showErrorMessage(`Failed to generate module map: ${e.message}`);
+    }
+  });
+  context.subscriptions.push(generateMapCmd);
+
+  context.subscriptions.push(openCmd, reloadCmd, tourCmd, switchModeCmd, saveWatcher);
 }
 
 function openDevicePreview(context) {
