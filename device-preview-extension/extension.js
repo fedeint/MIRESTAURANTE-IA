@@ -58,6 +58,18 @@ function openDevicePreview(context) {
   });
 
   panel.onDidDispose(() => { panel = null; stopTour(); });
+
+  // Load module map and send to webview
+  const mapPath = path.join(context.extensionPath, 'preview', 'module-map.json');
+  if (fs.existsSync(mapPath)) {
+    try {
+      const mapData = JSON.parse(fs.readFileSync(mapPath, 'utf8'));
+      // Send after a short delay to ensure webview is ready
+      setTimeout(() => {
+        panel?.webview.postMessage({ type: 'load-module-map', data: mapData });
+      }, 500);
+    } catch (e) { /* ignore parse errors */ }
+  }
 }
 
 // ===== FEEDBACK =====
@@ -179,12 +191,14 @@ function getWebviewContent(context, webview, appUrl) {
   const appJsUri = webview.asWebviewUri(vscode.Uri.joinPath(context.extensionUri, 'webview', 'app.js'));
   const commentsJsUri = webview.asWebviewUri(vscode.Uri.joinPath(context.extensionUri, 'webview', 'comments.js'));
   const terminalJsUri = webview.asWebviewUri(vscode.Uri.joinPath(context.extensionUri, 'webview', 'terminal.js'));
+  const miniMapJsUri = webview.asWebviewUri(vscode.Uri.joinPath(context.extensionUri, 'webview', 'mini-map.js'));
 
   html = html.replace(/\{\{APP_URL\}\}/g, appUrl);
   html = html.replace(/\{\{CSS_URI\}\}/g, cssUri.toString());
   html = html.replace(/\{\{APP_JS_URI\}\}/g, appJsUri.toString());
   html = html.replace(/\{\{COMMENTS_JS_URI\}\}/g, commentsJsUri.toString());
   html = html.replace(/\{\{TERMINAL_JS_URI\}\}/g, terminalJsUri.toString());
+  html = html.replace(/\{\{MINI_MAP_JS_URI\}\}/g, miniMapJsUri.toString());
   html = html.replace(/\{\{CSP_SOURCE\}\}/g, webview.cspSource);
 
   return html;

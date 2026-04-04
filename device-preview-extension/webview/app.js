@@ -142,6 +142,7 @@ function zoom(d) {
 function nav(path, el) {
   curPath = path;
   window._currentRoute = path;
+  if (window.miniMapSystem) miniMapSystem.render('mini-map-context', path);
   const url = baseUrl + path;
   document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
   if (el) el.classList.add('active');
@@ -367,6 +368,10 @@ window.addEventListener('message', e => {
     case 'term-started': currentPid = msg.pid; window._currentPid = msg.pid; terminalSystem.addLine('$ ' + msg.command, 'info'); break;
     case 'term-output': terminalSystem.addLine(msg.data.replace(/\n$/, ''), msg.isError ? 'err' : 'out'); break;
     case 'term-exit': currentPid = null; window._currentPid = null; terminalSystem.addLine('Process exited with code ' + msg.code, msg.code === 0 ? 'exit-ok' : 'exit-fail'); break;
+    case 'load-module-map':
+      miniMapSystem.load(msg.data);
+      miniMapSystem.render('mini-map-context', window._currentRoute || '/');
+      break;
   }
 });
 

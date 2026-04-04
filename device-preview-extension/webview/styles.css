@@ -196,6 +196,48 @@ body.dual-mode .dual-panel { display: flex; } body.dual-mode .dc-box { display: 
 .mode-toggle-btn.active-test { background: var(--teal); color: #0D0D0D; font-weight: 600; }
 .mode-toggle-btn.active-map { background: var(--purple); color: #FFFFFF; font-weight: 600; }
 
+/* ===== MINI MAP CONTEXT ===== */
+.mini-map {
+  flex-shrink: 0; background: var(--surface);
+  border-top: 2px solid var(--purple);
+  flex-direction: column;
+}
+.mini-map-header {
+  display: flex; align-items: center; gap: 8px;
+  height: 28px; padding: 0 14px; background: var(--elevated);
+  overflow: hidden;
+}
+.mini-map-title {
+  font-family: 'Oswald', sans-serif; font-size: 12px;
+  font-weight: 600; color: var(--purple); white-space: nowrap;
+}
+.mini-map-content {
+  display: flex; gap: 20px; padding: 8px 14px;
+  background: var(--page-bg); height: 90px; overflow: hidden;
+}
+.mini-map-section { display: flex; flex-direction: column; gap: 3px; min-width: 80px; }
+.mini-map-label {
+  font-size: 7px; font-weight: 600; color: var(--text-secondary);
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+.pipeline-flow { display: flex; align-items: center; gap: 4px; flex-wrap: nowrap; overflow: hidden; }
+.pipeline-step {
+  padding: 0 6px; height: 20px; border-radius: 4px;
+  display: inline-flex; align-items: center; white-space: nowrap;
+  font-size: 8px; font-weight: 600;
+  background: var(--elevated); color: var(--text-secondary);
+}
+.pipeline-step.active { background: var(--teal); color: #0D0D0D; font-weight: 700; }
+.pipeline-arrow { font-size: 10px; color: var(--inactive); flex-shrink: 0; }
+.dep-chip {
+  padding: 0 5px; height: 16px; border-radius: 4px;
+  display: inline-flex; align-items: center; white-space: nowrap;
+  font-size: 7px; font-weight: 600; background: var(--elevated);
+}
+.dep-chip.depends { color: var(--teal); }
+.dep-chip.blocks { color: var(--orange); background: rgba(255,107,53,0.1); }
+.endpoint-line { font-size: 7px; color: var(--teal); font-family: 'JetBrains Mono', monospace; white-space: nowrap; }
+
 /* ZOOM & STATUS */
 .zoom { display: flex; align-items: center; gap: 2px; }
 .zoom-label { font-size: 9px; color: var(--subtext); min-width: 26px; text-align: center; }
