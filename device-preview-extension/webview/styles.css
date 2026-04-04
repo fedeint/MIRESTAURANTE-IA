@@ -1,3 +1,6 @@
+/* ===== FONTS ===== */
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap');
+
 /* ===== V3 DESIGN TOKENS ===== */
 :root {
   /* Backgrounds */
@@ -26,9 +29,6 @@
   --surface2: #212121;
   --blue: #6366F1;
 }
-
-/* ===== FONTS ===== */
-@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=JetBrains+Mono:wght@400;600;700&display=swap');
 
 /* ===== MODE CONTAINERS ===== */
 .mode-container { display: none; flex: 1; flex-direction: column; overflow: hidden; }
