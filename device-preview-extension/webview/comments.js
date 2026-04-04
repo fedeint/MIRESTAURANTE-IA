@@ -1,5 +1,9 @@
 // comments.js — Shared comment system for Build and Test modes
 
+function _esc(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
 const COMMENT_TYPES = {
   bug: { label: 'BUG', color: '#EF4444', cssClass: 'bug' },
   fix: { label: 'FIX', color: '#F97316', cssClass: 'fix' },
@@ -62,7 +66,7 @@ function renderCommentsPanel(containerId, options = {}) {
       ${filtered.map(c => `
         <div class="c-item ${c.type}">
           <span class="c-tag ${c.type}">${COMMENT_TYPES[c.type]?.label || c.type.toUpperCase()}</span>
-          <span class="c-text">${c.text}</span>
+          <span class="c-text">${_esc(c.text)}</span>
           <span class="c-meta">
             <span class="c-route">${c.route}</span>
             <span class="c-del" onclick="commentSystem.deleteAndRerender('${c.id}','${containerId}')">✕</span>

@@ -364,9 +364,9 @@ window.addEventListener('message', e => {
     case 'tour-progress': handleTourProgress(msg); break;
     case 'tour-done': case 'screenshot-done': handleTourDone(msg.results); break;
     case 'tour-error': case 'screenshot-error': stopTour(); break;
-    case 'term-started': currentPid = msg.pid; terminalSystem.addLine('$ ' + msg.command, 'info'); break;
+    case 'term-started': currentPid = msg.pid; window._currentPid = msg.pid; terminalSystem.addLine('$ ' + msg.command, 'info'); break;
     case 'term-output': terminalSystem.addLine(msg.data.replace(/\n$/, ''), msg.isError ? 'err' : 'out'); break;
-    case 'term-exit': currentPid = null; terminalSystem.addLine('Process exited with code ' + msg.code, msg.code === 0 ? 'exit-ok' : 'exit-fail'); break;
+    case 'term-exit': currentPid = null; window._currentPid = null; terminalSystem.addLine('Process exited with code ' + msg.code, msg.code === 0 ? 'exit-ok' : 'exit-fail'); break;
   }
 });
 
