@@ -1,6 +1,8 @@
 const vscode = acquireVsCodeApi();
+window._vscode = vscode;
 let baseUrl = document.getElementById('urlInput')?.value || 'http://localhost:1995';
 let curPath = '/';
+window._currentRoute = '/';
 let zoomVal = 50;
 let syncOn = true;
 let comments = [];
@@ -139,6 +141,7 @@ function zoom(d) {
 // ===== NAV =====
 function nav(path, el) {
   curPath = path;
+  window._currentRoute = path;
   const url = baseUrl + path;
   document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
   if (el) el.classList.add('active');
