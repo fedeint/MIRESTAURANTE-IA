@@ -33,6 +33,10 @@ function switchMode(mode) {
     mapMode.init();
   }
 
+  if (mode === 'build' && window.buildMode) {
+    buildMode.init();
+  }
+
   window._currentMode = mode;
 }
 

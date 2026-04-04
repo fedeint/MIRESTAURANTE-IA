@@ -300,3 +300,41 @@ body.dual-mode .dual-panel { display: flex; } body.dual-mode .dc-box { display: 
   color: var(--text-primary);
 }
 .map-detail-body { flex: 1; overflow-y: auto; }
+
+/* ===== BUILD MODE ===== */
+.build-toolbar {
+  display: flex; align-items: center; gap: 8px;
+  height: 40px; padding: 0 14px; background: var(--surface);
+  border-bottom: 1px solid var(--elevated); flex-shrink: 0;
+  overflow-x: auto;
+}
+.build-area {
+  flex: 1; display: flex; align-items: flex-start; justify-content: center;
+  padding: 16px; overflow: auto; background: var(--page-bg);
+}
+.build-split-container {
+  display: flex; gap: 0; align-items: flex-start;
+}
+.build-overlay-container {
+  display: flex; align-items: flex-start; justify-content: center;
+}
+.build-panel { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.build-panel-label {
+  font-size: 9px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.5px; color: var(--text-secondary);
+}
+.build-frame {
+  border-radius: 8px; overflow: hidden; position: relative;
+  background: #fff; border: 1px solid var(--inactive);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+}
+.build-divider {
+  width: 2px; background: var(--purple); align-self: stretch;
+  margin: 0 12px; opacity: 0.5;
+}
+.build-design-placeholder { background: var(--elevated); }
+.match-badge {
+  display: flex; flex-direction: column; align-items: center;
+  background: var(--elevated); border-radius: 8px; padding: 4px 10px;
+}
+.comments-panel { background: var(--surface); border-left: 1px solid var(--elevated); }
