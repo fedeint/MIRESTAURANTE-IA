@@ -131,7 +131,7 @@ router.post('/:token/submit', submitLimiter, async (req, res) => {
         const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.ip;
         sigPage.drawText(`Firmado electronicamente el ${fecha} — IP: ${ip}`, {
             x: sigX,
-            y: sigY - 15,
+            y: sigY - 70,
             size: 6,
             color: rgb(0.5, 0.5, 0.5)
         });
