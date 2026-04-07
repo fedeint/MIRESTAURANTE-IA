@@ -4,9 +4,18 @@ const crypto = require('crypto');
 const rateLimit = require('express-rate-limit');
 const { PDFDocument, rgb } = require('pdf-lib');
 const db = require('../db');
-const { sendSignedContract } = require('../lib/mailer');
+const { sendSignedContract, sendSignedNda } = require('../lib/mailer');
 
-const PENDING_CONTRACT_QUERY = `SELECT * FROM contratos WHERE token = ? AND estado = 'pendiente' AND token_expires_at > NOW()`;
+const PENDING_CONTRACT_QUERY = `SELECT *, 'contrato' as doc_tipo FROM contratos WHERE token = ? AND estado = 'pendiente' AND token_expires_at > NOW()`;
+const PENDING_NDA_QUERY = `SELECT *, 'nda' as doc_tipo FROM nda_equipo WHERE token = ? AND estado = 'pendiente' AND token_expires_at > NOW()`;
+
+async function findPendingDoc(token) {
+    let [rows] = await db.query(PENDING_CONTRACT_QUERY, [token]);
+    if (rows && rows.length) return rows[0];
+    [rows] = await db.query(PENDING_NDA_QUERY, [token]);
+    if (rows && rows.length) return rows[0];
+    return null;
+}
 
 const submitLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -17,19 +26,21 @@ const submitLimiter = rateLimit({
 // GET /:token — Public signing page
 router.get('/:token', async (req, res) => {
     try {
-        const [rows] = await db.query(PENDING_CONTRACT_QUERY, [req.params.token]);
-        if (!rows || rows.length === 0) {
+        const doc = await findPendingDoc(req.params.token);
+        if (!doc) {
             return res.render('firmar', {
                 contrato: null,
-                error: 'Este contrato no existe, ya fue firmado o el enlace ha expirado.'
+                error: 'Este documento no existe, ya fue firmado o el enlace ha expirado.',
+                docTipo: null
             });
         }
-        res.render('firmar', { contrato: rows[0], error: null });
+        res.render('firmar', { contrato: doc, error: null, docTipo: doc.doc_tipo });
     } catch (err) {
-        console.error('Error loading contract for signing:', err);
+        console.error('Error loading document for signing:', err);
         res.render('firmar', {
             contrato: null,
-            error: 'Este contrato no existe, ya fue firmado o el enlace ha expirado.'
+            error: 'Este documento no existe, ya fue firmado o el enlace ha expirado.',
+            docTipo: null
         });
     }
 });
@@ -37,21 +48,20 @@ router.get('/:token', async (req, res) => {
 // GET /:token/pdf — Serve PDF for iframe
 router.get('/:token/pdf', async (req, res) => {
     try {
-        const [rows] = await db.query(PENDING_CONTRACT_QUERY, [req.params.token]);
-        if (!rows || rows.length === 0) {
+        const doc = await findPendingDoc(req.params.token);
+        if (!doc) {
             return res.status(404).send('No encontrado');
         }
-        const contrato = rows[0];
         res.set('Content-Type', 'application/pdf');
         res.set('Content-Disposition', 'inline');
-        res.send(contrato.pdf_original);
+        res.send(doc.pdf_original);
     } catch (err) {
         console.error('Error serving PDF:', err);
         res.status(404).send('No encontrado');
     }
 });
 
-// POST /:token/submit — Process client signature
+// POST /:token/submit — Process signature
 router.post('/:token/submit', submitLimiter, async (req, res) => {
     try {
         const { signature } = req.body;
@@ -68,21 +78,21 @@ router.post('/:token/submit', submitLimiter, async (req, res) => {
             return res.status(400).json({ error: 'La firma excede el tamano maximo permitido.' });
         }
 
-        // Validate contract exists, is pending, and not expired
-        const [rows] = await db.query(PENDING_CONTRACT_QUERY, [req.params.token]);
-        if (!rows || rows.length === 0) {
-            return res.status(404).json({ error: 'Este contrato no existe, ya fue firmado o el enlace ha expirado.' });
+        // Find document in either table
+        const documento = await findPendingDoc(req.params.token);
+        if (!documento) {
+            return res.status(404).json({ error: 'Este documento no existe, ya fue firmado o el enlace ha expirado.' });
         }
-        const contrato = rows[0];
+        const isNda = documento.doc_tipo === 'nda';
 
         // Verify PDF integrity
-        const pdfHash = crypto.createHash('sha256').update(contrato.pdf_original).digest('hex');
-        if (pdfHash !== contrato.pdf_hash) {
+        const pdfHash = crypto.createHash('sha256').update(documento.pdf_original).digest('hex');
+        if (pdfHash !== documento.pdf_hash) {
             return res.status(400).json({ error: 'La integridad del PDF no pudo ser verificada.' });
         }
 
         // Load existing PDF and embed signature using pdf-lib
-        const pdfDoc = await PDFDocument.load(contrato.pdf_original);
+        const pdfDoc = await PDFDocument.load(documento.pdf_original);
         const pages = pdfDoc.getPages();
         const lastPage = pages[pages.length - 1];
         const { width } = lastPage.getSize();
@@ -91,8 +101,6 @@ router.post('/:token/submit', submitLimiter, async (req, res) => {
         const sigImage = await pdfDoc.embedPng(sigBuffer);
         const sigDims = sigImage.scaleToFit(120, 50);
 
-        // Position on the RIGHT side (client section), aligned with signature line area
-        // pdf-lib Y=0 is bottom of page. The signature lines are roughly in the upper third of the last page.
         const { height } = lastPage.getSize();
         const sigX = width / 2 + 40;
         const sigY = height - 230;
@@ -115,42 +123,52 @@ router.post('/:token/submit', submitLimiter, async (req, res) => {
         });
 
         // Legal acceptance text at page bottom
-        lastPage.drawText(
-            'El firmante declara haber leido y aceptado todos los terminos del Contrato de Licencia de Software y Servicios Tecnologicos.',
-            {
-                x: 55,
-                y: 30,
-                size: 6,
-                color: rgb(0.5, 0.5, 0.5)
-            }
-        );
+        const legalText = isNda
+            ? 'El firmante declara haber leido y aceptado todos los terminos del Acuerdo de Confidencialidad (NDA).'
+            : 'El firmante declara haber leido y aceptado todos los terminos del Contrato de Licencia de Software y Servicios Tecnologicos.';
+        lastPage.drawText(legalText, {
+            x: 55,
+            y: 30,
+            size: 6,
+            color: rgb(0.5, 0.5, 0.5)
+        });
 
         const pdfFirmado = Buffer.from(await pdfDoc.save());
 
-        // Update DB
+        // Update correct table
         const clientIp = req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.ip;
         const userAgent = req.headers['user-agent'] || '';
+        const tabla = isNda ? 'nda_equipo' : 'contratos';
         await db.query(
-            `UPDATE contratos SET pdf_firmado=?, firma_png=?, estado='firmado',
+            `UPDATE ${tabla} SET pdf_firmado=?, firma_png=?, estado='firmado',
                     firmado_ip=?, firmado_user_agent=?, firmado_at=NOW() WHERE id=?`,
-            [pdfFirmado, sigBuffer, clientIp, userAgent, contrato.id]
+            [pdfFirmado, sigBuffer, clientIp, userAgent, documento.id]
         );
 
         // Send signed PDF by email
         try {
-            await sendSignedContract({
-                to: contrato.email,
-                nombreCliente: contrato.nombre_cliente,
-                nroContrato: contrato.nro_contrato,
-                pdfBuffer: pdfFirmado
-            });
-            await db.query('UPDATE contratos SET email_enviado_at=NOW() WHERE id=?', [contrato.id]);
+            if (isNda) {
+                await sendSignedNda({
+                    to: documento.email,
+                    nombreCompleto: documento.nombre_completo,
+                    nroNda: documento.nro_nda,
+                    pdfBuffer: pdfFirmado
+                });
+            } else {
+                await sendSignedContract({
+                    to: documento.email,
+                    nombreCliente: documento.nombre_cliente,
+                    nroContrato: documento.nro_contrato,
+                    pdfBuffer: pdfFirmado
+                });
+            }
+            await db.query(`UPDATE ${tabla} SET email_enviado_at=NOW() WHERE id=?`, [documento.id]);
         } catch (emailErr) {
-            console.error('Error sending signed contract email:', emailErr);
-            // Continue — signing succeeded even if email fails
+            console.error('Error sending signed document email:', emailErr);
         }
 
-        res.json({ ok: true, message: 'Contrato firmado exitosamente' });
+        const msg = isNda ? 'NDA firmado exitosamente' : 'Contrato firmado exitosamente';
+        res.json({ ok: true, message: msg });
     } catch (err) {
         console.error('Error processing signature:', err);
         res.status(500).json({ error: 'Error al procesar la firma. Intenta nuevamente.' });

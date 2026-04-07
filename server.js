@@ -44,8 +44,11 @@ app.set('etag', 'strong');
 // Security headers (helmet)
 const helmet = require('helmet');
 app.use(helmet({
-    contentSecurityPolicy: false, // disabled to allow inline scripts in EJS
-    crossOriginEmbedderPolicy: false
+    contentSecurityPolicy: false,       // disabled to allow inline scripts in EJS
+    crossOriginEmbedderPolicy: false,   // disabled to allow Device Preview iframes
+    crossOriginOpenerPolicy: false,     // disabled to allow Device Preview iframes
+    crossOriginResourcePolicy: false,   // disabled to allow Device Preview iframes
+    frameguard: false,                  // disabled to allow Device Preview iframes
 }));
 
 // Additional security headers
@@ -238,10 +241,94 @@ const csrfProtection = csrf({ cookie: false });
 // Se aplica solo a formularios que lo necesiten, no globalmente
 // Las APIs JSON estan protegidas por SOP + Content-Type check
 
+// Device Preview sync bridge — injected into all HTML responses
+// Uses BroadcastChannel: todos los iframes son mismo origen (localhost:1995)
+// y se comunican directamente sin pasar por el webview de VS Code.
+const SYNC_BRIDGE = `<script id="__dp_bridge__">
+(function(){
+  if(window.__dp_bridge_loaded__)return;
+  window.__dp_bridge_loaded__=true;
+  var _sync=true,ch;
+  try{ch=new BroadcastChannel('dp-sync');}catch(e){return;}
+
+  ch.onmessage=function(e){
+    var d=e.data;_sync=false;
+    try{
+      if(d.t==='sc'){
+        var el=document.documentElement;
+        el.scrollTop=d.p*(el.scrollHeight-el.clientHeight);
+      }
+      if(d.t==='cl'){
+        var t=document.querySelector(d.s);
+        if(t){
+          t.style.outline='2px solid #FF6B35';
+          setTimeout(function(){t.style.outline='';},500);
+          try{t.click();}catch(ex){}
+        }
+      }
+      if(d.t==='sc-cmd'){
+        window.scrollBy(0, d.a);
+      }
+      if(d.t==='in'){
+        var t=document.querySelector(d.s);
+        if(t){t.value=d.v;t.dispatchEvent(new Event('input',{bubbles:true}));}
+      }
+    }catch(ex){}
+    setTimeout(function(){_sync=true;},100);
+  };
+
+  function send(obj){if(_sync)try{ch.postMessage(obj);}catch(e){}}
+
+  function sel(el){
+    if(!el||!el.tagName)return'';
+    if(el.id)return'#'+el.id;
+    var p=[],c=el;
+    while(c&&c.tagName&&c!==document.body){
+      var s=c.tagName.toLowerCase();
+      if(c.id){p.unshift('#'+c.id);break;}
+      var par=c.parentElement;
+      if(par){var sb=Array.from(par.children).filter(function(x){return x.tagName===c.tagName;});if(sb.length>1)s+=':nth-of-type('+(sb.indexOf(c)+1)+')';}
+      p.unshift(s);c=c.parentElement;
+    }
+    return p.join('>')||'';
+  }
+
+  document.addEventListener('scroll',function(){
+    var el=document.documentElement;
+    var p=el.scrollHeight-el.clientHeight>0?el.scrollTop/(el.scrollHeight-el.clientHeight):0;
+    send({t:'sc',p:p});
+  },true);
+
+  document.addEventListener('click',function(e){
+    var s=sel(e.target);if(s)send({t:'cl',s:s});
+  },true);
+
+  document.addEventListener('input',function(e){
+    var s=sel(e.target);
+    if(s&&e.target.value!==undefined)send({t:'in',s:s,v:e.target.value});
+  },true);
+})();
+</script>`;
+
+app.use((req, res, next) => {
+    // Inject sync bridge into HTML pages
+    const origRender = res.render.bind(res);
+    res.render = function(view, opts, cb) {
+        const done = typeof opts === 'function' ? opts : cb;
+        origRender(view, opts, function(err, html) {
+            if (!err && html) html = html.replace('</body>', SYNC_BRIDGE + '</body>');
+            if (done) done(err, html);
+            else if (err) next(err);
+            else res.send(html);
+        });
+    };
+    next();
+});
+
 // Headers de seguridad y CORS
 app.use((req, res, next) => {
     res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+    // X-Frame-Options removed to allow Device Preview (VS Code iframe extension)
     res.setHeader('X-XSS-Protection', '1; mode=block');
     const corsOrigin = process.env.CORS_ORIGIN;
     if (corsOrigin) {
@@ -289,6 +376,7 @@ const pagosRoutes      = require('./routes/pagos');
 const legalRoutes      = require('./routes/legal');
 const legalPwaRoutes   = require('./routes/legal-pwa');
 const contratosRoutes  = require('./routes/contratos');
+const ndaEquipoRoutes  = require('./routes/nda-equipo');
 const firmarRoutes     = require('./routes/firmar');
 const cronRoutes       = require('./routes/cron');
 const observabilidadRoutes = require('./routes/observabilidad');
@@ -951,6 +1039,10 @@ app.use('/sostac', requireAuth, requireRole(['administrador']), sostacRoutes);
 app.use('/contratos', requireAuth, requireRole('superadmin'), contratosRoutes);
 app.use('/api/contratos', requireAuth, requireRole('superadmin'), contratosRoutes);
 
+// NDA Equipo (superadmin only)
+app.use('/nda-equipo', requireAuth, requireRole('superadmin'), ndaEquipoRoutes);
+app.use('/api/nda-equipo', requireAuth, requireRole('superadmin'), ndaEquipoRoutes);
+
 // Social media API (admin)
 app.use('/api/social', requireRole('administrador'), socialApiRoutes);
 
@@ -1132,7 +1224,27 @@ async function startServer() {
             });
         }
 
-        await listenConFallback(PORT, maxIntentosPuerto);
+        const httpServer = await listenConFallback(PORT, maxIntentosPuerto);
+
+        // Device Preview WebSocket sync relay
+        // Todos los iframes se conectan aquí. Cuando uno manda un evento, se retransmite a todos los demás.
+        try {
+            const { WebSocketServer } = require('ws');
+            const dpSync = new WebSocketServer({ server: httpServer, path: '/dp-sync' });
+            const dpClients = new Set();
+            dpSync.on('connection', ws => {
+                dpClients.add(ws);
+                ws.on('message', data => {
+                    // Relay to all other clients
+                    dpClients.forEach(c => { if (c !== ws && c.readyState === 1) c.send(data); });
+                });
+                ws.on('close', () => dpClients.delete(ws));
+                ws.on('error', () => dpClients.delete(ws));
+            });
+            console.log('Device Preview sync WebSocket listo en /dp-sync');
+        } catch (e) {
+            console.warn('Device Preview sync WebSocket no disponible:', e.message);
+        }
 
     } catch (err) {
         console.error('Error al conectar a la base de datos:', err);

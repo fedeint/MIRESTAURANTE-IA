@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="dignita">
   <link rel="manifest" href="/manifest.json">
   <link rel="apple-touch-icon" href="/icon-192.png">
-    <title>Firmar Contrato - mirestconia.com</title>
+    <title><%= docTipo === 'nda' ? 'Firmar NDA' : 'Firmar Contrato' %> - mirestconia.com</title>
     <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
     <style>
@@ -83,8 +83,8 @@
 
     <!-- Header -->
     <div class="header-gradient">
-        <h1>MiRestconIA</h1>
-        <p>MiRestconIA &mdash; Firma de Contrato</p>
+        <h1><%= typeof docTipo !== 'undefined' && docTipo === 'nda' ? 'DIGNITA.TECH' : 'MiRestconIA' %></h1>
+        <p><%= typeof docTipo !== 'undefined' && docTipo === 'nda' ? 'Firma de Acuerdo de Confidencialidad (NDA)' : 'MiRestconIA &mdash; Firma de Contrato' %></p>
     </div>
 
     <div class="main-container">
@@ -107,15 +107,15 @@
             <!-- Contract Info -->
             <div class="card shadow-sm border-0 mt-4">
                 <div class="card-body">
-                    <h5 class="card-title mb-3"><i class="bi bi-file-earmark-text me-2"></i>Información del Contrato</h5>
+                    <h5 class="card-title mb-3"><i class="bi bi-file-earmark-text me-2"></i><%= typeof docTipo !== 'undefined' && docTipo === 'nda' ? 'Información del NDA' : 'Información del Contrato' %></h5>
                     <div class="row">
                         <div class="col-sm-4 mb-2">
-                            <small class="text-muted d-block">Nro. Contrato</small>
-                            <strong><%= contrato.nro_contrato %></strong>
+                            <small class="text-muted d-block"><%= typeof docTipo !== 'undefined' && docTipo === 'nda' ? 'Nro. NDA' : 'Nro. Contrato' %></small>
+                            <strong><%= contrato.nro_nda || contrato.nro_contrato %></strong>
                         </div>
                         <div class="col-sm-4 mb-2">
-                            <small class="text-muted d-block">Cliente</small>
-                            <strong><%= contrato.nombre_cliente || contrato.razon_social %></strong>
+                            <small class="text-muted d-block"><%= typeof docTipo !== 'undefined' && docTipo === 'nda' ? 'Miembro' : 'Cliente' %></small>
+                            <strong><%= contrato.nombre_completo || contrato.nombre_cliente || contrato.razon_social %></strong>
                         </div>
                         <div class="col-sm-4 mb-2">
                             <small class="text-muted d-block">Fecha</small>
@@ -152,11 +152,15 @@
                     <div class="form-check mb-3">
                         <input class="form-check-input" type="checkbox" id="accept-terms">
                         <label class="form-check-label small" for="accept-terms">
+                            <% if (typeof docTipo !== 'undefined' && docTipo === 'nda') { %>
+                            Al firmar, declaro haber le&iacute;do y aceptado todos los t&eacute;rminos del presente Acuerdo de Confidencialidad (NDA) de DIGNITA.TECH
+                            <% } else { %>
                             Al firmar, declaro haber le&iacute;do y aceptado todos los t&eacute;rminos del presente Contrato de Licencia de Software y Servicios Tecnol&oacute;gicos de mirestconia.com
+                            <% } %>
                         </label>
                     </div>
                     <button type="button" id="btn-submit" class="btn btn-orange btn-lg w-100" disabled>
-                        <i class="bi bi-pen me-2"></i>Aceptar y Firmar Contrato
+                        <i class="bi bi-pen me-2"></i><%= typeof docTipo !== 'undefined' && docTipo === 'nda' ? 'Aceptar y Firmar NDA' : 'Aceptar y Firmar Contrato' %>
                     </button>
                 </div>
             </div>
@@ -167,8 +171,8 @@
             <div class="card shadow-sm border-0 mt-4">
                 <div class="card-body text-center py-5">
                     <i class="bi bi-check-circle-fill text-success" style="font-size: 3rem;"></i>
-                    <h4 class="mt-3 text-success">Contrato Firmado Exitosamente</h4>
-                    <p class="text-muted">Recibir&aacute; una copia del contrato firmado en su correo electr&oacute;nico.</p>
+                    <h4 class="mt-3 text-success"><%= typeof docTipo !== 'undefined' && docTipo === 'nda' ? 'NDA Firmado Exitosamente' : 'Contrato Firmado Exitosamente' %></h4>
+                    <p class="text-muted">Recibir&aacute; una copia del documento firmado en su correo electr&oacute;nico.</p>
                 </div>
             </div>
         </div>
@@ -217,12 +221,12 @@
                     } else {
                         alert(data.error || 'Error al firmar');
                         btnSubmit.disabled = false;
-                        btnSubmit.innerHTML = '<i class="bi bi-pen me-2"></i>Aceptar y Firmar Contrato';
+                        btnSubmit.innerHTML = '<i class="bi bi-pen me-2"></i><%= typeof docTipo !== 'undefined' && docTipo === 'nda' ? 'Aceptar y Firmar NDA' : 'Aceptar y Firmar Contrato' %>';
                     }
                 } catch (err) {
                     alert('Error de conexión');
                     btnSubmit.disabled = false;
-                    btnSubmit.innerHTML = '<i class="bi bi-pen me-2"></i>Aceptar y Firmar Contrato';
+                    btnSubmit.innerHTML = '<i class="bi bi-pen me-2"></i><%= typeof docTipo !== 'undefined' && docTipo === 'nda' ? 'Aceptar y Firmar NDA' : 'Aceptar y Firmar Contrato' %>';
                 }
             });
         </script>
