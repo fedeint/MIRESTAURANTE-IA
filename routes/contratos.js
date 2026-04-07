@@ -684,7 +684,7 @@ router.post('/generar', async (req, res) => {
     // Embed firma-dignita.png on the LEFT side (dignita.tech side)
     const firmaPath = path.join(__dirname, '..', 'public', 'uploads', 'firma-dignita.png');
     if (fs.existsSync(firmaPath)) {
-        doc.image(firmaPath, ml + 30, firmaY - 45, { fit: [150, 65] });
+        doc.image(firmaPath, ml + 50, firmaY - 60, { fit: [120, 80] });
     }
 
     // Lineas de firma
