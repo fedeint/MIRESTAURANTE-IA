@@ -103,9 +103,24 @@ router.post('/:token/submit', submitLimiter, async (req, res) => {
 
         const { height } = lastPage.getSize();
         const sigX = width / 2 + 40;
-        const sigY = height - 230;
 
-        lastPage.drawImage(sigImage, {
+        // Calculate signature Y position
+        // If firma_y is stored in DB (PDFKit Y from top), convert to pdf-lib (Y from bottom)
+        // pdf-lib Y = pageHeight - pdfKitY
+        let sigY;
+        if (documento.firma_y) {
+            // Convert PDFKit (top-down) to pdf-lib (bottom-up) and place signature ABOVE the line
+            sigY = height - documento.firma_y + sigDims.height;
+        } else {
+            // Fallback for old contracts without firma_y
+            sigY = height - 230;
+        }
+
+        // Use firma_page if available, otherwise use last page
+        const sigPageIdx = documento.firma_page ? documento.firma_page - 1 : pages.length - 1;
+        const sigPage = pages[sigPageIdx] || lastPage;
+
+        sigPage.drawImage(sigImage, {
             x: sigX,
             y: sigY,
             width: sigDims.width,
@@ -115,7 +130,7 @@ router.post('/:token/submit', submitLimiter, async (req, res) => {
         // Audit text below signature
         const fecha = new Date().toLocaleString('es-PE', { timeZone: 'America/Lima' });
         const ip = req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.ip;
-        lastPage.drawText(`Firmado electronicamente el ${fecha} — IP: ${ip}`, {
+        sigPage.drawText(`Firmado electronicamente el ${fecha} — IP: ${ip}`, {
             x: sigX,
             y: sigY - 15,
             size: 6,
@@ -126,7 +141,7 @@ router.post('/:token/submit', submitLimiter, async (req, res) => {
         const legalText = isNda
             ? 'El firmante declara haber leido y aceptado todos los terminos del Acuerdo de Confidencialidad (NDA).'
             : 'El firmante declara haber leido y aceptado todos los terminos del Contrato de Licencia de Software y Servicios Tecnologicos.';
-        lastPage.drawText(legalText, {
+        sigPage.drawText(legalText, {
             x: 55,
             y: 30,
             size: 6,

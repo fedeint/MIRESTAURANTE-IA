@@ -60,10 +60,10 @@ router.post('/generar', async (req, res) => {
             const pdfHash = crypto.createHash('sha256').update(pdfBuffer).digest('hex');
 
             const [[nda]] = await db.query(
-                `INSERT INTO nda_equipo (tenant_id, nro_nda, nombre_completo, dni, email, telefono, cargo, area, pdf_original, pdf_hash, created_by)
-                 VALUES (?,?,?,?,?,?,?,?,?,?,?)
+                `INSERT INTO nda_equipo (tenant_id, nro_nda, nombre_completo, dni, email, telefono, cargo, area, pdf_original, pdf_hash, created_by, firma_page, firma_y)
+                 VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)
                  RETURNING id, token, nro_nda`,
-                [req.tenantId||1, nroNda, nombre_completo, dni, email||null, telefono||null, cargo||null, area||null, pdfBuffer, pdfHash, req.session?.user?.id||null]
+                [req.tenantId||1, nroNda, nombre_completo, dni, email||null, telefono||null, cargo||null, area||null, pdfBuffer, pdfHash, req.session?.user?.id||null, firmaPage, firmaYForDb]
             );
             const baseUrl = `${req.protocol}://${req.get('host')}`;
             const link = `${baseUrl}/firmar/${nda.token}`;
@@ -292,16 +292,23 @@ router.post('/generar', async (req, res) => {
     doc.moveDown(0.3);
     para(`Fecha de suscripcion: Lima, ${fechaTexto}`);
 
-    doc.moveDown(2);
+    doc.moveDown(4);
 
-    const firmaY = doc.y;
     const midX = ml + pw / 2;
 
-    // Embed firma-dignita.png on the LEFT side
+    // Embed firma-dignita.png ABOVE the line on the LEFT side
     const firmaPath = path.join(__dirname, '..', 'public', 'uploads', 'firma-dignita.png');
     if (fs.existsSync(firmaPath)) {
-        doc.image(firmaPath, ml + 55, firmaY - 50, { width: 90 });
+        doc.image(firmaPath, ml + 55, doc.y, { width: 90 });
     }
+
+    // After image, set firmaY for the signature lines
+    const firmaY = doc.y + 10;
+
+    // Save signature line position for firmar.js to use
+    // pdf-lib uses Y from bottom, PDFKit uses Y from top. Convert: pdfLibY = pageHeight - pdfKitY
+    const firmaPage = doc.bufferedPageRange().count; // current page number (1-based)
+    const firmaYForDb = firmaY; // PDFKit Y from top
 
     // Lineas de firma
     doc.moveTo(ml + 10, firmaY).lineTo(ml + 200, firmaY).strokeColor('#333').lineWidth(0.8).stroke();
@@ -321,7 +328,7 @@ router.post('/generar', async (req, res) => {
     doc.text(`DNI: ${dni}`, midX + 10, firmaY + 30, { width: 190, align: 'center' });
     if (cargo) doc.text(cargo, midX + 10, firmaY + 40, { width: 190, align: 'center' });
 
-    doc.moveDown(5);
+    doc.y = firmaY + 70;
     doc.fontSize(7).fillColor('#999').text(`Documento generado el ${fechaTexto} — MiRestconIA por dignita.tech`, { align: 'center' });
     doc.text('Documento firmado en dos (2) ejemplares originales de igual tenor y valor.', { align: 'center' });
 
