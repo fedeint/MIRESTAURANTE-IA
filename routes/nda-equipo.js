@@ -300,7 +300,7 @@ router.post('/generar', async (req, res) => {
     // Embed firma-dignita.png centered over the left signature area
     const firmaPath = path.join(__dirname, '..', 'public', 'uploads', 'firma-dignita.png');
     if (fs.existsSync(firmaPath)) {
-        doc.image(firmaPath, ml + 50, firmaY - 60, { fit: [120, 80] });
+        doc.image(firmaPath, ml + 60, firmaY - 50, { fit: [120, 80] });
     }
 
     // Reset cursor to line position (image may have moved doc.y)
