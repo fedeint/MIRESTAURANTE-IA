@@ -297,10 +297,10 @@ router.post('/generar', async (req, res) => {
     const firmaY = doc.y;
     const midX = ml + pw / 2;
 
-    // Embed firma-dignita.png ABOVE the line (same size as receptor signature: 120x50)
+    // Embed firma-dignita.png centered over the line, overlapping above and below
     const firmaPath = path.join(__dirname, '..', 'public', 'uploads', 'firma-dignita.png');
     if (fs.existsSync(firmaPath)) {
-        doc.image(firmaPath, ml + 40, firmaY - 55, { fit: [120, 50] });
+        doc.image(firmaPath, ml + 30, firmaY - 45, { fit: [150, 65] });
     }
 
     // Reset cursor to line position (image may have moved doc.y)
