@@ -105,14 +105,13 @@ router.post('/:token/submit', submitLimiter, async (req, res) => {
         const sigX = width / 2 + 40;
 
         // Calculate signature Y position
-        // If firma_y is stored in DB (PDFKit Y from top), convert to pdf-lib (Y from bottom)
-        // pdf-lib Y = pageHeight - pdfKitY
+        // firma_y is PDFKit Y (from top). pdf-lib Y is from bottom.
+        // Convert: pdfLibY = pageHeight - pdfKitY
+        // drawImage y = bottom-left of image, so signature sits ON the line
         let sigY;
         if (documento.firma_y) {
-            // Convert PDFKit (top-down) to pdf-lib (bottom-up) and place signature ABOVE the line
-            sigY = height - documento.firma_y + sigDims.height;
+            sigY = height - documento.firma_y;
         } else {
-            // Fallback for old contracts without firma_y
             sigY = height - 230;
         }
 
