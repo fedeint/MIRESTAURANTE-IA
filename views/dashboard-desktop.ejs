@@ -1,400 +1,252 @@
+<%# @variant: desktop — Admin dashboard desktop variant. Reference: UI.DELSISTEMA.pen frame 1920w default (9RPaz). Must NEVER be byte-identical to dashboard.ejs (pwa variant). %>
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=1280, initial-scale=1">
     <link rel="icon" type="image/png" href="/favicon.png">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <meta name="theme-color" content="#10152f">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="MiRestcon">
-    <link rel="manifest" href="/manifest.json">
-    <link rel="apple-touch-icon" href="/icon-192.png">
-    <title>Inicio - mirestconia.com</title>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+    <title>Inicio — mirestconia.com</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fredoka+One&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/vendor/bootstrap-icons/font/bootstrap-icons.css">
     <style>
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-        html, body {
-            font-family: 'DM Sans', sans-serif;
-            background: #F0F2F8;
-            color: #0a0f24;
-            min-height: 100dvh;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-            overscroll-behavior: none;
+        :root {
+            --dg-bg-start: #fff8f0;
+            --dg-bg-end: #fafaf7;
+            --dg-main-bg: #ffffffc7;
+            --dg-text-primary: #1f2430;
+            --dg-text-secondary: #7a8090;
+            --dg-text-muted: #9ba3b2;
+            --dg-card-shadow: 0 14px 26.25px #0f172a14;
+            --dg-orange-solid: #f1703a;
+            --dg-orange-btn: linear-gradient(180deg, #f08a4f 0%, #d9501f 100%);
+            --dg-orange-day: linear-gradient(180deg, #f6a456 0%, #de5a25 100%);
+            --dg-orange-glow: 0 12px 19.25px #df4f1e47;
         }
-
-        .shell {
-            max-width: 480px;
-            margin: 0 auto;
-            min-height: 100dvh;
-            position: relative;
-            padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            color: var(--dg-text-primary);
+            background: linear-gradient(135deg, var(--dg-bg-start) 0%, var(--dg-bg-end) 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+        a { text-decoration: none; color: inherit; }
+        .dg-main-desktop {
+            margin-left: 350px;
+            margin-right: 40px;
+            margin-top: 55px;
+            margin-bottom: 66px;
+            padding: 40px 48px;
+            background: var(--dg-main-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 12px;
+            box-shadow: 0 18px 39.375px #0f172a14;
+            min-height: calc(100vh - 121px);
+        }
+        @media (max-width: 1280px) {
+            .dg-main-desktop { margin-left: 310px; margin-right: 20px; padding: 28px; }
         }
 
         /* ===== HEADER ===== */
-        .dash-header {
-            background: linear-gradient(180deg, #10152f 0%, #0a0f24 100%);
-            border-radius: 0 0 20px 20px;
-            padding: calc(52px + env(safe-area-inset-top, 0px)) 20px 24px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        .dash-header .greeting h1 {
-            font-size: 20px;
-            font-weight: 700;
-            color: #fff;
-            margin: 0;
-            line-height: 1.2;
-        }
-        .dash-header .greeting p {
-            font-size: 13px;
-            color: #8B8FAD;
-            margin: 4px 0 0;
-        }
-        .avatar {
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #ef520f, #FF6B35);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #fff;
-            font-weight: 700;
-            font-size: 16px;
-            flex-shrink: 0;
-        }
+        .dash-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; }
+        .dash-greeting h1 { font-size: 38px; font-weight: 800; letter-spacing: -1.52px; line-height: 1.05; color: var(--dg-text-primary); }
+        .dash-greeting p { font-size: 18px; color: var(--dg-text-secondary); margin-top: 14px; }
+        .dash-actions { display: flex; gap: 14px; align-items: center; flex-shrink: 0; }
+        .dash-toggle-dallia { display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: #ffffffe0; border-radius: 999px; box-shadow: 0 8px 19.25px #0f172a14; border: 1px solid #0f172a14; }
+        .dash-toggle-dallia__avatar { width: 26px; height: 26px; border-radius: 50%; background: linear-gradient(135deg, #ef520f, #FF6B35); }
+        .dash-toggle-dallia__label { font-size: 16px; color: #686f7f; font-weight: 500; }
+        .dash-toggle-dallia__switch { width: 48px; height: 24px; border-radius: 999px; background: linear-gradient(180deg, #f08a4f, #e56c38); position: relative; }
+        .dash-toggle-dallia__switch::after { content: ''; position: absolute; right: 3px; top: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; }
+        .dash-icon-btn { width: 42px; height: 42px; border-radius: 14px; background: #ffffffd1; border: 1px solid #0f172a14; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 19.25px #0f172a0f; cursor: pointer; }
+        .dash-icon-btn i { font-size: 18px; color: #686f7f; }
+        .dash-avatar { width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(180deg, #f08a4f, #e56c38); color: #fff; font-size: 20px; font-weight: 800; display: flex; align-items: center; justify-content: center; border: 1px solid #0f172a14; }
 
-        /* ===== CONTENT ===== */
-        .dash-content {
-            padding: 16px 16px 20px;
-        }
+        /* ===== TWO-COLUMN BODY ===== */
+        .dash-body { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(360px, 1fr); gap: 48px; margin-top: 34px; }
 
-        /* ===== KPI GRID ===== */
-        .kpi-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-bottom: 24px;
-        }
-        .kpi-card {
-            background: #fff;
-            border-radius: 14px;
-            padding: 14px 16px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        }
-        .kpi-card .kpi-value {
-            font-size: 20px;
-            font-weight: 700;
-            line-height: 1.2;
-        }
-        .kpi-card .kpi-label {
-            font-size: 12px;
-            color: #8B8FAD;
-            margin-top: 2px;
-        }
-        .kpi-card .kpi-badge {
-            display: inline-block;
-            font-size: 10px;
-            font-weight: 600;
-            padding: 2px 6px;
-            border-radius: 6px;
-            margin-top: 2px;
-        }
-        .kpi-dark  .kpi-value { color: #0a0f24; }
-        .kpi-green .kpi-value { color: #22C55E; }
-        .kpi-orange .kpi-value { color: #FF6B35; }
+        .dash-h2 { font-size: 22px; font-weight: 800; color: #22252e; }
+        .dash-h2-light { font-size: 22px; font-weight: 400; color: #252834; }
 
-        /* ===== SECTION TITLE ===== */
-        .section-title {
-            font-size: 15px;
-            font-weight: 700;
-            margin-bottom: 10px;
-        }
+        /* Left column */
+        .dash-left { display: flex; flex-direction: column; gap: 28px; }
+        .dash-pendientes-header { display: flex; justify-content: space-between; align-items: center; }
+        .dash-btn-primary { padding: 12px 28px; background: var(--dg-orange-btn); color: #fff; font-size: 18px; font-weight: 700; border: none; border-radius: 16px; box-shadow: var(--dg-orange-glow); cursor: pointer; }
+        .dash-card { background: #ffffffc7; border: 1px solid #1921300d; border-radius: 20px; box-shadow: var(--dg-card-shadow); padding: 22px 26px; }
+        .dash-card-radius-28 { border-radius: 28px; }
 
-        /* ===== DALLIA DICE ===== */
-        .insight-card {
-            background: #fff;
-            border-radius: 12px;
-            padding: 12px 14px;
-            margin-bottom: 8px;
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.04);
-        }
-        .insight-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            margin-top: 5px;
-            flex-shrink: 0;
-        }
-        .insight-card .insight-text {
-            font-size: 13px;
-            font-weight: 500;
-            line-height: 1.4;
-        }
-        .insight-card .insight-sub {
-            font-size: 11px;
-            color: #8B8FAD;
-            margin-top: 2px;
-        }
+        .dash-task { display: flex; align-items: center; gap: 22px; }
+        .dash-task + .dash-task { margin-top: 18px; padding-top: 18px; border-top: 1px solid #1921300d; }
+        .dash-task__check { width: 28px; height: 28px; border-radius: 50%; border: 3px solid #2b2f3b; flex-shrink: 0; }
+        .dash-task__check--urgent { border-color: #ef4444; }
+        .dash-task__body { flex: 1; min-width: 0; }
+        .dash-task__title { display: flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 800; color: #252834; }
+        .dash-task__badge { font-size: 13px; font-weight: 600; color: #ef520f; background: #f8915924; padding: 4px 10px; border-radius: 8px; }
+        .dash-task__subtitle { font-size: 17px; color: #81889a; margin-top: 6px; }
+        .dash-task__btn { padding: 12px 24px; background: #15192c; color: #fff; font-size: 16px; font-weight: 700; border: none; border-radius: 16px; cursor: pointer; flex-shrink: 0; }
+        .dash-task__empty { text-align: center; color: #81889a; font-size: 16px; padding: 16px 0; }
 
-        /* ===== ACCESOS RAPIDOS ===== */
-        .quick-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-        .quick-btn {
-            background: #fff;
-            border-radius: 14px;
-            padding: 16px 12px;
-            text-align: center;
-            text-decoration: none;
-            color: #0a0f24;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 6px;
-            transition: transform 0.15s, box-shadow 0.15s;
-        }
-        .quick-btn:active {
-            transform: scale(0.96);
-            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
-        }
-        .quick-btn .q-icon {
-            font-size: 28px;
-            line-height: 1;
-        }
-        .quick-btn .q-label {
-            font-size: 12px;
-            font-weight: 600;
-            color: #0a0f24;
-        }
+        .dash-agenda__header { display: flex; justify-content: space-between; align-items: center; }
+        .dash-agenda__today { font-size: 18px; font-weight: 800; color: var(--dg-orange-solid); text-transform: capitalize; }
+        .dash-agenda__days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 14px; margin-top: 22px; }
+        .dash-day { text-align: center; padding: 18px 0; border-radius: 18px; background: #ffffff; border: 1px solid #f1f2f6; }
+        .dash-day__label { font-size: 13px; color: #9ba3b2; text-transform: capitalize; }
+        .dash-day__num { font-size: 22px; font-weight: 800; color: #252834; margin-top: 4px; }
+        .dash-day--active { background: var(--dg-orange-day); border: none; box-shadow: var(--dg-orange-glow); }
+        .dash-day--active .dash-day__label, .dash-day--active .dash-day__num { color: #fff; }
 
-        /* ===== BOTTOM NAV ===== */
-        .bottom-nav {
-            position: fixed;
-            bottom: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 100%;
-            max-width: 480px;
-            background: #fff;
-            border-top: 1px solid #E5E7EB;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            padding: 8px 0 calc(8px + env(safe-area-inset-bottom, 0px));
-            z-index: 100;
-        }
-        .nav-tab {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-decoration: none;
-            font-size: 10px;
-            font-weight: 600;
-            color: #8B8FAD;
-            gap: 2px;
-            padding: 4px 0;
-            min-width: 56px;
-        }
-        .nav-tab.active { color: #FF6B35; }
-        .nav-tab .nav-icon {
-            font-size: 20px;
-            line-height: 1;
-        }
-        .nav-tab .nav-icon svg {
-            width: 22px;
-            height: 22px;
-            stroke: currentColor;
-            fill: none;
-            stroke-width: 2;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-        }
-        .nav-tab.active .nav-icon svg {
-            stroke: #FF6B35;
-        }
+        .dash-completadas { display: flex; align-items: center; gap: 14px; cursor: pointer; }
+        .dash-completadas__count { padding: 6px 14px; background: var(--dg-orange-btn); color: #fff; font-size: 16px; font-weight: 800; border-radius: 12px; }
+        .dash-completadas__chevron { color: #7a8090; font-size: 18px; }
 
-        /* ===== CREDITS ===== */
-        .credits {
-            text-align: center;
-            font-size: 11px;
-            color: #8B8FAD;
-            padding: 8px 0 12px;
-        }
-        .credits strong { color: #FF6B35; }
+        /* Right column */
+        .dash-right { display: flex; flex-direction: column; gap: 28px; }
+        .dash-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+        .dash-kpi { background: #ffffffc7; border: 1px solid #1921300d; border-radius: 22px; padding: 18px 12px; text-align: center; box-shadow: var(--dg-card-shadow); }
+        .dash-kpi__value { font-size: 18px; font-weight: 800; color: #1e2330; }
+        .dash-kpi__value--orange { color: var(--dg-orange-solid); }
+        .dash-kpi__label { font-size: 14px; color: var(--dg-text-muted); margin-top: 8px; }
+
+        .dash-insight { background: #ffffffc7; border: 1px solid #1921300d; border-radius: 22px; padding: 20px 22px; box-shadow: var(--dg-card-shadow); display: flex; gap: 16px; }
+        .dash-insight + .dash-insight { margin-top: 14px; }
+        .dash-insight__dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 10px; }
+        .dash-insight__body { flex: 1; min-width: 0; }
+        .dash-insight__text { font-size: 16px; font-weight: 600; color: #2a2e38; line-height: 1.45; }
+        .dash-insight__sub { font-size: 14px; color: var(--dg-text-muted); margin-top: 6px; }
+
+        .dash-quick { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        .dash-quick-btn { display: flex; align-items: center; gap: 14px; padding: 20px 22px; background: #ffffffc7; border: 1px solid #1921300d; border-radius: 20px; box-shadow: var(--dg-card-shadow); color: #252834; font-weight: 700; font-size: 16px; }
+        .dash-quick-btn i { font-size: 20px; color: #ef520f; }
     </style>
 </head>
 <body>
-<%
-    var now = new Date();
-    var fechaStr = now.toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+    <%- include('./partials/sidebar', { user: typeof user !== 'undefined' ? user : null, reqPath: '/', csrfToken: typeof csrfToken !== 'undefined' ? csrfToken : '' }) %>
 
-    var ventasHoy = parseFloat(dashboard.ventasHoy) || 0;
-    var ventasAyer = parseFloat(dashboard.ventasAyer) || 0;
-    var diffPct = ventasAyer > 0 ? Math.round(((ventasHoy - ventasAyer) / ventasAyer) * 100) : 0;
-    var diffSign = diffPct >= 0 ? '+' : '';
-    var diffColor = diffPct >= 0 ? '#22C55E' : '#EF4444';
+    <main class="dg-main-desktop">
 
-    var userInitial = (dashboard.userName || 'A').charAt(0).toUpperCase();
+        <!-- ========== HEADER ========== -->
+        <section class="dash-header">
+            <div class="dash-greeting">
+                <h1>Buenos dias, <%= user && user.usuario ? user.usuario : 'Administrador' %></h1>
+                <p><%= new Date().toLocaleDateString('es-PE', { weekday:'long', day:'numeric', month:'long', year:'numeric' }) %> · <%= (typeof tenant !== 'undefined' && tenant && tenant.subdominio) ? tenant.subdominio + '.mirestconia.com' : 'restaurante.mirestconia.com' %></p>
+            </div>
+            <div class="dash-actions">
+                <div class="dash-toggle-dallia">
+                    <div class="dash-toggle-dallia__avatar"></div>
+                    <span class="dash-toggle-dallia__label">DallIA</span>
+                    <div class="dash-toggle-dallia__switch"></div>
+                </div>
+                <button class="dash-icon-btn" aria-label="Notificaciones"><i class="bi bi-bell"></i></button>
+                <div class="dash-avatar"><%= (user && user.usuario ? user.usuario.substring(0,2) : 'AD').toUpperCase() %></div>
+            </div>
+        </section>
 
-    var insightColors = ['#FBBF24', '#6366F1', '#FF6B35'];
-%>
+        <!-- ========== TWO-COLUMN BODY ========== -->
+        <div class="dash-body">
 
-<div class="shell">
+            <!-- LEFT: Pendientes + Agenda + Completadas -->
+            <div class="dash-left">
 
-    <!-- ===== HEADER ===== -->
-    <div class="dash-header">
-        <div class="greeting">
-            <h1>Hola, <%= dashboard.userName || 'Admin' %></h1>
-            <p><%= fechaStr %></p>
+                <section>
+                    <div class="dash-pendientes-header">
+                        <h2 class="dash-h2">Pendientes</h2>
+                        <button class="dash-btn-primary" onclick="window.location.href='/administracion'">+ Agregar</button>
+                    </div>
+                    <div class="dash-card" style="margin-top: 18px;">
+                        <% const pend = (dashboard && dashboard.pendientes && dashboard.pendientes.length) ? dashboard.pendientes : []; %>
+                        <% if (pend.length === 0) { %>
+                            <div class="dash-task__empty">No hay pendientes por hoy</div>
+                        <% } else { pend.slice(0, 5).forEach(function(p){ %>
+                        <div class="dash-task">
+                            <div class="dash-task__check <%= p.urgente ? 'dash-task__check--urgent' : '' %>"></div>
+                            <div class="dash-task__body">
+                                <div class="dash-task__title">
+                                    <%= p.titulo %>
+                                    <% if (p.tipo === 'auto') { %><span class="dash-task__badge">DallIA</span><% } %>
+                                </div>
+                                <div class="dash-task__subtitle"><%= p.desc || '' %></div>
+                            </div>
+                            <a href="<%= p.href || '#' %>" class="dash-task__btn"><%= p.btn || 'Ver' %></a>
+                        </div>
+                        <% }) } %>
+                    </div>
+                </section>
+
+                <section class="dash-card dash-card-radius-28" style="padding: 28px 30px;">
+                    <div class="dash-agenda__header">
+                        <h2 class="dash-h2-light">Agenda</h2>
+                        <span class="dash-agenda__today"><%= new Date().toLocaleDateString('es-PE', { weekday:'short', day:'numeric', month:'short' }) %></span>
+                    </div>
+                    <div class="dash-agenda__days">
+                        <% const dias = ['Lun','Mar','Mie','Jue','Vie','Sab','Dom']; const hoy = new Date(); const dow = (hoy.getDay()+6)%7; const start = new Date(hoy); start.setDate(hoy.getDate()-dow); %>
+                        <% for(let i=0;i<7;i++){ const d = new Date(start); d.setDate(start.getDate()+i); const active = i===dow; %>
+                        <div class="dash-day <%= active ? 'dash-day--active' : '' %>">
+                            <div class="dash-day__label"><%= dias[i] %></div>
+                            <div class="dash-day__num"><%= d.getDate() %></div>
+                        </div>
+                        <% } %>
+                    </div>
+                </section>
+
+                <section class="dash-completadas">
+                    <h3 class="dash-h2">Completadas</h3>
+                    <span class="dash-completadas__count"><%= (dashboard && dashboard.historialTareas && dashboard.historialTareas.length) || 0 %></span>
+                    <i class="bi bi-chevron-down dash-completadas__chevron"></i>
+                </section>
+
+            </div>
+
+            <!-- RIGHT: KPIs + DallIA dice + Acceso rapido -->
+            <div class="dash-right">
+
+                <section>
+                    <h2 class="dash-h2">Hoy en numeros</h2>
+                    <div class="dash-kpis" style="margin-top: 18px;">
+                        <div class="dash-kpi">
+                            <div class="dash-kpi__value">S/ <%= (dashboard && dashboard.ventasHoy) ? Number(dashboard.ventasHoy).toFixed(2) : '0.00' %></div>
+                            <div class="dash-kpi__label">Ventas</div>
+                        </div>
+                        <div class="dash-kpi">
+                            <div class="dash-kpi__value dash-kpi__value--orange"><%= (dashboard && dashboard.mesasOcupadas) || 0 %>/<%= (dashboard && dashboard.mesasTotal) || 0 %></div>
+                            <div class="dash-kpi__label">Mesas</div>
+                        </div>
+                        <div class="dash-kpi">
+                            <div class="dash-kpi__value"><%= (dashboard && dashboard.platosHoy) || 0 %></div>
+                            <div class="dash-kpi__label">Platos</div>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h2 class="dash-h2">DallIA dice:</h2>
+                    <div style="margin-top: 18px;">
+                        <% const insights = (dashboard && dashboard.iaInsights && dashboard.iaInsights.length) ? dashboard.iaInsights : [{ color:'#e0a038', texto:'Dashboard sin datos aun' }]; %>
+                        <% insights.forEach(function(ins){ %>
+                        <div class="dash-insight">
+                            <div class="dash-insight__dot" style="background: <%= ins.color || '#e0a038' %>;"></div>
+                            <div class="dash-insight__body">
+                                <div class="dash-insight__text"><%= ins.texto %></div>
+                                <div class="dash-insight__sub">Consejo de DallIA</div>
+                            </div>
+                        </div>
+                        <% }) %>
+                    </div>
+                </section>
+
+                <section>
+                    <h2 class="dash-h2">Acceso rapido</h2>
+                    <div class="dash-quick" style="margin-top: 18px;">
+                        <a href="/mesas" class="dash-quick-btn"><i class="bi bi-grid-3x3-gap-fill"></i> Mesas</a>
+                        <a href="/cocina" class="dash-quick-btn"><i class="bi bi-fire"></i> Cocina</a>
+                        <a href="/productos" class="dash-quick-btn"><i class="bi bi-egg-fried"></i> Productos</a>
+                        <a href="/chat" class="dash-quick-btn"><i class="bi bi-stars"></i> Asistente IA</a>
+                    </div>
+                </section>
+
+            </div>
+
         </div>
-        <div class="avatar"><%= userInitial %></div>
-    </div>
-
-    <div class="dash-content">
-
-        <!-- ===== KPI CARDS ===== -->
-        <div class="kpi-grid">
-            <div class="kpi-card kpi-dark">
-                <div class="kpi-value"><%= dashboard.facturasHoy || 0 %></div>
-                <div class="kpi-label">Delivery en camino</div>
-            </div>
-            <div class="kpi-card kpi-green">
-                <div class="kpi-value"><%= (dashboard.mesasOcupadas || 0) + '/' + (dashboard.mesasTotal || 0) %></div>
-                <div class="kpi-label">Mesas ocupadas</div>
-            </div>
-            <div class="kpi-card kpi-orange">
-                <div class="kpi-value">S/ <%= ventasHoy.toFixed(0) %></div>
-                <div class="kpi-label">
-                    Ventas hoy
-                    <% if (ventasAyer > 0) { %>
-                    <span class="kpi-badge" style="background:<%= diffColor %>18;color:<%= diffColor %>;"><%= diffSign %><%= diffPct %>% vs ayer</span>
-                    <% } %>
-                </div>
-            </div>
-            <div class="kpi-card kpi-dark">
-                <div class="kpi-value"><%= dashboard.productosVendidosHoy || 0 %></div>
-                <div class="kpi-label">Platos activos</div>
-            </div>
-        </div>
-
-        <!-- ===== DALLIA DICE ===== -->
-        <div class="section-title">DallIA dice:</div>
-
-        <% if (dashboard.iaInsights && dashboard.iaInsights.length > 0) { %>
-            <% dashboard.iaInsights.forEach(function(insight, idx) { %>
-            <div class="insight-card">
-                <div class="insight-dot" style="background:<%= insight.color || insightColors[idx % insightColors.length] %>;"></div>
-                <div>
-                    <div class="insight-text"><%= insight.texto %></div>
-                    <div class="insight-sub">Consejo de DallIA</div>
-                </div>
-            </div>
-            <% }); %>
-        <% } else { %>
-            <% if (dashboard.alertas > 0) { %>
-            <div class="insight-card">
-                <div class="insight-dot" style="background:#FBBF24;"></div>
-                <div>
-                    <div class="insight-text"><%= dashboard.alertas %> insumo<%= dashboard.alertas > 1 ? 's' : '' %> cerca del limite de stock</div>
-                    <div class="insight-sub">Consejo de DallIA</div>
-                </div>
-            </div>
-            <% } %>
-            <div class="insight-card">
-                <div class="insight-dot" style="background:#6366F1;"></div>
-                <div>
-                    <div class="insight-text"><%= (dashboard.mesasOcupadas || 0) %> de <%= (dashboard.mesasTotal || 0) %> mesas ocupadas ahora</div>
-                    <div class="insight-sub">Consejo de DallIA</div>
-                </div>
-            </div>
-            <% if (dashboard.cajaAbierta === false) { %>
-            <div class="insight-card">
-                <div class="insight-dot" style="background:#FF6B35;"></div>
-                <div>
-                    <div class="insight-text">La caja aun no ha sido abierta hoy</div>
-                    <div class="insight-sub">Consejo de DallIA</div>
-                </div>
-            </div>
-            <% } %>
-        <% } %>
-
-        <div style="margin-bottom:24px;"></div>
-
-        <!-- ===== ACCESOS RAPIDOS ===== -->
-        <div class="section-title">Accesos rapidos</div>
-        <div class="quick-grid">
-            <a href="/pedidos" class="quick-btn">
-                <span class="q-icon">&#x1F6F5;</span>
-                <span class="q-label">Delivery</span>
-            </a>
-            <a href="/caja" class="quick-btn">
-                <span class="q-icon">&#x1F4B0;</span>
-                <span class="q-label">Caja</span>
-            </a>
-            <a href="/cocina-display" class="quick-btn">
-                <span class="q-icon">&#x1F525;</span>
-                <span class="q-label">Cocina</span>
-            </a>
-            <a href="/mesas" class="quick-btn">
-                <span class="q-icon">&#x1FA91;</span>
-                <span class="q-label">Mesas</span>
-            </a>
-        </div>
-
-        <div class="credits">
-            Creado por <strong>Leonidas Yauri</strong> &middot; mirestconia.com
-        </div>
-
-    </div><!-- /dash-content -->
-
-    <!-- ===== BOTTOM NAV ===== -->
-    <nav class="bottom-nav">
-        <a href="/dashboard" class="nav-tab active">
-            <span class="nav-icon">
-                <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-            </span>
-            <span>INICIO</span>
-        </a>
-        <a href="/mesas" class="nav-tab">
-            <span class="nav-icon">
-                <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-            </span>
-            <span>MESAS</span>
-        </a>
-        <a href="/cocina-display" class="nav-tab">
-            <span class="nav-icon">
-                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6 2 10.5c0 3 2 5.5 5 7v2.5a2 2 0 002 2h6a2 2 0 002-2V17.5c3-1.5 5-4 5-7C22 6 17.52 2 12 2z"/><line x1="9" y1="22" x2="15" y2="22"/></svg>
-            </span>
-            <span>COCINA</span>
-        </a>
-        <a href="/ventas" class="nav-tab">
-            <span class="nav-icon">
-                <svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
-            </span>
-            <span>VENTAS</span>
-        </a>
-        <a href="/configuracion" class="nav-tab">
-            <span class="nav-icon">
-                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
-            </span>
-            <span>MAS</span>
-        </a>
-    </nav>
-
-</div><!-- /shell -->
-
-<script src="/js/dallia-fab.js"></script>
+    </main>
 </body>
 </html>
