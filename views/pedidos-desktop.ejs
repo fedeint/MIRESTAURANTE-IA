@@ -1,0 +1,341 @@
+<%# @variant: desktop — Pedidos consolidated view (Mesa + Delivery + Para Llevar). Reference: spec 2026-04-08-pedidos-consolidation-design.md %>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1280, initial-scale=1">
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <title>Pedidos — mirestconia.com</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/vendor/bootstrap-icons/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --dg-bg-start: #fff8f0;
+            --dg-bg-end: #fafaf7;
+            --dg-main-bg: #ffffffc7;
+            --dg-text-primary: #1f2430;
+            --dg-text-secondary: #7a8090;
+            --dg-text-muted: #9ba3b2;
+            --dg-card-shadow: 0 14px 26.25px #0f172a14;
+            --dg-orange-solid: #f1703a;
+            --dg-orange-btn: linear-gradient(180deg, #f08a4f 0%, #d9501f 100%);
+            --dg-orange-glow: 0 12px 19.25px #df4f1e47;
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            color: var(--dg-text-primary);
+            background: linear-gradient(135deg, var(--dg-bg-start) 0%, var(--dg-bg-end) 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+        a { text-decoration: none; color: inherit; }
+        .dg-main-desktop {
+            margin-left: 320px;
+            margin-right: 40px;
+            margin-top: 40px;
+            margin-bottom: 40px;
+            padding: 40px 48px;
+            background: var(--dg-main-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 12px;
+            box-shadow: 0 18px 39.375px #0f172a14;
+            min-height: calc(100vh - 80px);
+        }
+        @media (max-width: 1280px) {
+            .dg-main-desktop { margin-left: 300px; margin-right: 20px; padding: 28px; }
+        }
+
+        /* ===== Header ===== */
+        .pedidos-header { display: flex; justify-content: space-between; align-items: center; gap: 24px; margin-bottom: 28px; }
+        .pedidos-title h1 { font-size: 38px; font-weight: 800; letter-spacing: -1.52px; color: var(--dg-text-primary); }
+        .pedidos-title p { font-size: 16px; color: var(--dg-text-secondary); margin-top: 6px; }
+        .pedidos-new-btn {
+            padding: 14px 28px;
+            background: var(--dg-orange-btn);
+            color: #fff;
+            font-size: 16px;
+            font-weight: 700;
+            border: none;
+            border-radius: 16px;
+            box-shadow: var(--dg-orange-glow);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .pedidos-new-btn:hover { filter: brightness(1.05); }
+        .pedidos-new-btn i { font-size: 18px; }
+
+        /* ===== Tabs ===== */
+        .pedidos-tabs {
+            display: flex;
+            gap: 8px;
+            padding: 6px;
+            background: #ffffffc7;
+            border: 1px solid #1921300d;
+            border-radius: 18px;
+            margin-bottom: 28px;
+            width: fit-content;
+            box-shadow: var(--dg-card-shadow);
+        }
+        .pedidos-tab {
+            padding: 12px 24px;
+            border: none;
+            background: transparent;
+            color: var(--dg-text-secondary);
+            font-size: 15px;
+            font-weight: 600;
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: all 0.2s;
+        }
+        .pedidos-tab:hover { color: var(--dg-text-primary); }
+        .pedidos-tab.active {
+            background: var(--dg-orange-btn);
+            color: #fff;
+            box-shadow: var(--dg-orange-glow);
+        }
+        .pedidos-tab__count {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 22px;
+            height: 22px;
+            padding: 0 8px;
+            background: rgba(15, 23, 42, 0.08);
+            color: #687183;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+        .pedidos-tab.active .pedidos-tab__count {
+            background: rgba(255, 255, 255, 0.25);
+            color: #fff;
+        }
+
+        /* ===== Tab content ===== */
+        .pedidos-tab-content { display: none; }
+        .pedidos-tab-content.active { display: block; }
+
+        /* ===== Grid de mesa (tab Mesa) ===== */
+        .mesa-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 16px;
+        }
+        .mesa-card {
+            background: #ffffffc7;
+            border: 1px solid #1921300d;
+            border-radius: 20px;
+            padding: 24px 20px;
+            box-shadow: var(--dg-card-shadow);
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .mesa-card:hover { transform: translateY(-2px); box-shadow: 0 20px 30px #0f172a18; }
+        .mesa-card--occupied { border-color: var(--dg-orange-solid); }
+        .mesa-card__num { font-size: 28px; font-weight: 800; color: var(--dg-text-primary); }
+        .mesa-card__label { font-size: 13px; color: var(--dg-text-muted); margin-top: 6px; text-transform: uppercase; letter-spacing: 0.08em; }
+        .mesa-card__status { font-size: 12px; font-weight: 700; margin-top: 10px; padding: 4px 10px; border-radius: 999px; display: inline-block; }
+        .mesa-card__status--libre { background: #dcfce7; color: #166534; }
+        .mesa-card__status--ocupada { background: #ffedd5; color: #c2410c; }
+
+        /* ===== Lista de delivery ===== */
+        .delivery-list { display: flex; flex-direction: column; gap: 14px; }
+        .delivery-card {
+            background: #ffffffc7;
+            border: 1px solid #1921300d;
+            border-radius: 20px;
+            padding: 22px 26px;
+            box-shadow: var(--dg-card-shadow);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .delivery-card__icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 16px;
+            background: #ffedd5;
+            color: var(--dg-orange-solid);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+        .delivery-card__body { flex: 1; min-width: 0; }
+        .delivery-card__cliente { font-size: 17px; font-weight: 700; color: var(--dg-text-primary); }
+        .delivery-card__direccion { font-size: 14px; color: var(--dg-text-secondary); margin-top: 4px; }
+        .delivery-card__meta { font-size: 13px; color: var(--dg-text-muted); margin-top: 8px; display: flex; gap: 14px; }
+        .delivery-card__total { font-size: 18px; font-weight: 800; color: var(--dg-text-primary); flex-shrink: 0; }
+
+        /* ===== Empty state ===== */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--dg-text-muted);
+        }
+        .empty-state__icon {
+            font-size: 56px;
+            color: #dde2ed;
+            margin-bottom: 16px;
+        }
+        .empty-state__title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--dg-text-secondary);
+            margin-bottom: 6px;
+        }
+        .empty-state__subtitle { font-size: 14px; }
+    </style>
+</head>
+<body>
+    <%- include('./partials/sidebar', { user: typeof user !== 'undefined' ? user : null, reqPath: '/pedidos', csrfToken: typeof csrfToken !== 'undefined' ? csrfToken : '' }) %>
+
+    <main class="dg-main-desktop">
+
+        <!-- HEADER -->
+        <section class="pedidos-header">
+            <div class="pedidos-title">
+                <h1>Pedidos</h1>
+                <p>Gestiona pedidos de mesa, delivery y para llevar en un solo lugar.</p>
+            </div>
+            <button class="pedidos-new-btn" type="button">
+                <i class="bi bi-plus-lg"></i>
+                Nuevo pedido
+            </button>
+        </section>
+
+        <!-- TABS -->
+        <% const activeTab = (typeof tab !== 'undefined' && tab) ? tab : 'mesa'; %>
+        <% const tabCounts = (typeof counts !== 'undefined' && counts) ? counts : { mesa: 0, delivery: 0, para_llevar: 0 }; %>
+
+        <div class="pedidos-tabs">
+            <button class="pedidos-tab <%= activeTab === 'mesa' ? 'active' : '' %>" data-tab="mesa">
+                <i class="bi bi-grid-3x3-gap-fill"></i>
+                Mesa
+                <span class="pedidos-tab__count"><%= tabCounts.mesa %></span>
+            </button>
+            <button class="pedidos-tab <%= activeTab === 'delivery' ? 'active' : '' %>" data-tab="delivery">
+                <i class="bi bi-bicycle"></i>
+                Delivery
+                <span class="pedidos-tab__count"><%= tabCounts.delivery %></span>
+            </button>
+            <button class="pedidos-tab <%= activeTab === 'para_llevar' ? 'active' : '' %>" data-tab="para_llevar">
+                <i class="bi bi-bag-fill"></i>
+                Para llevar
+                <span class="pedidos-tab__count"><%= tabCounts.para_llevar %></span>
+            </button>
+        </div>
+
+        <!-- ===== MESA TAB ===== -->
+        <div class="pedidos-tab-content <%= activeTab === 'mesa' ? 'active' : '' %>" id="tab-mesa">
+            <% const mesas = (typeof mesaPedidos !== 'undefined' && mesaPedidos && mesaPedidos.length) ? mesaPedidos : []; %>
+            <% if (mesas.length === 0) { %>
+                <div class="empty-state">
+                    <div class="empty-state__icon"><i class="bi bi-grid-3x3-gap"></i></div>
+                    <div class="empty-state__title">Sin pedidos de mesa activos</div>
+                    <div class="empty-state__subtitle">Cuando un mesero abra una comanda, aparecera aqui.</div>
+                </div>
+            <% } else { %>
+                <div class="mesa-grid">
+                    <% mesas.forEach(function(m){ %>
+                        <div class="mesa-card <%= m.estado === 'ocupada' ? 'mesa-card--occupied' : '' %>">
+                            <div class="mesa-card__num"><%= m.numero || m.mesa_id %></div>
+                            <div class="mesa-card__label">Mesa</div>
+                            <div class="mesa-card__status <%= m.estado === 'ocupada' ? 'mesa-card__status--ocupada' : 'mesa-card__status--libre' %>">
+                                <%= m.estado === 'ocupada' ? 'Ocupada' : 'Libre' %>
+                            </div>
+                        </div>
+                    <% }) %>
+                </div>
+            <% } %>
+        </div>
+
+        <!-- ===== DELIVERY TAB ===== -->
+        <div class="pedidos-tab-content <%= activeTab === 'delivery' ? 'active' : '' %>" id="tab-delivery">
+            <% const deliveries = (typeof deliveryPedidos !== 'undefined' && deliveryPedidos && deliveryPedidos.length) ? deliveryPedidos : []; %>
+            <% if (deliveries.length === 0) { %>
+                <div class="empty-state">
+                    <div class="empty-state__icon"><i class="bi bi-bicycle"></i></div>
+                    <div class="empty-state__title">Sin pedidos delivery activos</div>
+                    <div class="empty-state__subtitle">Usa el boton "Nuevo pedido" para registrar una entrega a domicilio.</div>
+                </div>
+            <% } else { %>
+                <div class="delivery-list">
+                    <% deliveries.forEach(function(d){ %>
+                        <div class="delivery-card">
+                            <div class="delivery-card__icon"><i class="bi bi-bicycle"></i></div>
+                            <div class="delivery-card__body">
+                                <div class="delivery-card__cliente"><%= d.cliente_nombre || 'Sin nombre' %></div>
+                                <div class="delivery-card__direccion"><%= d.direccion_entrega || '' %></div>
+                                <div class="delivery-card__meta">
+                                    <span><i class="bi bi-telephone"></i> <%= d.cliente_telefono || '—' %></span>
+                                    <span><i class="bi bi-clock"></i> <%= d.hora_estimada_entrega || 'Sin hora' %></span>
+                                </div>
+                            </div>
+                            <div class="delivery-card__total">S/ <%= Number(d.total || 0).toFixed(2) %></div>
+                        </div>
+                    <% }) %>
+                </div>
+            <% } %>
+        </div>
+
+        <!-- ===== PARA LLEVAR TAB ===== -->
+        <div class="pedidos-tab-content <%= activeTab === 'para_llevar' ? 'active' : '' %>" id="tab-para_llevar">
+            <% const paraLlevar = (typeof paraLlevarPedidos !== 'undefined' && paraLlevarPedidos && paraLlevarPedidos.length) ? paraLlevarPedidos : []; %>
+            <% if (paraLlevar.length === 0) { %>
+                <div class="empty-state">
+                    <div class="empty-state__icon"><i class="bi bi-bag"></i></div>
+                    <div class="empty-state__title">Sin pedidos para llevar activos</div>
+                    <div class="empty-state__subtitle">Registra aqui las ordenes que el cliente pasara a recoger.</div>
+                </div>
+            <% } else { %>
+                <div class="delivery-list">
+                    <% paraLlevar.forEach(function(p){ %>
+                        <div class="delivery-card">
+                            <div class="delivery-card__icon"><i class="bi bi-bag-fill"></i></div>
+                            <div class="delivery-card__body">
+                                <div class="delivery-card__cliente"><%= p.cliente_nombre_recojo || 'Sin nombre' %></div>
+                                <div class="delivery-card__direccion">Pasa a recoger</div>
+                                <div class="delivery-card__meta">
+                                    <span><i class="bi bi-clock"></i> <%= p.hora_recojo || 'Sin hora' %></span>
+                                    <span><%= p.listo_para_recojo ? 'Listo' : 'Preparando' %></span>
+                                </div>
+                            </div>
+                            <div class="delivery-card__total">S/ <%= Number(p.total || 0).toFixed(2) %></div>
+                        </div>
+                    <% }) %>
+                </div>
+            <% } %>
+        </div>
+
+    </main>
+
+    <script>
+        // Tab switching (no page reload)
+        document.querySelectorAll('.pedidos-tab').forEach(function(btn){
+            btn.addEventListener('click', function(){
+                var target = this.dataset.tab;
+                document.querySelectorAll('.pedidos-tab').forEach(function(b){ b.classList.remove('active'); });
+                document.querySelectorAll('.pedidos-tab-content').forEach(function(c){ c.classList.remove('active'); });
+                this.classList.add('active');
+                var content = document.getElementById('tab-' + target);
+                if (content) content.classList.add('active');
+                // Update URL without reload
+                var url = new URL(window.location);
+                url.searchParams.set('tab', target);
+                history.replaceState(null, '', url);
+            });
+        });
+    </script>
+</body>
+</html>

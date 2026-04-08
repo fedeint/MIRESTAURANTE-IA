@@ -394,9 +394,14 @@ const cronRoutes       = require('./routes/cron');
 const observabilidadRoutes = require('./routes/observabilidad');
 const sostacRoutes         = require('./routes/sostac');
 const sprint4Routes        = require('./routes/sprint4');
+const pedidosRoutes        = require('./routes/pedidos');
 
 // Cron endpoints (Vercel Cron Jobs — auth via CRON_SECRET header)
 app.use('/api/cron', cronRoutes);
+
+// Pedidos consolidated page (iter 1.6 — skeleton; full data in iter 1.7)
+app.use('/pedidos', pedidosRoutes);
+app.use('/api/pedidos', pedidosRoutes);
 
 // Honeypot: detect automated scanners hitting common attack paths
 ['/wp-admin', '/wp-login.php', '/.env', '/config.php', '/phpmyadmin', '/admin.php'].forEach(p => {
