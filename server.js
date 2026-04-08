@@ -18,6 +18,7 @@ const { requireCajaAbierta } = require('./middleware/requireCaja');
 const { attachGeoContext } = require('./middleware/geoContext');
 
 const logger = require('./lib/logger');
+const { renderForDevice } = require('./lib/deviceRouter');
 
 // Crear directorios necesarios
 const createRequiredDirectories = () => {
@@ -918,10 +919,8 @@ app.get('/', requireAuth, async (req, res) => {
         dashboard.iaInsights = iaInsights;
     } catch (e) { console.error('Dashboard error:', e.message); }
 
-    // Detectar mobile vs desktop por User-Agent
-    const ua = req.headers['user-agent'] || '';
-    const isMobile = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(ua);
-    res.render(isMobile ? 'dashboard' : 'dashboard-desktop', { dashboard });
+    // Render PWA or desktop variant depending on User-Agent. See lib/deviceRouter.js
+    renderForDevice(req, res, 'dashboard', { dashboard });
 });
 
 // API: Completar/descompletar tarea del dashboard
