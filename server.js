@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
+const cookieParser = require('cookie-parser');
 const path = require('path');
 const fs = require('fs');
 const app = express();
@@ -15,6 +16,8 @@ const { sessionTimeout } = require('./middleware/sessionTimeout');
 const { requirePasswordChange } = require('./middleware/requirePasswordChange');
 const { requireCajaAbierta } = require('./middleware/requireCaja');
 const { attachGeoContext } = require('./middleware/geoContext');
+
+const logger = require('./lib/logger');
 
 // Crear directorios necesarios
 const createRequiredDirectories = () => {
@@ -43,12 +46,54 @@ app.set('etag', 'strong');
 
 // Security headers (helmet)
 const helmet = require('helmet');
+const IS_PROD = process.env.NODE_ENV === 'production';
 app.use(helmet({
-    contentSecurityPolicy: false,       // disabled to allow inline scripts in EJS
-    crossOriginEmbedderPolicy: false,   // disabled to allow Device Preview iframes
-    crossOriginOpenerPolicy: false,     // disabled to allow Device Preview iframes
-    crossOriginResourcePolicy: false,   // disabled to allow Device Preview iframes
-    frameguard: false,                  // disabled to allow Device Preview iframes
+    contentSecurityPolicy: IS_PROD ? {
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: [
+                "'self'",
+                "'unsafe-inline'",    // EJS inline scripts (migrate to nonces in V3)
+                "https://cdn.jsdelivr.net",
+                "https://unpkg.com",
+                "https://maps.googleapis.com",
+            ],
+            styleSrc: [
+                "'self'",
+                "'unsafe-inline'",    // Inline styles in EJS templates
+                "https://fonts.googleapis.com",
+                "https://cdn.jsdelivr.net",
+                "https://unpkg.com",
+            ],
+            fontSrc: [
+                "'self'",
+                "https://fonts.gstatic.com",
+                "https://cdn.jsdelivr.net",
+            ],
+            imgSrc: [
+                "'self'",
+                "data:",
+                "blob:",
+                "https://*.supabase.co",
+                "https://*.tile.openstreetmap.org",
+                "https://unpkg.com",
+            ],
+            connectSrc: [
+                "'self'",
+                "https://*.supabase.co",
+                "https://us.i.posthog.com",
+                "https://maps.googleapis.com",
+            ],
+            frameSrc: ["'self'"],
+            objectSrc: ["'none'"],
+            baseUri: ["'self'"],
+            formAction: ["'self'"],
+        }
+    } : false,  // Disabled in dev for Device Preview
+    crossOriginEmbedderPolicy: IS_PROD,
+    crossOriginOpenerPolicy: IS_PROD ? { policy: 'same-origin' } : false,
+    crossOriginResourcePolicy: IS_PROD ? { policy: 'same-origin' } : false,
+    frameguard: IS_PROD ? { action: 'sameorigin' } : false,
 }));
 
 // Additional security headers
@@ -88,9 +133,10 @@ const trialApiLimiter = rateLimit({
     }
 });
 
-// Aumentar el límite de tamaño del cuerpo de la petición
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+// Body size limits: 1mb for JSON API, 10mb for URL-encoded forms (file uploads use multer with own limits)
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(cookieParser());
 
 // Trust proxy (Vercel runs behind a reverse proxy)
 app.set('trust proxy', 1);
@@ -236,79 +282,44 @@ if (process.env.NODE_ENV === 'production' && !IS_LOCAL_MODE) {
 }
 
 // CSRF protection para formularios (no para API JSON)
-const csrf = require('csurf');
-const csrfProtection = csrf({ cookie: false });
-// Se aplica solo a formularios que lo necesiten, no globalmente
-// Las APIs JSON estan protegidas por SOP + Content-Type check
-
-// Device Preview sync bridge — injected into all HTML responses
-// Uses BroadcastChannel: todos los iframes son mismo origen (localhost:1995)
-// y se comunican directamente sin pasar por el webview de VS Code.
-const SYNC_BRIDGE = `<script id="__dp_bridge__">
-(function(){
-  if(window.__dp_bridge_loaded__)return;
-  window.__dp_bridge_loaded__=true;
-  var _sync=true,ch;
-  try{ch=new BroadcastChannel('dp-sync');}catch(e){return;}
-
-  ch.onmessage=function(e){
-    var d=e.data;_sync=false;
-    try{
-      if(d.t==='sc'){
-        var el=document.documentElement;
-        el.scrollTop=d.p*(el.scrollHeight-el.clientHeight);
-      }
-      if(d.t==='cl'){
-        var t=document.querySelector(d.s);
-        if(t){
-          t.style.outline='2px solid #FF6B35';
-          setTimeout(function(){t.style.outline='';},500);
-          try{t.click();}catch(ex){}
+const { doubleCsrf } = require('csrf-csrf');
+const { generateCsrfToken: generateToken, doubleCsrfProtection } = doubleCsrf({
+    getSecret: () => process.env.SESSION_SECRET || 'dev-csrf-secret',
+    getSessionIdentifier: (req) => req.session?.id || '',
+    cookieName: '__csrf',
+    cookieOptions: {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+        path: '/',
+    },
+    getTokenFromRequest: (req) => req.body._csrf || req.headers['x-csrf-token'],
+});
+// Middleware que genera el token y lo pone en res.locals para EJS
+const csrfProtection = (req, res, next) => {
+    doubleCsrfProtection(req, res, (err) => {
+        if (err) {
+            logger.security('CSRF_REJECTED', { ip: req.ip, path: req.path, method: req.method });
+            return res.status(403).json({ error: 'Invalid CSRF token' });
         }
-      }
-      if(d.t==='sc-cmd'){
-        window.scrollBy(0, d.a);
-      }
-      if(d.t==='in'){
-        var t=document.querySelector(d.s);
-        if(t){t.value=d.v;t.dispatchEvent(new Event('input',{bubbles:true}));}
-      }
-    }catch(ex){}
-    setTimeout(function(){_sync=true;},100);
-  };
+        res.locals.csrfToken = generateToken(req, res);
+        next();
+    });
+};
+// Genera token para GET requests (formularios)
+const csrfTokenGen = (req, res, next) => {
+    res.locals.csrfToken = generateToken(req, res);
+    next();
+};
+// Las APIs JSON están protegidas por SOP + Content-Type check
 
-  function send(obj){if(_sync)try{ch.postMessage(obj);}catch(e){}}
-
-  function sel(el){
-    if(!el||!el.tagName)return'';
-    if(el.id)return'#'+el.id;
-    var p=[],c=el;
-    while(c&&c.tagName&&c!==document.body){
-      var s=c.tagName.toLowerCase();
-      if(c.id){p.unshift('#'+c.id);break;}
-      var par=c.parentElement;
-      if(par){var sb=Array.from(par.children).filter(function(x){return x.tagName===c.tagName;});if(sb.length>1)s+=':nth-of-type('+(sb.indexOf(c)+1)+')';}
-      p.unshift(s);c=c.parentElement;
-    }
-    return p.join('>')||'';
-  }
-
-  document.addEventListener('scroll',function(){
-    var el=document.documentElement;
-    var p=el.scrollHeight-el.clientHeight>0?el.scrollTop/(el.scrollHeight-el.clientHeight):0;
-    send({t:'sc',p:p});
-  },true);
-
-  document.addEventListener('click',function(e){
-    var s=sel(e.target);if(s)send({t:'cl',s:s});
-  },true);
-
-  document.addEventListener('input',function(e){
-    var s=sel(e.target);
-    if(s&&e.target.value!==undefined)send({t:'in',s:s,v:e.target.value});
-  },true);
-})();
-</script>`;
+// Device Preview sync bridge — cargado desde preview-v4/bridge/sync-bridge.js
+// WebSocket relay en ws://localhost:3001/sync (reemplaza BroadcastChannel)
+const _syncBridgePath = require('path').join(__dirname, 'preview-v4', 'bridge', 'sync-bridge.js');
+const _syncBridgeCode = require('fs').existsSync(_syncBridgePath)
+  ? require('fs').readFileSync(_syncBridgePath, 'utf-8')
+  : '';
+const SYNC_BRIDGE = `<script id="__dp_bridge__">${_syncBridgeCode}</script>`;
 
 app.use((req, res, next) => {
     // Inject sync bridge into HTML pages
@@ -401,8 +412,23 @@ app.use('/api/cron', cronRoutes);
 });
 
 // Auth routes (públicas): /login /logout /setup
-app.post('/login', loginLimiter); // rate limit login attempts
+// CSRF: generate token on GET, validate on POST
+app.get('/login', csrfTokenGen);
+app.get('/setup', csrfTokenGen);
+app.get('/cambiar-contrasena', csrfTokenGen);
+app.post('/login', loginLimiter, csrfProtection); // rate limit + CSRF
+app.post('/setup', csrfProtection);
+app.post('/cambiar-contrasena', csrfProtection);
+app.post('/logout', csrfProtection);
 app.use(authRoutes);
+
+// Generate CSRF token for all authenticated GET requests (sidebar/navbar logout forms)
+app.use((req, res, next) => {
+    if (req.method === 'GET' && req.session?.user) {
+        res.locals.csrfToken = generateToken(req, res);
+    }
+    next();
+});
 
 // Google Auth routes (public, rate limited)
 const googleAuthRoutes = require('./routes/google-auth');
