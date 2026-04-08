@@ -1,839 +1,655 @@
-<% const u=(typeof user !=='undefined' && user) ? user : null; %>
-  <% const rol=u ? String(u.rol || '' ).toLowerCase() : '' ; %>
-    <% const currentPath=(typeof reqPath !=='undefined' ) ? reqPath : '' ; %>
-      <% const isSuperadmin = rol === 'superadmin'; %>
-      <% const panelAlmacen=!isSuperadmin && currentPath.startsWith('/almacen'); const panelProductos=!isSuperadmin && (currentPath==='/productos' ||
-        currentPath==='/ranking') ; const panelAdmin=!isSuperadmin && (currentPath.startsWith('/administracion') || currentPath==='/sunat')
-        ; const panelSuperadmin=isSuperadmin && currentPath.startsWith('/superadmin'); const hasSubmodule=panelAlmacen || panelProductos || panelAdmin || panelSuperadmin; %>
-
-        <!-- Precargar fuente de iconos para evitar parpadeo al navegar -->
-        <link rel="preload" href="/vendor/bootstrap-icons/fonts/bootstrap-icons.woff2" as="font" type="font/woff2" crossorigin>
-        <!-- Fredoka One para brand MiRest con IA -->
-        <link rel="preload" href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap" as="style" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap" rel="stylesheet">
-        <!-- Anti-flash: hide everything until CSS + layout is ready -->
-        <style>
-          /* Body hidden by default — revealed by JS after paint */
-          html{background:#FFF8F0;}
-          html[data-theme="dark"]{background:#0f172a;}
-          body{opacity:0;transition:opacity .15s ease-in;}
-          body.dg-ready{opacity:1;}
-        </style>
-        <script>
-          /* Reveal body as soon as DOM + styles are parsed */
-          document.addEventListener('DOMContentLoaded',function(){document.body.classList.add('dg-ready');});
-          /* Safety: force reveal after 2s */
-          setTimeout(function(){if(document.body)document.body.classList.add('dg-ready');},2000);
-        </script>
-
-        <!-- CSS critico inline: evita flash blanco y parpadeo al navegar -->
-        <style>
-          @font-face{font-display:block;font-family:"bootstrap-icons";src:url("/vendor/bootstrap-icons/fonts/bootstrap-icons.woff2") format("woff2"),url("/vendor/bootstrap-icons/fonts/bootstrap-icons.woff") format("woff");}
-          body{background:#FFF8F0;background-image:linear-gradient(135deg,#FFF8F0 0%,#FAFAF7 100%);background-attachment:fixed;margin:0;}
-          [data-theme="dark"] body{background:#0f172a;background-image:linear-gradient(135deg,#0f172a 0%,#1e1b4b 50%,#0f172a 100%);}
-          .dg-sidebar{position:fixed;z-index:1030;background:#131627;display:flex;flex-direction:column;overflow-y:auto;overflow-x:hidden;transition:width .35s cubic-bezier(0.34,1.56,0.64,1);top:0;left:0;height:100vh;}
-          @media(min-width:992px){.dg-sidebar{top:55px !important;left:70px !important;height:calc(100vh - 121px) !important;border-radius:15px !important;}}
-          .dg-sidebar-expanded{width:260px;padding:16px;}
-          .dg-sidebar-collapsed{width:64px;padding:12px 0;align-items:center;}
-          .dg-sidebar-link,.dg-sidebar-icon-item,.dg-sidebar-section,.dg-sidebar-header,.dg-sidebar-footer,.dg-sidebar-sep,.dg-brand-text,.dg-brand-icon{visibility:visible;}
-          .dg-nav-expanded{display:flex;flex-direction:column;gap:2px;flex:1;}
-          .dg-nav-icons{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1;}
-          .dg-sidebar-link{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;color:#8B8FAD;text-decoration:none;font-size:14px;font-weight:500;position:relative;overflow:visible;transition:color .2s;}
-          .dg-sidebar-link::before{content:'';position:absolute;top:0;left:10%;width:80%;height:3px;border-radius:0 0 6px 6px;background:#FF6B35;opacity:0;transition:opacity .25s ease;box-shadow:0 0 10px #FF6B35,0 0 28px rgba(255,107,53,0.35);pointer-events:none;}
-          .dg-sidebar-link::after{content:'';position:absolute;top:0;left:0;right:0;bottom:0;border-radius:8px;background:linear-gradient(to bottom, rgba(255,107,53,0.15) 0%, rgba(255,107,53,0.04) 50%, transparent 100%);opacity:0;transition:opacity .25s ease;pointer-events:none;}
-          .dg-sidebar-link:hover::before{opacity:1;}
-          .dg-sidebar-link:hover::after{opacity:1;}
-          .dg-sidebar-link:hover{color:#fff;}
-          .dg-sidebar-link.active{background:linear-gradient(135deg,#FF6B35,#E55A2B);color:#fff;font-weight:600;border-radius:12px;}
-          .dg-sidebar-link.active::before,.dg-sidebar-link.active::after{display:none;}
-          .dg-sidebar-section{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:#6B5B4E;padding:20px 12px 8px;}
-          .dg-sidebar-icon-item{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#8B8FAD;font-size:1.15rem;text-decoration:none;position:relative;overflow:visible;transition:color .2s;}
-          .dg-sidebar-icon-item::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:24px;height:3px;border-radius:0 0 5px 5px;background:#FF6B35;opacity:0;transition:opacity .25s ease;box-shadow:0 0 8px #FF6B35,0 0 20px rgba(255,107,53,0.3);pointer-events:none;}
-          .dg-sidebar-icon-item::after{content:'';position:absolute;top:3px;left:50%;transform:translateX(-50%);width:0;height:0;border-left:18px solid transparent;border-right:18px solid transparent;border-top:18px solid rgba(255,107,53,0.15);opacity:0;transition:opacity .25s ease;pointer-events:none;}
-          .dg-sidebar-icon-item:hover::before{opacity:1;}
-          .dg-sidebar-icon-item:hover::after{opacity:1;}
-          .dg-sidebar-icon-item:hover{color:#fff;}
-          .dg-sidebar-icon-item.active{background:#FF6B35;color:#fff;}
-          .dg-sidebar-icon-item.active::before,.dg-sidebar-icon-item.active::after{display:none;}
-          .dg-sidebar-header{display:flex;align-items:center;justify-content:space-between;padding:0 0 16px;width:100%;}
-          .dg-sidebar-footer{padding:12px;border-top:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:space-between;gap:8px;}
-          .dg-sidebar-collapsed .dg-brand-text{display:none;}
-          .dg-sidebar-collapsed .dg-sidebar-user-info{display:none;}
-          .dg-sidebar-collapsed .dg-sidebar-header{justify-content:center;padding:0 0 8px;}
-          .dg-sidebar-collapsed .dg-sidebar-footer{justify-content:center;padding:8px;}
-          @media(min-width:992px){
-            body.sidebar-expanded .dg-main{margin-left:330px;}
-            body.sidebar-semi .dg-main,body.sidebar-collapsed .dg-main{margin-left:134px;}
-            body.sidebar-expanded.body-has-panel .dg-main{margin-left:510px;}
-            body.sidebar-semi.body-has-panel .dg-main,body.sidebar-collapsed.body-has-panel .dg-main{margin-left:314px;}
-            body.sidebar-expanded.panel-hidden .dg-main{margin-left:330px!important;}
-            body.sidebar-semi.panel-hidden .dg-main,body.sidebar-collapsed.panel-hidden .dg-main{margin-left:134px!important;}
-            .dg-main{margin-top:58px!important;margin-right:59px!important;margin-bottom:49px!important;border-radius:12px!important;height:calc(100vh - 107px)!important;max-height:calc(100vh - 107px)!important;background:#fff!important;overflow-y:auto!important;overflow-x:hidden!important;}
-          }
-          @media(max-width:991.98px){.dg-sidebar{transform:translateX(-100%);transition:transform .3s ease;}.dg-sidebar.open{transform:translateX(0);}}
-        </style>
-        <!-- Sliding submenu panel styles -->
-        <style>
-          /* ===== SIDEBAR SLIDE-OUT SUBMENU PANEL ===== */
-          .sidebar-submenu-panel {
-            position: fixed;
-            left: 260px;
-            top: 0;
-            width: 210px;
-            height: 100%;
-            background: rgba(19, 22, 39, 0.98);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border-left: 1px solid rgba(255,255,255,0.06);
-            transform: translateX(-110%);
-            opacity: 0;
-            transition: transform 500ms cubic-bezier(0.34, 1.8, 0.64, 1), opacity 280ms ease-out;
-            z-index: 1039;
-            padding: 1rem 0;
-            pointer-events: none;
-            box-shadow: 4px 0 24px rgba(0,0,0,0.18);
-          }
-
-          @media(min-width:992px){
-            .sidebar-submenu-panel {
-              left: 330px; /* 70 + 260 sidebar */
-              top: 55px;
-              height: calc(100vh - 121px);
-              border-radius: 0 15px 15px 0;
-            }
-          }
-
-          /* When sidebar is collapsed (icons only), panel comes from narrow sidebar width */
-          body.sidebar-semi .sidebar-submenu-panel,
-          body.sidebar-collapsed .sidebar-submenu-panel {
-            left: 64px;
-          }
-
-          @media(min-width:992px){
-            body.sidebar-semi .sidebar-submenu-panel,
-            body.sidebar-collapsed .sidebar-submenu-panel {
-              left: 134px; /* 70 + 64 */
-            }
-          }
-
-          .sidebar-submenu-panel.open {
-            transform: translateX(0);
-            opacity: 1;
-            pointer-events: all;
-            transition: transform 500ms cubic-bezier(0.34, 1.8, 0.64, 1), opacity 280ms ease-out;
-          }
-
-          .sidebar-submenu-panel .submenu-title {
-            padding: 0.6rem 1.25rem 0.5rem;
-            font-size: 0.72rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.09em;
-            color: #f97316;
-            display: flex;
-            align-items: center;
-            gap: 0.45rem;
-            border-bottom: 1px solid rgba(255,255,255,0.06);
-            margin-bottom: 0.4rem;
-          }
-
-          .sidebar-submenu-panel .submenu-item {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.5rem 1.25rem 0.5rem 1.6rem;
-            color: rgba(255,255,255,0.58);
-            font-size: 0.84rem;
-            text-decoration: none;
-            transition: all 0.15s ease;
-            position: relative;
-          }
-
-          .sidebar-submenu-panel .submenu-item::before {
-            content: '';
-            position: absolute;
-            left: 1rem;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 4px;
-            height: 4px;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.25);
-            transition: background 0.15s;
-          }
-
-          .sidebar-submenu-panel .submenu-item:hover {
-            color: #fff;
-            background: rgba(249,115,22,0.1);
-          }
-
-          .sidebar-submenu-panel .submenu-item:hover::before {
-            background: #f97316;
-          }
-
-          .sidebar-submenu-panel .submenu-item.active-sub {
-            color: #f97316;
-            background: rgba(249,115,22,0.08);
-            font-weight: 600;
-          }
-
-          .sidebar-submenu-panel .submenu-item.active-sub::before {
-            background: #f97316;
-          }
-
-          /* Hide on mobile — mobile has its own nav */
-          @media (max-width: 991.98px) {
-            .sidebar-submenu-panel { display: none !important; }
-          }
-        </style>
-
-        <!-- Aplicar estado del sidebar antes de pintar -->
-        <script>
-          (function(){
-            var s=parseInt(localStorage.getItem('dg-sidebar-state'))||1;
-            var cls=s===1?'sidebar-expanded':s===2?'sidebar-semi':'sidebar-collapsed';
-            document.body.classList.add(cls);
-            if(document.getElementById('sidebarPanel') && s!==1)document.body.classList.add('body-has-panel');
-          })();
-        </script>
-
-        <!-- Mobile top bar -->
-        <div class="dg-mobile-bar d-lg-none">
-          <button class="dg-mobile-toggle" id="sidebarToggle" type="button"><i class="bi bi-list"></i></button>
-          <a class="dg-mobile-brand" href="/"><span class="dg-brand-icon"><i class="bi bi-fire"></i></span> <span style="font-family:'Fredoka One',cursive;">Mi<span style="color:#FF6B35;">Rest</span> con <span style="color:#ff7846;">IA</span></span></a>
-        </div>
-        <div class="dg-sidebar-overlay d-lg-none" id="sidebarOverlay"></div>
-
-        <!-- Floating shell frame (orange border, desktop only) -->
-        <div class="dg-floating-frame d-none d-lg-block"></div>
-
-        <!-- SIDEBAR -->
-        <aside class="dg-sidebar" id="sidebar" data-state="expanded">
-
-          <!-- Header: logo + toggle arrows -->
-          <div class="dg-sidebar-header">
-            <a href="/" class="dg-sidebar-brand-link">
-              <span class="dg-brand-icon"><i class="bi bi-fire"></i></span>
-              <span class="dg-brand-text" style="font-family:'Fredoka One',cursive;font-size:20px;"><span style="color:#fff;">Mi</span><span style="color:#f97316;">Rest</span><span style="color:#fff;"> con </span><span style="color:#ff7846;">IA</span></span>
-            </a>
-            <button class="dg-sidebar-collapse-btn" id="sidebarToggleState" title="Cambiar vista">
-              <i class="bi bi-chevron-left" id="toggleIcon"></i>
-            </button>
-          </div>
-
-          <!-- ======= ESTADO 1: EXPANDIDO (iconos + texto + submodulos inline) ======= -->
-          <nav class="dg-nav-state dg-nav-expanded" id="navExpanded">
-
-            <%/* --- SUPERADMIN nav (completely separate from tenant menu) --- */%>
-            <% if (isSuperadmin) { %>
-              <div class="dg-sidebar-section">SUPERADMIN</div>
-              <a href="/superadmin" class="dg-sidebar-link <%= currentPath === '/superadmin' ? 'active' : '' %>" style="<%= currentPath === '/superadmin' ? '' : 'color:#f97316;' %>">
-                <i class="bi bi-shield-fill-check" style="color:#f97316;"></i><span>Dashboard SaaS</span>
-              </a>
-              <a href="/superadmin/tenants" class="dg-sidebar-link <%= currentPath.startsWith('/superadmin/tenants') ? 'active' : '' %>">
-                <i class="bi bi-building"></i><span>Tenants</span>
-              </a>
-              <a href="/superadmin/billing" class="dg-sidebar-link <%= currentPath.startsWith('/superadmin/billing') ? 'active' : '' %>">
-                <i class="bi bi-cash-stack"></i><span>Billing & P&L</span>
-              </a>
-              <a href="/superadmin/solicitudes" class="dg-sidebar-link <%= currentPath.startsWith('/superadmin/solicitudes') ? 'active' : '' %>">
-                <i class="bi bi-person-plus-fill"></i><span>Solicitudes</span>
-              </a>
-              <a href="/superadmin/observabilidad" class="dg-sidebar-link <%= currentPath.startsWith('/superadmin/observabilidad') ? 'active' : '' %>">
-                <i class="bi bi-graph-up"></i><span>Observabilidad</span>
-              </a>
-              <a href="/contratos" class="dg-sidebar-link <%= currentPath.startsWith('/contratos') ? 'active' : '' %>">
-                <i class="bi bi-file-earmark-text"></i><span>Contratos</span>
-              </a>
-              <a href="/nda-equipo" class="dg-sidebar-link <%= currentPath.startsWith('/nda-equipo') ? 'active' : '' %>">
-                <i class="bi bi-shield-lock"></i><span>NDA Equipo</span>
-              </a>
-              <a href="/superadmin/cotizador" class="dg-sidebar-link <%= currentPath.startsWith('/superadmin/cotizador') ? 'active' : '' %>">
-                <i class="bi bi-calculator"></i><span>Cotizador</span>
-              </a>
-            <% } else { %>
-
-            <%/* --- Asistente IA: solo administrador --- */%>
-            <% if (rol === 'administrador') { %>
-              <a href="/chat" class="dg-sidebar-link <%= currentPath === '/chat' ? 'active-glow' : '' %>"><i
-                  class="bi bi-stars"></i><span>Asistente IA</span></a>
-            <% } %>
-
-            <div class="dg-sidebar-section">MENU PRINCIPAL</div>
-
-            <%/* --- Inicio (Dashboard): todos los roles --- */%>
-            <a href="/" class="dg-sidebar-link <%= currentPath === '/' ? 'active' : '' %>"><i
-                class="bi bi-columns-gap"></i><span>Inicio</span></a>
-
-            <%/* --- Caja: administrador + cajero --- */%>
-            <% if (rol === 'administrador' || rol === 'cajero') { %>
-              <a href="/caja" class="dg-sidebar-link <%= currentPath === '/caja' ? 'active' : '' %>"><i
-                  class="bi bi-wallet2"></i><span>Caja</span></a>
-            <% } %>
-
-            <%/* --- Facturacion: administrador + cajero + mesero --- */%>
-            <% if (rol === 'administrador' || rol === 'cajero' || rol === 'mesero') { %>
-              <a href="/facturacion" class="dg-sidebar-link <%= currentPath === '/facturacion' ? 'active' : '' %>"><i
-                  class="bi bi-receipt-cutoff"></i><span>Facturacion</span></a>
-            <% } %>
-
-            <%/* --- Mesas: administrador + mesero --- */%>
-            <% if (rol === 'administrador' || rol === 'mesero') { %>
-              <a href="/mesas" class="dg-sidebar-link <%= currentPath === '/mesas' ? 'active' : '' %>"><i
-                  class="bi bi-grid-3x3-gap-fill"></i><span>Mesas</span></a>
-            <% } %>
-
-            <%/* --- Cocina: administrador + mesero + cocinero --- */%>
-            <% if (rol === 'administrador' || rol === 'mesero' || rol === 'cocinero') { %>
-              <a href="/cocina" class="dg-sidebar-link <%= currentPath === '/cocina' ? 'active' : '' %>"><i
-                  class="bi bi-fire"></i><span>Cocina</span></a>
-            <% } %>
-
-            <%/* --- Ventas: solo administrador --- */%>
-            <% if (rol === 'administrador') { %>
-              <a href="/ventas" class="dg-sidebar-link <%= currentPath === '/ventas' ? 'active' : '' %>"><i
-                  class="bi bi-graph-up-arrow"></i><span>Ventas</span></a>
-            <% } %>
-
-            <%/* --- SOSTAC: solo administrador --- */%>
-            <% if (rol === 'administrador') { %>
-              <a href="/sostac" class="dg-sidebar-link <%= currentPath.startsWith('/sostac') ? 'active' : '' %>"><i
-                  class="bi bi-compass-fill"></i><span>SOSTAC</span></a>
-            <% } %>
-
-            <%/* --- Almacen: administrador + almacenero --- */%>
-            <% if (rol === 'administrador' || rol === 'almacenero') { %>
-              <div class="dg-sidebar-section">OPERACIONES</div>
-              <a href="/almacen" class="dg-sidebar-link dg-has-submenu <%= panelAlmacen ? 'active' : '' %>"
-                 data-submenu='[{"href":"/almacen/inventario","label":"Inventario"},{"href":"/almacen/entradas","label":"Ingreso diario"},{"href":"/almacen/salidas","label":"Salida insumos"},{"href":"/almacen/que-comprar","label":"Que comprar"},{"href":"/almacen/proveedores","label":"Proveedores"},{"href":"/almacen/historial","label":"Historial"}]'
-                 data-submenu-title="Almacen"
-                 data-submenu-icon="box-seam"><i
-                  class="bi bi-box-seam"></i><span class="nav-label">Almacen</span></a>
-            <% } %>
-
-            <%/* --- Delivery: solo administrador --- */%>
-            <% if (rol === 'administrador') { %>
-              <a href="/delivery" class="dg-sidebar-link <%= currentPath.startsWith('/delivery') ? 'active' : '' %>"><i
-                  class="bi bi-bicycle"></i><span>Delivery</span></a>
-            <% } %>
-
-            <%/* --- Recetas: administrador + almacenero --- */%>
-            <% if (rol === 'administrador' || rol === 'almacenero') { %>
-              <a href="/recetas" class="dg-sidebar-link <%= currentPath.startsWith('/recetas') ? 'active' : '' %>"><i
-                  class="bi bi-journal-text"></i><span>Recetas</span></a>
-            <% } %>
-
-            <%/* --- Productos: administrador + mesero + almacenero --- */%>
-            <% if (rol === 'administrador' || rol === 'mesero' || rol === 'almacenero') { %>
-              <div class="dg-sidebar-section">GESTION</div>
-              <a href="/productos" class="dg-sidebar-link dg-has-submenu <%= panelProductos ? 'active' : '' %>"
-                 data-submenu='[{"href":"/productos","label":"Carta completa"},{"href":"/ranking","label":"Ranking disponibilidad"}]'
-                 data-submenu-title="Productos"
-                 data-submenu-icon="egg-fried"><i
-                  class="bi bi-egg-fried"></i><span class="nav-label">Productos</span></a>
-            <% } %>
-
-            <%/* --- Clientes: solo administrador --- */%>
-            <% if (rol === 'administrador') { %>
-              <a href="/clientes" class="dg-sidebar-link <%= currentPath === '/clientes' ? 'active' : '' %>"><i
-                  class="bi bi-people-fill"></i><span>Clientes</span></a>
-            <% } %>
-
-            <%/* --- Administracion, Configuracion, Usuarios, Reportes, SUNAT: solo administrador --- */%>
-            <% if (rol === 'administrador') { %>
-              <div class="dg-sidebar-section">ADMINISTRACION</div>
-              <a href="/administracion" class="dg-sidebar-link dg-has-submenu <%= panelAdmin ? 'active' : '' %>"
-                 data-submenu='[{"href":"/administracion","label":"P&L / Finanzas"},{"href":"/administracion/planilla","label":"Planilla"},{"href":"/administracion/gastos","label":"Gastos"},{"href":"/sunat","label":"SUNAT"}]'
-                 data-submenu-title="Administracion"
-                 data-submenu-icon="bar-chart-line-fill"><i
-                  class="bi bi-bar-chart-line-fill"></i><span class="nav-label">Administracion</span></a>
-              <a href="/sunat" class="dg-sidebar-link <%= currentPath === '/sunat' ? 'active' : '' %>"><i
-                  class="bi bi-building"></i><span>SUNAT</span></a>
-
-              <div class="dg-sidebar-section">SISTEMA</div>
-              <a href="/usuarios" class="dg-sidebar-link <%= currentPath === '/usuarios' ? 'active' : '' %>"><i
-                  class="bi bi-person-gear"></i><span>Usuarios</span></a>
-              <a href="/configuracion"
-                class="dg-sidebar-link <%= currentPath === '/configuracion' ? 'active' : '' %>"><i
-                  class="bi bi-gear-fill"></i><span>Configuracion</span></a>
-              <a href="/api/reportes" class="dg-sidebar-link <%= currentPath.startsWith('/reportes') ? 'active' : '' %>"><i
-                  class="bi bi-file-earmark-bar-graph"></i><span>Reportes</span></a>
-            <% } %>
-
-            <%/* --- Soporte: todos los roles autenticados (excepto superadmin que tiene su propio nav) --- */%>
-            <a href="/soporte" class="dg-sidebar-link <%= currentPath === '/soporte' ? 'active' : '' %>"><i
-                class="bi bi-headset"></i><span>Soporte</span></a>
-
-            <% } /* end else (non-superadmin) */ %>
-
-          </nav>
-
-          <!-- ======= ESTADO 2 y 3: ICONOS (semi + colapsado total) ======= -->
-          <nav class="dg-nav-state dg-nav-icons" id="navIcons" style="display:none;">
-
-            <%/* --- SUPERADMIN icon nav --- */%>
-            <% if (isSuperadmin) { %>
-              <a href="/superadmin" class="dg-sidebar-icon-item <%= currentPath === '/superadmin' ? 'active' : '' %>" title="Dashboard SaaS" style="color:#f97316;">
-                <i class="bi bi-shield-fill-check"></i>
-              </a>
-              <a href="/superadmin/tenants" class="dg-sidebar-icon-item <%= currentPath.startsWith('/superadmin/tenants') ? 'active' : '' %>" title="Tenants">
-                <i class="bi bi-building"></i>
-              </a>
-              <a href="/superadmin/billing" class="dg-sidebar-icon-item <%= currentPath.startsWith('/superadmin/billing') ? 'active' : '' %>" title="Billing">
-                <i class="bi bi-cash-stack"></i>
-              </a>
-              <a href="/superadmin/solicitudes" class="dg-sidebar-icon-item <%= currentPath.startsWith('/superadmin/solicitudes') ? 'active' : '' %>" title="Solicitudes">
-                <i class="bi bi-person-plus-fill"></i>
-              </a>
-              <a href="/superadmin/observabilidad" class="dg-sidebar-icon-item <%= currentPath.startsWith('/superadmin/observabilidad') ? 'active' : '' %>" title="Observabilidad">
-                <i class="bi bi-graph-up"></i>
-              </a>
-              <a href="/contratos" class="dg-sidebar-icon-item <%= currentPath.startsWith('/contratos') ? 'active' : '' %>" title="Contratos">
-                <i class="bi bi-file-earmark-text"></i>
-              </a>
-              <a href="/nda-equipo" class="dg-sidebar-icon-item <%= currentPath.startsWith('/nda-equipo') ? 'active' : '' %>" title="NDA Equipo">
-                <i class="bi bi-shield-lock"></i>
-              </a>
-              <a href="/superadmin/cotizador" class="dg-sidebar-icon-item <%= currentPath.startsWith('/superadmin/cotizador') ? 'active' : '' %>" title="Cotizador">
-                <i class="bi bi-calculator"></i>
-              </a>
-            <% } else { %>
-
-            <%/* --- Asistente IA: solo administrador --- */%>
-            <% if (rol === 'administrador') { %>
-              <a href="/chat" class="dg-sidebar-icon-item <%= currentPath === '/chat' ? 'active-glow' : '' %>"
-                title="Asistente IA"><i class="bi bi-stars"></i></a>
-            <% } %>
-
-            <div class="dg-sidebar-sep"></div>
-
-            <%/* --- Inicio: todos los roles --- */%>
-            <a href="/" class="dg-sidebar-icon-item <%= currentPath === '/' ? 'active' : '' %>" title="Inicio"><i
-                class="bi bi-columns-gap"></i></a>
-
-            <%/* --- Caja: administrador + cajero --- */%>
-            <% if (rol === 'administrador' || rol === 'cajero') { %>
-              <a href="/caja" class="dg-sidebar-icon-item <%= currentPath === '/caja' ? 'active' : '' %>"
-                title="Caja"><i class="bi bi-wallet2"></i></a>
-            <% } %>
-
-            <%/* --- Facturacion: administrador + cajero + mesero --- */%>
-            <% if (rol === 'administrador' || rol === 'cajero' || rol === 'mesero') { %>
-              <a href="/facturacion" class="dg-sidebar-icon-item <%= currentPath === '/facturacion' ? 'active' : '' %>"
-                title="Facturacion"><i class="bi bi-receipt-cutoff"></i></a>
-            <% } %>
-
-            <%/* --- Mesas: administrador + mesero --- */%>
-            <% if (rol === 'administrador' || rol === 'mesero') { %>
-              <a href="/mesas" class="dg-sidebar-icon-item <%= currentPath === '/mesas' ? 'active' : '' %>"
-                title="Mesas"><i class="bi bi-grid-3x3-gap-fill"></i></a>
-            <% } %>
-
-            <%/* --- Cocina: administrador + mesero + cocinero --- */%>
-            <% if (rol === 'administrador' || rol === 'mesero' || rol === 'cocinero') { %>
-              <a href="/cocina" class="dg-sidebar-icon-item <%= currentPath === '/cocina' ? 'active' : '' %>"
-                title="Cocina"><i class="bi bi-fire"></i></a>
-            <% } %>
-
-            <%/* --- Ventas: solo administrador --- */%>
-            <% if (rol === 'administrador') { %>
-              <a href="/ventas" class="dg-sidebar-icon-item <%= currentPath === '/ventas' ? 'active' : '' %>"
-                title="Ventas"><i class="bi bi-graph-up-arrow"></i></a>
-            <% } %>
-
-            <%/* --- SOSTAC: solo administrador --- */%>
-            <% if (rol === 'administrador') { %>
-              <a href="/sostac" class="dg-sidebar-icon-item <%= currentPath.startsWith('/sostac') ? 'active' : '' %>"
-                title="SOSTAC"><i class="bi bi-compass-fill"></i></a>
-            <% } %>
-
-            <div class="dg-sidebar-sep"></div>
-
-            <%/* --- Almacen: administrador + almacenero --- */%>
-            <% if (rol === 'administrador' || rol === 'almacenero') { %>
-              <a href="/almacen" class="dg-sidebar-icon-item dg-has-submenu <%= panelAlmacen ? 'active' : '' %>"
-                title="Almacen"
-                data-submenu='[{"href":"/almacen/inventario","label":"Inventario"},{"href":"/almacen/entradas","label":"Ingreso diario"},{"href":"/almacen/salidas","label":"Salida insumos"},{"href":"/almacen/que-comprar","label":"Que comprar"},{"href":"/almacen/proveedores","label":"Proveedores"},{"href":"/almacen/historial","label":"Historial"}]'
-                data-submenu-title="Almacen"
-                data-submenu-icon="box-seam"><i
-                  class="bi bi-box-seam"></i></a>
-            <% } %>
-
-            <%/* --- Delivery: solo administrador (icon mode) --- */%>
-            <% if (rol === 'administrador') { %>
-              <a href="/delivery" class="dg-sidebar-icon-item <%= currentPath.startsWith('/delivery') ? 'active' : '' %>"
-                title="Delivery"><i class="bi bi-bicycle"></i></a>
-            <% } %>
-
-            <%/* --- Recetas: administrador + almacenero (icon mode) --- */%>
-            <% if (rol === 'administrador' || rol === 'almacenero') { %>
-              <a href="/recetas" class="dg-sidebar-icon-item <%= currentPath.startsWith('/recetas') ? 'active' : '' %>"
-                title="Recetas"><i class="bi bi-journal-text"></i></a>
-            <% } %>
-
-            <%/* --- Productos: administrador + mesero + almacenero --- */%>
-            <% if (rol === 'administrador' || rol === 'mesero' || rol === 'almacenero') { %>
-              <a href="/productos" class="dg-sidebar-icon-item dg-has-submenu <%= panelProductos ? 'active' : '' %>"
-                title="Productos"
-                data-submenu='[{"href":"/productos","label":"Carta completa"},{"href":"/ranking","label":"Ranking disponibilidad"}]'
-                data-submenu-title="Productos"
-                data-submenu-icon="egg-fried"><i class="bi bi-egg-fried"></i></a>
-            <% } %>
-
-            <%/* --- Clientes: solo administrador --- */%>
-            <% if (rol === 'administrador') { %>
-              <a href="/clientes" class="dg-sidebar-icon-item <%= currentPath === '/clientes' ? 'active' : '' %>"
-                title="Clientes"><i class="bi bi-people-fill"></i></a>
-            <% } %>
-
-            <%/* --- Administracion, Sistema: solo administrador --- */%>
-            <% if (rol === 'administrador') { %>
-              <div class="dg-sidebar-sep"></div>
-              <a href="/administracion" class="dg-sidebar-icon-item <%= panelAdmin ? 'active' : '' %>" title="Administracion"><i
-                  class="bi bi-bar-chart-line-fill"></i></a>
-              <a href="/sunat" class="dg-sidebar-icon-item <%= currentPath === '/sunat' ? 'active' : '' %>"
-                title="SUNAT"><i class="bi bi-building"></i></a>
-              <div class="dg-sidebar-sep"></div>
-              <a href="/usuarios" class="dg-sidebar-icon-item <%= currentPath === '/usuarios' ? 'active' : '' %>"
-                title="Usuarios"><i class="bi bi-person-gear"></i></a>
-              <a href="/configuracion"
-                class="dg-sidebar-icon-item <%= currentPath === '/configuracion' ? 'active' : '' %>" title="Config"><i
-                  class="bi bi-gear-fill"></i></a>
-              <a href="/api/reportes" class="dg-sidebar-icon-item <%= currentPath.startsWith('/reportes') ? 'active' : '' %>"
-                title="Reportes"><i class="bi bi-file-earmark-bar-graph"></i></a>
-            <% } %>
-
-            <%/* --- Soporte: todos los roles autenticados --- */%>
-            <a href="/soporte" class="dg-sidebar-icon-item <%= currentPath === '/soporte' ? 'active' : '' %>"
-              title="Soporte"><i class="bi bi-headset"></i></a>
-
-            <% } /* end else (non-superadmin icon nav) */ %>
-
-          </nav>
-
-          <!-- User footer -->
-          <% if (u) { %>
-            <div class="dg-sidebar-footer">
-              <div class="dg-sidebar-user">
-                <div class="dg-sidebar-avatar"><i class="bi bi-person-fill"></i></div>
-                <div class="dg-sidebar-user-info">
-                  <div class="dg-sidebar-user-name">
-                    <%= u.usuario %>
-                  </div>
-                  <div class="dg-sidebar-user-role">
-                    <%= rol %>
-                  </div>
-                </div>
-              </div>
-              <form method="POST" action="/logout" style="margin:0;"><button type="submit" class="dg-sidebar-logout"
-                  title="Salir"><i class="bi bi-box-arrow-right"></i></button></form>
-            </div>
-            <% } %>
-        </aside>
-
-        <!-- PANEL DESPLEGABLE (solo en estado 2: semi-colapsado + modulo con submodulos) -->
-        <% if (hasSubmodule) { %>
-          <div class="dg-panel" id="sidebarPanel" style="display:none;">
-            <% if (panelSuperadmin) { %>
-              <div class="dg-panel-title"><i class="bi bi-shield-fill-check" style="color:#f97316;"></i> Superadmin</div>
-              <a href="/superadmin" class="dg-panel-item <%= currentPath==='/superadmin' ? 'active' : '' %>"><span class="dg-panel-dot"></span>Dashboard SaaS</a>
-              <a href="/superadmin/tenants" class="dg-panel-item <%= currentPath.startsWith('/superadmin/tenants') ? 'active' : '' %>"><span class="dg-panel-dot"></span>Tenants</a>
-              <a href="/superadmin/billing" class="dg-panel-item <%= currentPath.startsWith('/superadmin/billing') ? 'active' : '' %>"><span class="dg-panel-dot"></span>Billing & P&L</a>
-              <a href="/superadmin/solicitudes" class="dg-panel-item <%= currentPath.startsWith('/superadmin/solicitudes') ? 'active' : '' %>"><span class="dg-panel-dot"></span>Solicitudes</a>
-              <a href="/superadmin/observabilidad" class="dg-panel-item <%= currentPath.startsWith('/superadmin/observabilidad') ? 'active' : '' %>"><span class="dg-panel-dot"></span>Observabilidad</a>
-              <a href="/contratos" class="dg-panel-item <%= currentPath.startsWith('/contratos') ? 'active' : '' %>"><span class="dg-panel-dot"></span>Contratos</a>
-              <a href="/nda-equipo" class="dg-panel-item <%= currentPath.startsWith('/nda-equipo') ? 'active' : '' %>"><span class="dg-panel-dot"></span>NDA Equipo</a>
-              <a href="/superadmin/cotizador" class="dg-panel-item <%= currentPath.startsWith('/superadmin/cotizador') ? 'active' : '' %>"><span class="dg-panel-dot"></span>Cotizador</a>
-            <% } %>
-            <% if (panelAlmacen) { %>
-              <div class="dg-panel-title"><i class="bi bi-box-seam"></i> Almacen</div>
-              <a href="/almacen/inventario"
-                class="dg-panel-item <%= currentPath==='/almacen/inventario'||currentPath==='/almacen' ? 'active' : '' %>"><span
-                  class="dg-panel-dot"></span>Inventario</a>
-              <a href="/almacen/entradas"
-                class="dg-panel-item <%= currentPath==='/almacen/entradas' ? 'active' : '' %>"><span
-                  class="dg-panel-dot"></span>Ingreso diario</a>
-              <a href="/almacen/salidas"
-                class="dg-panel-item <%= currentPath==='/almacen/salidas' ? 'active' : '' %>"><span
-                  class="dg-panel-dot"></span>Salida insumos</a>
-              <a href="/almacen/que-comprar"
-                class="dg-panel-item <%= currentPath==='/almacen/que-comprar' ? 'active' : '' %>"><span
-                  class="dg-panel-dot"></span>Que comprar</a>
-              <a href="/almacen/proveedores"
-                class="dg-panel-item <%= currentPath==='/almacen/proveedores' ? 'active' : '' %>"><span
-                  class="dg-panel-dot"></span>Proveedores</a>
-              <a href="/almacen/historial"
-                class="dg-panel-item <%= currentPath==='/almacen/historial' ? 'active' : '' %>"><span
-                  class="dg-panel-dot"></span>Historial</a>
-              <% } %>
-                <% if (panelProductos) { %>
-                  <div class="dg-panel-title"><i class="bi bi-egg-fried"></i> Productos</div>
-                  <a href="/productos" class="dg-panel-item <%= currentPath==='/productos' ? 'active' : '' %>"><span
-                      class="dg-panel-dot"></span>Carta</a>
-                  <a href="/ranking" class="dg-panel-item <%= currentPath==='/ranking' ? 'active' : '' %>"><span
-                      class="dg-panel-dot"></span>Ranking disponibilidad</a>
-                  <% } %>
-                    <% if (panelAdmin) { %>
-                      <div class="dg-panel-title"><i class="bi bi-bar-chart-line-fill"></i> Administracion</div>
-                      <a href="/administracion"
-                        class="dg-panel-item <%= currentPath==='/administracion' ? 'active' : '' %>"><span
-                          class="dg-panel-dot"></span>P&L / Finanzas</a>
-                      <a href="/administracion/planilla"
-                        class="dg-panel-item <%= currentPath==='/administracion/planilla' ? 'active' : '' %>"><span
-                          class="dg-panel-dot"></span>Planilla</a>
-                      <a href="/administracion/gastos"
-                        class="dg-panel-item <%= currentPath==='/administracion/gastos' ? 'active' : '' %>"><span
-                          class="dg-panel-dot"></span>Gastos</a>
-                      <a href="/sunat" class="dg-panel-item <%= currentPath==='/sunat' ? 'active' : '' %>"><span
-                          class="dg-panel-dot"></span>SUNAT</a>
-                      <% } %>
-          </div>
-          <% } %>
-
-            <!-- Aplicar clases al sidebar element inmediatamente -->
-            <script>
-              (function () {
-                var s = parseInt(localStorage.getItem('dg-sidebar-state')) || 1;
-                var sidebar = document.getElementById('sidebar');
-                var navExp = document.getElementById('navExpanded');
-                var navIco = document.getElementById('navIcons');
-                if (sidebar) {
-                  if (s === 1) {
-                    sidebar.setAttribute('data-state', 'expanded');
-                    sidebar.classList.add('dg-sidebar-expanded');
-                  } else {
-                    sidebar.setAttribute('data-state', s === 2 ? 'semi' : 'collapsed');
-                    sidebar.classList.add('dg-sidebar-collapsed');
-                  }
-                }
-                if (navExp) navExp.style.display = s === 1 ? '' : 'none';
-                if (navIco) navIco.style.display = s === 1 ? 'none' : '';
-              })();
-            </script>
-
-            <script>
-              document.addEventListener('DOMContentLoaded', function () {
-                var sidebar = document.getElementById('sidebar');
-                var navExpanded = document.getElementById('navExpanded');
-                var navIcons = document.getElementById('navIcons');
-                var panel = document.getElementById('sidebarPanel');
-                var toggleBtn = document.getElementById('sidebarToggleState');
-                var toggleIcon = document.getElementById('toggleIcon');
-                var mainEl = document.querySelector('.dg-main');
-                var overlay = document.getElementById('sidebarOverlay');
-                var mobileToggle = document.getElementById('sidebarToggle');
-
-                // 3 states: expanded (1), semi (2), collapsed (3)
-                var state = parseInt(localStorage.getItem('dg-sidebar-state')) || 1;
-
-                // Al navegar a una pagina con submodulos, resetear panel-hidden
-                if (panel) localStorage.setItem('dg-panel-hidden', '0');
-
-                function updatePanel() {
-                  var panelHidden = localStorage.getItem('dg-panel-hidden') === '1';
-                  // Panel only visible in semi/collapsed states, never in expanded
-                  var showPanel = panel && !panelHidden && state !== 1;
-                  if (panel) panel.style.display = showPanel ? '' : 'none';
-                  if (mainEl) {
-                    if (showPanel) {
-                      mainEl.classList.add('has-panel');
-                      document.body.classList.add('body-has-panel');
-                      document.body.classList.remove('panel-hidden');
-                    } else {
-                      mainEl.classList.remove('has-panel');
-                      document.body.classList.remove('body-has-panel');
-                      document.body.classList.add('panel-hidden');
-                    }
-                  }
-                }
-
-                function applyState(s) {
-                  state = s;
-                  localStorage.setItem('dg-sidebar-state', s);
-                  document.body.classList.remove('sidebar-expanded', 'sidebar-semi', 'sidebar-collapsed');
-
-                  updatePanel();
-
-                  if (s === 1) {
-                    sidebar.setAttribute('data-state', 'expanded');
-                    sidebar.classList.add('dg-sidebar-expanded');
-                    sidebar.classList.remove('dg-sidebar-collapsed');
-                    if (navExpanded) navExpanded.style.display = '';
-                    if (navIcons) navIcons.style.display = 'none';
-                    if (toggleIcon) toggleIcon.className = 'bi bi-chevron-left';
-                    document.body.classList.add('sidebar-expanded');
-                  } else if (s === 2) {
-                    sidebar.setAttribute('data-state', 'semi');
-                    sidebar.classList.remove('dg-sidebar-expanded');
-                    sidebar.classList.add('dg-sidebar-collapsed');
-                    if (navExpanded) navExpanded.style.display = 'none';
-                    if (navIcons) navIcons.style.display = '';
-                    if (toggleIcon) toggleIcon.className = 'bi bi-chevron-right';
-                    document.body.classList.add('sidebar-semi');
-                  } else {
-                    sidebar.setAttribute('data-state', 'collapsed');
-                    sidebar.classList.remove('dg-sidebar-expanded');
-                    sidebar.classList.add('dg-sidebar-collapsed');
-                    if (navExpanded) navExpanded.style.display = 'none';
-                    if (navIcons) navIcons.style.display = '';
-                    if (toggleIcon) toggleIcon.className = 'bi bi-chevron-right';
-                    document.body.classList.add('sidebar-collapsed');
-                  }
-                }
-
-                applyState(state);
-
-                if (toggleBtn) toggleBtn.addEventListener('click', function () {
-                  // Cycle: 1 -> 2 -> 3 -> 1
-                  applyState(state >= 3 ? 1 : state + 1);
-                });
-
-                // === Click en categorias con submodulos (Almacen, Productos, Admin) ===
-                // Si ya estas en esa pagina, cada click cicla:
-                //   1er click (ya ahi): sidebar colapsa a iconos, panel sigue visible
-                //   2do click: oculta panel de submodulos
-                //   3er click: restaura todo (sidebar expandido + panel visible)
-                var catLinks = document.querySelectorAll('.dg-sidebar-link[href="/almacen"], .dg-sidebar-link[href="/productos"], .dg-sidebar-link[href="/administracion"]');
-                var catIcons = document.querySelectorAll('.dg-sidebar-icon-item[href="/almacen"], .dg-sidebar-icon-item[href="/productos"], .dg-sidebar-icon-item[href="/administracion"]');
-                var allCatLinks = [];
-                catLinks.forEach(function (l) { allCatLinks.push(l); });
-                catIcons.forEach(function (l) { allCatLinks.push(l); });
-
-                allCatLinks.forEach(function (link) {
-                  link.addEventListener('click', function (e) {
-                    // Solo interceptar si ya estamos en esa seccion (link esta activo)
-                    var isActive = link.classList.contains('active') || link.classList.contains('active-glow');
-                    if (!isActive) return; // Navegar normalmente
-
-                    e.preventDefault(); // No navegar, ciclar estados
-
-                    var panelHidden = localStorage.getItem('dg-panel-hidden') === '1';
-
-                    if (state === 1 && !panelHidden) {
-                      // 1er click: colapsar sidebar a iconos, panel sigue visible
-                      applyState(2);
-                    } else if (!panelHidden) {
-                      // 2do click: ocultar panel de submodulos
-                      localStorage.setItem('dg-panel-hidden', '1');
-                      updatePanel();
-                    } else {
-                      // 3er click: restaurar todo (expandido + panel visible)
-                      localStorage.setItem('dg-panel-hidden', '0');
-                      applyState(1);
-                    }
-                  });
-                });
-
-                // Mobile
-                if (mobileToggle) mobileToggle.addEventListener('click', function () { sidebar.classList.add('open'); if (overlay) overlay.classList.add('open'); });
-                if (overlay) overlay.addEventListener('click', function () { sidebar.classList.remove('open'); overlay.classList.remove('open'); });
-
-                // SEGURIDAD: En desktop, siempre limpiar el overlay al cargar
-                function limpiarOverlayDesktop() {
-                  if (window.innerWidth >= 992 && overlay) {
-                    overlay.classList.remove('open');
-                    overlay.style.pointerEvents = 'none';
-                    overlay.style.opacity = '0';
-                    overlay.style.display = 'none';
-                  }
-                }
-                limpiarOverlayDesktop();
-                window.addEventListener('resize', limpiarOverlayDesktop);
-
-                // SEGURIDAD: Limpiar cualquier modal-backdrop huérfano al cargar
-                document.querySelectorAll('.modal-backdrop').forEach(function (el) { el.remove(); });
-                document.body.classList.remove('modal-open');
-                document.body.style.removeProperty('overflow');
-                document.body.style.removeProperty('padding-right');
-              });
-            </script>
-
-            <%- include('mascota') %>
-
-        <!-- Sliding Submenu Panel (desktop only) -->
-        <div class="sidebar-submenu-panel" id="sidebarSubmenuPanel" role="navigation" aria-label="Subnavegacion">
-          <div class="submenu-title" id="sidebarSubmenuTitle"></div>
-          <div class="submenu-items" id="sidebarSubmenuItems"></div>
-        </div>
-
-        <script>
-        (function() {
-          var panel = document.getElementById('sidebarSubmenuPanel');
-          var panelTitle = document.getElementById('sidebarSubmenuTitle');
-          var panelItems = document.getElementById('sidebarSubmenuItems');
-          if (!panel) return;
-
-          var closeTimer = null;
-          var currentPath = window.location.pathname;
-
-          function openSubmenu(link) {
-            if (window.innerWidth < 992) return;
-            // Don't show hover submenu when sidebar is expanded (links already visible)
-            if (document.body.classList.contains('sidebar-expanded')) return;
-            // Don't show hover submenu when the fixed dg-panel is already visible
-            var fixedPanel = document.getElementById('sidebarPanel');
-            if (fixedPanel && fixedPanel.style.display !== 'none') return;
-            var raw = link.getAttribute('data-submenu');
-            if (!raw) return;
-            var items;
-            try { items = JSON.parse(raw); } catch(e) { return; }
-            var title = link.getAttribute('data-submenu-title') || '';
-            var icon  = link.getAttribute('data-submenu-icon') || 'grid';
-
-            panelTitle.innerHTML = '<i class="bi bi-' + icon + '"></i> ' + title;
-            panelItems.innerHTML = items.map(function(item) {
-              var isActive = currentPath === item.href || currentPath.startsWith(item.href + '/');
-              return '<a href="' + item.href + '" class="submenu-item' + (isActive ? ' active-sub' : '') + '">' + item.label + '</a>';
-            }).join('');
-            panel.classList.add('open');
-          }
-
-          function closeSubmenu() {
-            panel.classList.remove('open');
-          }
-
-          // Attach mouseenter/mouseleave to all submenu-capable links
-          document.querySelectorAll('.dg-has-submenu').forEach(function(link) {
-            link.addEventListener('mouseenter', function() {
-              if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; }
-              openSubmenu(link);
-            });
-            link.addEventListener('mouseleave', function() {
-              closeTimer = setTimeout(closeSubmenu, 120);
-            });
-          });
-
-          // Keep panel open while hovering it
-          panel.addEventListener('mouseenter', function() {
-            if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; }
-          });
-          panel.addEventListener('mouseleave', function() {
-            closeTimer = setTimeout(closeSubmenu, 120);
-          });
-
-          // Close on sidebar toggle (state change) — clean up
-          document.addEventListener('click', function(e) {
-            if (!e.target.closest('.dg-has-submenu') && !e.target.closest('#sidebarSubmenuPanel')) {
-              closeSubmenu();
-            }
-          });
-
-          // Ensure submenu panel always starts closed on page load
-          panel.classList.remove('open');
-        })();
-        </script>
-
-<!-- Offline detection + Service Worker -->
-<script>
-  window.__USER_ROLE__ = '<%= (typeof user !== "undefined" && user && user.rol) ? user.rol : "" %>';
-  window.__APP_MODO__  = '<%= process.env.MODO || "cloud" %>';
-</script>
-<script src="/js/offline-ui.js"></script>
-<script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js')
-      .then(function(reg) { console.log('SW registered:', reg.scope); })
-      .catch(function(err) { console.warn('SW registration failed:', err); });
+<%# @variant: desktop — sidebar shell. Role-based nav + new MiRest design system.
+     Reference: React component "MiRestSidebarIcons" (2026-04-08).
+     Used by all desktop variants via include('./partials/sidebar', { user, reqPath, csrfToken }). %>
+<%
+  const u = (typeof user !== 'undefined' && user) ? user : null;
+  const rol = u ? String(u.rol || '').toLowerCase() : '';
+  const cp = (typeof reqPath !== 'undefined') ? reqPath : '';
+  const isSuperadmin = rol === 'superadmin';
+  const isAdmin = rol === 'administrador';
+  const isCajero = rol === 'cajero';
+  const isMesero = rol === 'mesero';
+  const isCocinero = rol === 'cocinero';
+  const isAlmacenero = rol === 'almacenero';
+  // Helper to mark active links
+  function active(path, exact) {
+    if (exact) return cp === path ? 'active' : '';
+    return cp.startsWith(path) ? 'active' : '';
   }
-</script>
-<script src="/js/modal-fix.js" defer></script>
+%>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
+
+<style>
+  /* === MiRest Sidebar (new design 2026-04-08) === */
+  .mr-sidebar {
+    width: 280px;
+    min-height: 100vh;
+    border-radius: 0 28px 28px 0;
+    background:
+      radial-gradient(circle at top left, rgba(39,58,160,.38), transparent 30%),
+      radial-gradient(circle at 20% 15%, rgba(255,120,61,.08), transparent 22%),
+      linear-gradient(180deg, #10152f 0%, #0a0f24 55%, #090d1d 100%);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.06),
+      0 24px 60px rgba(3,7,18,.35);
+    color: #eef2ff;
+    padding: 12px 16px 14px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    font-family: 'Inter', -apple-system, sans-serif;
+    z-index: 1030;
+    box-sizing: border-box;
+  }
+  .mr-sidebar *, .mr-sidebar *::before, .mr-sidebar *::after { box-sizing: border-box; }
+  .mr-sidebar::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(255,255,255,.02), transparent 16%, transparent 84%, rgba(255,255,255,.015));
+    pointer-events: none;
+  }
+
+  .mr-brand-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    position: relative;
+    z-index: 1;
+  }
+  .mr-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    text-decoration: none;
+  }
+  .mr-brand-mark {
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+  }
+  .mr-brand-text {
+    font-size: 19px;
+    font-weight: 800;
+    letter-spacing: -.03em;
+    white-space: nowrap;
+  }
+  .mr-text-white { color: rgba(237,241,255,.96); }
+  .mr-text-orange { color: #ff7a33; }
+
+  .mr-collapse-btn {
+    width: 40px;
+    height: 44px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,.08);
+    background: rgba(255,255,255,.02);
+    display: grid;
+    place-items: center;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.03);
+    color: rgba(240,244,255,.9);
+    cursor: pointer;
+  }
+
+  .mr-nav-item {
+    height: 50px;
+    width: 100%;
+    border: 0;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 14px;
+    color: rgba(186,194,225,.78);
+    transition: transform .24s ease, color .24s ease, background .35s ease, box-shadow .35s ease, filter .24s ease;
+    position: relative;
+    overflow: hidden;
+    text-align: left;
+    cursor: pointer;
+    background: transparent;
+    z-index: 1;
+    text-decoration: none;
+  }
+  .mr-assistant {
+    margin-bottom: 4px;
+    color: rgba(210,217,241,.82);
+  }
+  .mr-nav-item::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, rgba(255,255,255,.06), transparent 55%);
+    opacity: 0;
+    transition: opacity .22s ease;
+    pointer-events: none;
+  }
+  .mr-nav-item::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    opacity: 0;
+    transition: opacity .35s ease;
+    pointer-events: none;
+  }
+  .mr-nav-item:hover {
+    color: #f6f8ff;
+    background: rgba(255,255,255,.03);
+    transform: translateX(2px);
+  }
+  .mr-nav-item:hover::before { opacity: 1; }
+  .mr-nav-item.active {
+    color: white;
+    background: linear-gradient(
+      270deg,
+      #FEFBF5 0%,
+      #FDB75E 4%,
+      #FD9931 9%,
+      #EF520F 38%,
+      #DF2C05 79%,
+      #E13809 89%,
+      #FBA251 97%,
+      #EE6D2D 100%
+    );
+    box-shadow:
+      0 0 34px rgba(239,82,15,.24),
+      0 14px 30px rgba(223,44,5,.18),
+      inset 0 1px 0 rgba(255,255,255,.12),
+      inset 0 -4px 0 rgba(175,41,0,.28);
+    filter: saturate(1.04);
+  }
+  .mr-nav-item.active:hover {
+    transform: translateX(2px);
+  }
+  .mr-nav-item.active::after {
+    opacity: 1;
+    background:
+      radial-gradient(circle at 7% 10%, rgba(255,255,255,.58) 0%, rgba(255,255,255,.18) 7%, rgba(255,255,255,0) 16%),
+      radial-gradient(circle at 96% 82%, rgba(255,239,210,.55) 0%, rgba(255,239,210,0) 12%),
+      linear-gradient(180deg, rgba(255,255,255,.12) 0%, rgba(255,255,255,0) 24%, rgba(255,255,255,0) 76%, rgba(86,15,0,.10) 100%);
+  }
+
+  .mr-icon-wrap {
+    width: 22px;
+    height: 22px;
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    position: relative;
+  }
+  .mr-nav-item svg {
+    width: 21px;
+    height: 21px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    overflow: visible;
+  }
+  .mr-nav-item.active svg {
+    filter: drop-shadow(0 0 6px rgba(255,255,255,.18));
+  }
+  .mr-glow-dot {
+    position: absolute;
+    width: 5px;
+    height: 5px;
+    border-radius: 999px;
+    background: #ffd0a7;
+    right: -2px;
+    top: 2px;
+    opacity: 0;
+    transform: scale(.5);
+    box-shadow: 0 0 10px rgba(255,208,167,.8);
+    transition: .22s ease;
+  }
+  .mr-nav-item:hover .mr-glow-dot,
+  .mr-nav-item.active .mr-glow-dot {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .mr-nav-label {
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: -.01em;
+  }
+  .mr-nav-item.active .mr-nav-label { font-weight: 700; }
+
+  .mr-section-title {
+    font-size: 11px;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: rgba(207,152,95,.62);
+    font-weight: 700;
+    padding: 18px 10px 10px;
+    position: relative;
+    z-index: 1;
+  }
+  .mr-nav-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .mr-footer {
+    margin-top: 18px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255,255,255,.06);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    position: relative;
+    z-index: 1;
+  }
+  .mr-user-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+  .mr-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.06);
+    display: grid;
+    place-items: center;
+    color: rgba(240,244,255,.78);
+    flex: 0 0 auto;
+  }
+  .mr-user-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: rgba(248,250,255,.92);
+    line-height: 1.1;
+  }
+  .mr-user-role {
+    font-size: 13px;
+    color: rgba(181,189,218,.68);
+    margin-top: 2px;
+    text-transform: capitalize;
+  }
+  .mr-logout-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,.08);
+    background: rgba(255,255,255,.025);
+    display: grid;
+    place-items: center;
+    color: rgba(234,239,255,.8);
+    flex: 0 0 auto;
+    cursor: pointer;
+  }
+  .mr-logout-btn:hover { background: rgba(255,255,255,.08); }
+
+  /* === Animations === */
+  @keyframes mr-orbit { 0%, 100% { transform: translateY(0); opacity: .9; } 50% { transform: translateY(-1.5px); opacity: 1; } }
+  .mr-icon-inicio .d1 { animation: mr-orbit 1.8s ease-in-out infinite; }
+  .mr-icon-inicio .d2 { animation: mr-orbit 1.8s ease-in-out infinite .15s; }
+  .mr-icon-inicio .d3 { animation: mr-orbit 1.8s ease-in-out infinite .3s; }
+  .mr-icon-inicio .d4 { animation: mr-orbit 1.8s ease-in-out infinite .45s; }
+
+  .mr-flow-path { stroke-dasharray: 12; stroke-dashoffset: 12; }
+  .mr-nav-item:hover .mr-flow-path, .mr-nav-item.active .mr-flow-path { animation: mr-draw-flow .65s ease forwards; }
+  @keyframes mr-draw-flow { to { stroke-dashoffset: 0; } }
+
+  .mr-check-mark { opacity: 0; transform: scale(.65); transform-origin: center; }
+  .mr-nav-item:hover .mr-check-mark, .mr-nav-item.active .mr-check-mark { animation: mr-pop-check .28s ease forwards; }
+  @keyframes mr-pop-check { to { opacity: 1; transform: scale(1); } }
+
+  .mr-table-dot { transition: fill .22s ease, transform .22s ease, opacity .22s ease; opacity: .75; }
+  .mr-nav-item:hover .mr-table-dot, .mr-nav-item.active .mr-table-dot { fill: currentColor; opacity: 1; transform: scale(1.15); }
+
+  .mr-flame { transform-origin: center bottom; }
+  .mr-nav-item:hover .mr-flame, .mr-nav-item.active .mr-flame { animation: mr-flicker .55s ease-in-out infinite alternate; }
+  @keyframes mr-flicker { from { transform: scaleY(1) scaleX(1); } to { transform: scaleY(1.12) scaleX(.97); } }
+
+  .mr-sales-line { stroke-dasharray: 18; stroke-dashoffset: 18; }
+  .mr-nav-item:hover .mr-sales-line, .mr-nav-item.active .mr-sales-line { animation: mr-rise .7s ease forwards; }
+  @keyframes mr-rise { to { stroke-dashoffset: 0; } }
+
+  .mr-warehouse-roof { transform-origin: center; }
+  .mr-nav-item:hover .mr-warehouse-roof, .mr-nav-item.active .mr-warehouse-roof { animation: mr-tiny-lift .45s ease-in-out infinite alternate; }
+  @keyframes mr-tiny-lift { from { transform: translateY(0); } to { transform: translateY(-1px); } }
+
+  .mr-product-cell { transform-origin: center; }
+  .mr-nav-item:hover .mr-product-cell.c2, .mr-nav-item.active .mr-product-cell.c2 { animation: mr-blink-cell 1s ease infinite .1s; }
+  .mr-nav-item:hover .mr-product-cell.c3, .mr-nav-item.active .mr-product-cell.c3 { animation: mr-blink-cell 1s ease infinite .22s; }
+  @keyframes mr-blink-cell { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
+
+  .mr-client-arc { stroke-dasharray: 16; stroke-dashoffset: 16; }
+  .mr-nav-item:hover .mr-client-arc, .mr-nav-item.active .mr-client-arc { animation: mr-draw-arc .6s ease forwards; }
+  @keyframes mr-draw-arc { to { stroke-dashoffset: 0; } }
+
+  .mr-admin-column { transform-origin: center bottom; }
+  .mr-nav-item:hover .mr-admin-column, .mr-nav-item.active .mr-admin-column { animation: mr-formal-rise .5s ease-in-out infinite alternate; }
+  @keyframes mr-formal-rise { from { transform: translateY(0); } to { transform: translateY(-1px); } }
+
+  .mr-sunat-lines { stroke-dasharray: 18; stroke-dashoffset: 18; }
+  .mr-nav-item:hover .mr-sunat-lines, .mr-nav-item.active .mr-sunat-lines { animation: mr-doc-read .7s ease forwards; }
+  @keyframes mr-doc-read { to { stroke-dashoffset: 0; } }
+
+  .mr-users-arc { stroke-dasharray: 20; stroke-dashoffset: 20; }
+  .mr-nav-item:hover .mr-users-arc, .mr-nav-item.active .mr-users-arc { animation: mr-draw-users .65s ease forwards; }
+  @keyframes mr-draw-users { to { stroke-dashoffset: 0; } }
+
+  .mr-gear { transform-origin: center; }
+  .mr-nav-item:hover .mr-gear, .mr-nav-item.active .mr-gear { animation: mr-rotate-gear 1.6s linear infinite; }
+  @keyframes mr-rotate-gear { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+  .mr-report-bar { transform-origin: center bottom; }
+  .mr-nav-item:hover .mr-report-bar.b1, .mr-nav-item.active .mr-report-bar.b1 { animation: mr-bars 1s ease infinite .05s; }
+  .mr-nav-item:hover .mr-report-bar.b2, .mr-nav-item.active .mr-report-bar.b2 { animation: mr-bars 1s ease infinite .18s; }
+  .mr-nav-item:hover .mr-report-bar.b3, .mr-nav-item.active .mr-report-bar.b3 { animation: mr-bars 1s ease infinite .3s; }
+  .mr-nav-item:hover .mr-report-bar.b4, .mr-nav-item.active .mr-report-bar.b4 { animation: mr-bars 1s ease infinite .42s; }
+  @keyframes mr-bars { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(1.15); } }
+
+  .mr-support-wave { stroke-dasharray: 16; stroke-dashoffset: 16; }
+  .mr-nav-item:hover .mr-support-wave, .mr-nav-item.active .mr-support-wave { animation: mr-help-wave .7s ease forwards; }
+  @keyframes mr-help-wave { to { stroke-dashoffset: 0; } }
+
+  .mr-assistant-orbit { transform-origin: center; opacity: .35; }
+  .mr-nav-item:hover .mr-assistant-orbit, .mr-nav-item.active .mr-assistant-orbit { animation: mr-assistant-pulse 1s ease infinite; }
+  @keyframes mr-assistant-pulse { 0% { transform: scale(.9); opacity: .45; } 100% { transform: scale(1.12); opacity: .1; } }
+
+  .mr-assistant-wave { stroke-dasharray: 16; stroke-dashoffset: 16; }
+  .mr-nav-item:hover .mr-assistant-wave, .mr-nav-item.active .mr-assistant-wave { animation: mr-assistant-draw .7s ease forwards; }
+  @keyframes mr-assistant-draw { to { stroke-dashoffset: 0; } }
+
+  /* Hide on mobile (PWA replaces it) */
+  @media (max-width: 991.98px) {
+    .mr-sidebar { display: none; }
+  }
+</style>
+
+<aside class="mr-sidebar">
+  <!-- Brand row: logo links to home -->
+  <div class="mr-brand-row">
+    <a href="/" class="mr-brand">
+      <div class="mr-brand-mark">
+        <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="MiRest Logo">
+          <defs>
+            <linearGradient id="mr-logo-bg" x1="6" y1="5" x2="38" y2="39" gradientUnits="userSpaceOnUse">
+              <stop offset="0" stop-color="#FDB75E"/>
+              <stop offset="0.18" stop-color="#FD9931"/>
+              <stop offset="0.52" stop-color="#EF520F"/>
+              <stop offset="0.8" stop-color="#DF2C05"/>
+              <stop offset="1" stop-color="#EE6D2D"/>
+            </linearGradient>
+            <linearGradient id="mr-visor-glow" x1="22" y1="13" x2="22" y2="31" gradientUnits="userSpaceOnUse">
+              <stop offset="0" stop-color="#121938"/>
+              <stop offset="1" stop-color="#050814"/>
+            </linearGradient>
+            <linearGradient id="mr-shell-white" x1="11" y1="10" x2="31" y2="31" gradientUnits="userSpaceOnUse">
+              <stop offset="0" stop-color="#FFFFFF"/>
+              <stop offset="1" stop-color="#DCE4F7"/>
+            </linearGradient>
+          </defs>
+          <rect x="1.5" y="1.5" width="41" height="41" rx="12.5" fill="url(#mr-logo-bg)"/>
+          <rect x="1.5" y="1.5" width="41" height="41" rx="12.5" stroke="rgba(255,255,255,.22)"/>
+          <path d="M7 39.5C10.8 41.4 16.4 42.5 22 42.5C27.6 42.5 33.2 41.4 37 39.5" fill="rgba(0,0,0,.14)"/>
+          <path d="M17.2 9.9C16.8 8.3 18 6.9 19.6 6.9C20.5 6.9 21.3 7.3 21.8 8C22.3 7.3 23 6.9 24 6.9C25.6 6.9 26.8 8.3 26.4 9.9" fill="none" stroke="#F5F8FF" stroke-width="1.6" stroke-linecap="round"/>
+          <path d="M14 10.8H29.6C31.8 10.8 33.6 12.6 33.6 14.8V16.7H10V14.8C10 12.6 11.8 10.8 14 10.8Z" fill="url(#mr-shell-white)" opacity="0.98"/>
+          <rect x="10.2" y="13.6" width="23.6" height="18.2" rx="8.4" fill="url(#mr-shell-white)"/>
+          <rect x="13.1" y="15.9" width="17.8" height="13.8" rx="5.8" fill="url(#mr-visor-glow)"/>
+          <rect x="8.7" y="18.1" width="2.3" height="7.8" rx="1.15" fill="url(#mr-shell-white)"/>
+          <rect x="33" y="18.1" width="2.3" height="7.8" rx="1.15" fill="url(#mr-shell-white)"/>
+          <ellipse cx="22" cy="32.2" rx="4.9" ry="2.3" fill="#DCE4F7"/>
+          <path d="M18.1 20.7C18.7 19.9 19.7 19.9 20.3 20.7" stroke="#F7FAFF" stroke-width="1.7" stroke-linecap="round"/>
+          <path d="M23.7 20.7C24.3 19.9 25.3 19.9 25.9 20.7" stroke="#F7FAFF" stroke-width="1.7" stroke-linecap="round"/>
+          <path d="M18.9 25.1C20.6 26.6 23.4 26.6 25.1 25.1" stroke="#0F172A" stroke-width="2" stroke-linecap="round"/>
+          <path d="M19.3 25C20.7 26.2 23.3 26.2 24.7 25" stroke="#FFB1A4" stroke-width="1.8" stroke-linecap="round"/>
+          <path d="M10.6 29.8L12.8 28.5" stroke="#F5F8FF" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M33.4 29.8L31.2 28.5" stroke="#F5F8FF" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="mr-brand-text">
+        <span class="mr-text-white">Mi</span><span class="mr-text-orange">Rest</span> <span class="mr-text-white">con</span> <span class="mr-text-orange">IA</span>
+      </div>
+    </a>
+    <button type="button" class="mr-collapse-btn" aria-label="Colapsar">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m14 6-6 6 6 6"/></svg>
+    </button>
+  </div>
+
+  <% if (isSuperadmin) { %>
+    <%# === SUPERADMIN nav (separate menu) === %>
+    <div class="mr-section-title">Superadmin</div>
+    <div class="mr-nav-list">
+      <a href="/superadmin" class="mr-nav-item <%= active('/superadmin', true) %>">
+        <div class="mr-icon-wrap"><svg viewBox="0 0 24 24"><path d="M12 2L4 6v6c0 5 3.5 9.5 8 10 4.5-.5 8-5 8-10V6l-8-4z"/></svg><span class="mr-glow-dot"></span></div>
+        <span class="mr-nav-label">Dashboard SaaS</span>
+      </a>
+      <a href="/superadmin/tenants" class="mr-nav-item <%= active('/superadmin/tenants') %>">
+        <div class="mr-icon-wrap"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="14" rx="2"/><path d="M3 10h18M8 14h2M14 14h2"/></svg><span class="mr-glow-dot"></span></div>
+        <span class="mr-nav-label">Tenants</span>
+      </a>
+      <a href="/superadmin/billing" class="mr-nav-item <%= active('/superadmin/billing') %>">
+        <div class="mr-icon-wrap"><svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="10" rx="2"/><circle cx="12" cy="12" r="2"/></svg><span class="mr-glow-dot"></span></div>
+        <span class="mr-nav-label">Billing & P&L</span>
+      </a>
+      <a href="/superadmin/solicitudes" class="mr-nav-item <%= active('/superadmin/solicitudes') %>">
+        <div class="mr-icon-wrap"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"/><path d="M5 20c1.5-4 5-5 7-5s5.5 1 7 5"/></svg><span class="mr-glow-dot"></span></div>
+        <span class="mr-nav-label">Solicitudes</span>
+      </a>
+      <a href="/superadmin/observabilidad" class="mr-nav-item <%= active('/superadmin/observabilidad') %>">
+        <div class="mr-icon-wrap"><svg viewBox="0 0 24 24"><path d="M3 18l6-6 4 4 8-8"/><path d="M14 8h6v6"/></svg><span class="mr-glow-dot"></span></div>
+        <span class="mr-nav-label">Observabilidad</span>
+      </a>
+      <a href="/contratos" class="mr-nav-item <%= active('/contratos') %>">
+        <div class="mr-icon-wrap"><svg viewBox="0 0 24 24"><path d="M7 4h8l3 3v13H7z"/><path d="M15 4v3h3"/></svg><span class="mr-glow-dot"></span></div>
+        <span class="mr-nav-label">Contratos</span>
+      </a>
+      <a href="/nda-equipo" class="mr-nav-item <%= active('/nda-equipo') %>">
+        <div class="mr-icon-wrap"><svg viewBox="0 0 24 24"><rect x="6" y="10" width="12" height="10" rx="2"/><path d="M9 10V7a3 3 0 0 1 6 0v3"/></svg><span class="mr-glow-dot"></span></div>
+        <span class="mr-nav-label">NDA Equipo</span>
+      </a>
+      <a href="/superadmin/cotizador" class="mr-nav-item <%= active('/superadmin/cotizador') %>">
+        <div class="mr-icon-wrap"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 7h6M9 11h6M9 15h4"/></svg><span class="mr-glow-dot"></span></div>
+        <span class="mr-nav-label">Cotizador</span>
+      </a>
+    </div>
+  <% } else if (u) { %>
+    <%# === Asistente IA (top, only for admin) === %>
+    <% if (isAdmin) { %>
+      <a href="/chat" class="mr-nav-item mr-assistant <%= active('/chat', true) %>">
+        <div class="mr-icon-wrap">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="2.2"/>
+            <circle cx="12" cy="12" r="5.3" class="mr-assistant-orbit"/>
+            <path d="M7.6 15.7c1.3-1 2.7-1.5 4.4-1.5 1.6 0 3.1.5 4.4 1.5" class="mr-assistant-wave"/>
+            <path d="M12 3.7v2.1M12 18.2v2.1M3.7 12h2.1M18.2 12h2.1"/>
+          </svg>
+          <span class="mr-glow-dot"></span>
+        </div>
+        <span class="mr-nav-label">Asistente IA</span>
+      </a>
+    <% } %>
+
+    <%# === OPS === %>
+    <div class="mr-section-title">OPS</div>
+    <div class="mr-nav-list">
+      <% if (isAdmin || isCajero) { %>
+      <a href="/caja" class="mr-nav-item <%= active('/caja', true) %>">
+        <div class="mr-icon-wrap">
+          <svg viewBox="0 0 24 24"><rect x="3.8" y="7" width="16.4" height="10" rx="2.9"/><path d="M6.2 12h4.3" class="mr-flow-path"/><circle cx="15.6" cy="12" r="1.6"/></svg>
+          <span class="mr-glow-dot"></span>
+        </div>
+        <span class="mr-nav-label">Caja</span>
+      </a>
+      <% } %>
+      <% if (isAdmin || isMesero) { %>
+      <a href="/pedidos" class="mr-nav-item <%= active('/pedidos') || active('/mesas') || active('/delivery') || active('/para-llevar') %>">
+        <div class="mr-icon-wrap">
+          <svg viewBox="0 0 24 24"><rect x="7" y="8" width="10" height="8" rx="2"/><rect x="4.2" y="8.8" width="2" height="2" rx="0.5" class="mr-table-dot"/><rect x="17.8" y="8.8" width="2" height="2" rx="0.5" class="mr-table-dot"/><rect x="4.2" y="13.2" width="2" height="2" rx="0.5" class="mr-table-dot"/><rect x="17.8" y="13.2" width="2" height="2" rx="0.5" class="mr-table-dot"/><path d="M9 16v2M15 16v2"/></svg>
+          <span class="mr-glow-dot"></span>
+        </div>
+        <span class="mr-nav-label">Pedidos</span>
+      </a>
+      <% } %>
+      <% if (isAdmin || isMesero || isCocinero) { %>
+      <a href="/cocina" class="mr-nav-item <%= active('/cocina', true) %>">
+        <div class="mr-icon-wrap">
+          <svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="6.5" rx="2"/><path d="M8 10V8.6c0-.9.7-1.6 1.6-1.6h4.8c.9 0 1.6.7 1.6 1.6V10"/><path d="M5 12.5H3.8M20.2 12.5H19"/><path d="M7 9.2h10"/><circle cx="12" cy="8" r="0.8"/><path d="M10 5.5c0-1 .8-1.6 1.2-2" class="mr-flame"/><path d="M13 5.5c0-1 .8-1.6 1.2-2" class="mr-flame"/></svg>
+          <span class="mr-glow-dot"></span>
+        </div>
+        <span class="mr-nav-label">Cocina</span>
+      </a>
+      <% } %>
+      <% if (isAdmin) { %>
+      <a href="/ventas" class="mr-nav-item <%= active('/ventas', true) %>">
+        <div class="mr-icon-wrap">
+          <svg viewBox="0 0 24 24"><path d="M4.5 18.5V6.5"/><path d="M4.5 18.5H19"/><rect x="7" y="13" width="2.4" height="5.5" rx="0.6" class="mr-report-bar b1"/><rect x="10.8" y="10.5" width="2.4" height="8" rx="0.6" class="mr-report-bar b2"/><rect x="14.6" y="8" width="2.4" height="10.5" rx="0.6" class="mr-report-bar b3"/><path d="M7 11.8l3.8-3 3 2.2 4.2-5.2" class="mr-sales-line"/><path d="M18 5.8h2v2"/></svg>
+          <span class="mr-glow-dot"></span>
+        </div>
+        <span class="mr-nav-label">Ventas</span>
+      </a>
+      <% } %>
+    </div>
+
+    <%# === Corazón === %>
+    <% if (isAdmin || isAlmacenero || isMesero) { %>
+    <div class="mr-section-title">Corazón</div>
+    <div class="mr-nav-list">
+      <% if (isAdmin || isAlmacenero) { %>
+      <a href="/almacen" class="mr-nav-item <%= active('/almacen') %>">
+        <div class="mr-icon-wrap">
+          <svg viewBox="0 0 24 24"><path d="M3.7 10.2 12 4.6l8.3 5.6" class="mr-warehouse-roof"/><path d="M5.2 10.7h13.6V20H5.2z"/><path d="M10 20v-5.2h4V20"/></svg>
+          <span class="mr-glow-dot"></span>
+        </div>
+        <span class="mr-nav-label">Almacén</span>
+      </a>
+      <% } %>
+      <% if (isAdmin || isMesero || isAlmacenero) { %>
+      <a href="/productos" class="mr-nav-item <%= active('/productos', true) || active('/ranking', true) %>">
+        <div class="mr-icon-wrap">
+          <svg viewBox="0 0 24 24"><rect x="4" y="4" width="6.1" height="6.1" rx="1.6" class="mr-product-cell c1"/><rect x="13.9" y="4" width="6.1" height="6.1" rx="1.6" class="mr-product-cell c2"/><rect x="4" y="13.9" width="6.1" height="6.1" rx="1.6" class="mr-product-cell c3"/><path d="M13.9 17h6.1"/></svg>
+          <span class="mr-glow-dot"></span>
+        </div>
+        <span class="mr-nav-label">Productos</span>
+      </a>
+      <% } %>
+      <% if (isAdmin || isAlmacenero) { %>
+      <a href="/recetas" class="mr-nav-item <%= active('/recetas') %>">
+        <div class="mr-icon-wrap">
+          <svg viewBox="0 0 24 24"><path d="M7 4.5h8l3 3v12H7z"/><path d="M15 4.5v3h3"/><path d="M9 10h6"/><path d="M9 13h6"/><path d="M9 16h4" class="mr-sunat-lines"/><path d="M16.8 15.4c.6.5.8 1 .8 1.6 0 1-.8 1.8-1.8 1.8-.9 0-1.7-.8-1.7-1.8 0-.6.2-1.1.8-1.6.5-.4.9-.8.9-1.5v-1.2"/></svg>
+          <span class="mr-glow-dot"></span>
+        </div>
+        <span class="mr-nav-label">Recetas</span>
+      </a>
+      <% } %>
+      <% if (isAdmin) { %>
+      <a href="/clientes" class="mr-nav-item <%= active('/clientes', true) %>">
+        <div class="mr-icon-wrap">
+          <svg viewBox="0 0 24 24"><circle cx="7" cy="9" r="2.2"/><circle cx="12" cy="8" r="2.5"/><circle cx="17" cy="9" r="2.2"/><path d="M3.8 18c1.4-2.3 3.2-3.3 5.2-3.3"/><path d="M7.5 18c1.6-2.6 3.8-3.6 4.5-3.6s2.9 1 4.5 3.6" class="mr-client-arc"/><path d="M14.8 18c2-2.3 3.8-3.3 5.2-3.3"/></svg>
+          <span class="mr-glow-dot"></span>
+        </div>
+        <span class="mr-nav-label">Clientes</span>
+      </a>
+      <% } %>
+    </div>
+    <% } %>
+
+    <%# === Administración === %>
+    <% if (isAdmin || isCajero || isMesero) { %>
+    <div class="mr-section-title">Administración</div>
+    <div class="mr-nav-list">
+      <% if (isAdmin) { %>
+      <a href="/administracion" class="mr-nav-item <%= active('/administracion') %>">
+        <div class="mr-icon-wrap">
+          <svg viewBox="0 0 24 24"><path d="M4.2 18.8h15.6"/><path d="M6.6 18.8V9.6" class="mr-admin-column"/><path d="M12 18.8V9.6" class="mr-admin-column"/><path d="M17.4 18.8V9.6" class="mr-admin-column"/><path d="M4.8 9.2 12 5.3l7.2 3.9"/></svg>
+          <span class="mr-glow-dot"></span>
+        </div>
+        <span class="mr-nav-label">Administración</span>
+      </a>
+      <% } %>
+      <% if (isAdmin || isCajero || isMesero) { %>
+      <a href="/facturacion" class="mr-nav-item <%= active('/facturacion', true) %>">
+        <div class="mr-icon-wrap">
+          <svg viewBox="0 0 24 24"><path d="M7 3.8h7l3 3V20H7z"/><path d="M14 3.8v3h3"/><path d="M9 13.1l1.7 1.7 4.2-4.2" class="mr-check-mark"/></svg>
+          <span class="mr-glow-dot"></span>
+        </div>
+        <span class="mr-nav-label">Facturación</span>
+      </a>
+      <% } %>
+      <% if (isAdmin) { %>
+      <a href="/sunat" class="mr-nav-item <%= active('/sunat') %>">
+        <div class="mr-icon-wrap">
+          <svg viewBox="0 0 24 24"><rect x="5.5" y="3.8" width="13" height="16.4" rx="1.8"/><path d="M8.2 8.2h7.6M8.2 11.6h7.6M8.2 15h4.8" class="mr-sunat-lines"/></svg>
+          <span class="mr-glow-dot"></span>
+        </div>
+        <span class="mr-nav-label">SUNAT</span>
+      </a>
+      <a href="/api/reportes" class="mr-nav-item <%= active('/reportes') || active('/api/reportes') %>">
+        <div class="mr-icon-wrap">
+          <svg viewBox="0 0 24 24"><path d="M4.5 18.5V6.3"/><path d="M8.5 18.5v-5.4" class="mr-report-bar b1"/><path d="M12 18.5V9.8" class="mr-report-bar b2"/><path d="M15.5 18.5v-7" class="mr-report-bar b3"/><path d="M19 18.5v-10" class="mr-report-bar b4"/></svg>
+          <span class="mr-glow-dot"></span>
+        </div>
+        <span class="mr-nav-label">Reportes</span>
+      </a>
+      <% } %>
+    </div>
+    <% } %>
+
+    <%# === Sistema === %>
+    <div class="mr-section-title">Sistema</div>
+    <div class="mr-nav-list">
+      <% if (isAdmin) { %>
+      <a href="/usuarios" class="mr-nav-item <%= active('/usuarios', true) %>">
+        <div class="mr-icon-wrap">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"/><circle cx="10.8" cy="7.6" r="0.4"/><circle cx="13.2" cy="7.6" r="0.4"/><path d="M10.6 9.2c.7.6 2.1.6 2.8 0"/><path d="M5.5 18c1.6-2.6 4-3.8 6.5-3.8s4.9 1.2 6.5 3.8" class="mr-users-arc"/></svg>
+          <span class="mr-glow-dot"></span>
+        </div>
+        <span class="mr-nav-label">Usuarios</span>
+      </a>
+      <a href="/configuracion" class="mr-nav-item <%= active('/configuracion', true) %>">
+        <div class="mr-icon-wrap">
+          <svg viewBox="0 0 24 24"><path d="M5 7h14"/><circle cx="9" cy="7" r="1.6" class="mr-gear"/><path d="M5 12h14"/><circle cx="14" cy="12" r="1.6" class="mr-gear"/><path d="M5 17h14"/><circle cx="11" cy="17" r="1.6" class="mr-gear"/></svg>
+          <span class="mr-glow-dot"></span>
+        </div>
+        <span class="mr-nav-label">Configuración</span>
+      </a>
+      <% } %>
+      <a href="/soporte" class="mr-nav-item <%= active('/soporte', true) %>">
+        <div class="mr-icon-wrap">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v8" class="mr-support-wave"/><path d="M8 12h8" class="mr-support-wave"/></svg>
+          <span class="mr-glow-dot"></span>
+        </div>
+        <span class="mr-nav-label">Soporte</span>
+      </a>
+    </div>
+  <% } %>
+
+  <%# === Footer: user + logout === %>
+  <% if (u) { %>
+  <div class="mr-footer">
+    <div class="mr-user-card">
+      <div class="mr-avatar">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 13a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M5.8 19.5c1.7-2.5 4.2-3.6 6.2-3.6s4.5 1.1 6.2 3.6"/></svg>
+      </div>
+      <div>
+        <div class="mr-user-name"><%= u.usuario %></div>
+        <div class="mr-user-role"><%= rol %></div>
+      </div>
+    </div>
+    <form method="POST" action="/logout" style="margin:0;">
+      <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+      <button type="submit" class="mr-logout-btn" title="Salir">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 17l5-5-5-5"/><path d="M19 12H9"/><path d="M10 20H5a1.5 1.5 0 0 1-1.5-1.5v-13A1.5 1.5 0 0 1 5 4h5"/></svg>
+      </button>
+    </form>
+  </div>
+  <% } %>
+</aside>
