@@ -1,4 +1,4 @@
-# Separación Dashboard Desktop / PWA Mobile
+# Separación Desktop / PWA — Iteración 1 (Fundamento)
 
 **Fecha:** 2026-04-08
 **Autor:** Claude + Leonidas
@@ -13,18 +13,47 @@ El commit `c28544e` (31 de marzo 2026) intentó separar el dashboard desktop del
 
 La detección por User-Agent en `server.js` ya está activa pero es inútil porque renderiza el mismo template a desktop y mobile.
 
-Adicionalmente, durante la verificación encontramos varios bugs latentes en `csrf-csrf` v4:
-- Función `generateToken` se renombró a `generateCsrfToken`
-- Falta `cookie-parser` middleware
-- Falta `getSessionIdentifier` en la config de `doubleCsrf`
+Adicionalmente, durante la verificación local encontramos varios bugs que bloquean el arranque del servidor:
+- `csrf-csrf` v4: `generateToken` se renombró a `generateCsrfToken`
+- `cookie-parser` middleware faltante
+- `getSessionIdentifier` requerido en la config de `doubleCsrf`
 - Variable `logger` se usaba antes de definirse
 
-## Objetivos
+## Regla arquitectónica fundamental
 
-1. **Recrear `dashboard-desktop.ejs`** con el diseño desktop nuevo del frame `1920w default` (`9RPaz`) en `UI.DELSISTEMA.pen`
-2. **Mantener `dashboard.ejs`** sin cambios — ya tiene el diseño PWA correcto
-3. **Prevenir** que ambos archivos vuelvan a quedar sincronizados accidentalmente
-4. **Estabilizar** los bugs CSRF que bloquean el servidor en local
+**Cero responsive entre desktop y PWA.** Cada página tiene exactamente dos archivos exclusivos:
+
+- `<page>.ejs` — variante PWA (phones + tablets)
+- `<page>-desktop.ejs` — variante desktop (Mac/Windows/Linux browsers)
+
+El router elige uno u otro según User-Agent. **Nunca** un template responsive intenta servir a ambos. Si abrís en mobile, jamás debes ver layout desktop, ni viceversa.
+
+### Detección de dispositivo
+
+```js
+// lib/deviceRouter.js
+const isTouchDevice = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(
+  req.headers['user-agent'] || ''
+);
+```
+
+| Dispositivo | Variante |
+|-------------|----------|
+| iPhone, Android phone | PWA (`view.ejs`) |
+| iPad, Android tablet | PWA (`view.ejs`) — centrado a 480px en tablets |
+| Mac/Windows/Linux desktop | Desktop (`view-desktop.ejs`) |
+
+Tablets aceptan el shell PWA estrecho centrado (patrón común tipo Twitter/X mobile en iPad). Si en el futuro se quiere un diseño específico para tablets, será una iteración aparte.
+
+## Objetivos de Iteración 1
+
+1. Corregir los bugs CSRF que bloquean el servidor local (commit los parches que ya aplicamos en sesión)
+2. Crear `lib/deviceRouter.js` como helper único de detección + render
+3. Crear `views/partials/desktop-layout.ejs` con el shell desktop (sidebar + main + tokens del nuevo diseño)
+4. Reescribir `dashboard-desktop.ejs` con el diseño nuevo del frame `1920w default` (`9RPaz`)
+5. Construir infraestructura de prevención (markers, tests, hook, docs)
+6. Auditar las 80+ vistas y catalogar pares mobile/desktop existentes y faltantes
+7. Generar specs por módulo para iteraciones futuras (basado en la auditoría)
 
 ## Diseño Desktop (frame `9RPaz` - 1920w default)
 
@@ -46,18 +75,18 @@ Adicionalmente, durante la verificación encontramos varios bugs latentes en `cs
   - Activo (Inicio): gradiente naranja 8-stop (`#fefbf5` → `#fdb75e` → `#fd9931` → `#ef520f` → `#df2c05` → `#e13809` → `#fba251` → `#ee6d2d`) con shadow glow doble
 - Footer: borde superior `#ffffff0f`, padding 16px
 
-**Reusará el `views/partials/sidebar.ejs` existente** que ya tiene esta estructura. Solo se ajustarán colores/spacing donde difieran del diseño nuevo.
+**Reusará el `views/partials/sidebar.ejs` existente** que ya tiene la mayor parte de esta estructura. Solo se ajustarán colores/spacing donde difieran del diseño nuevo.
 
 ### Main content - DASHBOARD VIEW (`M0kcC`)
 
-**Header (y:0):**
+**Header:**
 - "Buenos dias, {nombre}" — Inter 38px, weight 800, color `#1f2430`, letter-spacing -1.52px
-- Subtítulo: "{día de la semana}, {fecha} · {dominio}" — Inter 18px, color `#7a8090`
-- Botones derecha (top-right): Toggle DallIA (172x48 con avatar), notificación (42x42), avatar usuario (48x48 gradiente naranja con iniciales)
+- Subtítulo: "{día}, {fecha} · {dominio}" — Inter 18px, color `#7a8090`
+- Top-right: Toggle DallIA (172x48 con avatar), notificación (42x42), avatar usuario (48x48 gradiente naranja con iniciales)
 
 **Columna izquierda (0-905px):**
 
-1. **Pendientes** (y:93)
+1. **Pendientes**
    - Heading: "Pendientes" Inter 22px weight 800
    - Botón "+ Agregar" (120x45) gradiente naranja `#f08a4f` → `#d9501f` con shadow
    - Card de tarea (904x98, corner-radius 20):
@@ -65,117 +94,120 @@ Adicionalmente, durante la verificación encontramos varios bugs latentes en `cs
      - Título tarea Inter 20px weight 800
      - Badge "DallIA" naranja `#f8915924`
      - Subtítulo Inter 17px color `#81889a`
-     - Botón "Pagar" (94x45) fondo `#15192c`
+     - Botón acción (94x45) fondo `#15192c`
 
-2. **Agenda** (y:280)
+2. **Agenda**
    - Card 904x183, corner-radius 28
-   - Heading: "Agenda" Inter 22px
-   - Fecha actual derecha: "Jue, 27 Mar." color `#f1703a`
+   - Heading "Agenda" Inter 22px
+   - Fecha actual derecha en naranja `#f1703a`
    - 7 botones día (112x78, corner-radius 18):
      - Día activo: gradiente naranja con shadow glow
      - Resto: fondo blanco semi-transparente
 
-3. **Completadas** (y:490)
+3. **Completadas**
    - Heading "Completadas" Inter 22px weight 800
    - Badge count (46x30, corner-radius 12) gradiente naranja
    - Chevron expand/collapse SVG
 
 **Columna derecha (932px+):**
 
-1. **Hoy en numeros** (y:0)
+1. **Hoy en numeros**
    - Heading "Hoy en numeros" Inter 22px weight 800
    - 3 KPI cards (142x77, corner-radius 22) en fila:
-     - Ventas: "S/ 125.00" + "Ventas" texto secundario
-     - Mesas: "0/42" en naranja `#f1703a` + "Mesas"
-     - Platos: "5" + "Platos"
+     - Ventas: "S/ {monto}" + "Ventas"
+     - Mesas: "{ocupadas}/{total}" en naranja `#f1703a` + "Mesas"
+     - Platos: "{count}" + "Platos"
    - Cards: fondo `#ffffffc7`, shadow soft
 
-2. **DallIA dice:** (y:148)
+2. **DallIA dice:**
    - Heading "DallIA dice:" Inter 22px weight 800
    - Cards 452x~80px, corner-radius 22
    - Cada card: dot indicador (8x8) + texto Inter 16px weight 600 + "Consejo de DallIA" subtítulo
 
-3. **Acceso rapido** (y:412)
+3. **Acceso rapido**
    - Heading "Acceso rapido" Inter 22px weight 800
    - Grid 2x2 de botones (219x64, corner-radius 20):
      - Mesas, Cocina, Productos, Asistente IA
      - Cada uno con icono SVG + label Inter 16px weight 700
 
-### Tipografía global
+### Tipografía global desktop
 - Familia: **Inter** (no DM Sans como en mobile)
-- Razón: el diseño usa Inter en el `.pen`, mantenemos coherencia
+- Razón: el diseño en `.pen` usa Inter, mantenemos coherencia con el frame fuente
 
-### Notas
-- **Logo SVG falta**: el imagotipo de "MiRest con IA" en el sidebar usará el placeholder existente con fuente Fredoka One hasta que se incorpore el SVG real. La referencia visual del `.pen` muestra un SVG `Imagotipo.svg` que aún no está en el repo.
-
-## Routing
-
-`server.js` ya tiene la lógica correcta (línea ~977):
-
-```js
-const ua = req.headers['user-agent'] || '';
-const isMobile = /Android|iPhone|iPad|iPod|webOS|BlackBerry|IEMobile|Opera Mini/i.test(ua);
-res.render(isMobile ? 'dashboard' : 'dashboard-desktop', { dashboard });
-```
-
-No hay cambios en routing — solo necesitamos que el template desktop sea diferente del mobile.
+### Logo placeholder
+El imagotipo SVG real "MiRest con IA" no está en el repo. Usamos el placeholder existente con fuente Fredoka One hasta que se incorpore.
 
 ## Prevención: cómo evitar que se mezclen de nuevo
 
-### 1. Comentario marker en cada archivo
-Cada template lleva un comentario obligatorio en el head que declara su variante:
+### 1. Markers de variante obligatorios
+Cada template lleva un comentario en el head que declara su variante:
 
 ```html
-<!-- @variant: pwa-mobile (max-width 480px, bottom nav, no sidebar) -->
-<!-- @variant: desktop (sidebar + 2-column layout, min-width 992px) -->
+<!-- @variant: pwa -->
+<!-- @variant: desktop -->
 ```
 
-### 2. Test de no-equivalencia
-Test simple en `tests/dashboard-variants.test.js` que falla si los dos archivos quedan idénticos:
+### 2. Helper de routing centralizado
+`lib/deviceRouter.js` exporta `renderForDevice(req, res, viewName, data)`. Todas las rutas que tengan ambas variantes deben usar este helper. Las rutas que solo tienen una variante (ej: solo desktop o solo PWA) usan `res.render` normal pero con un check explícito que loguea warning si el dispositivo no coincide.
+
+### 3. Tests
+Test suite en `tests/view-variants.test.js`:
 
 ```js
-const fs = require('fs');
-const mobile = fs.readFileSync('views/dashboard.ejs', 'utf8');
-const desktop = fs.readFileSync('views/dashboard-desktop.ejs', 'utf8');
-
-test('dashboard.ejs y dashboard-desktop.ejs deben ser distintos', () => {
-  expect(mobile).not.toBe(desktop);
-});
-
-test('dashboard.ejs debe declarar variant pwa-mobile', () => {
-  expect(mobile).toContain('@variant: pwa-mobile');
-});
-
-test('dashboard-desktop.ejs debe declarar variant desktop', () => {
-  expect(desktop).toContain('@variant: desktop');
-});
+// Para cada par <name>.ejs / <name>-desktop.ejs:
+// 1. Ambos archivos existen
+// 2. Son distintos byte-a-byte
+// 3. Cada uno declara su marker correcto
 ```
 
-Este test corre en CI antes de cualquier merge.
+### 4. Pre-commit hook
+Hook que ejecuta el test de variantes si tocaste archivos en `views/`. Bloquea commit si:
+- Algún par mobile/desktop quedó idéntico
+- Falta el marker `@variant`
 
-### 3. Pre-commit hook
-Hook de git en `.husky/pre-commit` o equivalente que ejecute el test anterior si alguno de los dos archivos cambia.
+### 5. Documentación en CLAUDE.md
+Sección "Variantes de vistas" con:
+- La regla "cero responsive"
+- Cómo crear una vista nueva (siempre en pares)
+- Cómo usar `deviceRouter`
+- Lista de excepciones autorizadas (vistas solo-desktop o solo-PWA)
 
-### 4. Documentación en CLAUDE.md
-Agregar una sección "Dashboard variants" que explique:
-- `dashboard.ejs` es PWA mobile-only — NO tocar para cambios desktop
-- `dashboard-desktop.ejs` es desktop-only — NO tocar para cambios mobile
-- Si necesitas cambiar lógica compartida (data, KPIs), modifica el controlador en `server.js` no los templates
+## Auditoría de vistas existentes
 
-## Bugs CSRF descubiertos durante la verificación
+Como parte de Iteración 1 generamos `docs/superpowers/audits/2026-04-08-views-pairing-audit.md` con:
 
-Estos bugs bloquean el servidor local. Se arreglarán como parte del plan:
+| View | PWA | Desktop | Estado |
+|------|-----|---------|--------|
+| `dashboard` | ✓ existente | ✓ creado en este plan | OK |
+| `almacen/inventario` | ✗ falta | ✓ con responsive contaminante | PWA por crear (Iter 2) |
+| `productos` | ✗ falta | ✓ | PWA por crear (Iter 3) |
+| ... | | | |
 
-1. **`csrf-csrf` v4 API change** — `generateToken` renombrado a `generateCsrfToken`. Ya parcheado en sesión actual.
-2. **`cookie-parser` faltante** — instalado y agregado al middleware. Ya parcheado.
-3. **`getSessionIdentifier` requerido** — agregado en la config `doubleCsrf`. Ya parcheado.
-4. **`logger` undefined** — `require('./lib/logger')` movido al top del archivo. Ya parcheado.
+La auditoría categoriza cada vista en una de estas:
+- **OK**: ambas variantes existen y son distintas
+- **Falta PWA**: tiene desktop, hay que crear PWA
+- **Falta desktop**: tiene PWA, hay que crear desktop nuevo
+- **Responsive contaminante**: una sola vista intentando hacer ambos — hay que dividirla en dos
+- **Solo-desktop autorizado**: módulos administrativos que no necesitan PWA (ej: superadmin/observabilidad). Mobile muestra mensaje "vista solo desktop"
+- **Solo-PWA autorizado**: features mobile-exclusive (ej: scan QR fidelidad)
 
-Estos parches deben commitearse antes de empezar el trabajo del dashboard.
+A partir de la auditoría se generan los specs y planes de iteraciones 2+, una por módulo.
 
-## Out of scope
+## Bugs CSRF a corregir como parte del plan
 
-- Actualización de los demás 20 screens desktop al diseño nuevo (queda para iteraciones futuras)
-- Logo SVG real "Imagotipo.svg" (placeholder por ahora)
-- Datos reales de Pendientes/Agenda/Completadas — usaremos los datos existentes del controlador `dashboard` o stubs si no existen
-- Mejora del sidebar con animaciones de iconos al presionar (queda para iteración posterior)
+Estos bugs ya los parcheamos en sesión durante la verificación, pero hay que commitearlos:
+
+1. `csrf-csrf` v4 — `generateToken` → `generateCsrfToken` (server.js:284)
+2. `cookie-parser` — agregado al middleware (server.js:137)
+3. `getSessionIdentifier` — agregado a `doubleCsrf` config (server.js:286)
+4. `logger` — `require('./lib/logger')` movido al top (server.js:20)
+
+También se agregaron `SESSION_SECRET` y `PORT` al `.env` local.
+
+## Out of scope (Iteración 1)
+
+- Crear las versiones PWA faltantes para módulos completos (irá en iteraciones por módulo)
+- Actualizar los demás screens desktop existentes al nuevo diseño (irá en iteraciones por módulo)
+- Logo SVG real del imagotipo (placeholder por ahora)
+- Animaciones de iconos del sidebar al presionar
+- Diseño tablet específico (PWA estrecho centrado por ahora)
