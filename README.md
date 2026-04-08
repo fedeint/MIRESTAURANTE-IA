@@ -1,97 +1,254 @@
-# Sistema de Facturación para Restaurante
+# MiRest con IA
 
-## Requisitos Previos
-1. Node.js (v18 recomendado)
-2. MySQL (versión 5.7 o superior)
-3. Git (opcional)
+> **Sistema SaaS multi-tenant de gestión de restaurantes peruanos con IA conversacional (DallIA).**
+> PWA mobile-first para micro-restaurantes hasta cadenas.
 
-## Pasos de Instalación
+[![CI](https://github.com/Leonidasx8/MiRestconIA/actions/workflows/ci.yml/badge.svg)](https://github.com/Leonidasx8/MiRestconIA/actions/workflows/ci.yml)
 
-### 1. Base de Datos
-1. Abrir MySQL Workbench o el cliente MySQL de tu preferencia
-2. Ejecutar el script `database.sql` que se encuentra en la raíz del proyecto
+---
 
-### 2. Aplicación
-1. Clonar o descargar este repositorio
-2. Abrir una terminal en la carpeta del proyecto
-3. Instalar las dependencias:
+## Descripción
+
+MiRest con IA es una plataforma integral para restaurantes que unifica:
+
+- **Operaciones** — caja, pedidos (mesa + delivery + para llevar), cocina, ventas
+- **Gestión de cocina** — almacén, productos, recetas, costeo
+- **Clientes y fidelización** — base de clientes, promociones, fidelidad por QR
+- **Administración** — P&L, planilla, gastos, facturación electrónica SUNAT
+- **IA conversacional (DallIA)** — asistente que responde preguntas del negocio en lenguaje natural
+- **Multi-tenant** — cada restaurante es un tenant con subdominio propio (`restaurante.mirestconia.com`)
+
+---
+
+## Stack
+
+| Capa | Tecnología |
+|------|-----------|
+| Backend | Express 4 + Node.js 24 |
+| Vistas | EJS (Server-Side Rendering) |
+| DB | PostgreSQL (Supabase en producción, local opcional) |
+| Auth | Sessions + Google OAuth 2.0 + WebAuthn biométrico |
+| PWA | Service Worker + IndexedDB offline queue |
+| Deploy | Vercel (Fluid Compute + Vercel Cron) |
+| Tests | `node:test` built-in (sin Jest/Mocha) |
+| Observability | Grafana Cloud + custom dashboard `/superadmin/observabilidad` |
+| IA | Claude (Anthropic) vía `@anthropic-ai/sdk` |
+
+---
+
+## Arquitectura: Dos variantes por página (ZERO responsive)
+
+Cada página tiene **exactamente** dos archivos EJS mutuamente excluyentes:
+
+| Variante | Archivo | Dispositivos |
+|---|---|---|
+| PWA mobile | `views/<page>.ejs` | iPhone, Android phone, iPad, Android tablet |
+| Desktop | `views/<page>-desktop.ejs` | Mac, Windows, Linux |
+
+La decisión se hace server-side via User-Agent en `lib/deviceRouter.js`:
+
+```js
+const { renderForDevice } = require('./lib/deviceRouter');
+
+app.get('/pedidos', requireAuth, (req, res) => {
+  renderForDevice(req, res, 'pedidos', { data });
+  // phone/tablet → views/pedidos.ejs
+  // desktop → views/pedidos-desktop.ejs
+});
+```
+
+**Regla estricta**: jamás un template intenta ser responsive para ambos. Cada uno es exclusivo. Un test guard en `tests/view-variants.test.js` **falla CI** si algún par queda byte-idéntico.
+
+Detalles completos en [CLAUDE.md](./CLAUDE.md) sección "Variantes de vistas".
+
+---
+
+## Quickstart (desarrollo local)
+
+### 1. Requisitos
+
+- Node.js **24 LTS** (no 18)
+- PostgreSQL local **O** acceso a la base de Supabase dev
+- Git
+
+### 2. Clonar e instalar
+
 ```bash
+git clone https://github.com/Leonidasx8/MiRestconIA.git
+cd MiRestconIA
 npm install
 ```
-4. Variables de entorno (opcional):
-   - El sistema usa estos valores por defecto (ver `config/database.js`):
-     - `DB_HOST=localhost`
-     - `DB_USER=root`
-     - `DB_PASSWORD=111`
-     - `DB_NAME=reconocimiento`
-     - `PORT=3000`
-   - Puedes sobreescribirlos creando un archivo `.env` o exportando variables.
 
-### 3. Iniciar el Sistema
-1. Ejecutar el siguiente comando:
+### 3. Configurar `.env`
+
+Pídele a `@Leonidasx8` el archivo `.env.local` con las credenciales de desarrollo. **Nunca comitees este archivo.**
+
+Si necesitas crearlo desde cero, mira `.env.example` para la lista de variables requeridas. Las críticas:
+
 ```bash
-npm start
-```
-2. Abrir el navegador y acceder a: `http://localhost:3000`
-3. Acceso desde otra PC o celular en la misma red (LAN):
-   - La app escucha en `0.0.0.0`. Usa tu IP local: `http://TU_IP_LOCAL:3000`
-   - Si es necesario, permite el puerto 3000 en el Firewall de Windows.
-   - Ejemplo PowerShell (Admin):
-     ```bash
-     New-NetFirewallRule -DisplayName "Restaurante-3000" -Direction Inbound -LocalPort 3000 -Protocol TCP -Action Allow
-     ```
-
-## Estructura de Carpetas
-- `/public` - Archivos estáticos (CSS, JS, imágenes)
-- `/routes` - Rutas de la aplicación
-- `/views` - Plantillas EJS
-- `/config` - Configuración de la base de datos
-- `/uploads` - Carpeta donde se guardan las imágenes subidas
- - `/dist` - Ejecutable y artefactos de distribución
-
-## Funcionalidades
-- Gestión de productos
-- Gestión de clientes
-- Generación de facturas y vista de ventas con filtros/búsqueda
-- Configuración de impresión (logo, QR, ancho de papel, etc.)
-- Restaurante: Mesas, pedidos por mesa y Cocina (cola en orden)
-- Notas por ítem para cocina (en rojo), y estados: enviado, preparando, listo, servido
-- Mover pedidos entre mesas y liberar mesas sin ítems activos
-- Exportación de ventas a Excel (.xlsx) con encabezado de empresa, logo y totales
-- Importación masiva de productos desde Excel (plantilla descargable)
-
-## Importación masiva de productos
-1. Ir a Productos → botón "Plantilla Excel" para descargar `plantilla_productos.xlsx`.
-2. La plantilla incluye una hoja de Instrucciones y otra "Productos" con columnas:
-   - `codigo` (obligatorio, único)
-   - `nombre` (obligatorio)
-   - `precio_kg`, `precio_unidad`, `precio_libra` (números ≥ 0, usar punto decimal)
-3. Completar la hoja "Productos" (hay ejemplos). No cambiar los encabezados.
-4. En Productos → botón "Importar Excel" y seleccionar el archivo.
-5. Se realiza upsert por `codigo` (si existe, actualiza precios/nombre).
-
-## Exportación de ventas a Excel
-- En Ventas, aplicar filtros (fecha y búsqueda) y presionar "Exportar".
-- Se descarga `ventas.xlsx` con:
-  - Encabezado con nombre, datos de empresa y rango aplicado
-  - Logo (si está configurado)
-  - Encabezados estilizados, autoajuste de columnas y bandas de color
-  - Totales por forma de pago (efectivo/transferencia) y total general
-
-## Construir ejecutable (Windows)
-Requisitos: `pkg` instalado globalmente o usar `npx`.
-
-- Usando script ya definido:
-```bash
-npm run build
+DATABASE_URL=postgresql://user:pass@host:5432/db
+SESSION_SECRET=<generate with: openssl rand -hex 32>
+PORT=1995
 ```
 
-- Alternativa directa:
+### 4. Instalar el pre-commit hook
+
 ```bash
-npx pkg . --public --target node18-win-x64 --out-path dist
+npm run hooks:install
 ```
 
-El ejecutable queda en `dist/`.
+Esto activa el hook que corre `npm test` automáticamente antes de cada commit que toque `views/` o `lib/deviceRouter*`. **No lo saltes con `--no-verify`** salvo autorización explícita.
 
-## Soporte
-Para soporte o preguntas, abrir un issue o contactar al equipo. 
+### 5. Arrancar el servidor
+
+```bash
+npm run dev    # con nodemon, recarga automática
+# o
+npm start      # sin recarga
+```
+
+Luego abre http://localhost:1995
+
+**Credenciales default** (primer acceso):
+- Usuario: `admin`
+- Contraseña: `admin123`
+
+**Cambia esta contraseña inmediatamente en tu primer login.**
+
+---
+
+## Comandos disponibles
+
+```bash
+npm start              # Arranca el servidor (node server.js)
+npm run dev            # Arranca con nodemon (recarga en cambios)
+npm test               # Corre toda la suite (22+ tests)
+npm run hooks:install  # Instala el pre-commit hook (una sola vez)
+npm run build          # Build ejecutable Windows (pkg)
+npm run local          # Modo local sin Supabase
+```
+
+---
+
+## Estructura del proyecto
+
+```
+.
+├── server.js                     # Entry point — mount routes, middleware, helpers
+├── db.js                         # Pool Postgres + helpers de queries
+├── lib/
+│   ├── deviceRouter.js           # PWA vs desktop picker (fuente de verdad)
+│   ├── deviceRouter.test.js      # Tests del picker
+│   ├── logger.js                 # Structured logging + niveles
+│   ├── alertas.js                # Email/WhatsApp para eventos críticos
+│   ├── grafana-client.js         # Cliente de Grafana Cloud con circuit breaker
+│   └── schemas.js                # Zod schemas compartidos
+├── middleware/
+│   ├── auth.js                   # requireAuth, requireRole, attachUserToLocals
+│   ├── tenant.js                 # Resolución de tenant por subdomain/path
+│   ├── tenantGuard.js            # Bloqueo cross-tenant
+│   ├── ipGuard.js                # Rate limit + blacklist
+│   ├── sessionTimeout.js         # 8h idle, 24h absoluto
+│   └── ...
+├── routes/
+│   ├── auth.js                   # Login, logout, Google OAuth, WebAuthn
+│   ├── mesas.js                  # Flow de mesas
+│   ├── cocina.js                 # Display de cocina + cola
+│   ├── pedidos.js                # (iter 1.6) vista consolidada mesa/delivery/para-llevar
+│   ├── ...
+│   └── superadmin/               # Panel de admin del SaaS
+├── views/
+│   ├── dashboard.ejs             # @variant: pwa  (admin)
+│   ├── dashboard-desktop.ejs     # @variant: desktop (admin)
+│   ├── pedidos.ejs               # @variant: pwa
+│   ├── pedidos-desktop.ejs       # @variant: desktop
+│   ├── partials/
+│   │   ├── sidebar.ejs           # Sidebar desktop (role-based)
+│   │   ├── navbar.ejs            # Navbar alt
+│   │   └── desktop-layout.ejs    # Shell reusable para vistas desktop
+│   ├── almacen/                  # Sub-módulo de almacén
+│   ├── administracion/           # P&L, planilla, gastos
+│   └── superadmin/               # Panel superadmin
+├── public/
+│   ├── css/, js/, img/
+│   └── vendor/                   # Libs third-party (Bootstrap Icons, etc)
+├── migrations/
+│   └── *.sql                     # Migraciones versionadas
+├── tests/
+│   └── view-variants.test.js     # Guard: ningún par PWA/desktop identical
+├── docs/
+│   └── superpowers/
+│       ├── specs/                # Diseños de features (brainstorm → spec)
+│       ├── plans/                # Planes de implementación
+│       └── audits/               # Auditorías del código
+├── .github/
+│   ├── CODEOWNERS                # Review routing
+│   ├── PULL_REQUEST_TEMPLATE.md  # Template obligatorio de PR
+│   ├── ISSUE_TEMPLATE/           # Bug + feature templates
+│   ├── workflows/ci.yml          # GitHub Actions CI
+│   └── dependabot.yml            # Auto-update de deps
+├── .githooks/
+│   └── pre-commit                # Hook local (instalar con `npm run hooks:install`)
+├── CLAUDE.md                     # Instrucciones arquitectónicas / reglas (leer primero)
+├── CONTRIBUTING.md               # Guía para workers/contribuidores
+├── SECURITY.md                   # Política de seguridad
+└── README.md                     # Este archivo
+```
+
+---
+
+## Roles de usuario
+
+| Rol | Accesos |
+|---|---|
+| `administrador` | Todo el sistema del tenant (dashboard, caja, mesas, cocina, ventas, almacén, productos, admin, usuarios, config, reportes, SUNAT, chat IA) |
+| `cajero` | Caja, facturación |
+| `mesero` | Mesas, cocina, facturación |
+| `cocinero` | Cocina |
+| `almacenero` | Almacén, productos, recetas |
+| `superadmin` | Panel del SaaS (todos los tenants, billing, observabilidad, solicitudes, cotizador, NDA, contratos) — menú separado del tenant |
+
+---
+
+## Para contribuir
+
+**Lee estos tres archivos antes de abrir tu primer PR:**
+
+1. [CONTRIBUTING.md](./CONTRIBUTING.md) — workflow de PRs, branch naming, reglas
+2. [SECURITY.md](./SECURITY.md) — reglas innegociables de seguridad
+3. [CLAUDE.md](./CLAUDE.md) — arquitectura, regla de variantes, reglas de seguridad detalladas
+
+**Resumen rápido:**
+- Toca **solo** los archivos de tu módulo asignado (ver [CODEOWNERS](./.github/CODEOWNERS))
+- Crea una rama con formato `<tipo>/<tu-nombre>-<descripcion>`
+- Pre-commit hook corre `npm test` automáticamente
+- Abre el PR con el template completo
+- Espera review de `@Leonidasx8` (y del AI reviewer automático)
+- **Jamás** push a `main` directamente
+
+---
+
+## Documentación adicional
+
+- [CLAUDE.md](./CLAUDE.md) — fuente de verdad de reglas arquitectónicas y de seguridad
+- [docs/superpowers/specs/](./docs/superpowers/specs/) — diseños de features nuevas
+- [docs/superpowers/plans/](./docs/superpowers/plans/) — planes de implementación
+- [docs/superpowers/audits/](./docs/superpowers/audits/) — auditorías de código
+- [UI.DELSISTEMA.pen](./UI.DELSISTEMA.pen) — archivo Pencil con 80+ pantallas diseñadas
+
+---
+
+## Reportar bugs o vulnerabilidades
+
+- **Bugs normales** → abre un issue con el template de bug
+- **Vulnerabilidades de seguridad** → **NO abras issue público**, lee [SECURITY.md](./SECURITY.md) y contacta a `@Leonidasx8` privado
+
+---
+
+## Licencia
+
+Propietario — `@Leonidasx8`. Uso interno del equipo MiRest con IA.
+
+---
+
+🤖 Última actualización: 2026-04-08

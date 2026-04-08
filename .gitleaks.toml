@@ -1,0 +1,56 @@
+# Gitleaks config for MiRest con IA
+# Scans every commit in CI for committed secrets.
+# Docs: https://github.com/gitleaks/gitleaks
+
+title = "MiRest con IA — gitleaks baseline"
+
+[extend]
+useDefault = true
+
+# Rules below augment the default ruleset with project-specific patterns.
+
+[[rules]]
+id = "mirestcon-database-url"
+description = "PostgreSQL/Supabase connection string with inline password"
+regex = '''postgres(?:ql)?:\/\/[^:\/\s]+:[^@\s]{6,}@[^\s"']+'''
+tags = ["database", "credentials"]
+
+[[rules]]
+id = "mirestcon-anthropic-key"
+description = "Anthropic API key"
+regex = '''sk-ant-[a-zA-Z0-9_-]{20,}'''
+tags = ["api", "credentials"]
+
+[[rules]]
+id = "mirestcon-openai-key"
+description = "OpenAI API key"
+regex = '''sk-[a-zA-Z0-9]{20,}'''
+tags = ["api", "credentials"]
+
+[[rules]]
+id = "mirestcon-meta-token"
+description = "Meta Graph API long-lived token"
+regex = '''EAA[A-Za-z0-9]{50,}'''
+tags = ["api", "credentials"]
+
+# Files to skip entirely (known-safe paths).
+[allowlist]
+paths = [
+  '''\.env\.example$''',
+  '''^docs/.*\.md$''',
+  '''^README\.md$''',
+  '''^CONTRIBUTING\.md$''',
+  '''^SECURITY\.md$''',
+  '''^CLAUDE\.md$''',
+  # Test fixtures with fake secrets
+  '''^tests/.*\.test\.js$''',
+  '''^lib/deviceRouter\.test\.js$''',
+  # Migrations reference schema names but never secrets
+  '''^migrations/.*\.sql$''',
+]
+regexes = [
+  # Allow the placeholder values in .env.example and docs
+  '''your-secret-here''',
+  '''changeme''',
+  '''example\.com''',
+]

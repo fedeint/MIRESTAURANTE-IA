@@ -1,0 +1,103 @@
+name: 🐛 Bug report
+description: Reportar algo que no funciona como debería
+title: "[Bug] "
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Gracias por reportar el bug. Llena este formulario para que podamos reproducirlo rápido.
+
+        **⚠️ Si es un problema de seguridad, NO lo reportes aquí — lee [SECURITY.md](../blob/main/SECURITY.md) y contacta directamente a @Leonidasx8 por canal privado.**
+
+  - type: textarea
+    id: descripcion
+    attributes:
+      label: ¿Qué pasó?
+      description: Describe el bug en 2-3 oraciones. Sé claro.
+      placeholder: "Cuando hago X, pasa Y pero debería pasar Z"
+    validations:
+      required: true
+
+  - type: textarea
+    id: pasos
+    attributes:
+      label: Pasos para reproducir
+      description: Lista exacta. Empieza desde login.
+      placeholder: |
+        1. Login con usuario admin
+        2. Ir a /caja
+        3. Click en "Nuevo cobro"
+        4. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: esperado
+    attributes:
+      label: Comportamiento esperado
+      placeholder: "Debería cobrar y abrir el recibo"
+    validations:
+      required: true
+
+  - type: textarea
+    id: real
+    attributes:
+      label: Comportamiento real
+      placeholder: "Se queda cargando y no hace nada"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: modulo
+    attributes:
+      label: Módulo afectado
+      options:
+        - Caja
+        - Cocina
+        - Mesas
+        - Delivery
+        - Productos
+        - Clientes
+        - Recetas
+        - Reportes
+        - Almacén
+        - Login / Auth
+        - Dashboard
+        - SUNAT
+        - Superadmin
+        - Otro
+    validations:
+      required: true
+
+  - type: dropdown
+    id: dispositivo
+    attributes:
+      label: Dispositivo donde lo viste
+      options:
+        - Desktop (Mac/Windows/Linux)
+        - Mobile (teléfono)
+        - Tablet (iPad/Android tablet)
+        - Los dos
+    validations:
+      required: true
+
+  - type: input
+    id: navegador
+    attributes:
+      label: Navegador y versión
+      placeholder: "Chrome 130 / Safari 17 / Firefox 120"
+    validations:
+      required: true
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots o video
+      description: Arrastra imágenes aquí. Si hay console errors, incluye screenshot del DevTools.
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Contexto adicional
+      description: ¿Pasa siempre o a veces? ¿Desde cuándo? ¿Hay un patrón?
