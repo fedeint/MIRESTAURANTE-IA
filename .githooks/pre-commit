@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Pre-commit hook: guard the desktop/PWA variant split.
+# Install with: npm run hooks:install
+set -e
+
+# Only run if any views/* or lib/deviceRouter* file is staged.
+if git diff --cached --name-only | grep -qE '^(views/|lib/deviceRouter)'; then
+    echo "[hooks] Variant changes detected — running view-variant tests..."
+    npm test
+    echo "[hooks] Variant tests passed."
+fi
