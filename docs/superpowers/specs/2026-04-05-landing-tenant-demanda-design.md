@@ -29,23 +29,30 @@ Stock almacen → DalIA analiza disponibilidad → Sugiere carta del dia
 
 ---
 
-## Concepto: "Abrir Cocina" vs "Abrir Caja"
+## Concepto: "Salimos al Aire" vs "Abrir Caja"
 
 Son dos momentos diferentes que no deben confundirse:
 
 | Accion | Tipo | Quien | Que activa |
 |--------|------|-------|------------|
 | Abrir caja | Administrativo | Admin/Cajero | Turno financiero, asignacion meseros |
-| Abrir cocina | Operativo/Marketing | Admin/Cocinero (confirma DalIA) | Landing publica, disponibilidad, WhatsApp broadcast |
+| Salir al aire | Marketing/Operativo | Admin (confirma DalIA) | Landing publica EN VIVO, disponibilidad, WhatsApp broadcast |
 
-**Flujo "Abrir Cocina":**
+**Metafora:** Como un canal de TV que empieza a transmitir. "Salimos al aire" = tu restaurante esta visible, activo, vendiendo. "Fuera del aire" = cerrado.
+
+**Estados:**
+- **EN VIVO** (badge rojo) — restaurante al aire, landing activa con menu del dia
+- **FUERA DEL AIRE** (badge gris) — cerrado, landing muestra "vuelve manana" + suscripcion
+- **PREPARANDO** (badge amarillo) — DalIA analizo stock, esperando confirmacion del admin
+
+**Flujo "Salimos al Aire":**
 
 1. DalIA ejecuta rutina pre-apertura (ya documentada en `antes-de-abrir.md`)
 2. Analiza stock actual via `services/disponibilidad.js`
 3. Muestra checklist: platos disponibles, platos sin insumos, sugerencias
-4. Admin confirma: "Si, estos platos salen hoy" (1 tap)
-5. Sistema marca `cocina_abierta = true` en el tenant
-6. Landing publica se actualiza con platos confirmados
+4. DalIA pregunta: "Buenos dias! Tu carta de hoy esta lista. ¿Salimos al aire?"
+5. Admin confirma (1 tap) → POST /api/al-aire/salir
+6. Landing publica se actualiza con platos confirmados, badge "EN VIVO"
 7. (Opcional) WhatsApp broadcast a suscriptores del menu diario
 
 ---
@@ -55,18 +62,18 @@ Son dos momentos diferentes que no deben confundirse:
 ### Nuevas tablas
 
 ```sql
--- Estado de cocina por tenant (diario)
-CREATE TABLE cocina_estado (
+-- Estado "al aire" por tenant (diario)
+CREATE TABLE al_aire (
   id SERIAL PRIMARY KEY,
   tenant_id INT NOT NULL REFERENCES tenants(id),
   fecha DATE NOT NULL DEFAULT CURRENT_DATE,
-  estado ENUM('cerrada', 'preparando', 'abierta') DEFAULT 'cerrada',
+  estado ENUM('fuera', 'preparando', 'en_vivo') DEFAULT 'fuera',
   platos_aprobados JSON, -- IDs de productos confirmados para hoy
   menu_dia JSON, -- {entrada: {id, nombre, emoji}, segundo: {...}, postre: {...}, precio: 12}
   combos_activos JSON, -- [{nombre, items, precio_original, precio_combo, descuento}]
-  abierta_por INT REFERENCES usuarios(id),
-  abierta_at TIMESTAMP,
-  cerrada_at TIMESTAMP,
+  al_aire_por INT REFERENCES usuarios(id),
+  al_aire_at TIMESTAMP,
+  fuera_at TIMESTAMP,
   broadcast_enviado BOOLEAN DEFAULT FALSE,
   broadcast_at TIMESTAMP,
   UNIQUE(tenant_id, fecha)
@@ -123,21 +130,21 @@ GET  /api/public/:slug/menu    → JSON: menu del dia + carta + combos + disponi
 GET  /api/public/:slug/equipo  → JSON: miembros del equipo publicos
 POST /api/public/:slug/suscribir → Suscribirse al menu diario
 
-# Rutas internas (con auth) — nuevo routes/cocina.js
-POST /api/cocina/abrir          → Confirmar carta y abrir cocina
-POST /api/cocina/cerrar         → Cerrar cocina
-GET  /api/cocina/estado         → Estado actual
-POST /api/cocina/broadcast      → Enviar menu del dia por WhatsApp
-PUT  /api/cocina/menu-dia       → Editar menu del dia manualmente
+# Rutas internas (con auth) — nuevo routes/al-aire.js
+POST /api/al-aire/salir           → Confirmar carta y salir al aire
+POST /api/al-aire/cerrar          → Fuera del aire
+GET  /api/al-aire/estado          → Estado actual (en_vivo/fuera/preparando)
+POST /api/al-aire/broadcast       → Enviar menu del dia por WhatsApp
+PUT  /api/al-aire/menu-dia        → Editar menu del dia manualmente
 ```
 
 ### Archivos nuevos
 
 ```
-routes/cocina.js              — Router "abrir/cerrar cocina"
+routes/al-aire.js              — Router "abrir/cerrar cocina"
 routes/landing-tenant.js      — Router landing publica
 views/landing-tenant.ejs      — Vista EJS de la landing
-services/cocina.js            — Logica de negocio cocina
+services/al-aire.js            — Logica de negocio cocina
 services/broadcast-menu.js    — Envio WhatsApp broadcast del menu
 public/css/landing-tenant.css — Estilos de la landing
 public/js/landing-tenant.js   — JS interactivo (agregar items, WhatsApp link)
@@ -149,7 +156,7 @@ public/js/landing-tenant.js   — JS interactivo (agregar items, WhatsApp link)
 services/disponibilidad.js   → Se usa para calcular platos disponibles hoy
 services/whatsapp-api.js     → Se usa para broadcast del menu diario
 middleware/tenant.js          → Resuelve tenant desde /:slug (ya existe)
-routes/caja.js               → Al abrir caja, DalIA sugiere abrir cocina si no esta abierta
+routes/caja.js               → Al abrir caja, DalIA sugiere "salir al aire" si aun no lo han hecho
 routes/productos.js          → GET /productos/carta alimenta el menu de la landing
 ```
 
@@ -160,12 +167,12 @@ routes/productos.js          → GET /productos/carta alimenta el menu de la lan
 ### 1. Hero
 
 - Imagen/gradiente de fondo del restaurante
-- Badge dinamico: "COCINA ABIERTA" (verde) / "CERRADA" (rojo) / "ABRE A LAS 11 AM" (amarillo)
+- Badge dinamico: "EN VIVO" (rojo pulso) / "FUERA DEL AIRE" (gris) / "PREPARANDO" (amarillo)
 - Horario de atencion (de `configuracion_impresion` o nuevo campo)
 - Nombre del restaurante + tagline
 - 2 CTAs: "Pedir por WhatsApp" (primario, naranja) + "Ver carta" (secundario, anchor #carta)
 
-**Datos de:** `tenants`, `configuracion_impresion`, `cocina_estado`
+**Datos de:** `tenants`, `configuracion_impresion`, `al_aire`
 
 ### 2. Menu del Dia (dinamico)
 
@@ -174,10 +181,10 @@ routes/productos.js          → GET /productos/carta alimenta el menu de la lan
 - Precio del menu (S/ XX)
 - Items: Entrada, Segundo, Postre+Refresco — cada uno con emoji, categoria, nombre
 - CTA: "Pedir este menu" (genera WhatsApp link) + "Recibir diario" (suscripcion)
-- **Solo visible cuando `cocina_estado.estado = 'abierta'` y hay menu_dia configurado**
-- Cuando cocina cerrada: muestra "Manana vuelve nuestro menu del dia" con CTA de suscripcion
+- **Solo visible cuando `al_aire.estado = 'en_vivo'` y hay menu_dia configurado**
+- Cuando fuera del aire: muestra "Manana vuelve nuestro menu del dia" con CTA de suscripcion
 
-**Datos de:** `cocina_estado.menu_dia`
+**Datos de:** `al_aire.menu_dia`
 
 ### 3. Nuestra Carta (a la carta)
 
@@ -197,9 +204,9 @@ routes/productos.js          → GET /productos/carta alimenta el menu de la lan
 - Cards con nombre, items incluidos, precio original tachado, precio combo, % descuento
 - Badge "X ACTIVAS"
 - CTA "Pedir" por combo
-- **Solo visible si hay combos activos en `cocina_estado.combos_activos`**
+- **Solo visible si hay combos activos en `al_aire.combos_activos`**
 
-**Datos de:** `cocina_estado.combos_activos`
+**Datos de:** `al_aire.combos_activos`
 
 ### 5. Juega y Gana Premios
 
@@ -276,17 +283,18 @@ Enviado desde mirestconia.com/corkys
           → Notifica admin: "Buenos dias! Hoy puedes ofrecer: [platos]. Confirmo?"
 
 07-10 AM  Admin confirma carta del dia (1 tap en dashboard o chat DalIA)
-          → POST /api/cocina/abrir
-          → Landing se actualiza automaticamente
+          → DalIA: "¿Salimos al aire?"
+          → Admin: "Si" → POST /api/al-aire/salir
+          → Landing se actualiza, badge "EN VIVO"
 
 09:00 AM  Broadcast del menu del dia a suscriptores WhatsApp
           → Usa services/whatsapp-api.js sendTemplate()
           → Template: imagen + menu + link a landing
-          → Se registra en cocina_estado.broadcast_enviado
+          → Se registra en al_aire.broadcast_enviado
 
 11 PM     Cierre automatico o manual
-          → POST /api/cocina/cerrar
-          → Landing muestra "Cerrado — vuelve manana"
+          → POST /api/al-aire/cerrar
+          → Landing muestra "FUERA DEL AIRE — vuelve manana"
           → Stats del dia se guardan
 ```
 
@@ -295,7 +303,7 @@ Enviado desde mirestconia.com/corkys
 El admin puede crear campanas desde el dashboard o por DalIA:
 - "Este viernes ceviche especial a S/ 20" → combo temporal
 - "Cumpleanos de clientes esta semana" → promo personalizada via WhatsApp
-- Estas se gestionan via `cocina_estado.combos_activos` y se muestran en la seccion de Ofertas
+- Estas se gestionan via `al_aire.combos_activos` y se muestran en la seccion de Ofertas
 
 ### Suscripcion al menu diario
 
@@ -370,11 +378,11 @@ El admin marca que miembros aparecen en la landing desde la seccion de equipo de
 
 ## Estados de la landing
 
-| Estado cocina | Hero badge | Menu del dia | Carta | Combos | Juegos |
+| Estado | Hero badge | Menu del dia | Carta | Combos | Juegos |
 |---|---|---|---|---|---|
-| Abierta | Verde "COCINA ABIERTA" | Visible con platos | Visible con disponibilidad | Visible si hay | Siempre |
-| Cerrada | Rojo "CERRADA" | "Manana vuelve..." + suscripcion | Visible sin disponibilidad | Oculta | Siempre |
-| Preparando | Amarillo "ABRE PRONTO" | "Estamos preparando..." | Visible sin disponibilidad | Oculta | Siempre |
+| EN VIVO | Rojo "EN VIVO" (pulso) | Visible con platos | Visible con disponibilidad | Visible si hay | Siempre |
+| FUERA DEL AIRE | Gris "FUERA DEL AIRE" | "Manana vuelve..." + suscripcion | Visible sin disponibilidad | Oculta | Siempre |
+| PREPARANDO | Amarillo "PREPARANDO" | "Estamos preparando..." | Visible sin disponibilidad | Oculta | Siempre |
 
 ---
 
