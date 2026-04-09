@@ -23,7 +23,7 @@ router.get('/', requireRole(['cocinero', 'mesero', 'administrador']), async (req
         res.render('cocina', { items: items || [] });
     } catch (error) {
         console.error('Error al cargar cocina:', error);
-        res.status(500).render('error', { error: { message: 'Error al cargar cocina', stack: error.stack } });
+        res.status(500).render('error', { error: { message: 'Error al cargar cocina', stack: process.env.NODE_ENV !== 'production' ? error.stack : null } });
     }
 });
 

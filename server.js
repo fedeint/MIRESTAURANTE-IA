@@ -1198,7 +1198,7 @@ app.use((err, req, res, next) => {
         res.status(500).render('error', {
             error: {
                 message: err.message || 'Error interno del servidor',
-                stack: err.stack || ''
+                stack: process.env.NODE_ENV !== 'production' ? (err.stack || '') : null
             }
         });
     }

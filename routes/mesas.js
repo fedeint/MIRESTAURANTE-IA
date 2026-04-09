@@ -233,7 +233,7 @@ router.get('/', async (req, res) => {
     } catch (error) {
         console.error('Error al cargar mesas:', error);
         res.status(500).render('error', {
-            error: { message: 'Error al cargar mesas', stack: error.stack }
+            error: { message: 'Error al cargar mesas', stack: process.env.NODE_ENV !== 'production' ? error.stack : null }
         });
     }
 });

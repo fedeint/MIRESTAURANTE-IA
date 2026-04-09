@@ -9,10 +9,10 @@ router.get('/', async (req, res) => {
         res.render('clientes', { clientes: clientes || [] });
     } catch (error) {
         console.error('Error al obtener clientes:', error);
-        res.status(500).render('error', { 
+        res.status(500).render('error', {
             error: {
                 message: 'Error al obtener clientes',
-                stack: error.stack
+                stack: process.env.NODE_ENV !== 'production' ? error.stack : null
             }
         });
     }
