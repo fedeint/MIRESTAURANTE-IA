@@ -53,10 +53,10 @@ router.get('/', async (req, res) => {
         res.render('productos', { productos: productos || [] });
     } catch (error) {
         console.error('Error al obtener productos:', error);
-        res.status(500).render('error', { 
+        res.status(500).render('error', {
             error: {
                 message: 'Error al obtener productos',
-                stack: error.stack
+                stack: process.env.NODE_ENV !== 'production' ? error.stack : null
             }
         });
     }
