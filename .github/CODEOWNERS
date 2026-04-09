@@ -11,7 +11,7 @@
 # también requieren la aprobación de @Leonidasx8 antes del merge a main
 # (configurado via Branch Protection Rules en la UI de GitHub).
 #
-# Última actualización: 2026-04-08
+# Última actualización: 2026-04-09
 
 # ============================================================================
 # DEFAULT — todo lo que no matchee después
@@ -36,42 +36,39 @@
 # ============================================================================
 # JONATHAN — Mesas
 # ============================================================================
-# TODO: reemplazar @jhonatan con el handle real
-/views/mesas.ejs                     @Leonidasx8 # TODO: @jhonatan
-/views/mesas-desktop.ejs             @Leonidasx8 # TODO: @jhonatan
-/views/mesa-ronda.ejs                @Leonidasx8 # TODO: @jhonatan
-/views/mesa-cuenta.ejs               @Leonidasx8 # TODO: @jhonatan
-/views/mesa-cobrar.ejs               @Leonidasx8 # TODO: @jhonatan
-/routes/mesas.js                     @Leonidasx8 # TODO: @jhonatan
-/public/js/mesas/                    @Leonidasx8 # TODO: @jhonatan
+/views/mesas.ejs                     @Leonidasx8 @shonperez
+/views/mesas-desktop.ejs             @Leonidasx8 @shonperez
+/views/mesa-ronda.ejs                @Leonidasx8 @shonperez
+/views/mesa-cuenta.ejs               @Leonidasx8 @shonperez
+/views/mesa-cobrar.ejs               @Leonidasx8 @shonperez
+/routes/mesas.js                     @Leonidasx8 @shonperez
+/public/js/mesas/                    @Leonidasx8 @shonperez
 
 # ============================================================================
 # IAN MIGUEL — Delivery + Productos
 # ============================================================================
-# TODO: reemplazar @ian-miguel con el handle real
-/views/delivery.ejs                  @Leonidasx8 # TODO: @ian-miguel
-/views/delivery-desktop.ejs          @Leonidasx8 # TODO: @ian-miguel
-/views/delivery-config.ejs           @Leonidasx8 # TODO: @ian-miguel
-/views/productos.ejs                 @Leonidasx8 # TODO: @ian-miguel
-/views/productos-desktop.ejs         @Leonidasx8 # TODO: @ian-miguel
-/views/ranking.ejs                   @Leonidasx8 # TODO: @ian-miguel
-/routes/delivery.js                  @Leonidasx8 # TODO: @ian-miguel
-/routes/productos.js                 @Leonidasx8 # TODO: @ian-miguel
-/public/js/delivery/                 @Leonidasx8 # TODO: @ian-miguel
-/public/js/productos/                @Leonidasx8 # TODO: @ian-miguel
+/views/delivery.ejs                  @Leonidasx8 @IanMiguelLM
+/views/delivery-desktop.ejs          @Leonidasx8 @IanMiguelLM
+/views/delivery-config.ejs           @Leonidasx8 @IanMiguelLM
+/views/productos.ejs                 @Leonidasx8 @IanMiguelLM
+/views/productos-desktop.ejs         @Leonidasx8 @IanMiguelLM
+/views/ranking.ejs                   @Leonidasx8 @IanMiguelLM
+/routes/delivery.js                  @Leonidasx8 @IanMiguelLM
+/routes/productos.js                 @Leonidasx8 @IanMiguelLM
+/public/js/delivery/                 @Leonidasx8 @IanMiguelLM
+/public/js/productos/                @Leonidasx8 @IanMiguelLM
 
 # ============================================================================
 # BRUCE — Clientes + Recetas
 # ============================================================================
-# Handle conocido: @brucev030
-/views/clientes.ejs                  @Leonidasx8 @brucev030
-/views/clientes-desktop.ejs          @Leonidasx8 @brucev030
-/views/recetas-standalone.ejs        @Leonidasx8 @brucev030
-/views/recetas-desktop.ejs           @Leonidasx8 @brucev030
-/routes/clientes.js                  @Leonidasx8 @brucev030
-/routes/recetas.js                   @Leonidasx8 @brucev030
-/public/js/clientes/                 @Leonidasx8 @brucev030
-/public/js/recetas/                  @Leonidasx8 @brucev030
+/views/clientes.ejs                  @Leonidasx8 @BruceVilla-91
+/views/clientes-desktop.ejs          @Leonidasx8 @BruceVilla-91
+/views/recetas-standalone.ejs        @Leonidasx8 @BruceVilla-91
+/views/recetas-desktop.ejs           @Leonidasx8 @BruceVilla-91
+/routes/clientes.js                  @Leonidasx8 @BruceVilla-91
+/routes/recetas.js                   @Leonidasx8 @BruceVilla-91
+/public/js/clientes/                 @Leonidasx8 @BruceVilla-91
+/public/js/recetas/                  @Leonidasx8 @BruceVilla-91
 
 # ============================================================================
 # DANIEL — Reportes + Almacén
