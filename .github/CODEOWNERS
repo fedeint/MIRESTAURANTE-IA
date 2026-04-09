@@ -21,17 +21,16 @@
 # ============================================================================
 # ANTHONY PULGAR — Caja + Cocina
 # ============================================================================
-# TODO: reemplazar @anthony-pulgar con el handle real
-/views/caja.ejs                      @Leonidasx8 # TODO: @anthony-pulgar
-/views/caja-desktop.ejs              @Leonidasx8 # TODO: @anthony-pulgar
-/views/cocina.ejs                    @Leonidasx8 # TODO: @anthony-pulgar
-/views/cocina-desktop.ejs            @Leonidasx8 # TODO: @anthony-pulgar
-/views/cocina-display.ejs            @Leonidasx8 # TODO: @anthony-pulgar
-/views/comanda.ejs                   @Leonidasx8 # TODO: @anthony-pulgar
-/routes/caja.js                      @Leonidasx8 # TODO: @anthony-pulgar
-/routes/cocina.js                    @Leonidasx8 # TODO: @anthony-pulgar
-/public/js/caja/                     @Leonidasx8 # TODO: @anthony-pulgar
-/public/js/cocina/                   @Leonidasx8 # TODO: @anthony-pulgar
+/views/caja.ejs                      @Leonidasx8 @fedeint
+/views/caja-desktop.ejs              @Leonidasx8 @fedeint
+/views/cocina.ejs                    @Leonidasx8 @fedeint
+/views/cocina-desktop.ejs            @Leonidasx8 @fedeint
+/views/cocina-display.ejs            @Leonidasx8 @fedeint
+/views/comanda.ejs                   @Leonidasx8 @fedeint
+/routes/caja.js                      @Leonidasx8 @fedeint
+/routes/cocina.js                    @Leonidasx8 @fedeint
+/public/js/caja/                     @Leonidasx8 @fedeint
+/public/js/cocina/                   @Leonidasx8 @fedeint
 
 # ============================================================================
 # JONATHAN — Mesas
@@ -73,14 +72,13 @@
 # ============================================================================
 # DANIEL — Reportes + Almacén
 # ============================================================================
-# TODO: reemplazar @daniel con el handle real
-/views/reportes.ejs                  @Leonidasx8 # TODO: @daniel
-/views/reportes-desktop.ejs          @Leonidasx8 # TODO: @daniel
-/views/almacen/                      @Leonidasx8 # TODO: @daniel
-/routes/reportes.js                  @Leonidasx8 # TODO: @daniel
-/routes/almacen.js                   @Leonidasx8 # TODO: @daniel
-/public/js/almacen/                  @Leonidasx8 # TODO: @daniel
-/public/js/reportes/                 @Leonidasx8 # TODO: @daniel
+/views/reportes.ejs                  @Leonidasx8 @danielcharcape17-cpu
+/views/reportes-desktop.ejs          @Leonidasx8 @danielcharcape17-cpu
+/views/almacen/                      @Leonidasx8 @danielcharcape17-cpu
+/routes/reportes.js                  @Leonidasx8 @danielcharcape17-cpu
+/routes/almacen.js                   @Leonidasx8 @danielcharcape17-cpu
+/public/js/almacen/                  @Leonidasx8 @danielcharcape17-cpu
+/public/js/reportes/                 @Leonidasx8 @danielcharcape17-cpu
 
 # ============================================================================
 # ARCHIVOS CRÍTICOS — SOLO @Leonidasx8 puede mergear
