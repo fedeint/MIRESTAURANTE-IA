@@ -46,16 +46,16 @@
 # ============================================================================
 # IAN MIGUEL — Delivery + Productos
 # ============================================================================
-/views/delivery.ejs                  @Leonidasx8 @IanMiguelLM
-/views/delivery-desktop.ejs          @Leonidasx8 @IanMiguelLM
-/views/delivery-config.ejs           @Leonidasx8 @IanMiguelLM
-/views/productos.ejs                 @Leonidasx8 @IanMiguelLM
-/views/productos-desktop.ejs         @Leonidasx8 @IanMiguelLM
-/views/ranking.ejs                   @Leonidasx8 @IanMiguelLM
-/routes/delivery.js                  @Leonidasx8 @IanMiguelLM
-/routes/productos.js                 @Leonidasx8 @IanMiguelLM
-/public/js/delivery/                 @Leonidasx8 @IanMiguelLM
-/public/js/productos/                @Leonidasx8 @IanMiguelLM
+/views/delivery.ejs                  @Leonidasx8 @IanMiguelBG
+/views/delivery-desktop.ejs          @Leonidasx8 @IanMiguelBG
+/views/delivery-config.ejs           @Leonidasx8 @IanMiguelBG
+/views/productos.ejs                 @Leonidasx8 @IanMiguelBG
+/views/productos-desktop.ejs         @Leonidasx8 @IanMiguelBG
+/views/ranking.ejs                   @Leonidasx8 @IanMiguelBG
+/routes/delivery.js                  @Leonidasx8 @IanMiguelBG
+/routes/productos.js                 @Leonidasx8 @IanMiguelBG
+/public/js/delivery/                 @Leonidasx8 @IanMiguelBG
+/public/js/productos/                @Leonidasx8 @IanMiguelBG
 
 # ============================================================================
 # BRUCE — Clientes + Recetas
