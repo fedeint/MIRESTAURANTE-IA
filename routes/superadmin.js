@@ -972,17 +972,6 @@ const VAULT_RP_ID     = process.env.WEBAUTHN_RP_ID  || 'mirestconia.com';
 const VAULT_ORIGIN    = process.env.WEBAUTHN_ORIGIN  || 'https://mirestconia.com';
 const VAULT_TOKEN_TTL = 30 * 60 * 1000; // 30 min
 
-// In-memory short-lived tokens: token → { userId, expiresAt }
-const vaultSessions = new Map();
-
-// Purge expired tokens every 5 min
-setInterval(() => {
-  const now = Date.now();
-  for (const [t, v] of vaultSessions) {
-    if (v.expiresAt < now) vaultSessions.delete(t);
-  }
-}, 5 * 60 * 1000);
-
 // AES-256-GCM helpers -------------------------------------------------------
 function vaultKey() {
   const secret = process.env.VAULT_SECRET;
@@ -1013,16 +1002,15 @@ function decryptVault(encrypted) {
   return decipher.update(Buffer.from(data, 'base64')) + decipher.final('utf8');
 }
 
-// Middleware: validate x-vault-token header
+// Middleware: validate x-vault-token against session (session is in Postgres, safe on Vercel)
 function requireVaultToken(req, res, next) {
   const token = req.headers['x-vault-token'];
   if (!token) return res.status(401).json({ error: 'Vault token requerido' });
-  const session = vaultSessions.get(token);
-  if (!session || session.expiresAt < Date.now()) {
-    vaultSessions.delete(token);
+  const vault = req.session?.vault;
+  if (!vault || vault.token !== token || vault.expiresAt < Date.now()) {
     return res.status(401).json({ error: 'Vault token expirado' });
   }
-  req.vaultUserId = session.userId;
+  req.vaultUserId = vault.userId;
   next();
 }
 
@@ -1119,9 +1107,10 @@ router.post('/boveda/auth/verify', async (req, res) => {
     );
     await db.query('DELETE FROM webauthn_challenges WHERE user_id = ?', [user.id]);
 
-    // Issue vault session token
+    // Issue vault session token — stored in Postgres-backed session (safe on Vercel multi-instance)
     const token = crypto.randomBytes(32).toString('hex');
-    vaultSessions.set(token, { userId: user.id, expiresAt: Date.now() + VAULT_TOKEN_TTL });
+    req.session.vault = { token, userId: user.id, expiresAt: Date.now() + VAULT_TOKEN_TTL };
+    await new Promise((resolve, reject) => req.session.save(err => err ? reject(err) : resolve()));
 
     res.json({ ok: true, token });
   } catch (err) {
