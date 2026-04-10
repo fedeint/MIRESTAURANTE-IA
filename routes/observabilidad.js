@@ -695,8 +695,8 @@ router.get('/api/negocio', async (req, res) => {
       )
       for (const s of snapshots) {
         if (s.tipo === 'mrr') result.kpis.mrr = s.datos?.mrr ?? s.datos ?? 0
-        if (s.tipo === 'tenants_activos_7d') result.kpis.tenants_activos = s.datos?.total ?? s.datos ?? 0
-        if (s.tipo === 'operaciones_hoy') result.kpis.ventas_hoy = s.datos?.total ?? s.datos ?? 0
+        if (s.tipo === 'tenants_activos_7d') result.kpis.tenants_activos = s.datos?.count ?? s.datos?.total ?? 0
+        if (s.tipo === 'operaciones_hoy') result.kpis.ventas_hoy = s.datos?.facturas?.hoy ?? s.datos?.pedidos?.hoy ?? s.datos?.total ?? 0
         if (s.tipo === 'churn_mensual') result.kpis.churn = s.datos?.churn ?? s.datos ?? 0
       }
     } catch (_) {}
