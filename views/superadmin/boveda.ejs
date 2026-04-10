@@ -179,8 +179,8 @@
       <span class="bio-label">Primera vez — activa la biometría para esta bóveda</span>
     </button>
 
-    <div id="lockStatus" style="font-size:12px;color:#64748b;display:none;">Verificando biometría…</div>
-    <div id="lockError" style="font-size:12px;color:#ef4444;display:none;"></div>
+    <div id="lockStatus" style="font-size:13px;color:#94a3b8;display:none;padding:8px 16px;background:rgba(255,255,255,0.04);border-radius:10px;"></div>
+    <div id="lockError" style="font-size:13px;color:#ef4444;display:none;padding:10px 16px;background:rgba(239,68,68,0.08);border-radius:10px;border:1px solid rgba(239,68,68,0.2);max-width:280px;text-align:center;"></div>
   </div>
 
   <!-- VAULT SCREEN -->
@@ -268,6 +268,7 @@ const CAT_COLORS = { correos:'rgba(99,102,241,0.2)', servidores:'rgba(249,115,22
 // Al cargar: detecta si hay biometría registrada
 document.addEventListener('DOMContentLoaded', async () => {
   const statusEl = document.getElementById('lockStatus');
+  statusEl.textContent = 'Verificando biometría disponible…';
   statusEl.style.display = 'block';
   try {
     const r = await fetch('/superadmin/boveda/auth/options');
@@ -286,7 +287,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 async function registrar() {
   const errEl = document.getElementById('lockError');
+  const statusEl = document.getElementById('lockStatus');
+  const btn = document.getElementById('btnRegistrar');
   errEl.style.display = 'none';
+  if (!navigator.credentials) {
+    errEl.textContent = 'Tu navegador no soporta biometría. Usa Chrome o Safari modernos.';
+    errEl.style.display = 'block';
+    return;
+  }
+  btn.disabled = true;
+  btn.style.opacity = '0.6';
+  statusEl.textContent = 'Preparando registro…';
+  statusEl.style.display = 'block';
   try {
     const optRes = await fetch('/auth/webauthn/register/options');
     if (!optRes.ok) throw new Error((await optRes.json()).error || 'Error');
@@ -298,7 +310,9 @@ async function registrar() {
       options.excludeCredentials = options.excludeCredentials.map(c => ({ ...c, id: base64ToBuffer(c.id) }));
     }
 
+    statusEl.textContent = 'Esperando tu huella o Face ID…';
     const credential = await navigator.credentials.create({ publicKey: options });
+    statusEl.textContent = 'Guardando credencial…';
     const body = {
       id: credential.id,
       rawId: bufferToBase64(credential.rawId),
@@ -316,18 +330,35 @@ async function registrar() {
     if (!verRes.ok) throw new Error(verData.error || 'Registro fallido');
 
     // Registro exitoso — ahora desbloquea
+    statusEl.textContent = 'Registro exitoso. Desbloqueando…';
     document.getElementById('btnRegistrar').style.display = 'none';
     document.getElementById('btnUnlock').style.display = 'flex';
     await autenticar();
   } catch(e) {
-    errEl.textContent = e.name === 'NotAllowedError' ? 'Cancelado — vuelve a intentarlo' : e.message;
+    statusEl.style.display = 'none';
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    errEl.textContent = e.name === 'NotAllowedError'
+      ? 'Cancelado — vuelve a intentarlo'
+      : (e.message || e.name || 'Error al registrar biometría');
     errEl.style.display = 'block';
   }
 }
 
 async function autenticar() {
   const errEl = document.getElementById('lockError');
+  const statusEl = document.getElementById('lockStatus');
+  const btn = document.getElementById('btnUnlock');
   errEl.style.display = 'none';
+  if (!navigator.credentials) {
+    errEl.textContent = 'Tu navegador no soporta biometría. Usa Chrome o Safari modernos.';
+    errEl.style.display = 'block';
+    return;
+  }
+  btn.disabled = true;
+  btn.style.opacity = '0.6';
+  statusEl.textContent = 'Conectando…';
+  statusEl.style.display = 'block';
   try {
     const optRes = await fetch('/superadmin/boveda/auth/options');
     const options = await optRes.json();
@@ -338,7 +369,9 @@ async function autenticar() {
       ...c, id: base64ToBuffer(c.id)
     }));
 
+    statusEl.textContent = 'Esperando tu huella o Face ID…';
     const assertion = await navigator.credentials.get({ publicKey: options });
+    statusEl.textContent = 'Verificando…';
     const body = {
       id: assertion.id,
       rawId: bufferToBase64(assertion.rawId),
@@ -358,14 +391,16 @@ async function autenticar() {
     const verData = await verRes.json();
     if (!verRes.ok) throw new Error(verData.error || 'Verificación fallida');
 
+    statusEl.style.display = 'none';
     sessionToken = verData.token;
     desbloquear();
   } catch(e) {
-    if (e.name === 'NotAllowedError') {
-      errEl.textContent = 'Autenticación cancelada o no disponible en este dispositivo';
-    } else {
-      errEl.textContent = e.message;
-    }
+    statusEl.style.display = 'none';
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    errEl.textContent = e.name === 'NotAllowedError'
+      ? 'Autenticación cancelada o no disponible en este dispositivo'
+      : (e.message || e.name || 'Error al verificar biometría');
     errEl.style.display = 'block';
   }
 }
