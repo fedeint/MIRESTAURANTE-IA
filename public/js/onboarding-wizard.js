@@ -393,6 +393,31 @@ function submitWizard() {
 // ============= Mobile DalIA Toggle =============
 
 document.addEventListener('DOMContentLoaded', function () {
+  // Wire navigation buttons (replaces inline onclick blocked by CSP)
+  const btnPrev = document.getElementById('btn-prev');
+  const btnNext = document.getElementById('btn-next');
+  const btnSubmit = document.getElementById('btn-submit');
+  if (btnPrev) btnPrev.addEventListener('click', function () { wizardNav(-1); });
+  if (btnNext) btnNext.addEventListener('click', function () { wizardNav(1); });
+  if (btnSubmit) btnSubmit.addEventListener('click', function () { submitWizard(); });
+
+  // Wire staff checkboxes (replaces inline onchange blocked by CSP)
+  [
+    ['crear-mesero',     'mesero-fields'],
+    ['crear-cocinero',   'cocinero-fields'],
+    ['crear-cajero',     'cajero-fields'],
+    ['crear-almacenero', 'almacenero-fields'],
+  ].forEach(function ([cbId, fieldsId]) {
+    const cb = document.getElementById(cbId);
+    const fields = document.getElementById(fieldsId);
+    if (cb && fields) {
+      cb.addEventListener('change', function () {
+        fields.classList.toggle('d-none');
+      });
+    }
+  });
+
+  // DalIA mobile toggle
   const toggle = document.getElementById('dalia-mobile-toggle');
   const overlay = document.getElementById('dalia-mobile-overlay');
   const panel = document.getElementById('dalia-panel');
