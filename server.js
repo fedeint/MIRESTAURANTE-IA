@@ -612,6 +612,7 @@ app.get('/api/health', async (req, res) => {
 // Ruta principal - Dashboard (requiere login)
 app.get('/', requireAuth, async (req, res) => {
     const rol = String(req.session?.user?.rol || '').toLowerCase();
+    if (rol === 'superadmin') return res.redirect('/superadmin');
     if (rol === 'cocinero') return res.redirect('/cocina');
 
     // ---- MESERO dashboard ----

@@ -1,6 +1,7 @@
 <%# Superadmin mobile pill bottom nav — include in all superadmin pages.
-    Set activeTab before including: e.g. <% var activeTab = 'inicio' %> <%- include('../partials/superadmin-mobile-nav') %>
-    Valid values: inicio | tenants | solicitudes | mensajes | mas %>
+    Set activeTab before including, then include this partial.
+    Valid values: inicio | tenants | solicitudes | mensajes | mas
+%>
 <style>
   @media (max-width: 768px) {
     .dg-main { padding-bottom: calc(90px + env(safe-area-inset-bottom, 0px)) !important; }
