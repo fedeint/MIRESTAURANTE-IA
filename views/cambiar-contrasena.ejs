@@ -35,6 +35,7 @@
         </div>
       <% } %>
       <form method="POST" action="/cambiar-contrasena" autocomplete="off">
+        <input type="hidden" name="_csrf" value="<%= locals.csrfToken || '' %>">
         <div style="margin-bottom:16px;">
           <label style="font-size:13px;font-weight:600;color:#64748b;display:block;margin-bottom:6px;">Nueva contraseña</label>
           <div style="position:relative;">

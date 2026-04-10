@@ -264,6 +264,7 @@
         </div>
       <% } %>
       <form method="POST" action="/login" autocomplete="off">
+        <input type="hidden" name="_csrf" value="<%= locals.csrfToken || '' %>">
         <label>Usuario</label>
         <input type="text" name="usuario" class="field-input" placeholder="Tu usuario" required autofocus>
         <label>Contraseña</label>
@@ -325,6 +326,7 @@
         <% } %>
 
         <form method="POST" action="/login" autocomplete="off" class="login-form">
+          <input type="hidden" name="_csrf" value="<%= locals.csrfToken || '' %>">
           <div>
             <label for="usuario" class="field-label">Usuario</label>
             <input name="usuario" id="usuario" class="field-input" required autofocus placeholder="Tu usuario">

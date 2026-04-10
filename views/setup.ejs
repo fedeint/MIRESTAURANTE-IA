@@ -45,6 +45,7 @@
               <% } %>
 
               <form method="POST" action="/setup" autocomplete="off">
+                <input type="hidden" name="_csrf" value="<%= locals.csrfToken || '' %>">
                 <div class="row g-2">
                   <div class="col-12">
                     <label class="form-label">Usuario</label>
