@@ -426,6 +426,17 @@ app.use('/api/pedidos', pedidosRoutes);
 app.get('/login', csrfTokenGen);
 app.get('/setup', csrfTokenGen);
 app.get('/cambiar-contrasena', csrfTokenGen);
+// DEBUG: temporary endpoint to inspect req.body on POST
+app.post('/__debug_csrf', (req, res) => {
+    res.json({
+        contentType: req.headers['content-type'],
+        bodyKeys: Object.keys(req.body || {}),
+        bodyCsrf: (req.body && req.body._csrf) ? req.body._csrf.substring(0, 30) + '...' : null,
+        bodyRaw: JSON.stringify(req.body).substring(0, 500),
+        cookies: Object.keys(req.cookies || {}),
+        csrfCookie: req.cookies?.__csrf ? req.cookies.__csrf.substring(0, 30) + '...' : null,
+    });
+});
 app.post('/login', loginLimiter, csrfProtection); // rate limit + CSRF
 app.post('/setup', csrfProtection);
 app.post('/cambiar-contrasena', csrfProtection);
