@@ -958,4 +958,255 @@ router.post('/solicitudes/:id/info', async (req, res) => {
   }
 });
 
+// ===========================================================================
+// BÓVEDA DE CONTRASEÑAS — /superadmin/boveda
+// Cifrado AES-256-GCM server-side. Acceso protegido por biometría WebAuthn.
+// ===========================================================================
+
+const {
+  generateAuthenticationOptions: genAuthOpts,
+  verifyAuthenticationResponse: verifyAuthResp,
+} = require('@simplewebauthn/server');
+
+const VAULT_RP_ID     = process.env.WEBAUTHN_RP_ID  || 'mirestconia.com';
+const VAULT_ORIGIN    = process.env.WEBAUTHN_ORIGIN  || 'https://mirestconia.com';
+const VAULT_TOKEN_TTL = 30 * 60 * 1000; // 30 min
+
+// In-memory short-lived tokens: token → { userId, expiresAt }
+const vaultSessions = new Map();
+
+// Purge expired tokens every 5 min
+setInterval(() => {
+  const now = Date.now();
+  for (const [t, v] of vaultSessions) {
+    if (v.expiresAt < now) vaultSessions.delete(t);
+  }
+}, 5 * 60 * 1000);
+
+// AES-256-GCM helpers -------------------------------------------------------
+function vaultKey() {
+  const secret = process.env.VAULT_SECRET;
+  if (!secret) throw new Error('VAULT_SECRET no configurado');
+  return crypto.createHash('sha256').update(secret).digest(); // 32 bytes
+}
+
+function encryptVault(plaintext) {
+  const iv  = crypto.randomBytes(12);
+  const key = vaultKey();
+  const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
+  const data   = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
+  const tag    = cipher.getAuthTag();
+  return JSON.stringify({
+    iv:   iv.toString('base64'),
+    tag:  tag.toString('base64'),
+    data: data.toString('base64'),
+  });
+}
+
+function decryptVault(encrypted) {
+  const { iv, tag, data } = JSON.parse(encrypted);
+  const key = vaultKey();
+  const decipher = crypto.createDecipheriv(
+    'aes-256-gcm', key, Buffer.from(iv, 'base64')
+  );
+  decipher.setAuthTag(Buffer.from(tag, 'base64'));
+  return decipher.update(Buffer.from(data, 'base64')) + decipher.final('utf8');
+}
+
+// Middleware: validate x-vault-token header
+function requireVaultToken(req, res, next) {
+  const token = req.headers['x-vault-token'];
+  if (!token) return res.status(401).json({ error: 'Vault token requerido' });
+  const session = vaultSessions.get(token);
+  if (!session || session.expiresAt < Date.now()) {
+    vaultSessions.delete(token);
+    return res.status(401).json({ error: 'Vault token expirado' });
+  }
+  req.vaultUserId = session.userId;
+  next();
+}
+
+// GET /superadmin/boveda — render view
+const { renderForDevice } = require('../lib/deviceRouter');
+router.get('/boveda', (req, res) => {
+  renderForDevice(req, res, 'superadmin/boveda', {});
+});
+
+// GET /superadmin/boveda/auth/options — WebAuthn challenge for vault unlock
+router.get('/boveda/auth/options', async (req, res) => {
+  try {
+    const user = req.session?.user;
+    if (!user) return res.status(401).json({ error: 'No autenticado' });
+
+    const [creds] = await db.query(
+      'SELECT credential_id FROM webauthn_credentials WHERE user_id = ?',
+      [user.id]
+    );
+
+    if (!creds || creds.length === 0) {
+      return res.status(404).json({ error: 'Sin biometría registrada. Ve a Perfil → Seguridad para activarla.' });
+    }
+
+    const allowCredentials = creds.map(c => ({
+      id: c.credential_id,
+      type: 'public-key',
+    }));
+
+    const options = await genAuthOpts({
+      rpID: VAULT_RP_ID,
+      allowCredentials,
+      userVerification: 'required',
+    });
+
+    // Store challenge scoped with prefix so it doesn't collide with login challenges
+    await db.query(
+      `INSERT INTO webauthn_challenges (user_id, challenge, expires_at)
+       VALUES (?, ?, NOW() + INTERVAL '5 minutes')
+       ON CONFLICT (user_id) DO UPDATE SET challenge = EXCLUDED.challenge, expires_at = EXCLUDED.expires_at`,
+      [user.id, 'vault::' + options.challenge]
+    );
+
+    options._userId = user.id;
+    res.json(options);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /superadmin/boveda/auth/verify — verify biometric → vault token
+router.post('/boveda/auth/verify', async (req, res) => {
+  try {
+    const user = req.session?.user;
+    if (!user) return res.status(401).json({ error: 'No autenticado' });
+
+    const [[challengeRow]] = await db.query(
+      `SELECT challenge FROM webauthn_challenges WHERE user_id = ? AND expires_at > NOW()`,
+      [user.id]
+    );
+    if (!challengeRow) return res.status(400).json({ error: 'Challenge expirado' });
+
+    const rawChallenge = challengeRow.challenge.replace(/^vault::/, '');
+
+    const [[cred]] = await db.query(
+      `SELECT credential_id, public_key, sign_count
+       FROM webauthn_credentials WHERE user_id = ? LIMIT 1`,
+      [user.id]
+    );
+    if (!cred) return res.status(404).json({ error: 'Sin credencial biométrica' });
+
+    const verification = await verifyAuthResp({
+      response: req.body,
+      expectedChallenge: rawChallenge,
+      expectedOrigin: VAULT_ORIGIN,
+      expectedRPID: VAULT_RP_ID,
+      credential: {
+        id: cred.credential_id,
+        publicKey: cred.public_key instanceof Buffer
+          ? cred.public_key
+          : Buffer.from(cred.public_key),
+        counter: cred.sign_count || 0,
+      },
+    });
+
+    if (!verification.verified) {
+      return res.status(401).json({ error: 'Biometría no verificada' });
+    }
+
+    // Update sign count
+    await db.query(
+      'UPDATE webauthn_credentials SET sign_count = ? WHERE user_id = ?',
+      [verification.authenticationInfo?.newCounter ?? 0, user.id]
+    );
+    await db.query('DELETE FROM webauthn_challenges WHERE user_id = ?', [user.id]);
+
+    // Issue vault session token
+    const token = crypto.randomBytes(32).toString('hex');
+    vaultSessions.set(token, { userId: user.id, expiresAt: Date.now() + VAULT_TOKEN_TTL });
+
+    res.json({ ok: true, token });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /superadmin/boveda/items — list all items (decrypted metadata, NOT password)
+router.get('/boveda/items', requireVaultToken, async (req, res) => {
+  try {
+    const [rows] = await db.query(
+      `SELECT id, categoria, titulo, usuario, url, notas, created_at, updated_at
+       FROM vault_items ORDER BY categoria, titulo`
+    );
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /superadmin/boveda/items/:id — full item with decrypted password
+router.get('/boveda/items/:id', requireVaultToken, async (req, res) => {
+  try {
+    const [[row]] = await db.query(
+      'SELECT * FROM vault_items WHERE id = ?',
+      [Number(req.params.id)]
+    );
+    if (!row) return res.status(404).json({ error: 'Item no encontrado' });
+
+    const plaintext = decryptVault(row.encrypted);
+    const { password } = JSON.parse(plaintext);
+    res.json({ ...row, encrypted: undefined, password });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// POST /superadmin/boveda/items — create item
+router.post('/boveda/items', requireVaultToken, async (req, res) => {
+  try {
+    const { categoria, titulo, usuario, url, notas, password } = req.body;
+    if (!titulo) return res.status(400).json({ error: 'titulo requerido' });
+
+    const encrypted = encryptVault(JSON.stringify({ password: password || '' }));
+
+    const [rows] = await db.query(
+      `INSERT INTO vault_items (categoria, titulo, usuario, encrypted, url, notas)
+       VALUES (?, ?, ?, ?, ?, ?) RETURNING id`,
+      [categoria || 'otros', titulo, usuario || null, encrypted, url || null, notas || null]
+    );
+    res.json({ ok: true, id: rows.insertId || rows[0]?.id });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PUT /superadmin/boveda/items/:id — update item
+router.put('/boveda/items/:id', requireVaultToken, async (req, res) => {
+  try {
+    const id = Number(req.params.id);
+    const { categoria, titulo, usuario, url, notas, password } = req.body;
+    if (!titulo) return res.status(400).json({ error: 'titulo requerido' });
+
+    const encrypted = encryptVault(JSON.stringify({ password: password || '' }));
+
+    await db.query(
+      `UPDATE vault_items SET categoria = ?, titulo = ?, usuario = ?,
+       encrypted = ?, url = ?, notas = ?, updated_at = NOW()
+       WHERE id = ?`,
+      [categoria || 'otros', titulo, usuario || null, encrypted, url || null, notas || null, id]
+    );
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// DELETE /superadmin/boveda/items/:id — delete item
+router.delete('/boveda/items/:id', requireVaultToken, async (req, res) => {
+  try {
+    await db.query('DELETE FROM vault_items WHERE id = ?', [Number(req.params.id)]);
+    res.json({ ok: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
