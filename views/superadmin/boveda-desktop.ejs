@@ -10,12 +10,13 @@
   <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
   <link rel="stylesheet" href="/css/theme.css">
   <style>
-    body { background: #0f172a; font-family: 'Inter', sans-serif; overflow: hidden; }
+    body { background: #0f172a; font-family: 'Inter', sans-serif; }
 
     /* LOCK */
     .lock-overlay {
-      position: fixed; inset: 0; background: #0f172a;
-      display: flex; align-items: center; justify-content: center; z-index: 100;
+      position: absolute; inset: 0; background: #0f172a;
+      display: flex; align-items: center; justify-content: center; z-index: 10;
+      min-height: 100vh;
     }
     .lock-card {
       background: #1e2235; border-radius: 24px; padding: 48px;
@@ -37,7 +38,7 @@
 
     /* VAULT LAYOUT */
     .vault-layout {
-      display: none; height: 100vh; flex-direction: column;
+      display: none; min-height: 100vh; flex-direction: column;
     }
     .vault-topbar {
       height: 52px; background: #1e2235; border-bottom: 1px solid rgba(255,255,255,0.06);
@@ -143,6 +144,8 @@
   </style>
 </head>
 <body>
+<%- include('../partials/sidebar') %>
+<div class="dg-main" style="position:relative;">
 
 <!-- LOCK -->
 <div class="lock-overlay" id="lockOverlay">
@@ -516,5 +519,6 @@ function escAttr(s) { return String(s||'').replace(/'/g,'&#39;').replace(/"/g,'&
 function base64ToBuffer(b64) { const bin = atob(b64.replace(/-/g,'+').replace(/_/g,'/')); return Uint8Array.from(bin, c => c.charCodeAt(0)).buffer; }
 function bufferToBase64(buf) { return btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,''); }
 </script>
+</div><!-- /.dg-main -->
 </body>
 </html>
