@@ -426,7 +426,14 @@ app.use('/api/pedidos', pedidosRoutes);
 app.get('/login', csrfTokenGen);
 app.get('/setup', csrfTokenGen);
 app.get('/cambiar-contrasena', csrfTokenGen);
-// DEBUG: reproduce csrf-csrf HMAC computation manually
+// DEBUG: run library validation AND manual HMAC in same request
+const { validateRequest: _debugLibValidate } = doubleCsrf({
+    getSecret: () => process.env.SESSION_SECRET || 'dev-csrf-secret',
+    getSessionIdentifier: () => 'static-csrf-session',
+    cookieName: '__csrf',
+    cookieOptions: { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: '/' },
+    getTokenFromRequest: (req) => req.body._csrf || req.headers['x-csrf-token'],
+});
 app.post('/__debug_csrf', (req, res) => {
     const crypto = require('crypto');
     const secret = process.env.SESSION_SECRET || 'dev-csrf-secret';
@@ -436,16 +443,16 @@ app.post('/__debug_csrf', (req, res) => {
     const [hmacFromCookie, randomValue] = cookie.split('.');
     const message = `${sessionId.length}!${sessionId}!${randomValue?.length || 0}!${randomValue || ''}`;
     const expected = crypto.createHmac('sha256', secret).update(message).digest('hex');
+    let libResult = null;
+    let libError = null;
+    try { libResult = _debugLibValidate(req); } catch (e) { libError = e.message; }
     res.json({
-        cookieLen: cookie.length,
-        formLen: formToken.length,
         identical: cookie === formToken,
-        hmacFromCookie,
-        randomValue,
-        computedMessage: message,
-        computedHmac: expected,
         hmacMatches: hmacFromCookie === expected,
-        secretLen: secret.length,
+        libraryValidation: libResult,
+        libraryError: libError,
+        cookieSample: cookie.substring(0, 20),
+        formSample: formToken.substring(0, 20),
     });
 });
 app.post('/login', loginLimiter, csrfProtection); // rate limit + CSRF
