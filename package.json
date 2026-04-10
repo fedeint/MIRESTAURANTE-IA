@@ -31,7 +31,8 @@
     "setup:local": "bash scripts/setup-local.sh",
     "sync:to-cloud": "node scripts/sync-to-cloud.js",
     "sync:from-cloud": "node scripts/sync-from-cloud.js",
-    "sync:from-cloud:full": "node scripts/sync-from-cloud.js --full"
+    "sync:from-cloud:full": "node scripts/sync-from-cloud.js --full",
+    "test": "node --test tests/dallia-actions.test.js"
   },
   "dependencies": {
     "@andresaya/edge-tts": "^1.8.0",
