@@ -402,14 +402,15 @@ document.addEventListener('DOMContentLoaded', function () {
   if (btnSubmit) btnSubmit.addEventListener('click', function () { submitWizard(); });
 
   // Wire staff checkboxes (replaces inline onchange blocked by CSP)
-  [
+  var staffPairs = [
     ['crear-mesero',     'mesero-fields'],
     ['crear-cocinero',   'cocinero-fields'],
     ['crear-cajero',     'cajero-fields'],
     ['crear-almacenero', 'almacenero-fields'],
-  ].forEach(function ([cbId, fieldsId]) {
-    const cb = document.getElementById(cbId);
-    const fields = document.getElementById(fieldsId);
+  ];
+  staffPairs.forEach(function (pair) {
+    var cb = document.getElementById(pair[0]);
+    var fields = document.getElementById(pair[1]);
     if (cb && fields) {
       cb.addEventListener('change', function () {
         fields.classList.toggle('d-none');
