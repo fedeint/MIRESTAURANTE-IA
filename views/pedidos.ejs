@@ -32,7 +32,7 @@
             margin: 0 auto;
             min-height: 100dvh;
             position: relative;
-            padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+            padding-bottom: calc(90px + env(safe-area-inset-bottom, 0px));
         }
 
         /* ===== HEADER ===== */
@@ -155,9 +155,25 @@
             flex-shrink: 0;
         }
         .ped-card__body { flex: 1; min-width: 0; }
-        .ped-card__name { font-size: 15px; font-weight: 700; color: #0a0f24; }
-        .ped-card__sub { font-size: 12px; color: #8B8FAD; margin-top: 3px; }
+        .ped-card__name { font-size: 14px; font-weight: 700; color: #0a0f24; }
+        .ped-card__sub { font-size: 12px; color: #8B8FAD; margin-top: 2px; }
+        .ped-card__time { font-size: 11px; font-weight: 500; margin-top: 2px; }
+        .ped-card__time--fresh { color: #22C55E; }
+        .ped-card__time--warn { color: #F97316; }
+        .ped-card__time--late { color: #EF4444; }
         .ped-card__total { font-size: 15px; font-weight: 800; color: #0a0f24; align-self: center; flex-shrink: 0; }
+        .ped-card__status {
+            font-size: 10px;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 999px;
+            align-self: center;
+            flex-shrink: 0;
+            white-space: nowrap;
+        }
+        .ped-card__status--pending { background: #FFF7ED; color: #c2410c; }
+        .ped-card__status--ready { background: #dcfce7; color: #166534; }
+        .ped-card__status--delivered { background: #EEF2FF; color: #4338CA; }
 
         /* Empty state */
         .empty-state {
@@ -189,7 +205,7 @@
             z-index: 20;
         }
 
-        /* Bottom nav (reused pattern from dashboard.ejs) */
+        /* Bottom nav — pill style */
         .bottom-nav {
             position: fixed;
             bottom: 0;
@@ -197,23 +213,37 @@
             transform: translateX(-50%);
             width: 100%;
             max-width: 480px;
-            background: #0a0f24;
-            padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+            background: #fff;
+            padding: 8px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+            z-index: 100;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+        }
+        .nav-pill {
+            background: linear-gradient(180deg, #10152f 0%, #0a0f24 55%, #090d1d 100%);
+            border-radius: 36px;
+            padding: 4px;
             display: flex;
-            justify-content: space-around;
-            border-radius: 20px 20px 0 0;
+            height: 62px;
         }
         .bottom-nav a {
-            color: #8B8FAD;
-            text-decoration: none;
-            font-size: 10px;
+            flex: 1;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 4px;
+            justify-content: center;
+            text-decoration: none;
+            font-size: 9px;
+            font-weight: 600;
+            color: #8B8FAD;
+            gap: 2px;
+            border-radius: 26px;
         }
-        .bottom-nav a i { font-size: 20px; }
-        .bottom-nav a.active { color: #ef520f; }
+        .bottom-nav a i { font-size: 18px; }
+        .bottom-nav a.active {
+            background: linear-gradient(135deg, #fefbf5, #fdb75e 4%, #fd9931 9%, #ef520f 38%, #df2c05 79%, #ee6d2d 100%);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(223,44,5,0.24), 0 8px 16px rgba(239,82,15,0.18);
+        }
     </style>
 </head>
 <body>
@@ -279,14 +309,20 @@
                         <div class="empty-state__subtitle">Toca el boton + para registrar uno nuevo.</div>
                     </div>
                 <% } else { %>
-                    <% deliveries.forEach(function(d){ %>
+                    <% deliveries.forEach(function(d){
+                        var minutos = d.created_at ? Math.round((Date.now() - new Date(d.created_at).getTime()) / 60000) : null;
+                        var timeClass = minutos === null ? '' : minutos < 20 ? 'ped-card__time--fresh' : minutos < 40 ? 'ped-card__time--warn' : 'ped-card__time--late';
+                        var statusClass = d.estado === 'entregado' ? 'ped-card__status--delivered' : d.estado === 'listo' ? 'ped-card__status--ready' : 'ped-card__status--pending';
+                        var statusLabel = d.estado === 'entregado' ? 'Entregado' : d.estado === 'listo' ? 'Listo' : 'En camino';
+                    %>
                         <div class="ped-card">
                             <div class="ped-card__icon"><i class="bi bi-bicycle"></i></div>
                             <div class="ped-card__body">
                                 <div class="ped-card__name"><%= d.cliente_nombre || 'Sin nombre' %></div>
-                                <div class="ped-card__sub"><%= d.direccion_entrega || '' %></div>
+                                <div class="ped-card__sub">Pedido #<%= d.id || '' %> · S/ <%= Number(d.total || 0).toFixed(2) %></div>
+                                <% if (minutos !== null) { %><div class="ped-card__time <%= timeClass %>">hace <%= minutos %> min</div><% } %>
                             </div>
-                            <div class="ped-card__total">S/ <%= Number(d.total || 0).toFixed(2) %></div>
+                            <div class="ped-card__status <%= statusClass %>"><%= statusLabel %></div>
                         </div>
                     <% }) %>
                 <% } %>
@@ -302,14 +338,19 @@
                         <div class="empty-state__subtitle">Registra aqui las ordenes a recoger.</div>
                     </div>
                 <% } else { %>
-                    <% paraLlevar.forEach(function(p){ %>
+                    <% paraLlevar.forEach(function(p){
+                        var minutos = p.created_at ? Math.round((Date.now() - new Date(p.created_at).getTime()) / 60000) : null;
+                        var timeClass = minutos === null ? '' : minutos < 20 ? 'ped-card__time--fresh' : minutos < 40 ? 'ped-card__time--warn' : 'ped-card__time--late';
+                        var isListo = p.listo_para_recojo;
+                    %>
                         <div class="ped-card">
                             <div class="ped-card__icon"><i class="bi bi-bag-fill"></i></div>
                             <div class="ped-card__body">
                                 <div class="ped-card__name"><%= p.cliente_nombre_recojo || 'Sin nombre' %></div>
-                                <div class="ped-card__sub"><%= p.listo_para_recojo ? 'Listo para recoger' : 'Preparando' %></div>
+                                <div class="ped-card__sub">Pedido #<%= p.id || '' %> · S/ <%= Number(p.total || 0).toFixed(2) %></div>
+                                <% if (minutos !== null) { %><div class="ped-card__time <%= timeClass %>">hace <%= minutos %> min</div><% } %>
                             </div>
-                            <div class="ped-card__total">S/ <%= Number(p.total || 0).toFixed(2) %></div>
+                            <div class="ped-card__status <%= isListo ? 'ped-card__status--ready' : 'ped-card__status--pending' %>"><%= isListo ? 'Listo' : 'Preparando' %></div>
                         </div>
                     <% }) %>
                 <% } %>
@@ -321,11 +362,13 @@
         </button>
 
         <nav class="bottom-nav">
-            <a href="/"><i class="bi bi-house"></i>INICIO</a>
-            <a href="/pedidos" class="active"><i class="bi bi-receipt"></i>PEDIDOS</a>
-            <a href="/cocina"><i class="bi bi-fire"></i>COCINA</a>
-            <a href="/caja"><i class="bi bi-wallet2"></i>CAJA</a>
-            <a href="/mas"><i class="bi bi-three-dots"></i>MAS</a>
+            <div class="nav-pill">
+                <a href="/dashboard"><i class="bi bi-house"></i>INICIO</a>
+                <a href="/pedidos" class="active"><i class="bi bi-receipt"></i>PEDIDOS</a>
+                <a href="/cocina-display"><i class="bi bi-fire"></i>COCINA</a>
+                <a href="/caja"><i class="bi bi-wallet2"></i>CAJA</a>
+                <a href="/configuracion"><i class="bi bi-three-dots"></i>MÁS</a>
+            </div>
         </nav>
     </div>
 

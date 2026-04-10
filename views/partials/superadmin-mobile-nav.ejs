@@ -1,0 +1,73 @@
+<%# Superadmin mobile pill bottom nav — include in all superadmin pages.
+    Set activeTab before including: e.g. <% var activeTab = 'inicio' %> <%- include('../partials/superadmin-mobile-nav') %>
+    Valid values: inicio | tenants | solicitudes | mensajes | mas %>
+<style>
+  @media (max-width: 768px) {
+    .dg-main { padding-bottom: calc(90px + env(safe-area-inset-bottom, 0px)) !important; }
+    .sa-mobile-nav {
+      display: flex !important;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: #fff;
+      padding: 8px 16px calc(16px + env(safe-area-inset-bottom, 0px));
+      z-index: 1050;
+      box-shadow: 0 -4px 20px rgba(0,0,0,0.15);
+    }
+    .sa-nav-pill {
+      background: linear-gradient(180deg, #10152f 0%, #0a0f24 55%, #090d1d 100%);
+      border-radius: 36px;
+      padding: 4px;
+      display: flex;
+      height: 62px;
+      width: 100%;
+    }
+    .sa-nav-tab {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 8px;
+      font-weight: 600;
+      color: #8B8FAD;
+      gap: 2px;
+      border-radius: 26px;
+    }
+    .sa-nav-tab i { font-size: 18px; }
+    .sa-nav-tab.active {
+      background: linear-gradient(135deg, #fefbf5, #fdb75e 4%, #fd9931 9%, #ef520f 38%, #df2c05 79%, #ee6d2d 100%);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(223,44,5,0.24), 0 8px 16px rgba(239,82,15,0.18);
+    }
+  }
+  .sa-mobile-nav { display: none; }
+</style>
+
+<nav class="sa-mobile-nav">
+  <div class="sa-nav-pill">
+    <a href="/superadmin" class="sa-nav-tab <%= (typeof activeTab !== 'undefined' && activeTab === 'inicio') ? 'active' : '' %>">
+      <i class="bi bi-house"></i>
+      <span>INICIO</span>
+    </a>
+    <a href="/superadmin/tenants" class="sa-nav-tab <%= (typeof activeTab !== 'undefined' && activeTab === 'tenants') ? 'active' : '' %>">
+      <i class="bi bi-building"></i>
+      <span>TENANTS</span>
+    </a>
+    <a href="/superadmin/solicitudes" class="sa-nav-tab <%= (typeof activeTab !== 'undefined' && activeTab === 'solicitudes') ? 'active' : '' %>">
+      <i class="bi bi-inbox"></i>
+      <span>SOLICITUDES</span>
+    </a>
+    <a href="/superadmin/correos" class="sa-nav-tab <%= (typeof activeTab !== 'undefined' && activeTab === 'mensajes') ? 'active' : '' %>">
+      <i class="bi bi-envelope-fill"></i>
+      <span>MENSAJES</span>
+    </a>
+    <a href="/superadmin/observabilidad" class="sa-nav-tab <%= (typeof activeTab !== 'undefined' && activeTab === 'mas') ? 'active' : '' %>">
+      <i class="bi bi-three-dots"></i>
+      <span>MÁS</span>
+    </a>
+  </div>
+</nav>

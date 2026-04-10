@@ -1,0 +1,324 @@
+<%# @variant: desktop %>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Correos — MiRestcon</title>
+  <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+  <link rel="stylesheet" href="/css/theme.css">
+  <style>
+    body { background: #f8f6f0; font-family: 'Inter', sans-serif; }
+
+    /* LAYOUT 3 COLUMNAS */
+    .mail-shell {
+      display: flex; height: 100vh; overflow: hidden;
+    }
+
+    /* SIDEBAR CUENTAS */
+    .mail-sidebar {
+      width: 220px; flex-shrink: 0;
+      background: #1e2235; border-right: 1px solid rgba(255,255,255,0.06);
+      display: flex; flex-direction: column;
+      padding: 16px 0;
+    }
+    .mail-sidebar-title {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 1.5px; color: #475569; padding: 0 16px 10px;
+    }
+    .acc-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 16px; cursor: pointer; transition: background .15s;
+      border-left: 3px solid transparent;
+    }
+    .acc-item:hover { background: rgba(255,255,255,0.04); }
+    .acc-item.active {
+      background: rgba(249,115,22,0.1);
+      border-left-color: #f97316;
+    }
+    .acc-icon {
+      width: 32px; height: 32px; border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; color: #fff; flex-shrink: 0;
+    }
+    .acc-info { flex: 1; min-width: 0; }
+    .acc-name { font-size: 12px; font-weight: 600; color: #cbd5e1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .acc-email-label { font-size: 10px; color: #475569; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .acc-badge {
+      background: #f97316; color: #fff; font-size: 9px; font-weight: 700;
+      padding: 1px 6px; border-radius: 8px; min-width: 18px; text-align: center;
+      display: none;
+    }
+    .acc-badge.show { display: inline-block; }
+
+    /* LISTA DE CORREOS */
+    .mail-list-col {
+      width: 340px; flex-shrink: 0;
+      background: #1a1f30; border-right: 1px solid rgba(255,255,255,0.06);
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    .mail-list-header {
+      padding: 14px 16px 10px; border-bottom: 1px solid rgba(255,255,255,0.06);
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .mail-list-title { font-size: 13px; font-weight: 700; color: #fff; }
+    .mail-list-count { font-size: 11px; color: #475569; }
+    .mail-list-body { flex: 1; overflow-y: auto; scrollbar-width: thin; }
+    .mail-row {
+      padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.04);
+      cursor: pointer; transition: background .15s; display: flex; gap: 10px;
+    }
+    .mail-row:hover { background: rgba(255,255,255,0.03); }
+    .mail-row.selected { background: rgba(249,115,22,0.08); border-left: 3px solid #f97316; }
+    .mail-row.unread .mail-row-subject { font-weight: 700; color: #fff; }
+    .mail-row-avatar {
+      width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700; color: #fff;
+    }
+    .mail-row-body { flex: 1; min-width: 0; }
+    .mail-row-from { font-size: 12px; font-weight: 600; color: #cbd5e1; }
+    .mail-row-subject { font-size: 11px; color: #94a3b8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mail-row-preview { font-size: 10px; color: #475569; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .mail-row-meta { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; flex-shrink: 0; }
+    .mail-row-time { font-size: 10px; color: #475569; }
+    .mail-row-dot { width: 6px; height: 6px; border-radius: 50%; background: #f97316; }
+
+    /* PANEL DE LECTURA */
+    .mail-reader {
+      flex: 1; display: flex; flex-direction: column; overflow: hidden;
+      background: #fff; border-radius: 12px 0 0 0;
+    }
+    .reader-toolbar {
+      padding: 14px 24px; border-bottom: 1px solid #f0f0f0;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .reader-empty {
+      flex: 1; display: flex; flex-direction: column; align-items: center;
+      justify-content: center; gap: 10px; color: #94a3b8;
+    }
+    .reader-empty i { font-size: 56px; color: #e2e8f0; }
+    .reader-body { flex: 1; padding: 28px 32px; overflow-y: auto; }
+    .reader-from { font-size: 12px; color: #64748b; margin-bottom: 4px; }
+    .reader-subject { font-size: 20px; font-weight: 700; color: #1e293b; margin-bottom: 16px; }
+    .reader-content { font-size: 13px; color: #334155; line-height: 1.7; white-space: pre-wrap; }
+
+    /* COMPOSE */
+    .compose-btn {
+      margin: 12px 16px 0; padding: 9px 16px; border-radius: 10px;
+      background: linear-gradient(135deg, #ef520f, #df2c05);
+      border: none; color: #fff; font-size: 12px; font-weight: 600;
+      cursor: pointer; display: flex; align-items: center; gap: 6px;
+      justify-content: center; transition: opacity .15s;
+    }
+    .compose-btn:hover { opacity: .9; }
+
+    /* LOADING / EMPTY */
+    .state-box {
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center; height: 100%; gap: 8px; color: #475569;
+    }
+    .spinner-sm {
+      width: 20px; height: 20px; border-radius: 50%;
+      border: 2px solid rgba(249,115,22,0.2); border-top-color: #f97316;
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* HEADER */
+    .page-header {
+      background: #1e2235; border-bottom: 1px solid rgba(255,255,255,0.06);
+      padding: 10px 20px; display: flex; align-items: center; gap: 12px;
+    }
+    .page-header-title { font-size: 15px; font-weight: 700; color: #fff; }
+    .page-header-sub { font-size: 11px; color: #475569; margin-left: auto; }
+  </style>
+</head>
+<body>
+
+<div class="d-flex flex-column" style="height:100vh;">
+
+  <!-- Top header -->
+  <div class="page-header">
+    <a href="/superadmin" style="color:#475569;text-decoration:none;font-size:13px;">
+      <i class="bi bi-arrow-left"></i>
+    </a>
+    <i class="bi bi-envelope-fill" style="color:#f97316;font-size:16px;"></i>
+    <span class="page-header-title">Correos Centralizados</span>
+    <span class="page-header-sub">mirestconia.com · <%= cuentas.length %> cuentas</span>
+    <button class="btn btn-sm" style="border:1px solid rgba(255,255,255,0.1);color:#94a3b8;font-size:11px;" onclick="recargar()">
+      <i class="bi bi-arrow-clockwise"></i> Recargar
+    </button>
+  </div>
+
+  <!-- 3-column shell -->
+  <div class="mail-shell flex-grow-1">
+
+    <!-- COLUMNA 1: Cuentas -->
+    <div class="mail-sidebar">
+      <div class="mail-sidebar-title">Cuentas</div>
+
+      <button class="compose-btn" onclick="abrirCompose()">
+        <i class="bi bi-pencil-square"></i> Redactar
+      </button>
+
+      <div style="margin-top:16px;">
+        <% const BG = ['#6366f1','#f97316','#22c55e','#ec4899','#3b82f6','#a855f7','#14b8a6']; %>
+        <% cuentas.forEach((c, i) => { %>
+        <div class="acc-item <%= i === 0 ? 'active' : '' %>"
+          data-cuenta="<%= c.email %>"
+          onclick="selectCuenta('<%= c.email %>', this)">
+          <div class="acc-icon" style="background:<%= BG[i % BG.length] %>">
+            <i class="bi bi-<%= c.icon %>"></i>
+          </div>
+          <div class="acc-info">
+            <div class="acc-name"><%= c.alias %></div>
+            <div class="acc-email-label"><%= c.email %></div>
+          </div>
+          <span class="acc-badge" id="badge-<%= i %>"></span>
+        </div>
+        <% }) %>
+      </div>
+    </div>
+
+    <!-- COLUMNA 2: Lista de correos -->
+    <div class="mail-list-col">
+      <div class="mail-list-header">
+        <span class="mail-list-title" id="listTitle">Bandeja de entrada</span>
+        <span class="mail-list-count" id="listCount"></span>
+      </div>
+      <div class="mail-list-body" id="mailList">
+        <div class="state-box">
+          <div class="spinner-sm"></div>
+          <span style="font-size:12px;">Cargando...</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- COLUMNA 3: Lector -->
+    <div class="mail-reader" id="mailReader">
+      <div class="reader-empty">
+        <i class="bi bi-envelope-open"></i>
+        <div style="font-size:14px;font-weight:600;">Selecciona un correo</div>
+        <div style="font-size:12px;">Elige un mensaje de la lista para leerlo</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+let currentCuenta = '<%= cuentas[0]?.email %>';
+let selectedUid = null;
+const COLORS = ['#6366f1','#f97316','#22c55e','#ec4899','#3b82f6','#a855f7','#14b8a6'];
+
+async function selectCuenta(email, el) {
+  document.querySelectorAll('.acc-item').forEach(a => a.classList.remove('active'));
+  el.classList.add('active');
+  currentCuenta = email;
+  selectedUid = null;
+  resetReader();
+  await cargarCorreos(email);
+}
+
+async function cargarCorreos(email) {
+  const list = document.getElementById('mailList');
+  const count = document.getElementById('listCount');
+  list.innerHTML = '<div class="state-box"><div class="spinner-sm"></div><span style="font-size:12px;">Cargando...</span></div>';
+  try {
+    const r = await fetch(`/superadmin/correos/inbox?cuenta=${encodeURIComponent(email)}`);
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.error || 'Error');
+    const mails = data.mensajes || [];
+    count.textContent = `${mails.length} mensajes`;
+    renderMailList(mails);
+  } catch(e) {
+    list.innerHTML = `<div class="state-box">
+      <i class="bi bi-wifi-off" style="font-size:32px;color:#1e2235;"></i>
+      <div style="font-size:12px;color:#64748b;">${e.message}</div>
+    </div>`;
+  }
+}
+
+function renderMailList(mails) {
+  const list = document.getElementById('mailList');
+  if (!mails.length) {
+    list.innerHTML = '<div class="state-box"><i class="bi bi-inbox" style="font-size:32px;color:#1e2235;"></i><div style="font-size:12px;">Bandeja vacía</div></div>';
+    return;
+  }
+  list.innerHTML = mails.map((m, i) => `
+    <div class="mail-row ${m.unread ? 'unread' : ''}" onclick="verCorreo(${m.uid}, this)">
+      <div class="mail-row-avatar" style="background:${COLORS[i % COLORS.length]}">${(m.from||'?')[0].toUpperCase()}</div>
+      <div class="mail-row-body">
+        <div class="mail-row-from">${escHtml(m.from)}</div>
+        <div class="mail-row-subject">${escHtml(m.subject || '(Sin asunto)')}</div>
+        <div class="mail-row-preview">${escHtml(m.preview || '')}</div>
+      </div>
+      <div class="mail-row-meta">
+        <span class="mail-row-time">${m.date}</span>
+        ${m.unread ? '<div class="mail-row-dot"></div>' : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+async function verCorreo(uid, el) {
+  document.querySelectorAll('.mail-row').forEach(r => r.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedUid = uid;
+  const reader = document.getElementById('mailReader');
+  reader.innerHTML = '<div class="reader-empty"><div class="spinner-sm"></div></div>';
+  try {
+    const r = await fetch(`/superadmin/correos/ver-json?cuenta=${encodeURIComponent(currentCuenta)}&uid=${uid}`);
+    const m = await r.json();
+    if (!r.ok) throw new Error(m.error || 'Error');
+    reader.innerHTML = `
+      <div class="reader-toolbar">
+        <button class="btn btn-sm" style="border:1px solid #f0f0f0;font-size:11px;" onclick="resetReader()">
+          <i class="bi bi-arrow-left"></i>
+        </button>
+        <span style="font-size:12px;color:#64748b;">${escHtml(currentCuenta)}</span>
+        <button class="btn btn-sm ms-auto" style="border:1px solid #f0f0f0;font-size:11px;" onclick="responder(${uid})">
+          <i class="bi bi-reply"></i> Responder
+        </button>
+      </div>
+      <div class="reader-body">
+        <div class="reader-from">De: ${escHtml(m.from)} · ${m.date}</div>
+        <div class="reader-subject">${escHtml(m.subject || '(Sin asunto)')}</div>
+        <div class="reader-content">${escHtml(m.body || '')}</div>
+      </div>
+    `;
+  } catch(e) {
+    reader.innerHTML = `<div class="reader-empty"><i class="bi bi-exclamation-circle" style="font-size:40px;color:#e2e8f0;"></i><div style="font-size:13px;">${e.message}</div></div>`;
+  }
+}
+
+function resetReader() {
+  document.getElementById('mailReader').innerHTML = `
+    <div class="reader-empty">
+      <i class="bi bi-envelope-open"></i>
+      <div style="font-size:14px;font-weight:600;">Selecciona un correo</div>
+      <div style="font-size:12px;">Elige un mensaje de la lista para leerlo</div>
+    </div>`;
+}
+
+function abrirCompose() {
+  window.location.href = `/superadmin/correos/nuevo?de=${encodeURIComponent(currentCuenta)}`;
+}
+
+function responder(uid) {
+  window.location.href = `/superadmin/correos/nuevo?de=${encodeURIComponent(currentCuenta)}&reply=${uid}`;
+}
+
+function recargar() { cargarCorreos(currentCuenta); }
+
+function escHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+cargarCorreos(currentCuenta);
+</script>
+</body>
+</html>
