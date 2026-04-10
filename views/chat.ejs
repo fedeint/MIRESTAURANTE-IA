@@ -767,12 +767,6 @@
             if (el) el.remove();
         }
 
-        function escapeHtml(s) {
-            var d = document.createElement('div');
-            d.textContent = s;
-            return d.innerHTML;
-        }
-
         function formatAI(text) {
             var html = escapeHtml(text);
             html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
@@ -1182,10 +1176,10 @@
             }
 
             html += '<div class="action-card-buttons">' +
-                '<button class="btn btn-primary" onclick="approveAction(' + card.logId + ', this)">' +
+                '<button class="btn btn-primary" onclick="approveAction(this)">' +
                     '<i class="bi bi-check-circle"></i> Aprobar y enviar' +
                 '</button>' +
-                '<button class="btn btn-outline-secondary" onclick="rejectAction(' + card.logId + ', this)">' +
+                '<button class="btn btn-outline-secondary" onclick="rejectAction(this)">' +
                     'Cancelar' +
                 '</button>' +
             '</div>' +
@@ -1199,8 +1193,9 @@
             }
         }
 
-        async function approveAction(logId, btn) {
+        async function approveAction(btn) {
             var card = btn.closest('.action-card');
+            var logId = card.dataset.logId;
             var statusDiv = card.querySelector('.action-card-status');
             btn.disabled = true;
             statusDiv.textContent = 'Enviando…';
@@ -1225,8 +1220,9 @@
             }
         }
 
-        async function rejectAction(logId, btn) {
+        async function rejectAction(btn) {
             var card = btn.closest('.action-card');
+            var logId = card.dataset.logId;
             var statusDiv = card.querySelector('.action-card-status');
             try {
                 await fetch('/api/chat/action/' + logId + '/reject', { method: 'POST' });
