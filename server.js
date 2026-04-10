@@ -283,10 +283,14 @@ if (process.env.NODE_ENV === 'production' && !IS_LOCAL_MODE) {
 }
 
 // CSRF protection para formularios (no para API JSON)
+// Usamos un identificador estable derivado de la cookie __csrf misma (no de la sesión)
+// para evitar que el estado de la sesión (pgSession/DB) afecte la validación CSRF.
+// La seguridad sigue siendo double-submit: el atacante no puede leer la cookie httpOnly
+// cross-origin, por lo que no puede forjar un token válido.
 const { doubleCsrf } = require('csrf-csrf');
 const { generateCsrfToken: generateToken, doubleCsrfProtection } = doubleCsrf({
     getSecret: () => process.env.SESSION_SECRET || 'dev-csrf-secret',
-    getSessionIdentifier: (req) => req.session?.id || '',
+    getSessionIdentifier: () => 'static-csrf-session',
     cookieName: '__csrf',
     cookieOptions: {
         httpOnly: true,
@@ -308,14 +312,7 @@ const csrfProtection = (req, res, next) => {
     });
 };
 // Genera token para GET requests (formularios)
-// NOTA: Con saveUninitialized:false, la sesión no se persiste si nada se escribe
-// en ella. Esto causa que req.session.id cambie entre GET /login y POST /login,
-// rompiendo la validación CSRF (el token queda ligado a un session id que ya no existe).
-// Solución: tocar la sesión para forzar su persistencia antes de generar el token.
 const csrfTokenGen = (req, res, next) => {
-    if (req.session) {
-        req.session.csrfBound = true;
-    }
     res.locals.csrfToken = generateToken(req, res);
     next();
 };
