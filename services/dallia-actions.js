@@ -134,3 +134,10 @@ module.exports = {
     executeApproved,
     rejectProposal
 };
+
+// Auto-register known handlers (lazy require to avoid circular deps)
+try {
+    register(require('./dallia-actions/enviar-pedido-proveedor'));
+} catch (err) {
+    console.error('Failed to register dallia-actions handler:', err.message);
+}
