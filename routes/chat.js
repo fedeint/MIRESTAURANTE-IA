@@ -429,8 +429,8 @@ router.post('/', async (req, res) => {
     }
 
     const { mensaje, historial } = req.body;
-    // Use session role (secure) — ignore client-sent rol
-    const rol = req.session?.user?.rol || req.body.rol || '';
+    // Use session role (secure) — never trust client-sent rol
+    const rol = req.session?.user?.rol || '';
     if (!mensaje || !String(mensaje).trim()) {
         return res.status(400).json({ error: 'Mensaje requerido' });
     }
