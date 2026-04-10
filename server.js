@@ -282,34 +282,63 @@ if (process.env.NODE_ENV === 'production' && !IS_LOCAL_MODE) {
     });
 }
 
-// CSRF protection para formularios (no para API JSON)
-// Usamos un identificador estable derivado de la cookie __csrf misma (no de la sesión)
-// para evitar que el estado de la sesión (pgSession/DB) afecte la validación CSRF.
-// La seguridad sigue siendo double-submit: el atacante no puede leer la cookie httpOnly
-// cross-origin, por lo que no puede forjar un token válido.
-const { doubleCsrf } = require('csrf-csrf');
-const { generateCsrfToken: generateToken, doubleCsrfProtection } = doubleCsrf({
-    getSecret: () => process.env.SESSION_SECRET || 'dev-csrf-secret',
-    getSessionIdentifier: () => 'static-csrf-session',
-    cookieName: '__csrf',
-    cookieOptions: {
-        httpOnly: true,
-        sameSite: 'lax',
-        secure: process.env.NODE_ENV === 'production',
-        path: '/',
-    },
-    getTokenFromRequest: (req) => req.body._csrf || req.headers['x-csrf-token'],
-});
-// Middleware que genera el token y lo pone en res.locals para EJS
+// CSRF protection para formularios (no para API JSON).
+// Implementación manual del patrón double-submit con HMAC.
+// Se reemplazó la librería csrf-csrf porque su validateRequest fallaba silenciosamente
+// incluso cuando la cookie y el token del form eran idénticos y el HMAC era válido
+// (comprobado con debug endpoint). La lógica aquí es equivalente y está bajo nuestro control.
+const crypto = require('crypto');
+const CSRF_COOKIE_NAME = '__csrf';
+const CSRF_STATIC_ID = 'static-csrf-session';
+const CSRF_TOKEN_SIZE = 32;
+function csrfSecret() { return process.env.SESSION_SECRET || 'dev-csrf-secret'; }
+function csrfBuildMessage(randomValue) {
+    return `${CSRF_STATIC_ID.length}!${CSRF_STATIC_ID}!${randomValue.length}!${randomValue}`;
+}
+function csrfGenerateToken() {
+    const randomValue = crypto.randomBytes(CSRF_TOKEN_SIZE).toString('hex');
+    const message = csrfBuildMessage(randomValue);
+    const hmac = crypto.createHmac('sha256', csrfSecret()).update(message).digest('hex');
+    return `${hmac}.${randomValue}`;
+}
+function csrfVerifyToken(token) {
+    if (typeof token !== 'string' || token.length === 0) return false;
+    const parts = token.split('.');
+    if (parts.length !== 2) return false;
+    const [receivedHmac, randomValue] = parts;
+    if (!receivedHmac || !randomValue) return false;
+    const message = csrfBuildMessage(randomValue);
+    const expected = crypto.createHmac('sha256', csrfSecret()).update(message).digest('hex');
+    if (expected.length !== receivedHmac.length) return false;
+    return crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(receivedHmac));
+}
+function generateToken(req, res) {
+    // Si ya hay una cookie válida, reutilizarla. Si no, generar una nueva y setearla.
+    const existing = req.cookies?.[CSRF_COOKIE_NAME];
+    let token = existing;
+    if (!token || !csrfVerifyToken(token)) {
+        token = csrfGenerateToken();
+        res.cookie(CSRF_COOKIE_NAME, token, {
+            httpOnly: true,
+            sameSite: 'lax',
+            secure: process.env.NODE_ENV === 'production',
+            path: '/',
+        });
+        // Actualizar req.cookies para que lecturas posteriores en la misma request vean el nuevo token
+        if (req.cookies) req.cookies[CSRF_COOKIE_NAME] = token;
+    }
+    return token;
+}
+// Middleware que valida el token en POST. Devuelve 403 si falla.
 const csrfProtection = (req, res, next) => {
-    doubleCsrfProtection(req, res, (err) => {
-        if (err) {
-            logger.security('CSRF_REJECTED', { ip: req.ip, path: req.path, method: req.method });
-            return res.status(403).json({ error: 'Invalid CSRF token' });
-        }
-        res.locals.csrfToken = generateToken(req, res);
-        next();
-    });
+    const cookieToken = req.cookies?.[CSRF_COOKIE_NAME];
+    const formToken = req.body?._csrf || req.headers['x-csrf-token'];
+    if (!cookieToken || !formToken || cookieToken !== formToken || !csrfVerifyToken(cookieToken)) {
+        logger.security('CSRF_REJECTED', { ip: req.ip, path: req.path, method: req.method });
+        return res.status(403).json({ error: 'Invalid CSRF token' });
+    }
+    res.locals.csrfToken = generateToken(req, res);
+    next();
 };
 // Genera token para GET requests (formularios)
 const csrfTokenGen = (req, res, next) => {
@@ -426,35 +455,6 @@ app.use('/api/pedidos', pedidosRoutes);
 app.get('/login', csrfTokenGen);
 app.get('/setup', csrfTokenGen);
 app.get('/cambiar-contrasena', csrfTokenGen);
-// DEBUG: run library validation AND manual HMAC in same request
-const { validateRequest: _debugLibValidate } = doubleCsrf({
-    getSecret: () => process.env.SESSION_SECRET || 'dev-csrf-secret',
-    getSessionIdentifier: () => 'static-csrf-session',
-    cookieName: '__csrf',
-    cookieOptions: { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: '/' },
-    getTokenFromRequest: (req) => req.body._csrf || req.headers['x-csrf-token'],
-});
-app.post('/__debug_csrf', (req, res) => {
-    const crypto = require('crypto');
-    const secret = process.env.SESSION_SECRET || 'dev-csrf-secret';
-    const sessionId = 'static-csrf-session';
-    const cookie = req.cookies?.__csrf || '';
-    const formToken = req.body?._csrf || '';
-    const [hmacFromCookie, randomValue] = cookie.split('.');
-    const message = `${sessionId.length}!${sessionId}!${randomValue?.length || 0}!${randomValue || ''}`;
-    const expected = crypto.createHmac('sha256', secret).update(message).digest('hex');
-    let libResult = null;
-    let libError = null;
-    try { libResult = _debugLibValidate(req); } catch (e) { libError = e.message; }
-    res.json({
-        identical: cookie === formToken,
-        hmacMatches: hmacFromCookie === expected,
-        libraryValidation: libResult,
-        libraryError: libError,
-        cookieSample: cookie.substring(0, 20),
-        formSample: formToken.substring(0, 20),
-    });
-});
 app.post('/login', loginLimiter, csrfProtection); // rate limit + CSRF
 app.post('/setup', csrfProtection);
 app.post('/cambiar-contrasena', csrfProtection);
