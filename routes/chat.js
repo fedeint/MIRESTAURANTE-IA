@@ -10,6 +10,22 @@ const {
   capturarChatAbierto
 } = require('../lib/posthog-events');
 
+const daliaActions = require('../services/dallia-actions');
+const whatsappApi = require('../services/whatsapp-api');
+const llm = require('../lib/llm');
+
+// Keywords that trigger the enviar_pedido_proveedor action
+const STOCK_INTENT_KEYWORDS = ['revisa', 'revisar', 'stock', 'falta', 'pedido', 'compras', 'comprar', 'insumos'];
+
+function detectStockIntent(text) {
+    const lower = (text || '').toLowerCase();
+    let matches = 0;
+    for (const kw of STOCK_INTENT_KEYWORDS) {
+        if (lower.includes(kw)) matches++;
+    }
+    return matches >= 2 || lower.includes('revisa mi stock') || lower.includes('haz el pedido');
+}
+
 // Helper: Detectar categoría de pregunta basada en palabras clave
 function detectarCategoria(texto) {
   const texto_lower = (texto || '').toLowerCase();
@@ -429,6 +445,37 @@ router.post('/', async (req, res) => {
         preguntaTexto: mensaje,
         fuente: 'chat'
     });
+
+    // ── DallIA Actions intent detection ──────────────────────────────────────
+    if (detectStockIntent(mensaje) && (rol === 'administrador' || rol === 'superadmin')) {
+        try {
+            const result = await daliaActions.run('enviar_pedido_proveedor', tid, {
+                db, llm, whatsapp: whatsappApi
+            });
+            if (!result.shouldPropose) {
+                return res.json({
+                    respuesta: result.message,
+                    provider: 'dallia-actions',
+                    type: 'text'
+                });
+            }
+            return res.json({
+                respuesta: 'Revisé tu almacén. Te propongo enviar estos pedidos:',
+                provider: 'dallia-actions',
+                type: 'action_card',
+                action_card: {
+                    logId: result.logId,
+                    actionName: result.actionName,
+                    detection: result.detection,
+                    draft: result.draft
+                }
+            });
+        } catch (err) {
+            console.error('[dallia-actions] run failed:', err.message);
+            // Fall through to normal LLM chat on error
+        }
+    }
+    // ─────────────────────────────────────────────────────────────────────────
 
     // ── Token gate ────────────────────────────────────────────────────────────
     // Fail-open: if tokenInfo is null (query failed / columns missing), allow chat.
@@ -876,5 +923,45 @@ router.post('/dallia/guardar-mensaje', async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
+
+// ── DallIA Actions approve/reject ─────────────────────────────────────────
+function requireAdmin(req, res, next) {
+    const userRol = req.session?.user?.rol;
+    if (userRol !== 'administrador' && userRol !== 'superadmin') {
+        return res.status(403).json({ error: 'Solo administradores pueden aprobar acciones de DallIA' });
+    }
+    next();
+}
+
+router.post('/action/:logId/approve', requireAdmin, async (req, res) => {
+    try {
+        const logId = parseInt(req.params.logId, 10);
+        if (!logId) return res.status(400).json({ error: 'logId invalido' });
+        const tenantId = req.tenantId || 1;
+        const userId = req.session?.user?.id || 0;
+        const result = await daliaActions.executeApproved(logId, tenantId, userId, {
+            db, llm, whatsapp: whatsappApi
+        });
+        res.json({ ok: true, result });
+    } catch (err) {
+        console.error('[dallia-actions approve]', err);
+        res.status(500).json({ error: process.env.NODE_ENV !== 'production' ? err.message : 'Error al ejecutar accion' });
+    }
+});
+
+router.post('/action/:logId/reject', requireAdmin, async (req, res) => {
+    try {
+        const logId = parseInt(req.params.logId, 10);
+        if (!logId) return res.status(400).json({ error: 'logId invalido' });
+        const tenantId = req.tenantId || 1;
+        const userId = req.session?.user?.id || 0;
+        await daliaActions.rejectProposal(logId, tenantId, userId, { db });
+        res.json({ ok: true });
+    } catch (err) {
+        console.error('[dallia-actions reject]', err);
+        res.status(500).json({ error: process.env.NODE_ENV !== 'production' ? err.message : 'Error al rechazar accion' });
+    }
+});
+// ─────────────────────────────────────────────────────────────────────────
 
 module.exports = router;
