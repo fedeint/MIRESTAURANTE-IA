@@ -337,6 +337,36 @@ async function ensureSchema() {
             )`);
         } catch (_) {}
 
+        // ── DallIA Actions framework ──────────────────────────────────────
+        try {
+            await pgNativeQuery(`CREATE TABLE IF NOT EXISTS dallia_actions (
+                id SERIAL PRIMARY KEY,
+                nombre VARCHAR(100) NOT NULL UNIQUE,
+                descripcion TEXT,
+                tipo_trigger VARCHAR(30) DEFAULT 'manual',
+                activa BOOLEAN DEFAULT true,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )`);
+            await pgNativeQuery(`CREATE TABLE IF NOT EXISTS dallia_actions_log (
+                id BIGSERIAL PRIMARY KEY,
+                tenant_id INT NOT NULL,
+                action_id INT,
+                usuario_id INT,
+                estado VARCHAR(20) NOT NULL DEFAULT 'propuesta',
+                input_data JSONB,
+                draft_data JSONB,
+                result_data JSONB,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )`);
+            await pgNativeQuery(`CREATE INDEX IF NOT EXISTS idx_dallia_log_tenant ON dallia_actions_log(tenant_id, created_at DESC)`);
+            await pgNativeQuery(`CREATE INDEX IF NOT EXISTS idx_dallia_log_estado ON dallia_actions_log(estado, created_at DESC)`);
+            // Seed: registrar la primera accion
+            await pgNativeQuery(`INSERT INTO dallia_actions (nombre, descripcion, tipo_trigger)
+                VALUES ('enviar_pedido_proveedor', 'Detecta insumos bajo minimo y propone enviar pedido WhatsApp al proveedor', 'manual')
+                ON CONFLICT (nombre) DO NOTHING`);
+        } catch (_) {}
+
         // ALTER tenants — add geo columns (ignore if already exist)
         try { await pgNativeQuery(`ALTER TABLE tenants ADD COLUMN geo_lat DECIMAL(10,7)`); } catch (_) {}
         try { await pgNativeQuery(`ALTER TABLE tenants ADD COLUMN geo_lon DECIMAL(10,7)`); } catch (_) {}
