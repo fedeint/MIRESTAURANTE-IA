@@ -426,29 +426,26 @@ app.use('/api/pedidos', pedidosRoutes);
 app.get('/login', csrfTokenGen);
 app.get('/setup', csrfTokenGen);
 app.get('/cambiar-contrasena', csrfTokenGen);
-// DEBUG: temporary endpoint to inspect csrf validation state
-const { validateRequest: _debugValidate } = doubleCsrf({
-    getSecret: () => process.env.SESSION_SECRET || 'dev-csrf-secret',
-    getSessionIdentifier: () => 'static-csrf-session',
-    cookieName: '__csrf',
-    cookieOptions: { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: '/' },
-    getTokenFromRequest: (req) => req.body._csrf || req.headers['x-csrf-token'],
-});
+// DEBUG: reproduce csrf-csrf HMAC computation manually
 app.post('/__debug_csrf', (req, res) => {
-    let validationResult = null;
-    let validationError = null;
-    try {
-        validationResult = _debugValidate(req);
-    } catch (e) {
-        validationError = e.message;
-    }
+    const crypto = require('crypto');
+    const secret = process.env.SESSION_SECRET || 'dev-csrf-secret';
+    const sessionId = 'static-csrf-session';
+    const cookie = req.cookies?.__csrf || '';
+    const formToken = req.body?._csrf || '';
+    const [hmacFromCookie, randomValue] = cookie.split('.');
+    const message = `${sessionId.length}!${sessionId}!${randomValue?.length || 0}!${randomValue || ''}`;
+    const expected = crypto.createHmac('sha256', secret).update(message).digest('hex');
     res.json({
-        bodyCsrf: req.body?._csrf || null,
-        cookieCsrf: req.cookies?.__csrf || null,
-        identical: req.body?._csrf === req.cookies?.__csrf,
-        secretEnv: process.env.SESSION_SECRET ? `set(len=${process.env.SESSION_SECRET.length})` : 'NOT_SET',
-        validationResult,
-        validationError,
+        cookieLen: cookie.length,
+        formLen: formToken.length,
+        identical: cookie === formToken,
+        hmacFromCookie,
+        randomValue,
+        computedMessage: message,
+        computedHmac: expected,
+        hmacMatches: hmacFromCookie === expected,
+        secretLen: secret.length,
     });
 });
 app.post('/login', loginLimiter, csrfProtection); // rate limit + CSRF
