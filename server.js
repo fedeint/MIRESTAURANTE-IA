@@ -308,7 +308,14 @@ const csrfProtection = (req, res, next) => {
     });
 };
 // Genera token para GET requests (formularios)
+// NOTA: Con saveUninitialized:false, la sesión no se persiste si nada se escribe
+// en ella. Esto causa que req.session.id cambie entre GET /login y POST /login,
+// rompiendo la validación CSRF (el token queda ligado a un session id que ya no existe).
+// Solución: tocar la sesión para forzar su persistencia antes de generar el token.
 const csrfTokenGen = (req, res, next) => {
+    if (req.session) {
+        req.session.csrfBound = true;
+    }
     res.locals.csrfToken = generateToken(req, res);
     next();
 };
