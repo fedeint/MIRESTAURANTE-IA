@@ -450,6 +450,29 @@ app.use('/api/pedidos', pedidosRoutes);
     });
 });
 
+// DEBUG: test DB connectivity and user query
+app.get('/__debug_db', async (req, res) => {
+    const db = require('./db');
+    const out = { steps: [] };
+    try {
+        out.steps.push('start');
+        const [r1] = await db.query('SELECT 1 as ok');
+        out.steps.push('select1 ok');
+        out.select1 = r1;
+        const [r2] = await db.query('SELECT COUNT(*) as cnt FROM usuarios');
+        out.steps.push('count ok');
+        out.userCount = r2?.[0]?.cnt;
+        const [r3] = await db.query('SELECT id, usuario, rol, activo FROM usuarios WHERE usuario = ? LIMIT 1', ['admin']);
+        out.steps.push('lookup ok');
+        out.admin = r3?.[0] || null;
+        res.json(out);
+    } catch (e) {
+        out.error = e.message;
+        out.code = e.code;
+        out.stack = (e.stack || '').split('\n').slice(0, 5);
+        res.status(500).json(out);
+    }
+});
 // Auth routes (públicas): /login /logout /setup
 // CSRF: generate token on GET, validate on POST
 app.get('/login', csrfTokenGen);
