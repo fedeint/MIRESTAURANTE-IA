@@ -450,26 +450,30 @@ app.use('/api/pedidos', pedidosRoutes);
     });
 });
 
-// DEBUG: test DB connectivity and user query
+// DEBUG: test DB connectivity and inspect env config
 app.get('/__debug_db', async (req, res) => {
     const db = require('./db');
-    const out = { steps: [] };
+    const url = process.env.DATABASE_URL || '';
+    // Mask password in connection string for safe debugging
+    const masked = url.replace(/(postgres(?:ql)?:\/\/[^:]+:)([^@]+)(@)/, '$1***$3');
+    const out = {
+        steps: [],
+        env: {
+            DATABASE_URL_set: !!process.env.DATABASE_URL,
+            DATABASE_URL_host: masked ? masked.match(/@([^:/?]+)/)?.[1] : null,
+            DATABASE_URL_port: masked ? masked.match(/:(\d+)\//)?.[1] : null,
+            MODO: process.env.MODO || 'cloud',
+            NODE_ENV: process.env.NODE_ENV,
+        },
+    };
     try {
-        out.steps.push('start');
         const [r1] = await db.query('SELECT 1 as ok');
         out.steps.push('select1 ok');
         out.select1 = r1;
-        const [r2] = await db.query('SELECT COUNT(*) as cnt FROM usuarios');
-        out.steps.push('count ok');
-        out.userCount = r2?.[0]?.cnt;
-        const [r3] = await db.query('SELECT id, usuario, rol, activo FROM usuarios WHERE usuario = ? LIMIT 1', ['admin']);
-        out.steps.push('lookup ok');
-        out.admin = r3?.[0] || null;
         res.json(out);
     } catch (e) {
         out.error = e.message;
         out.code = e.code;
-        out.stack = (e.stack || '').split('\n').slice(0, 5);
         res.status(500).json(out);
     }
 });
