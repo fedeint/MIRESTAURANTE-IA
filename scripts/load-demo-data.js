@@ -1,5 +1,22 @@
+// USAGE:
+//   node -r dotenv/config scripts/load-demo-data.js dotenv_config_path=/tmp/prod.env
+//
+// Requires DATABASE_URL env var. NEVER hardcode connection strings or
+// credentials in source — see CLAUDE.md §2.
+require('dotenv').config();
 const { Pool } = require('pg');
-const pool = new Pool({ connectionString: 'postgresql://postgres.vfltsjcktxgmqbrzwthn:SUPAAAAAAHHHHCOCACOLA@aws-0-us-west-2.pooler.supabase.com:6543/postgres', ssl: { rejectUnauthorized: false } });
+
+if (!process.env.DATABASE_URL) {
+  console.error('ERROR: DATABASE_URL env var is required.');
+  console.error('Run with: node -r dotenv/config scripts/load-demo-data.js dotenv_config_path=<path-to-env-file>');
+  process.exit(1);
+}
+
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false },
+  connectionTimeoutMillis: 10000,
+});
 
 async function run() {
   const c = await pool.connect();

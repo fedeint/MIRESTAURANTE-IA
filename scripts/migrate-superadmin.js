@@ -11,18 +11,16 @@ require('dotenv').config();
 const { Client } = require('pg');
 const bcrypt = require('bcryptjs');
 
-const client = new Client(
-  process.env.DATABASE_URL
-    ? { connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } }
-    : {
-        host: process.env.DB_HOST || 'db.vfltsjcktxgmqbrzwthn.supabase.co',
-        port: Number(process.env.DB_PORT) || 5432,
-        database: process.env.DB_DATABASE || 'postgres',
-        user: process.env.DB_USER || 'postgres',
-        password: process.env.DB_PASSWORD || 'SUPAAAAAAHHHHCOCACOLA',
-        ssl: { rejectUnauthorized: false },
-      }
-);
+if (!process.env.DATABASE_URL) {
+  console.error('ERROR: DATABASE_URL env var is required.');
+  console.error('Run with: node -r dotenv/config scripts/migrate-superadmin.js dotenv_config_path=<path-to-env>');
+  process.exit(1);
+}
+
+const client = new Client({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false },
+});
 
 async function run(label, sql, params = []) {
   try {

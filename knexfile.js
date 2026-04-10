@@ -3,7 +3,7 @@ require('dotenv').config();
 module.exports = {
   client: 'pg',
   connection: process.env.DATABASE_URL || {
-    host: process.env.DB_HOST || 'db.vfltsjcktxgmqbrzwthn.supabase.co',
+    host: process.env.DB_HOST,
     user: process.env.DB_USER || 'postgres',
     password: process.env.DB_PASSWORD || '',
     database: process.env.DB_DATABASE || 'postgres',

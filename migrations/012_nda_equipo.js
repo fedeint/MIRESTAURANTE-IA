@@ -13,7 +13,7 @@ const client = new Client(
   process.env.DATABASE_URL
     ? { connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } }
     : {
-        host: process.env.DB_HOST || 'db.vfltsjcktxgmqbrzwthn.supabase.co',
+        host: process.env.DB_HOST,
         port: Number(process.env.DB_PORT) || 5432,
         database: process.env.DB_DATABASE || 'postgres',
         user: process.env.DB_USER || 'postgres',

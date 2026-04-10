@@ -1,19 +1,26 @@
 /**
  * setup-supabase.js
  * Creates the full restaurant management schema on Supabase PostgreSQL.
- * Run with: node scripts/setup-supabase.js
+ *
+ * USAGE:
+ *   node -r dotenv/config scripts/setup-supabase.js dotenv_config_path=<path-to-env>
+ *
+ * Requires DATABASE_URL. NEVER hardcode credentials — see CLAUDE.md §2.
  */
 
 'use strict';
 
+require('dotenv').config();
 const { Client } = require('pg');
 
+if (!process.env.DATABASE_URL) {
+  console.error('ERROR: DATABASE_URL env var is required.');
+  console.error('Run with: node -r dotenv/config scripts/setup-supabase.js dotenv_config_path=<path-to-env>');
+  process.exit(1);
+}
+
 const client = new Client({
-  host: 'db.vfltsjcktxgmqbrzwthn.supabase.co',
-  port: 5432,
-  database: 'postgres',
-  user: 'postgres',
-  password: 'SUPAAAAAAHHHHCOCACOLA',
+  connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false },
 });
 
@@ -1562,7 +1569,7 @@ async function main() {
   console.log('=============================================================');
   console.log('  Supabase PostgreSQL Schema Setup – Restaurant Management   ');
   console.log('=============================================================');
-  console.log(`  Host: db.vfltsjcktxgmqbrzwthn.supabase.co`);
+  console.log(`  Host: ${process.env.DB_HOST || '(from DATABASE_URL)'}`);
   console.log(`  DB:   postgres`);
   console.log(`  Date: ${new Date().toISOString()}`);
   console.log('=============================================================');

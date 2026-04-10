@@ -36,7 +36,7 @@ if (IS_LOCAL) {
 } else {
     // Cloud mode with individual env vars (legacy / manual Supabase setup)
     poolConfig = {
-        host:     process.env.DB_HOST     || 'db.vfltsjcktxgmqbrzwthn.supabase.co',
+        host:     process.env.DB_HOST,
         port:     Number(process.env.DB_PORT) || 5432,
         database: process.env.DB_DATABASE || 'postgres',
         user:     process.env.DB_USER     || 'postgres',

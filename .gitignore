@@ -7,8 +7,8 @@ public/uploads/
 dist.zip
 # Archivos de entorno
 .env
-.env.local
-.env.production
+.env.*
+!.env.example
 .cursorrules
 dist
 
