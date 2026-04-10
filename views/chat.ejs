@@ -473,6 +473,58 @@
             background: linear-gradient(to bottom, transparent, var(--dg-surface-border), transparent);
             border-radius: 1px;
         }
+
+        /* ── DallIA Action Cards ─────────────────── */
+        .action-card {
+            background: linear-gradient(135deg, #fff8f0 0%, #fafaf7 100%);
+            border: 2px solid #ef520f;
+            border-radius: 16px;
+            padding: 16px;
+            margin: 12px 0;
+            box-shadow: 0 4px 12px rgba(239, 82, 15, 0.15);
+        }
+        .action-card-header {
+            font-size: 1.1em;
+            color: #ef520f;
+            margin-bottom: 12px;
+            border-bottom: 1px solid rgba(239, 82, 15, 0.2);
+            padding-bottom: 8px;
+        }
+        .action-card-proveedor {
+            background: white;
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 8px;
+        }
+        .prov-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .prov-message {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 6px;
+            font-family: 'DM Sans', sans-serif;
+            white-space: pre-wrap;
+            font-size: 0.9em;
+            margin: 0;
+        }
+        .action-card-warning {
+            background: #fff4e5;
+            border-left: 4px solid #F97316;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            font-size: 0.9em;
+        }
+        .action-card-warning ul { margin: 4px 0 0 16px; }
+        .action-card-buttons { display: flex; gap: 8px; margin-top: 12px; }
+        .action-card-status { margin-top: 10px; font-size: 0.9em; }
+        .action-card-status.success { color: #22C55E; }
+        .action-card-status.error { color: #EF4444; }
+        /* ─────────────────────────────────────────── */
     </style>
 </head>
 <body>
@@ -762,15 +814,17 @@
                 var data = await resp.json();
                 if (!resp.ok) throw new Error(data.error || 'Error del servidor');
 
-                addMessage('assistant', data.respuesta);
-                historial.push({ role: 'assistant', content: data.respuesta });
-
-                // Save to history
-                saveToHistory(text, data.respuesta);
+                if (data.type === 'action_card') {
+                    renderActionCard(data);
+                } else {
+                    addMessage('assistant', data.respuesta);
+                    historial.push({ role: 'assistant', content: data.respuesta });
+                    saveToHistory(text, data.respuesta);
+                }
 
                 var prov = document.getElementById('chatProvider');
                 if (prov && data.provider) {
-                    var name = data.provider === 'kimi' ? 'Kimi AI (Moonshot)' : 'Claude AI (Anthropic)';
+                    var name = data.provider === 'kimi' ? 'Kimi AI (Moonshot)' : data.provider === 'claude' ? 'Claude AI (Anthropic)' : 'DallIA Actions';
                     prov.textContent = 'Powered by ' + name + ' \u00B7 Datos en tiempo real de tu BD';
                 }
             } catch (err) {
@@ -1086,6 +1140,103 @@
         // Initialize button state
         updateMainButton();
     })();
+
+        // ── DallIA Action Card rendering ──────────────────────────────────────
+        function escapeHtml(s) {
+            return String(s || '').replace(/[&<>"']/g, function(c) {
+                return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+            });
+        }
+
+        function renderActionCard(data) {
+            var card = data.action_card;
+            var draft = card.draft;
+            var container = document.createElement('div');
+            container.className = 'message dallia-message action-card';
+            container.dataset.logId = card.logId;
+
+            var html = '<div class="action-card-header"><i class="bi bi-robot"></i> <strong>DallIA propone enviar pedidos</strong></div>';
+
+            if (data.respuesta) {
+                html += '<p style="margin-bottom:10px;">' + escapeHtml(data.respuesta) + '</p>';
+            }
+
+            for (var i = 0; i < draft.messages.length; i++) {
+                var msg = draft.messages[i];
+                html += '<div class="action-card-proveedor">' +
+                    '<div class="prov-header">' +
+                        '<strong>' + escapeHtml(msg.proveedor_nombre) + '</strong>' +
+                        '<span class="badge bg-secondary">' + msg.items.length + ' item(s)</span>' +
+                    '</div>' +
+                    '<pre class="prov-message">' + escapeHtml(msg.texto) + '</pre>' +
+                '</div>';
+            }
+
+            if (draft.sinProveedor && draft.sinProveedor.length > 0) {
+                html += '<div class="action-card-warning"><strong>Sin proveedor asignado:</strong><ul>';
+                for (var j = 0; j < draft.sinProveedor.length; j++) {
+                    var it = draft.sinProveedor[j];
+                    html += '<li>' + escapeHtml(it.nombre) + ' (' + escapeHtml(it.razon) + ')</li>';
+                }
+                html += '</ul></div>';
+            }
+
+            html += '<div class="action-card-buttons">' +
+                '<button class="btn btn-primary" onclick="approveAction(' + card.logId + ', this)">' +
+                    '<i class="bi bi-check-circle"></i> Aprobar y enviar' +
+                '</button>' +
+                '<button class="btn btn-outline-secondary" onclick="rejectAction(' + card.logId + ', this)">' +
+                    'Cancelar' +
+                '</button>' +
+            '</div>' +
+            '<div class="action-card-status"></div>';
+
+            container.innerHTML = html;
+            var chatMessages = document.querySelector('#chat-messages');
+            if (chatMessages) {
+                chatMessages.appendChild(container);
+                container.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        async function approveAction(logId, btn) {
+            var card = btn.closest('.action-card');
+            var statusDiv = card.querySelector('.action-card-status');
+            btn.disabled = true;
+            statusDiv.textContent = 'Enviando…';
+            try {
+                var res = await fetch('/api/chat/action/' + logId + '/approve', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                var data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Error desconocido');
+                var msg = 'Listo! Envié ' + data.result.sent.length + ' mensaje(s)';
+                if (data.result.failed.length > 0) {
+                    msg += '. Fallaron ' + data.result.failed.length + ': ' + data.result.failed.map(function(f){return f.proveedor_nombre;}).join(', ');
+                }
+                statusDiv.textContent = msg;
+                statusDiv.className = 'action-card-status success';
+                card.querySelectorAll('.action-card-buttons button').forEach(function(b){b.remove();});
+            } catch(err) {
+                statusDiv.textContent = 'Error: ' + err.message;
+                statusDiv.className = 'action-card-status error';
+                btn.disabled = false;
+            }
+        }
+
+        async function rejectAction(logId, btn) {
+            var card = btn.closest('.action-card');
+            var statusDiv = card.querySelector('.action-card-status');
+            try {
+                await fetch('/api/chat/action/' + logId + '/reject', { method: 'POST' });
+                statusDiv.textContent = 'Cancelado.';
+                card.querySelectorAll('.action-card-buttons button').forEach(function(b){b.remove();});
+            } catch(err) {
+                statusDiv.textContent = 'Error al cancelar: ' + err.message;
+            }
+        }
+        // ─────────────────────────────────────────────────────────────────────
     </script>
 </body>
 </html>
