@@ -119,6 +119,9 @@ async function draft(tenantId, detection, { db, llm }) {
 async function execute(tenantId, userId, approvedDraft, { db, whatsapp }) {
     // Handle case where draft_data comes back as a JSON string from the DB
     const draftData = typeof approvedDraft === 'string' ? JSON.parse(approvedDraft) : approvedDraft;
+    if (!draftData || !Array.isArray(draftData.messages)) {
+        return { sent: [], failed: [] };
+    }
     const sent = [];
     const failed = [];
 
