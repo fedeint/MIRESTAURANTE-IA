@@ -426,15 +426,29 @@ app.use('/api/pedidos', pedidosRoutes);
 app.get('/login', csrfTokenGen);
 app.get('/setup', csrfTokenGen);
 app.get('/cambiar-contrasena', csrfTokenGen);
-// DEBUG: temporary endpoint to inspect req.body on POST
+// DEBUG: temporary endpoint to inspect csrf validation state
+const { validateRequest: _debugValidate } = doubleCsrf({
+    getSecret: () => process.env.SESSION_SECRET || 'dev-csrf-secret',
+    getSessionIdentifier: () => 'static-csrf-session',
+    cookieName: '__csrf',
+    cookieOptions: { httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: '/' },
+    getTokenFromRequest: (req) => req.body._csrf || req.headers['x-csrf-token'],
+});
 app.post('/__debug_csrf', (req, res) => {
+    let validationResult = null;
+    let validationError = null;
+    try {
+        validationResult = _debugValidate(req);
+    } catch (e) {
+        validationError = e.message;
+    }
     res.json({
-        contentType: req.headers['content-type'],
-        bodyKeys: Object.keys(req.body || {}),
-        bodyCsrf: (req.body && req.body._csrf) ? req.body._csrf.substring(0, 30) + '...' : null,
-        bodyRaw: JSON.stringify(req.body).substring(0, 500),
-        cookies: Object.keys(req.cookies || {}),
-        csrfCookie: req.cookies?.__csrf ? req.cookies.__csrf.substring(0, 30) + '...' : null,
+        bodyCsrf: req.body?._csrf || null,
+        cookieCsrf: req.cookies?.__csrf || null,
+        identical: req.body?._csrf === req.cookies?.__csrf,
+        secretEnv: process.env.SESSION_SECRET ? `set(len=${process.env.SESSION_SECRET.length})` : 'NOT_SET',
+        validationResult,
+        validationError,
     });
 });
 app.post('/login', loginLimiter, csrfProtection); // rate limit + CSRF
