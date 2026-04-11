@@ -558,13 +558,10 @@
                 <div class="chat-messages" id="chatMessages">
                 </div>
 
-                <!-- Suggestions -->
+                <!-- Suggestions (dynamic by time + context) -->
                 <div id="suggestionsWrap">
                     <div class="chat-suggestions" id="chatSuggestions">
-                        <a class="chat-suggestion" data-q="Como van las ventas de hoy?"><i class="bi bi-graph-up me-1"></i>Ventas de hoy</a>
-                        <a class="chat-suggestion" data-q="Cuales son los productos mas vendidos?"><i class="bi bi-trophy me-1"></i>Mas vendidos</a>
-                        <a class="chat-suggestion" data-q="Ensenname a usar el sistema paso a paso"><i class="bi bi-book me-1"></i>Tutorial</a>
-                        <a class="chat-suggestion" data-q="Que puedo hacer desde mi puesto?"><i class="bi bi-question-circle me-1"></i>Mis funciones</a>
+                        <!-- Filled by JS below -->
                     </div>
                 </div>
 
@@ -1261,6 +1258,67 @@
                 statusDiv.textContent = 'Error al cancelar: ' + err.message;
             }
         }
+        // ─── Dynamic suggestions by time of day and URL context ─────────────
+        (function initSuggestions() {
+            var hora = new Date().getHours(); // local time
+            var params = new URLSearchParams(window.location.search);
+            var agent   = params.get('agent')   || '';
+            var contexto = params.get('contexto') || '';
+
+            // Time-of-day buckets (Lima time, close enough with local)
+            var isManana  = hora >= 6  && hora < 12;
+            var isTarde   = hora >= 12 && hora < 18;
+            var isNoche   = hora >= 18 || hora < 6;
+
+            // Base pools by time
+            var sugerencias;
+            if (agent === 'salva' && contexto === 'caja') {
+                sugerencias = [
+                    { icon: 'bi-cash-coin',    q: 'Cuánto efectivo hay en caja ahora?', label: 'Efectivo actual' },
+                    { icon: 'bi-arrow-down-up', q: 'Resumen de movimientos de hoy',      label: 'Movimientos' },
+                    { icon: 'bi-lock',          q: 'Debo cerrar la caja ahora?',          label: 'Cerrar caja?' },
+                    { icon: 'bi-bell',          q: 'Hay alguna alerta de caja?',          label: 'Alertas caja' }
+                ];
+            } else if (isManana) {
+                sugerencias = [
+                    { icon: 'bi-sunrise',       q: 'Buenos días! Qué pasa si no abro la caja?', label: 'Abrir caja' },
+                    { icon: 'bi-box-seam',      q: 'Revisa mi stock, qué me falta comprar hoy?', label: 'Stock del día' },
+                    { icon: 'bi-calendar-check', q: 'Cuál es el plan operativo para hoy?',       label: 'Plan del día' },
+                    { icon: 'bi-graph-up',       q: 'Como van las ventas de hoy?',               label: 'Ventas hoy' }
+                ];
+            } else if (isTarde) {
+                sugerencias = [
+                    { icon: 'bi-graph-up',      q: 'Como van las ventas de hoy?',               label: 'Ventas hoy' },
+                    { icon: 'bi-trophy',        q: 'Cuales son los productos mas vendidos?',     label: 'Más vendidos' },
+                    { icon: 'bi-people',        q: 'Cuántas mesas activas hay ahora?',           label: 'Mesas activas' },
+                    { icon: 'bi-clock-history', q: 'Cual es el tiempo promedio de cocina hoy?', label: 'Tiempo cocina' }
+                ];
+            } else {
+                // Noche
+                sugerencias = [
+                    { icon: 'bi-bar-chart',     q: 'Resumen de ventas de hoy vs ayer',          label: 'Resumen del día' },
+                    { icon: 'bi-cash-stack',    q: 'Debo cerrar la caja ahora?',                label: 'Cerrar caja' },
+                    { icon: 'bi-box-seam',      q: 'Hay insumos próximos a vencerse?',          label: 'Vencimientos' },
+                    { icon: 'bi-star',          q: 'Cuál fue el plato más vendido hoy?',        label: 'Estrella del día' }
+                ];
+            }
+
+            var container = document.getElementById('chatSuggestions');
+            if (!container) return;
+            container.innerHTML = sugerencias.map(function(s) {
+                return '<a class="chat-suggestion" data-q="' + s.q.replace(/"/g, '&quot;') + '">' +
+                    '<i class="bi ' + s.icon + ' me-1"></i>' + s.label + '</a>';
+            }).join('');
+
+            // Attach click handlers to the newly created elements
+            container.querySelectorAll('.chat-suggestion').forEach(function(btn) {
+                btn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    var q = this.getAttribute('data-q');
+                    if (q) sendMessage(q);
+                });
+            });
+        })();
         // ─────────────────────────────────────────────────────────────────────
     </script>
 </body>
