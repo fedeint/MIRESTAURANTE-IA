@@ -209,6 +209,8 @@ app.use(attachGeoContext);
 // Tenant middleware (resuelve tenant_id por request)
 app.use(attachTenant);
 app.use(tenantGuard);
+// Rewrite /:slug/... → /... so existing routes match after tenant resolution
+app.use(slugRewrite);
 // tenantUrl helper for EJS views
 app.use((req, res, next) => {
     res.locals.tenantUrl = createTenantUrlHelper(res.locals.basePath || null);
