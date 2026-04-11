@@ -756,17 +756,20 @@ app.get('/', requireAuth, async (req, res) => {
     }
 
     // ---- ONBOARDING CHECK (administrador only) ----
-    // If the restaurant hasn't been named yet, guide the admin through the wizard.
+    // If tenants.onboarding_completado is false, send them to the DallIA
+    // onboarding flow (the new design from UI.DELSISTEMA.pen).
     if (rol === 'administrador' && !req.session?.onboardingCompleted) {
         try {
             const tid = req.tenantId || 1;
-            const [[cfgRow]] = await db.query(
-                "SELECT nombre_negocio FROM configuracion_impresion WHERE tenant_id=? LIMIT 1",
+            const [[tRow]] = await db.query(
+                "SELECT onboarding_completado FROM tenants WHERE id = ? LIMIT 1",
                 [tid]
             );
-            if (!cfgRow || !String(cfgRow.nombre_negocio || '').trim()) {
-                return res.redirect('/onboarding');
+            if (!tRow || tRow.onboarding_completado === false || tRow.onboarding_completado === null) {
+                return res.redirect('/onboarding-dallia');
             }
+            // Mirror the flag on session so we don't re-query on every render
+            req.session.onboardingCompleted = true;
         } catch (_) {
             // If the query fails for any reason, don't block the dashboard
         }
