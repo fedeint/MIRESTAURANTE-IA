@@ -731,8 +731,25 @@
         // ─── Welcome message (natural, context-aware) ───
         var hora = new Date().getHours();
         var saludo = hora < 12 ? 'Buenos dias' : hora < 18 ? 'Buenas tardes' : 'Buenas noches';
-        addMessage('assistant', '**' + saludo + ', ' + userName + '!** Soy DalIA, tu asistente.\n\nRecuerda que para iniciar operaciones necesitas **abrir caja** primero. Si necesitas ayuda con cualquier cosa sobre la gestion del restaurante, aqui estoy para ti.');
+        var _urlParams  = new URLSearchParams(window.location.search);
+        var _agent      = _urlParams.get('agent')   || '';
+        var _contexto   = _urlParams.get('contexto') || '';
+        var _autoPrompt = _urlParams.get('prompt')  || '';
+
+        // Contextual welcome when opened as Agente Salva
+        var welcomeMsg;
+        if (_agent === 'salva' && _contexto === 'caja') {
+            welcomeMsg = '**' + saludo + ', ' + userName + '!** Soy Salva, tu agente de caja.\n\nEstoy monitoreando tu efectivo, movimientos y metas en tiempo real. ¿En qué te ayudo?';
+        } else {
+            welcomeMsg = '**' + saludo + ', ' + userName + '!** Soy DalIA, tu asistente.\n\nRecuerda que para iniciar operaciones necesitas **abrir caja** primero. Si necesitas ayuda con cualquier cosa sobre la gestion del restaurante, aqui estoy para ti.';
+        }
+        addMessage('assistant', welcomeMsg);
         inputEl.focus();
+
+        // Auto-send ?prompt= query param after a short delay (gives page time to paint)
+        if (_autoPrompt) {
+            setTimeout(function() { sendMessage(_autoPrompt); }, 600);
+        }
 
         // ─── Message helpers ───
         function scrollBottom() {
