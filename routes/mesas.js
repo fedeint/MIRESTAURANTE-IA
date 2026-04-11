@@ -5,6 +5,7 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const { execFile } = require('child_process');
+const { renderForDevice } = require('../lib/deviceRouter');
 
 // Rutas para gestión de mesas y pedidos de restaurante
 // - Renderiza la vista de mesas (GET /mesas)
@@ -229,7 +230,7 @@ router.get('/', async (req, res) => {
 
         const currentUserId = req.session?.user?.id || null;
         const currentUserRol = req.session?.user?.rol || '';
-        res.render('mesas', { mesas: mesas || [], currentUserId, currentUserRol });
+        renderForDevice(req, res, 'mesas', { mesas: mesas || [], currentUserId, currentUserRol });
     } catch (error) {
         console.error('Error al cargar mesas:', error);
         res.status(500).render('error', {
