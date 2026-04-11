@@ -264,12 +264,66 @@ router.get('/:mesaId/cobrar', async (req, res) => {
   }
 });
 
+// ─── POST /descuento/validar ── Validate coupon code ────────────────────────
+
+router.post('/descuento/validar', async (req, res) => {
+  const tenantId = req.session?.user?.tenant_id;
+  const { codigo, total_actual } = req.body || {};
+
+  if (!codigo || typeof codigo !== 'string') {
+    return res.json({ valido: false, motivo: 'Código requerido' });
+  }
+
+  try {
+    const [[promo]] = await db.query(
+      `SELECT * FROM promociones
+       WHERE tenant_id = ? AND codigo_cupon = ? AND activa = true
+         AND (fecha_inicio IS NULL OR fecha_inicio <= CURDATE())
+         AND (fecha_fin IS NULL OR fecha_fin >= CURDATE())`,
+      [tenantId, codigo.trim().toUpperCase()]
+    );
+
+    if (!promo) {
+      return res.json({ valido: false, motivo: 'Código inválido o expirado' });
+    }
+    if (promo.usos_maximo && promo.usos_actual >= promo.usos_maximo) {
+      return res.json({ valido: false, motivo: 'Este código ya alcanzó el límite de usos' });
+    }
+
+    const base = Number(total_actual || 0);
+    let descuento_monto = 0;
+    let descuento_porcentaje = 0;
+
+    if (promo.tipo === 'porcentaje') {
+      descuento_porcentaje = Number(promo.valor);
+      descuento_monto = Math.round(base * (descuento_porcentaje / 100) * 100) / 100;
+    } else if (promo.tipo === 'monto_fijo') {
+      descuento_monto = Math.min(Number(promo.valor), base);
+      descuento_porcentaje = base > 0 ? Math.round((descuento_monto / base) * 100) : 0;
+    }
+
+    const total_final = Math.max(0, Math.round((base - descuento_monto) * 100) / 100);
+
+    return res.json({
+      valido: true,
+      promo_id: promo.id,
+      nombre: promo.nombre,
+      descuento_monto,
+      descuento_porcentaje,
+      total_final
+    });
+  } catch (e) {
+    console.error('[descuento/validar]', e);
+    return res.status(500).json({ valido: false, motivo: 'Error del servidor' });
+  }
+});
+
 // ─── POST /mesa/:mesaId/cobrar ── Process payment ───────────────────────────
 
 router.post('/:mesaId/cobrar', async (req, res) => {
   const tenantId = req.session?.user?.tenant_id;
   const mesaId   = Number(req.params.mesaId);
-  const { propina_pct, metodo_pago, tipo_comprobante } = req.body || {};
+  const { propina_pct, metodo_pago, tipo_comprobante, codigo_descuento, descuento_monto, promo_id } = req.body || {};
 
   const connection = await db.getConnection();
   try {
@@ -288,9 +342,10 @@ router.post('/:mesaId/cobrar', async (req, res) => {
     const subtotal  = Number(pedido.total || 0);
     const igv       = Math.round(subtotal * 0.18 * 100) / 100;
     const baseTotal = Math.round((subtotal + igv) * 100) / 100;
+    const descuentoAplicado = Math.max(0, Math.min(Number(descuento_monto || 0), baseTotal));
     const propinaPct = Number(propina_pct || 0);
-    const propinaMonto = Math.round(baseTotal * (propinaPct / 100) * 100) / 100;
-    const totalFinal = Math.round((baseTotal + propinaMonto) * 100) / 100;
+    const propinaMonto = Math.round((baseTotal - descuentoAplicado) * (propinaPct / 100) * 100) / 100;
+    const totalFinal = Math.max(0, Math.round((baseTotal - descuentoAplicado + propinaMonto) * 100) / 100);
 
     // Mark all items as servido
     await connection.query(
@@ -311,13 +366,29 @@ router.post('/:mesaId/cobrar', async (req, res) => {
     );
 
     // Insert factura record
-    await connection.query(
+    const [facturaResult] = await connection.query(
       `INSERT INTO facturas
          (pedido_id, tenant_id, subtotal, igv, propina, propina_pct, total, metodo_pago, tipo_comprobante, estado, created_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'emitida', NOW())`,
       [pedido.id, tenantId, subtotal, igv, propinaMonto, propinaPct, totalFinal,
        metodo_pago || 'efectivo', tipo_comprobante || 'boleta']
     );
+
+    // Record discount if applied
+    if (descuentoAplicado > 0) {
+      const facturaId = facturaResult.insertId;
+      await connection.query(
+        `INSERT INTO descuentos_aplicados (tenant_id, factura_id, promocion_id, tipo, monto_descuento, created_at)
+         VALUES (?, ?, ?, 'cupon', ?, NOW())`,
+        [tenantId, facturaId, promo_id || null, descuentoAplicado]
+      );
+      if (promo_id) {
+        await connection.query(
+          'UPDATE promociones SET usos_actual = usos_actual + 1 WHERE id = ? AND tenant_id = ?',
+          [promo_id, tenantId]
+        );
+      }
+    }
 
     await connection.commit();
     connection.release();

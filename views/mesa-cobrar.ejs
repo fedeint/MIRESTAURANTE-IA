@@ -153,20 +153,57 @@
       width: calc(100% - 32px); max-width: 448px; z-index: 50;
     }
 
-    /* BOTTOM NAV */
-    .bottom-nav {
-      position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
-      width: 100%; max-width: 480px; background: white;
-      display: flex; justify-content: space-around;
-      padding: 8px 0; padding-bottom: max(8px, env(safe-area-inset-bottom));
-      box-shadow: 0 -2px 16px rgba(0,0,0,0.08); z-index: 100;
+    /* DESCUENTO MODAL */
+    .desc-modal-bg {
+      position: fixed; inset: 0; background: rgba(10,15,36,0.65);
+      display: flex; align-items: flex-end; justify-content: center;
+      z-index: 400; opacity: 0; pointer-events: none; transition: opacity 0.2s;
     }
-    .nav-item {
-      display: flex; flex-direction: column; align-items: center; gap: 2px;
-      color: #8B8FAD; text-decoration: none; font-size: 10px; font-weight: 500;
+    .desc-modal-bg.open { opacity: 1; pointer-events: auto; }
+    .desc-modal {
+      background: white; border-radius: 20px 20px 0 0;
+      width: 100%; max-width: 480px;
+      padding: 20px 20px calc(20px + env(safe-area-inset-bottom, 0px));
+      transform: translateY(100%); transition: transform 0.25s ease;
     }
-    .nav-item.active { color: #ef520f; }
-    .nav-icon { font-size: 22px; }
+    .desc-modal-bg.open .desc-modal { transform: translateY(0); }
+    .desc-modal-handle { width: 36px; height: 4px; background: #e2e5f0; border-radius: 2px; margin: 0 auto 20px; }
+    .desc-modal-title { font-size: 16px; font-weight: 700; color: #0a0f24; margin-bottom: 16px; }
+    .desc-input-row { display: flex; gap: 8px; }
+    .desc-input {
+      flex: 1; padding: 12px 14px; border: 1.5px solid #e2e5f0;
+      border-radius: 12px; font-family: 'DM Sans', sans-serif;
+      font-size: 15px; font-weight: 600; letter-spacing: 0.05em;
+      text-transform: uppercase; outline: none;
+    }
+    .desc-input:focus { border-color: #ef520f; }
+    .desc-apply-btn {
+      padding: 12px 20px; background: linear-gradient(135deg,#ef520f,#df2c05);
+      color: white; border: none; border-radius: 12px;
+      font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 700;
+      cursor: pointer; white-space: nowrap;
+    }
+    .desc-feedback {
+      margin-top: 12px; font-size: 14px; font-weight: 600;
+      display: none; padding: 10px 14px; border-radius: 10px;
+    }
+    .desc-feedback.ok  { display: block; background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+    .desc-feedback.err { display: block; background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+    .desc-done-btn {
+      width: 100%; margin-top: 16px; padding: 14px;
+      background: #0a0f24; color: white; border: none; border-radius: 14px;
+      font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 700;
+      cursor: pointer; display: none;
+    }
+    .desc-skip-btn {
+      width: 100%; margin-top: 10px; padding: 12px;
+      background: transparent; color: #8B8FAD; border: none;
+      font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500;
+      cursor: pointer;
+    }
+    /* Cobrar-row clickable */
+    #descuentoRow { cursor: pointer; user-select: none; -webkit-tap-highlight-color: transparent; }
+    #descuentoRow:active { opacity: 0.75; }
 
     /* TOAST */
     .toast {
@@ -265,10 +302,10 @@
       <!-- ── COBRAR MODE ── -->
 
       <!-- Discount row -->
-      <div class="cobrar-card">
-        <div class="cobrar-row">
-          <span class="cobrar-row-label">&#127381; ¿Tiene código de descuento?</span>
-          <span class="cobrar-row-chevron">›</span>
+      <div class="cobrar-card" id="descuentoRow" onclick="abrirDescuentoModal()">
+        <div class="cobrar-row" style="border-bottom:none;">
+          <span class="cobrar-row-label" id="descuentoLabel">&#127381; ¿Tiene código de descuento?</span>
+          <span class="cobrar-row-chevron" id="descuentoChevron">›</span>
         </div>
       </div>
 
@@ -312,6 +349,10 @@
           <span class="resumen-label">Consumo</span>
           <span class="resumen-value">S/ <%= Number(total).toFixed(2) %></span>
         </div>
+        <div class="resumen-row" id="descuentoResumenRow" style="display:none;">
+          <span class="resumen-label" style="color:#16a34a;">Descuento <span id="descuentoLabelPct"></span></span>
+          <span class="resumen-value" style="color:#16a34a;" id="descuentoResumen">- S/ 0.00</span>
+        </div>
         <div class="resumen-row">
           <span class="resumen-label">Propina <span id="propinaLabelPct">0%</span></span>
           <span class="resumen-value" id="propinaResumen">S/ 0.00</span>
@@ -342,14 +383,24 @@
     </div>
   <% } %>
 
-  <!-- BOTTOM NAV -->
-  <nav class="bottom-nav">
-    <a href="/" class="nav-item"><span class="nav-icon">🏠</span>INICIO</a>
-    <a href="/pedidos" class="nav-item active"><span class="nav-icon">📋</span>PEDIDOS</a>
-    <a href="/cocina-display" class="nav-item"><span class="nav-icon">🍳</span>COCINA</a>
-    <a href="/caja" class="nav-item"><span class="nav-icon">💰</span>CAJA</a>
-    <a href="/configuracion" class="nav-item"><span class="nav-icon">⋯</span>MÁS</a>
-  </nav>
+  <%- include('partials/limelight-nav', { reqPath: '/pedidos' }) %>
+</div>
+
+<!-- DISCOUNT MODAL -->
+<div class="desc-modal-bg" id="descModalBg">
+  <div class="desc-modal">
+    <div class="desc-modal-handle"></div>
+    <div class="desc-modal-title">&#127381; Código de descuento</div>
+    <div class="desc-input-row">
+      <input type="text" class="desc-input" id="descCodigoInput"
+             placeholder="Ej: VERANO10" maxlength="50"
+             oninput="this.value=this.value.toUpperCase()">
+      <button class="desc-apply-btn" onclick="aplicarDescuento()">Aplicar</button>
+    </div>
+    <div class="desc-feedback" id="descFeedback"></div>
+    <button class="desc-done-btn" id="descDoneBtn" onclick="cerrarDescuentoModal()">Confirmar descuento</button>
+    <button class="desc-skip-btn" onclick="saltarDescuento()">Continuar sin descuento</button>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -379,9 +430,75 @@
   }
 
   // ── Cobrar mode logic ───────────────────────────────────────────────
-  let propinaPct  = 0;
-  let metodoPago  = 'efectivo';
-  let comprobante = 'boleta';
+  let propinaPct       = 0;
+  let metodoPago       = 'efectivo';
+  let comprobante      = 'boleta';
+  let descuentoMonto   = 0;
+  let descuentoCodigo  = '';
+  let descuentoPromoId = null;
+
+  // ── Descuento modal ─────────────────────────────────────────────────
+  function abrirDescuentoModal() {
+    document.getElementById('descModalBg').classList.add('open');
+  }
+  function cerrarDescuentoModal() {
+    document.getElementById('descModalBg').classList.remove('open');
+    recalcTotal();
+  }
+  function saltarDescuento() {
+    descuentoMonto   = 0;
+    descuentoCodigo  = '';
+    descuentoPromoId = null;
+    document.getElementById('descModalBg').classList.remove('open');
+    recalcTotal();
+    updateDescuentoRow();
+  }
+  function updateDescuentoRow() {
+    const lbl = document.getElementById('descuentoLabel');
+    const chv = document.getElementById('descuentoChevron');
+    if (descuentoMonto > 0) {
+      lbl.textContent = '✅ Descuento: ' + descuentoCodigo + ' (- S/ ' + descuentoMonto.toFixed(2) + ')';
+      lbl.style.color = '#16a34a';
+      chv.textContent = '✕';
+    } else {
+      lbl.textContent = '🏷️ ¿Tiene código de descuento?';
+      lbl.style.color = '';
+      chv.textContent = '›';
+    }
+  }
+  async function aplicarDescuento() {
+    const codigo = document.getElementById('descCodigoInput').value.trim();
+    const fb     = document.getElementById('descFeedback');
+    if (!codigo) { fb.textContent = 'Ingresa un código'; fb.className = 'desc-feedback err'; return; }
+    fb.textContent = ''; fb.className = 'desc-feedback';
+
+    try {
+      const resp = await fetch('/mesa/descuento/validar', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ codigo, total_actual: BASE_TOTAL })
+      });
+      const data = await resp.json();
+      if (data.valido) {
+        descuentoMonto   = data.descuento_monto;
+        descuentoCodigo  = codigo;
+        descuentoPromoId = data.promo_id || null;
+        fb.innerHTML = '✅ ' + (data.nombre || 'Descuento aplicado') + ': - S/ ' + descuentoMonto.toFixed(2);
+        fb.className = 'desc-feedback ok';
+        document.getElementById('descDoneBtn').style.display = '';
+      } else {
+        descuentoMonto = 0; descuentoCodigo = ''; descuentoPromoId = null;
+        fb.textContent = '❌ ' + (data.motivo || 'Código inválido');
+        fb.className = 'desc-feedback err';
+        document.getElementById('descDoneBtn').style.display = 'none';
+      }
+    } catch (e) {
+      fb.textContent = 'Error de conexión'; fb.className = 'desc-feedback err';
+    }
+  }
+  document.getElementById('descCodigoInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') aplicarDescuento();
+  });
 
   function selectPropina(el, pct) {
     document.querySelectorAll('.pill-btn').forEach(function(b) { b.classList.remove('active'); });
@@ -417,13 +534,24 @@
   }
 
   function recalcTotal() {
-    const propinaMonto = Math.round(BASE_TOTAL * (propinaPct / 100) * 100) / 100;
-    const totalFinal   = Math.round((BASE_TOTAL + propinaMonto) * 100) / 100;
-    const montoEl      = document.getElementById('propinaMontoEl');
-    const resumenEl    = document.getElementById('propinaResumen');
-    const totalEl      = document.getElementById('totalFinalEl');
-    const labelEl      = document.getElementById('propinaLabelPct');
+    const afterDiscount = Math.max(0, BASE_TOTAL - descuentoMonto);
+    const propinaMonto  = Math.round(afterDiscount * (propinaPct / 100) * 100) / 100;
+    const totalFinal    = Math.round((afterDiscount + propinaMonto) * 100) / 100;
+    const montoEl       = document.getElementById('propinaMontoEl');
+    const resumenEl     = document.getElementById('propinaResumen');
+    const totalEl       = document.getElementById('totalFinalEl');
+    const labelEl       = document.getElementById('propinaLabelPct');
+    const descRow       = document.getElementById('descuentoResumenRow');
+    const descVal       = document.getElementById('descuentoResumen');
+    const descPct       = document.getElementById('descuentoLabelPct');
 
+    if (descuentoMonto > 0) {
+      if (descRow) descRow.style.display = '';
+      if (descVal) descVal.textContent = '- S/ ' + descuentoMonto.toFixed(2);
+      if (descPct) descPct.textContent = descuentoCodigo ? '(' + descuentoCodigo + ')' : '';
+    } else {
+      if (descRow) descRow.style.display = 'none';
+    }
     if (propinaMonto > 0) {
       if (montoEl) { montoEl.style.display = ''; montoEl.textContent = '+ S/ ' + propinaMonto.toFixed(2); }
     } else {
@@ -432,6 +560,7 @@
     if (resumenEl) resumenEl.textContent = 'S/ ' + propinaMonto.toFixed(2);
     if (totalEl)   totalEl.textContent   = 'S/ ' + totalFinal.toFixed(2);
     if (labelEl)   labelEl.textContent   = (propinaPct > 0 ? propinaPct + '%' : '0%');
+    updateDescuentoRow();
   }
 
   function showToast(msg, type) {
@@ -449,9 +578,12 @@
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({
-          propina_pct:      propinaPct,
-          metodo_pago:      metodoPago,
-          tipo_comprobante: comprobante
+          propina_pct:       propinaPct,
+          metodo_pago:       metodoPago,
+          tipo_comprobante:  comprobante,
+          codigo_descuento:  descuentoCodigo || null,
+          descuento_monto:   descuentoMonto  || 0,
+          promo_id:          descuentoPromoId || null
         })
       });
       const data = await res.json();
