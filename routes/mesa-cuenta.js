@@ -278,8 +278,8 @@ router.post('/descuento/validar', async (req, res) => {
     const [[promo]] = await db.query(
       `SELECT * FROM promociones
        WHERE tenant_id = ? AND codigo_cupon = ? AND activa = true
-         AND (fecha_inicio IS NULL OR fecha_inicio <= CURDATE())
-         AND (fecha_fin IS NULL OR fecha_fin >= CURDATE())`,
+         AND (fecha_inicio IS NULL OR fecha_inicio <= CURRENT_DATE)
+         AND (fecha_fin IS NULL OR fecha_fin >= CURRENT_DATE)`,
       [tenantId, codigo.trim().toUpperCase()]
     );
 
