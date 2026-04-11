@@ -20,12 +20,15 @@
     '  width: 52px;',
     '  height: 52px;',
     '  border-radius: 16px;',
-    '  background: linear-gradient(135deg, #ef520f 0%, #df2c05 100%);',
-    '  box-shadow: 0 4px 20px rgba(239,82,15,0.45);',
+    '  background-image: url(/icono-mirestcon.png);',
+    '  background-size: cover;',
+    '  background-position: center;',
+    '  background-repeat: no-repeat;',
+    '  box-shadow: 0 4px 20px rgba(223,44,5,0.4), 0 0 30px rgba(239,82,15,0.24);',
     '  display: flex;',
     '  align-items: center;',
     '  justify-content: center;',
-    '  font-size: 24px;',
+    '  font-size: 0;',
     '  cursor: pointer;',
     '  z-index: 900;',
     '  border: none;',
@@ -67,7 +70,7 @@
   var fab = document.createElement('button');
   fab.id = FAB_ID;
   fab.setAttribute('aria-label', 'Abrir DallIA');
-  fab.innerHTML = '🤖<span id="dallia-fab-badge"></span>';
+  fab.innerHTML = '<span id="dallia-fab-badge"></span>';
 
   fab.addEventListener('click', function() {
     window.location = '/dallia';

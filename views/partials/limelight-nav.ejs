@@ -1,6 +1,6 @@
 <%# @variant: pwa-partial — bottom nav for all PWA views %>
 <%
-  const _rp = (typeof reqPath !== 'undefined') ? reqPath : (req && req.path ? req.path : '');
+  const _rp = (typeof reqPath !== 'undefined') ? reqPath : '';
   const _bp = (typeof locals !== 'undefined' && locals.basePath) ? locals.basePath : '';
   function _isActive(path) {
     if (path === '/') return _rp === '/';
@@ -9,18 +9,27 @@
   function _href(path) { return _bp + path; }
 %>
 <style>
-  .ll-nav {
+  .ll-outer {
     position: fixed;
     bottom: 0;
     left: 0;
     right: 0;
     z-index: 1000;
+    padding: 8px 16px calc(24px + env(safe-area-inset-bottom, 0px));
+    pointer-events: none;
+    filter: drop-shadow(0 -4px 20px rgba(0,0,0,0.18));
+  }
+  .ll-pill {
     display: flex;
     align-items: stretch;
-    background: #0f172a;
-    border-top: 1px solid rgba(255,255,255,0.08);
-    padding-bottom: env(safe-area-inset-bottom, 0px);
-    height: calc(60px + env(safe-area-inset-bottom, 0px));
+    background:
+      radial-gradient(ellipse 150% 400% at 8% 50%, rgba(255,120,61,0.09) 0%, transparent 22%),
+      radial-gradient(ellipse 150% 400% at 95% 50%, rgba(39,58,160,0.38) 0%, transparent 30%),
+      linear-gradient(180deg, #10152f 0%, #0a0f24 55%, #090d1d 100%);
+    border-radius: 36px;
+    height: 62px;
+    padding: 4px;
+    pointer-events: all;
   }
   .ll-tab {
     flex: 1;
@@ -28,88 +37,94 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 3px;
+    gap: 2px;
     text-decoration: none;
-    color: rgba(255,255,255,0.45);
+    color: rgba(186,194,225,0.78);
     font-family: 'DM Sans', sans-serif;
-    font-size: 10px;
+    font-size: 9px;
     font-weight: 500;
-    padding: 8px 4px;
-    transition: color 0.15s ease;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    border-radius: 26px;
     -webkit-tap-highlight-color: transparent;
     user-select: none;
-  }
-  .ll-tab.active {
-    color: #ef520f;
+    transition: color 0.15s ease;
   }
   .ll-tab svg {
-    width: 22px;
-    height: 22px;
+    width: 18px;
+    height: 18px;
     flex-shrink: 0;
   }
-  .ll-tab.active svg {
-    filter: drop-shadow(0 0 6px rgba(239,82,15,0.6));
+  .ll-tab.active {
+    background: linear-gradient(135deg,
+      #fefbf5 0%, #fdb75e 4%, #fd9931 9%,
+      #ef520f 38%, #df2c05 79%,
+      #e13809 89%, #fba251 97%, #ee6d2d 100%);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(223,44,5,0.28), 0 0 16px rgba(239,82,15,0.2);
+    font-weight: 600;
   }
-  .ll-tab:active {
-    opacity: 0.7;
-  }
-  /* space for content above nav */
+  .ll-tab:active { opacity: 0.7; }
   .ll-nav-spacer {
-    height: calc(60px + env(safe-area-inset-bottom, 0px));
+    height: calc(94px + env(safe-area-inset-bottom, 0px));
   }
 </style>
 
-<nav class="ll-nav" role="navigation" aria-label="Navegación principal">
+<div class="ll-outer">
+  <nav class="ll-pill" role="navigation" aria-label="Navegación principal">
 
-  <%# INICIO %>
-  <a href="<%= _href('/') %>" class="ll-tab <%= _isActive('/') ? 'active' : '' %>" aria-label="Inicio">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M3 9.5L12 3l9 6.5V21a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/>
-      <path d="M9 22V12h6v10"/>
-    </svg>
-    <span>Inicio</span>
-  </a>
+    <%# INICIO %>
+    <a href="<%= _href('/') %>" class="ll-tab <%= _isActive('/') ? 'active' : '' %>" aria-label="Inicio">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect width="7" height="9" x="3" y="3" rx="1"/>
+        <rect width="7" height="5" x="14" y="3" rx="1"/>
+        <rect width="7" height="9" x="14" y="12" rx="1"/>
+        <rect width="7" height="5" x="3" y="16" rx="1"/>
+      </svg>
+      <span>Inicio</span>
+    </a>
 
-  <%# PEDIDOS %>
-  <a href="<%= _href('/pedidos') %>" class="ll-tab <%= _isActive('/pedidos') ? 'active' : '' %>" aria-label="Pedidos">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
-      <rect x="9" y="3" width="6" height="4" rx="1"/>
-      <line x1="9" y1="12" x2="15" y2="12"/>
-      <line x1="9" y1="16" x2="13" y2="16"/>
-    </svg>
-    <span>Pedidos</span>
-  </a>
+    <%# PEDIDOS %>
+    <a href="<%= _href('/pedidos') %>" class="ll-tab <%= _isActive('/pedidos') ? 'active' : '' %>" aria-label="Pedidos">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect width="8" height="4" x="8" y="2" rx="1"/>
+        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
+        <line x1="12" x2="16" y1="11" y2="11"/>
+        <line x1="12" x2="16" y1="16" y2="16"/>
+        <line x1="8" x2="8.01" y1="11" y2="11"/>
+        <line x1="8" x2="8.01" y1="16" y2="16"/>
+      </svg>
+      <span>Pedidos</span>
+    </a>
 
-  <%# COCINA %>
-  <a href="<%= _href('/cocina') %>" class="ll-tab <%= _isActive('/cocina') ? 'active' : '' %>" aria-label="Cocina">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M12 2C8 2 5 5 5 9c0 2.4 1.1 4.5 2.8 5.9L8 21h8l.2-6.1C17.9 13.5 19 11.4 19 9c0-4-3-7-7-7z"/>
-      <line x1="12" y1="2" x2="12" y2="9"/>
-    </svg>
-    <span>Cocina</span>
-  </a>
+    <%# COCINA %>
+    <a href="<%= _href('/cocina') %>" class="ll-tab <%= _isActive('/cocina') ? 'active' : '' %>" aria-label="Cocina">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>
+      </svg>
+      <span>Cocina</span>
+    </a>
 
-  <%# CAJA %>
-  <a href="<%= _href('/caja') %>" class="ll-tab <%= _isActive('/caja') ? 'active' : '' %>" aria-label="Caja">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <rect x="2" y="7" width="20" height="14" rx="2"/>
-      <path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/>
-      <line x1="12" y1="12" x2="12" y2="16"/>
-      <line x1="10" y1="14" x2="14" y2="14"/>
-    </svg>
-    <span>Caja</span>
-  </a>
+    <%# CAJA %>
+    <a href="<%= _href('/caja') %>" class="ll-tab <%= _isActive('/caja') ? 'active' : '' %>" aria-label="Caja">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/>
+        <path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/>
+        <path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/>
+      </svg>
+      <span>Caja</span>
+    </a>
 
-  <%# MÁS %>
-  <a href="<%= _href('/mas') %>" class="ll-tab <%= _isActive('/mas') ? 'active' : '' %>" aria-label="Más opciones">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <circle cx="5" cy="12" r="1.5" fill="currentColor" stroke="none"/>
-      <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/>
-      <circle cx="19" cy="12" r="1.5" fill="currentColor" stroke="none"/>
-    </svg>
-    <span>Más</span>
-  </a>
+    <%# MÁS %>
+    <a href="<%= _href('/mas') %>" class="ll-tab <%= _isActive('/mas') ? 'active' : '' %>" aria-label="Más">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="4" x2="20" y1="6" y2="6"/>
+        <line x1="4" x2="20" y1="12" y2="12"/>
+        <line x1="4" x2="20" y1="18" y2="18"/>
+      </svg>
+      <span>Más</span>
+    </a>
 
-</nav>
+  </nav>
+</div>
 <div class="ll-nav-spacer"></div>
