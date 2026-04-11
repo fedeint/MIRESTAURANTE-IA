@@ -202,6 +202,7 @@ router.post('/:id/asignar-mesero', async (req, res) => {
 // GET /mesas - Página de gestión de mesas
 router.get('/', async (req, res) => {
     try {
+        const tenantId = req.session?.user?.tenant_id;
         // Trae el listado de mesas con asignación de mesero y estado actualizado
         const [mesas] = await db.query(`
             SELECT m.*,
@@ -225,8 +226,9 @@ router.get('/', async (req, res) => {
                   AND i.estado NOT IN ('cancelado','rechazado')
                 GROUP BY p.mesa_id
             ) stats ON stats.mesa_id = m.id
+            WHERE m.tenant_id = ?
             ORDER BY m.numero
-        `);
+        `, [tenantId]);
 
         const currentUserId = req.session?.user?.id || null;
         const currentUserRol = req.session?.user?.rol || '';
@@ -242,6 +244,7 @@ router.get('/', async (req, res) => {
 // GET /mesas/listar - API: lista de mesas con estado actual y asignación de mesero
 router.get('/listar', async (req, res) => {
     try {
+        const tenantId = req.session?.user?.tenant_id;
         const [mesas] = await db.query(`
             SELECT m.*,
             m.mesero_asignado_id,
@@ -264,8 +267,9 @@ router.get('/listar', async (req, res) => {
                   AND i.estado NOT IN ('cancelado','rechazado')
                 GROUP BY p.mesa_id
             ) stats ON stats.mesa_id = m.id
+            WHERE m.tenant_id = ?
             ORDER BY m.numero
-        `);
+        `, [tenantId]);
         res.json(mesas);
     } catch (error) {
         console.error('Error al listar mesas:', error);
