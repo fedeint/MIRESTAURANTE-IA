@@ -59,6 +59,42 @@ router.get('/', (req, res) => {
 });
 
 // System prompt builder
+// ─── Agente Salva — bloque de contexto especializado en caja ────────────────
+// Inyectado al system prompt cuando el chat se abre desde /caja con ?agent=salva
+function buildSalvaBlock(contextoChat, negocioContexto) {
+    // Extraer datos clave de caja del contexto de negocio si están disponibles
+    const cajaMatch = negocioContexto && negocioContexto.match(/## CAJA[\s\S]*?(?=## |$)/);
+    const cajaData = cajaMatch ? cajaMatch[0].trim() : '';
+
+    return `# MODO: AGENTE SALVA — GUARDIÁN DE CAJA
+
+Estás actuando como **Salva**, el agente especializado en protección y monitoreo de caja.
+Tu misión es vigilar proactivamente el dinero del restaurante y alertar sobre anomalías.
+
+## TU ROL COMO SALVA
+- Eres el guardián financiero del día — tu prioridad es la caja y el dinero
+- Analiza los movimientos de caja en busca de inconsistencias
+- Alerta sobre: metas no alcanzadas, stock que afecta ingresos, diferencias de caja
+- Proporciona resúmenes claros: ingresos vs egresos, efectivo esperado vs real
+- Sugiere acciones concretas cuando detectas un problema
+- Tono: directo, protector, como un contador de confianza
+
+## CONTEXTO DE SESIÓN
+- El usuario viene directamente desde la pantalla de **Caja**
+- Contexto adicional: ${contextoChat || 'caja'}
+${cajaData ? `\n## ESTADO ACTUAL DE CAJA\n${cajaData}` : ''}
+
+## PRIORIDADES DE RESPUESTA (en orden)
+1. Si la caja está cerrada → recordar abrir caja ANTES de operar
+2. Si hay diferencias entre efectivo esperado y real → alertar inmediatamente
+3. Si las ventas del día están por debajo de la meta → sugerir acciones
+4. Si hay stock crítico que puede afectar ventas → mencionar
+5. Si todo está bien → confirmar el estado y sugerir el próximo paso
+
+---
+`;
+}
+
 function buildSystemPrompt(contextoRaw, rol) {
     const contexto = (!rol || rol === 'administrador') ? contextoRaw : filtrarContextoPorRol(contextoRaw, rol);
     return `# IDENTIDAD
@@ -428,7 +464,7 @@ router.post('/', async (req, res) => {
         return res.status(500).json({ error: 'Configura KIMI_API_KEY o ANTHROPIC_API_KEY en .env' });
     }
 
-    const { mensaje, historial } = req.body;
+    const { mensaje, historial, agent, contexto: contextoChat } = req.body;
     // Use session role (secure) — never trust client-sent rol
     const rol = req.session?.user?.rol || '';
     if (!mensaje || !String(mensaje).trim()) {
@@ -503,7 +539,8 @@ router.post('/', async (req, res) => {
             : '';
 
         const rawSystemPrompt = buildSystemPrompt(contexto, rol || '');
-        const systemPrompt = kbBlock + rawSystemPrompt;
+        const salvaBlock = (agent === 'salva') ? buildSalvaBlock(contextoChat, contexto) : '';
+        const systemPrompt = salvaBlock + kbBlock + rawSystemPrompt;
         const messages    = buildMessages(historial, mensaje);
 
         const modelo = kimiKey ? 'kimi' : 'claude';

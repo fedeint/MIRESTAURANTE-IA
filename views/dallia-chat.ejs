@@ -640,10 +640,16 @@
     isFetching = true;
 
     try {
+      const _qp = new URLSearchParams(window.location.search);
       const r = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ mensaje: msg, historial: historial.slice(-20) })
+        body: JSON.stringify({
+          mensaje: msg,
+          historial: historial.slice(-20),
+          agent: _qp.get('agent') || '',
+          contexto: _qp.get('contexto') || ''
+        })
       });
       const data = await r.json();
       removeTyping(typingId);
