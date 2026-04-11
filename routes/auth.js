@@ -121,7 +121,7 @@ function defaultRedirectForRole(rol) {
 router.get('/login', async (req, res) => {
   try {
     // Si ya está logueado, redirigir según rol
-    if (req.session?.user) return res.redirect(defaultRedirectForRole(req.session.user.rol));
+    if (req.session?.user) return res.redirect((res.locals.basePath || '') + defaultRedirectForRole(req.session.user.rol));
 
     // Si no hay usuarios aún, guiar a setup
     let total = 1; // default: asumir que hay usuarios (mostrar login)
@@ -257,7 +257,7 @@ router.post('/login', async (req, res) => {
       );
     } catch (_) {}
 
-    res.redirect(defaultRedirectForRole(u.rol));
+    res.redirect((res.locals.basePath || '') + defaultRedirectForRole(u.rol));
   } catch (e) {
     console.error('Error login:', e);
     // Si la tabla no existe aún, guiar a migración
@@ -281,8 +281,9 @@ router.post('/logout', async (req, res) => {
         );
       } catch (_) {}
     }
+    const loginPath = (res.locals.basePath || '') + '/login';
     req.session.destroy(() => {
-      res.redirect('/login');
+      res.redirect(loginPath);
     });
   } catch (_) {
     res.redirect('/login');

@@ -247,7 +247,8 @@
 function abrirMesa(mesaId, numero, estado) {
   if (estado === 'bloqueada') return;
   // Navigate to new order flow for this mesa
-  window.location.href = '/pedido-nuevo?mesa=' + mesaId;
+  var _basePath = '<%- locals.basePath || "" %>';
+  window.location.href = _basePath + '/pedido-nuevo?mesa=' + mesaId;
 }
 
 // Auto-refresh every 30s to reflect table state changes
