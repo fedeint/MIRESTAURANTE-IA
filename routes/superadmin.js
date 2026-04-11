@@ -20,10 +20,29 @@ const crypto = require('crypto');
 /**
  * Creates an admin user for a new tenant.
  * Returns { usuario, pin } for inclusion in welcome email.
+ *
+ * NOTE: `usuarios.usuario` has a GLOBAL UNIQUE constraint (not composite with
+ * tenant_id), so the email prefix alone can clash across tenants. We try the
+ * bare prefix first, then `{prefix}.{subdomain}`, then `{prefix}.{subdomain}{N}`.
  */
 async function crearUsuarioAdmin(tenantId, emailAdmin, nombreRestaurante) {
-  // Generate username from email (part before @)
-  const usuario = emailAdmin.split('@')[0].toLowerCase().replace(/[^a-z0-9._-]/g, '');
+  const base = emailAdmin.split('@')[0].toLowerCase().replace(/[^a-z0-9._-]/g, '') || 'admin';
+
+  // Fetch subdomain for this tenant (used as suffix on clash)
+  const [[tenantRow]] = await db.query('SELECT subdominio FROM tenants WHERE id = ?', [tenantId]);
+  const subdominio = (tenantRow?.subdominio || `t${tenantId}`).toLowerCase().replace(/[^a-z0-9]/g, '');
+
+  // Find an unused username, globally
+  let usuario = base;
+  let attempt = 0;
+  while (true) {
+    const [dup] = await db.query('SELECT id FROM usuarios WHERE usuario = ? LIMIT 1', [usuario]);
+    if (!dup || dup.length === 0) break;
+    attempt++;
+    if (attempt === 1) usuario = `${base}.${subdominio}`;
+    else usuario = `${base}.${subdominio}${attempt}`;
+    if (attempt > 50) throw new Error('Cannot find unique username after 50 attempts');
+  }
 
   // Generate 6-digit PIN
   const pinBuffer = crypto.randomBytes(4);
@@ -32,23 +51,23 @@ async function crearUsuarioAdmin(tenantId, emailAdmin, nombreRestaurante) {
   const passwordHash = await bcrypt.hash(pin, 10);
   const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000); // 48h
 
-  // Check if user already exists for this tenant
-  const [existing] = await db.query(
-    'SELECT id, usuario FROM usuarios WHERE tenant_id = ? AND (usuario = ? OR google_email = ?)',
-    [tenantId, usuario, emailAdmin]
+  // Check if this tenant already has an admin (reuse it instead of inserting)
+  const [existingForTenant] = await db.query(
+    "SELECT id, usuario FROM usuarios WHERE tenant_id = ? AND rol = 'administrador' LIMIT 1",
+    [tenantId]
   );
 
-  if (existing && existing.length > 0) {
-    // Update existing user with new PIN
+  if (existingForTenant && existingForTenant.length > 0) {
+    // Update existing admin user with new PIN
     await db.query(
       `UPDATE usuarios SET password_hash = ?, must_change_password = true,
        password_expires_at = ?, updated_at = NOW() WHERE id = ?`,
-      [passwordHash, expiresAt.toISOString(), existing[0].id]
+      [passwordHash, expiresAt.toISOString(), existingForTenant[0].id]
     );
-    return { usuario: existing[0].usuario || usuario, pin };
+    return { usuario: existingForTenant[0].usuario, pin };
   }
 
-  // Create new admin user
+  // Create new admin user with the unique usuario we picked
   await db.query(
     `INSERT INTO usuarios (tenant_id, usuario, nombre, password_hash, rol, activo, must_change_password, password_expires_at)
      VALUES (?, ?, ?, ?, 'administrador', true, true, ?)`,
