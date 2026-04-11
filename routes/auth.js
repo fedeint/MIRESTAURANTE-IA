@@ -39,32 +39,73 @@ function validarPassword(pwd) {
   return null;
 }
 
-// Intentos fallidos en memoria (se resetea al reiniciar - para produccion usar Redis)
-const loginAttempts = {};
+// Brute-force lockout backed by PostgreSQL so it works across multiple Vercel instances.
+// Falls back to an in-memory map if the DB table doesn't exist yet (e.g. before migration).
+const _memAttempts = {}; // fallback only
 const MAX_ATTEMPTS = 5;
 const LOCK_TIME_MS = 15 * 60 * 1000; // 15 minutos
 
 function attemptKey(usuario, ip) {
-  return `${usuario}::${ip || 'unknown'}`;
+  return `${String(usuario).substring(0, 100)}::${String(ip || 'unknown').substring(0, 45)}`;
 }
 
-function checkLocked(usuario, ip) {
+async function checkLocked(usuario, ip) {
   const key = attemptKey(usuario, ip);
-  const entry = loginAttempts[key];
-  if (!entry) return false;
-  if (entry.attempts >= MAX_ATTEMPTS && (Date.now() - entry.lastAttempt) < LOCK_TIME_MS) return true;
-  if ((Date.now() - entry.lastAttempt) >= LOCK_TIME_MS) { delete loginAttempts[key]; return false; }
-  return false;
+  try {
+    const [rows] = await db.query(
+      `SELECT attempts, locked_until FROM login_attempts WHERE attempt_key = $1 LIMIT 1`,
+      [key]
+    );
+    const row = rows?.[0];
+    if (!row) return false;
+    if (row.locked_until && new Date(row.locked_until) > new Date()) return true;
+    if (row.attempts >= MAX_ATTEMPTS) {
+      // Lock expired — clean up
+      await db.query(`DELETE FROM login_attempts WHERE attempt_key = $1`, [key]).catch(() => {});
+    }
+    return false;
+  } catch (_) {
+    // Fallback to in-memory
+    const entry = _memAttempts[key];
+    if (!entry) return false;
+    if (entry.attempts >= MAX_ATTEMPTS && (Date.now() - entry.lastAttempt) < LOCK_TIME_MS) return true;
+    if ((Date.now() - entry.lastAttempt) >= LOCK_TIME_MS) { delete _memAttempts[key]; return false; }
+    return false;
+  }
 }
 
-function registerFailedAttempt(usuario, ip) {
+async function registerFailedAttempt(usuario, ip) {
   const key = attemptKey(usuario, ip);
-  if (!loginAttempts[key]) loginAttempts[key] = { attempts: 0, lastAttempt: 0 };
-  loginAttempts[key].attempts++;
-  loginAttempts[key].lastAttempt = Date.now();
+  try {
+    await db.query(
+      `INSERT INTO login_attempts (attempt_key, attempts, last_attempt, locked_until)
+       VALUES ($1, 1, NOW(), NULL)
+       ON CONFLICT (attempt_key) DO UPDATE
+         SET attempts     = login_attempts.attempts + 1,
+             last_attempt = NOW(),
+             locked_until = CASE
+               WHEN login_attempts.attempts + 1 >= $2
+               THEN NOW() + INTERVAL '15 minutes'
+               ELSE NULL
+             END`,
+      [key, MAX_ATTEMPTS]
+    );
+  } catch (_) {
+    // Fallback to in-memory
+    if (!_memAttempts[key]) _memAttempts[key] = { attempts: 0, lastAttempt: 0 };
+    _memAttempts[key].attempts++;
+    _memAttempts[key].lastAttempt = Date.now();
+  }
 }
 
-function clearAttempts(usuario, ip) { delete loginAttempts[attemptKey(usuario, ip)]; }
+async function clearAttempts(usuario, ip) {
+  const key = attemptKey(usuario, ip);
+  try {
+    await db.query(`DELETE FROM login_attempts WHERE attempt_key = $1`, [key]);
+  } catch (_) {
+    delete _memAttempts[key];
+  }
+}
 
 function defaultRedirectForRole(rol) {
   const r = String(rol || '').toLowerCase();
@@ -109,9 +150,9 @@ router.post('/login', async (req, res) => {
 
   if (!usuario || !password) return res.status(400).render('login', { error: 'Usuario y contraseña son requeridos.', isSubdomain: res.locals.isSubdomain || false, tenant: res.locals.tenant || null });
 
-  // Bloqueo por intentos fallidos (por usuario + IP)
+  // Bloqueo por intentos fallidos (por usuario + IP) — DB-backed, cross-instance
   const clientIp = req.ip;
-  if (checkLocked(usuario, clientIp)) {
+  if (await checkLocked(usuario, clientIp)) {
     return res.status(429).render('login', { error: 'Cuenta bloqueada por multiples intentos fallidos. Intenta en 15 minutos.', isSubdomain: res.locals.isSubdomain || false, tenant: res.locals.tenant || null });
   }
 
@@ -125,7 +166,7 @@ router.post('/login', async (req, res) => {
     );
     const u = rows?.[0];
     if (!u || Number(u.activo) !== 1) {
-      registerFailedAttempt(usuario, clientIp);
+      await registerFailedAttempt(usuario, clientIp);
       // Log failed login attempt
       try {
         await db.query(
@@ -139,7 +180,7 @@ router.post('/login', async (req, res) => {
 
     const ok = await bc.compare(password, String(u.password_hash || ''));
     if (!ok) {
-      registerFailedAttempt(usuario, clientIp);
+      await registerFailedAttempt(usuario, clientIp);
       // Log failed login attempt
       try {
         await db.query(
@@ -152,7 +193,7 @@ router.post('/login', async (req, res) => {
     }
 
     // Login exitoso - limpiar intentos
-    clearAttempts(usuario, clientIp);
+    await clearAttempts(usuario, clientIp);
 
     // Cargar permisos del usuario
     let permisos = null;
