@@ -59,6 +59,9 @@ app.use(helmet({
                 "https://unpkg.com",
                 "https://maps.googleapis.com",
             ],
+            scriptSrcAttr: [
+                "'unsafe-inline'",    // Inline onclick/onchange — boveda + legacy views (V3: migrate to addEventListener)
+            ],
             styleSrc: [
                 "'self'",
                 "'unsafe-inline'",    // Inline styles in EJS templates
