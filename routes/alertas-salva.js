@@ -19,6 +19,7 @@ router.get('/', async (req, res) => {
     checkStock(tid, alerts),
     checkMetas(tid, alerts),
     checkVencimiento(tid, alerts),
+    checkMetaAlcanzada(tid, alerts),
   ]);
 
   // Sort by severity: error > warning > info
@@ -204,6 +205,43 @@ async function checkVencimiento(tid, alerts) {
         dallia: { label: 'Ver con DalIA', href: '/chat?prompt=Insumos+próximos+a+vencerse' }
       });
     }
+  } catch (_) {}
+}
+
+async function checkMetaAlcanzada(tid, alerts) {
+  try {
+    // Load ventas meta
+    const [[meta]] = await db.query(
+      `SELECT meta_valor FROM metas_diarias WHERE tenant_id = $1 AND tipo = 'ventas' AND activa = true LIMIT 1`,
+      [tid]
+    );
+    const metaValor = Number(meta?.meta_valor || 0);
+    if (metaValor <= 0) return;
+
+    // Today's ingresos
+    const [[ing]] = await db.query(
+      `SELECT COALESCE(SUM(CASE WHEN tipo='ingreso' AND concepto IN ('venta_factura','propina') AND NOT anulado THEN monto ELSE 0 END), 0) AS ingresos
+       FROM caja_movimientos
+       WHERE tenant_id = $1
+         AND created_at AT TIME ZONE 'America/Lima' >= CURRENT_DATE AT TIME ZONE 'America/Lima'
+         AND created_at AT TIME ZONE 'America/Lima' <  (CURRENT_DATE + INTERVAL '1 day') AT TIME ZONE 'America/Lima'`,
+      [tid]
+    );
+    const ingresosHoy = Number(ing?.ingresos || 0);
+    if (ingresosHoy < metaValor) return;
+
+    const pct = Math.round((ingresosHoy / metaValor) * 100);
+    const emoji = pct >= 130 ? '🚀' : '🎉';
+
+    alerts.push({
+      id: 'meta_ventas_alcanzada',
+      tipo: 'info',
+      icono: emoji,
+      titulo: `¡Meta de ventas alcanzada! (${pct}%)`,
+      mensaje: `Hoy llevas S/ ${ingresosHoy.toFixed(2)} — superaste tu meta de S/ ${metaValor.toFixed(2)}.`,
+      accion: { label: 'Ver finanzas', href: '/finanzas' },
+      dallia: { label: 'Celebrar con DalIA', href: `/chat?prompt=Alcancé+mi+meta+de+ventas+de+hoy` }
+    });
   } catch (_) {}
 }
 
