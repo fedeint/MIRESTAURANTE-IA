@@ -852,6 +852,29 @@ async function obtenerContextoNegocio() {
         } else {
             seccion += '\n- Stock: todo OK, ningun ingrediente bajo minimo';
         }
+        // Vencimientos próximos
+        try {
+            const [venciendo] = await db.query(`
+                SELECT ai.nombre, al.cantidad_disponible, al.unidad_medida_legacy,
+                       al.fecha_vencimiento,
+                       (al.fecha_vencimiento - CURRENT_DATE) as dias
+                FROM almacen_lotes al
+                JOIN almacen_ingredientes ai ON ai.id = al.ingrediente_id
+                WHERE al.cantidad_disponible > 0
+                  AND al.fecha_vencimiento IS NOT NULL
+                  AND al.fecha_vencimiento >= CURRENT_DATE
+                  AND al.fecha_vencimiento <= CURRENT_DATE + 3
+                ORDER BY al.fecha_vencimiento ASC LIMIT 8
+            `);
+            if (venciendo.length > 0) {
+                seccion += `\n- VENCIMIENTOS PRÓXIMOS (${venciendo.length}):\n` +
+                    venciendo.map(v => {
+                        const dias = Number(v.dias);
+                        const cuando = dias === 0 ? 'HOY' : dias === 1 ? 'mañana' : `en ${dias} días`;
+                        return `  - ${v.nombre}: vence ${cuando} (${v.cantidad_disponible} uds)`;
+                    }).join('\n');
+            }
+        } catch (_) {}
         secciones.push(seccion);
     } catch (_) {}
 
@@ -899,6 +922,18 @@ async function obtenerContextoNegocio() {
         } else {
             secciones.push('## CAJA\n- Estado: CERRADA — recordar al usuario que debe abrir caja para operar');
         }
+
+    // --- METAS DEL DÍA ---
+    try {
+        const [metas] = await db.query('SELECT tipo, meta_valor FROM metas_diarias WHERE activa = true LIMIT 5');
+        if (metas && metas.length > 0) {
+            let seccionMetas = '## METAS DEL DÍA';
+            for (const meta of metas) {
+                seccionMetas += `\n- Meta ${meta.tipo}: ${meta.meta_valor}`;
+            }
+            secciones.push(seccionMetas);
+        }
+    } catch (_) {}
 
     // --- PLANILLA (solo admin/superadmin) ---
     try {
