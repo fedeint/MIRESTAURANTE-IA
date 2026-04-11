@@ -1,212 +1,546 @@
+<%# @variant: pwa %>
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
+  <meta charset="UTF-8">
   <link rel="icon" type="image/png" href="/favicon.png">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#1e1b4b">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0f172a">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="dignita">
+  <meta name="apple-mobile-web-app-title" content="Cocina">
   <link rel="manifest" href="/manifest.json">
   <link rel="apple-touch-icon" href="/icon-192.png">
-    <title>Cocina - mirestconia.com</title>
-    <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
-    <link rel="stylesheet" href="/css/theme.css">
-    <style>
-      @keyframes cocina-pulse {
-        0%, 100% { opacity: 1; transform: scale(1); }
-        50%       { opacity: 0.75; transform: scale(1.06); }
-      }
-      .cocina-timer-wrap {
-        display: flex;
-        justify-content: center;
-      }
-      .cocina-timer-badge {
-        font-size: 1rem !important;
-        padding: .4em .75em;
-        border-radius: .5rem;
-        letter-spacing: .01em;
-      }
-      .cocina-summary-bar {
-        background: var(--bs-body-bg, #fff);
-        border: 1px solid var(--bs-border-color, #dee2e6);
-        border-radius: .5rem;
-        padding: .5rem 1rem;
-        display: flex;
-        flex-wrap: wrap;
-        gap: .75rem;
-        align-items: center;
-        font-size: .9rem;
-        margin-bottom: 1rem;
-      }
-      .cocina-summary-bar .summary-item {
-        display: flex;
-        align-items: center;
-        gap: .35rem;
-      }
-    </style>
+  <title>Cocina</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      font-family: 'DM Sans', sans-serif;
+      background: #0f172a;
+      color: #fff;
+      min-height: 100dvh;
+      -webkit-font-smoothing: antialiased;
+      overscroll-behavior: none;
+    }
+    .shell {
+      max-width: 480px;
+      margin: 0 auto;
+      min-height: 100dvh;
+      padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px));
+    }
+
+    /* HEADER */
+    .c-header {
+      background: #0f172a;
+      padding: calc(env(safe-area-inset-top, 12px) + 14px) 16px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+    }
+    .c-header-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .c-header-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: rgba(239,82,15,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .c-header-icon svg { width: 20px; height: 20px; }
+    .c-header-title { font-size: 20px; font-weight: 800; color: #fff; }
+    .c-header-sub { font-size: 12px; color: rgba(255,255,255,0.45); margin-top: 2px; }
+
+    /* KPI ROW */
+    .c-kpi-row {
+      display: flex;
+      gap: 8px;
+      padding: 14px 16px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .c-kpi-row::-webkit-scrollbar { display: none; }
+    .c-kpi {
+      background: #1e293b;
+      border-radius: 14px;
+      padding: 12px 14px;
+      min-width: 90px;
+      flex-shrink: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .c-kpi-icon { font-size: 18px; }
+    .c-kpi-val { font-size: 22px; font-weight: 800; color: #fff; line-height: 1; }
+    .c-kpi-lbl { font-size: 10px; color: rgba(255,255,255,0.45); font-weight: 500; text-align: center; }
+    .c-kpi.urgent .c-kpi-val { color: #ef4444; }
+
+    /* SEARCH */
+    .c-search-wrap { padding: 0 16px 14px; }
+    .c-search {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #1e293b;
+      border-radius: 12px;
+      padding: 11px 14px;
+      border: 1px solid rgba(255,255,255,0.07);
+    }
+    .c-search svg { width: 16px; height: 16px; stroke: rgba(255,255,255,0.35); flex-shrink: 0; }
+    .c-search input {
+      background: none;
+      border: none;
+      outline: none;
+      color: #fff;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      width: 100%;
+    }
+    .c-search input::placeholder { color: rgba(255,255,255,0.3); }
+
+    /* STATUS TABS */
+    .c-tabs-row {
+      display: flex;
+      gap: 6px;
+      padding: 0 16px 14px;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .c-tabs-row::-webkit-scrollbar { display: none; }
+    .c-tab-btn {
+      background: #1e293b;
+      border: 1px solid rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.55);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 8px 14px;
+      border-radius: 20px;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+      -webkit-tap-highlight-color: transparent;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.15s ease;
+    }
+    .c-tab-btn.active {
+      background: linear-gradient(135deg,#ef520f,#df2c05);
+      color: #fff;
+      border-color: transparent;
+    }
+    .c-tab-count {
+      background: rgba(255,255,255,0.2);
+      border-radius: 10px;
+      padding: 1px 7px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .c-tab-btn.active .c-tab-count { background: rgba(255,255,255,0.25); }
+
+    /* ORDERS GRID */
+    .c-grid {
+      padding: 0 12px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .c-card {
+      background: #1e293b;
+      border-radius: 16px;
+      padding: 14px 12px 12px;
+      border: 1px solid rgba(255,255,255,0.07);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      position: relative;
+    }
+    /* Badge mesa/tipo */
+    .c-mesa-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      border-radius: 8px;
+      padding: 3px 9px;
+      font-size: 11px;
+      font-weight: 700;
+      width: fit-content;
+    }
+    .badge-mesa     { background: rgba(99,102,241,0.2);  color: #a5b4fc; }
+    .badge-delivery { background: rgba(249,115,22,0.2);  color: #fdba74; }
+    .badge-llevar   { background: rgba(34,197,94,0.2);   color: #86efac; }
+
+    /* Product name */
+    .c-product { font-size: 16px; font-weight: 700; color: #fff; line-height: 1.25; }
+    .c-qty { font-size: 12px; color: rgba(255,255,255,0.5); }
+
+    /* Notes chip */
+    .c-note {
+      display: inline-flex;
+      align-items: center;
+      background: rgba(239,82,15,0.15);
+      border: 1px solid rgba(239,82,15,0.3);
+      color: #fda574;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 9px;
+      border-radius: 8px;
+      margin-top: 2px;
+    }
+
+    /* Timer */
+    .c-timer-row {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+    .c-timer {
+      font-size: 38px;
+      font-weight: 800;
+      color: #fff;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+    .c-timer-goal { font-size: 12px; color: rgba(255,255,255,0.35); }
+
+    /* Progress bar */
+    .c-progress {
+      height: 4px;
+      border-radius: 2px;
+      background: rgba(255,255,255,0.1);
+      overflow: hidden;
+    }
+    .c-progress-fill {
+      height: 100%;
+      border-radius: 2px;
+      background: #22c55e;
+      transition: width 1s linear, background 0.5s ease;
+    }
+
+    /* Buttons */
+    .c-btn-row {
+      display: flex;
+      gap: 8px;
+    }
+    .c-btn {
+      flex: 1;
+      border: none;
+      border-radius: 12px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      padding: 13px 8px;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 5px;
+      transition: opacity 0.1s, transform 0.1s;
+    }
+    .c-btn:active { opacity: 0.75; transform: scale(0.97); }
+    .c-btn-listo {
+      background: linear-gradient(135deg,#ef520f,#df2c05);
+      color: #fff;
+    }
+    .c-btn-rechazar {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.15);
+      color: rgba(255,255,255,0.65);
+    }
+
+    /* Empty state */
+    .c-empty {
+      grid-column: 1 / -1;
+      padding: 40px 16px;
+      text-align: center;
+      color: rgba(255,255,255,0.3);
+      font-size: 14px;
+    }
+    .c-empty svg { width: 40px; height: 40px; margin: 0 auto 12px; display: block; opacity: 0.3; }
+
+    /* Refreshing indicator */
+    .c-refresh-dot {
+      position: fixed;
+      top: calc(env(safe-area-inset-top, 0px) + 8px);
+      right: 12px;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #22c55e;
+      opacity: 0;
+      transition: opacity 0.3s;
+      z-index: 200;
+    }
+    .c-refresh-dot.active { opacity: 1; }
+  </style>
 </head>
 <body>
-    <%- include('partials/sidebar') %>
-    <div class="dg-main">
-    <main class="flex-grow-1">
-    <div class="container">
-        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
-          <div>
-            <h4 class="mb-0"><i class="bi bi-fire me-2"></i>Cocina</h4>
-            <div class="text-muted small">Gestiona el estado de preparación de forma rápida y clara.</div>
-          </div>
-          <div class="d-flex align-items-center gap-2">
-            <button id="btnRefreshCocina" class="btn btn-outline-secondary btn-sm" type="button">
-              <i class="bi bi-arrow-clockwise me-1"></i>Actualizar
-            </button>
-            <div class="form-check form-switch m-0">
-              <input class="form-check-input" type="checkbox" role="switch" id="toggleAutoRefresh" checked>
-              <label class="form-check-label small" for="toggleAutoRefresh">Auto</label>
-            </div>
-          </div>
-        </div>
+<div class="shell">
 
-        <!-- Barra de resumen en tiempo real -->
-        <div class="cocina-summary-bar mb-3" id="cocinaSummaryBar">
-          <div class="summary-item">
-            <i class="bi bi-grid-3x3-gap text-secondary"></i>
-            <span class="fw-semibold"><span id="summaryActivos">0</span></span>
-            <span class="text-muted">mesas activas</span>
-          </div>
-          <div class="vr d-none d-md-block"></div>
-          <div class="summary-item">
-            <i class="bi bi-clock text-secondary"></i>
-            <span class="text-muted">Tiempo promedio:</span>
-            <span class="fw-semibold"><span id="summaryPromedio">0</span> min</span>
-          </div>
-          <div class="vr d-none d-md-block"></div>
-          <div class="summary-item">
-            <i class="bi bi-exclamation-triangle text-danger"></i>
-            <span class="text-muted">Urgentes:</span>
-            <span id="summaryUrgentesBadge" class="badge text-bg-secondary"><span id="summaryUrgentes">0</span></span>
-          </div>
-        </div>
+  <%- include('partials/pwa-header', { title: 'Cocina', subtitle: 'Gestión de preparación en tiempo real' }) %>
 
-        <div class="cocina-toolbar mb-3">
-          <div class="row g-2 align-items-center">
-            <div class="col-12 col-md-6">
-              <div class="input-group">
-                <span class="input-group-text"><i class="bi bi-search"></i></span>
-                <input id="buscarCocina" class="form-control" placeholder="Buscar por mesa, producto o nota...">
-              </div>
-            </div>
-            <div class="col-12 col-md-6 d-flex justify-content-md-end gap-2 flex-wrap">
-              <span class="badge text-bg-primary kpi-badge">Enviados: <span id="countEnviados">0</span></span>
-              <span class="badge text-bg-warning kpi-badge">Preparando: <span id="countPreparando">0</span></span>
-              <span class="badge text-bg-success kpi-badge">Listos: <span id="countListos">0</span></span>
-            </div>
-          </div>
-          <!-- Filtros de Entregados (por defecto hoy) -->
-          <!-- Relacionado con: public/js/cocina.js (GET /api/cocina/entregados?desde&hasta) -->
-          <div class="row g-2 align-items-end mt-2">
-            <div class="col-12 col-md-3">
-              <label class="form-label small mb-1">Desde</label>
-              <input type="date" id="entDesde" class="form-control form-control-sm">
-            </div>
-            <div class="col-12 col-md-3">
-              <label class="form-label small mb-1">Hasta</label>
-              <input type="date" id="entHasta" class="form-control form-control-sm">
-            </div>
-            <div class="col-12 col-md-3">
-              <button id="btnFiltrarEntregados" class="btn btn-outline-secondary btn-sm w-100" type="button">
-                <i class="bi bi-funnel me-1"></i>Filtrar entregados
-              </button>
-            </div>
-            <div class="col-12 col-md-3 small text-muted">
-              Predeterminado: <strong>hoy</strong>
-            </div>
-          </div>
-        </div>
-
-        <ul class="nav nav-pills gap-2" id="tabsCocina" role="tablist">
-          <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="tabEnviados-tab" data-bs-toggle="tab" data-bs-target="#tabEnviados" type="button" role="tab" aria-controls="tabEnviados" aria-selected="true">
-              <i class="bi bi-send me-1"></i>Enviados <span class="badge text-bg-light ms-1" id="pillEnviados">0</span>
-            </button>
-          </li>
-          <li class="nav-item" role="presentation">
-            <button class="nav-link" id="tabPreparando-tab" data-bs-toggle="tab" data-bs-target="#tabPreparando" type="button" role="tab" aria-controls="tabPreparando" aria-selected="false">
-              <i class="bi bi-fire me-1"></i>Preparando <span class="badge text-bg-light ms-1" id="pillPreparando">0</span>
-            </button>
-          </li>
-          <li class="nav-item" role="presentation">
-            <button class="nav-link" id="tabListos-tab" data-bs-toggle="tab" data-bs-target="#tabListos" type="button" role="tab" aria-controls="tabListos" aria-selected="false">
-              <i class="bi bi-check2-circle me-1"></i>Listos <span class="badge text-bg-light ms-1" id="pillListos">0</span>
-            </button>
-          </li>
-          <li class="nav-item" role="presentation">
-            <button class="nav-link" id="tabEntregados-tab" data-bs-toggle="tab" data-bs-target="#tabEntregados" type="button" role="tab" aria-controls="tabEntregados" aria-selected="false">
-              <i class="bi bi-box-seam me-1"></i>Entregados <span class="badge text-bg-light ms-1" id="pillEntregados">0</span>
-            </button>
-          </li>
-          <!-- Pestaña Rechazados: visualizar pedidos/items cancelados (estado='rechazado') -->
-          <!-- Relacionado con: routes/cocina.js (GET /api/cocina/rechazados) y public/js/cocina.js -->
-          <li class="nav-item" role="presentation">
-            <button class="nav-link" id="tabRechazados-tab" data-bs-toggle="tab" data-bs-target="#tabRechazados" type="button" role="tab" aria-controls="tabRechazados" aria-selected="false">
-              <i class="bi bi-x-octagon me-1"></i>Rechazados <span class="badge text-bg-light ms-1" id="pillRechazados">0</span>
-            </button>
-          </li>
-        </ul>
-
-        <div class="tab-content pt-3">
-          <div class="tab-pane fade show active" id="tabEnviados" role="tabpanel" aria-labelledby="tabEnviados-tab" tabindex="0">
-            <div id="listaEnviados" class="vstack gap-2"></div>
-            <div id="emptyEnviados" class="empty-state mt-2 d-none">
-              <i class="bi bi-inbox me-1"></i>No hay pedidos enviados.
-            </div>
-          </div>
-          <div class="tab-pane fade" id="tabPreparando" role="tabpanel" aria-labelledby="tabPreparando-tab" tabindex="0">
-            <div id="listaPreparando" class="vstack gap-2"></div>
-            <div id="emptyPreparando" class="empty-state mt-2 d-none">
-              <i class="bi bi-inbox me-1"></i>No hay pedidos en preparación.
-            </div>
-          </div>
-          <div class="tab-pane fade" id="tabListos" role="tabpanel" aria-labelledby="tabListos-tab" tabindex="0">
-            <div id="listaListos" class="vstack gap-2"></div>
-            <div id="emptyListos" class="empty-state mt-2 d-none">
-              <i class="bi bi-inbox me-1"></i>No hay pedidos listos para entregar.
-            </div>
-          </div>
-          <div class="tab-pane fade" id="tabEntregados" role="tabpanel" aria-labelledby="tabEntregados-tab" tabindex="0">
-            <div id="listaEntregados" class="vstack gap-2"></div>
-            <div id="emptyEntregados" class="empty-state mt-2 d-none">
-              <i class="bi bi-inbox me-1"></i>No hay pedidos entregados en el rango seleccionado.
-            </div>
-          </div>
-          <div class="tab-pane fade" id="tabRechazados" role="tabpanel" aria-labelledby="tabRechazados-tab" tabindex="0">
-            <div id="listaRechazados" class="vstack gap-2"></div>
-            <div id="emptyRechazados" class="empty-state mt-2 d-none">
-              <i class="bi bi-inbox me-1"></i>No hay pedidos rechazados en el rango seleccionado.
-            </div>
-          </div>
-        </div>
+  <!-- KPI ROW -->
+  <div class="c-kpi-row">
+    <div class="c-kpi">
+      <span class="c-kpi-icon">🍽️</span>
+      <span class="c-kpi-val" id="kpiMesas">0</span>
+      <span class="c-kpi-lbl">Mesas activas</span>
     </div>
-    </main>
+    <div class="c-kpi">
+      <span class="c-kpi-icon">⏱️</span>
+      <span class="c-kpi-val" id="kpiTiempo">0</span>
+      <span class="c-kpi-lbl">Prom. min</span>
+    </div>
+    <div class="c-kpi urgent">
+      <span class="c-kpi-icon">🔥</span>
+      <span class="c-kpi-val" id="kpiUrgentes">0</span>
+      <span class="c-kpi-lbl">Urgentes</span>
+    </div>
+    <div class="c-kpi">
+      <span class="c-kpi-icon">✅</span>
+      <span class="c-kpi-val" id="kpiEntregados">0</span>
+      <span class="c-kpi-lbl">Listos hoy</span>
+    </div>
+  </div>
 
-    <%- include('partials/footer') %>
-    </div><!-- dg-main -->
+  <!-- SEARCH -->
+  <div class="c-search-wrap">
+    <div class="c-search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input id="cSearchInput" type="text" placeholder="Buscar por mesa, producto o nota…">
+    </div>
+  </div>
 
-    <script src="/vendor/jquery/jquery.min.js"></script>
-    <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-    <!-- SweetAlert2 (confirmaciones). Relacionado con: public/js/cocina.js (cancelar item) -->
-    <script src="/vendor/sweetalert2/sweetalert2.all.min.js"></script>
-    <script>
-      // Render inicial (evita “pantalla vacía” mientras carga el fetch)
-      window.__COCINA_ITEMS__ = <%- JSON.stringify(items || []) %>;
-      // Rol del usuario (para esconder acciones en UI cuando es mesero)
-      // Relacionado con: public/js/cocina.js y middleware/auth.js (res.locals.user)
-      window.__USER_ROLE__ = <%- JSON.stringify((typeof user !== 'undefined' && user && user.rol) ? user.rol : '') %>;
-    </script>
-    <script src="/js/cocina.js"></script>
+  <!-- STATUS TABS -->
+  <div class="c-tabs-row">
+    <button class="c-tab-btn active" data-tab="preparando">
+      🔥 Preparando <span class="c-tab-count" id="tabCntPreparando">0</span>
+    </button>
+    <button class="c-tab-btn" data-tab="listo">
+      ✅ Listos <span class="c-tab-count" id="tabCntListo">0</span>
+    </button>
+    <button class="c-tab-btn" data-tab="servido">
+      📦 Entregados <span class="c-tab-count" id="tabCntServido">0</span>
+    </button>
+    <button class="c-tab-btn" data-tab="rechazado">
+      ❌ Rechazados <span class="c-tab-count" id="tabCntRechazado">0</span>
+    </button>
+  </div>
+
+  <!-- ORDERS GRID -->
+  <div class="c-grid" id="cGrid">
+    <!-- rendered by JS -->
+  </div>
+
+</div>
+
+<div class="c-refresh-dot" id="refreshDot"></div>
+
+<%- include('partials/limelight-nav', { reqPath: '/cocina' }) %>
+
+<script src="/js/dallia-fab.js"></script>
+<script>
+(function() {
+  var GOAL_MIN = 20; // default objetivo en minutos
+  var currentTab = 'preparando';
+  var searchQ = '';
+  var allItems = [];
+  var timerIntervals = {};
+
+  var grid  = document.getElementById('cGrid');
+  var dot   = document.getElementById('refreshDot');
+
+  // Initial data from server
+  var serverItems = <%- JSON.stringify(items || []) %>;
+
+  // ------ Helpers ------
+  function elapsed(sent) {
+    if (!sent) return 0;
+    return Math.floor((Date.now() - new Date(sent).getTime()) / 1000);
+  }
+
+  function fmtTimer(secs) {
+    var m = Math.floor(secs / 60);
+    var s = secs % 60;
+    return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+  }
+
+  function progressPct(secs) {
+    var goal = GOAL_MIN * 60;
+    return Math.min(100, Math.round((secs / goal) * 100));
+  }
+
+  function progressColor(pct) {
+    if (pct < 60) return '#22c55e';
+    if (pct < 85) return '#f97316';
+    return '#ef4444';
+  }
+
+  function badgeClass(item) {
+    if (item.mesa_numero) return 'badge-mesa';
+    // Could check type from pedido but we only have mesa_id
+    return 'badge-mesa';
+  }
+
+  function badgeLabel(item) {
+    if (item.mesa_numero) return 'Mesa ' + item.mesa_numero;
+    return 'Para llevar';
+  }
+
+  // ------ Render ------
+  function render() {
+    // Clear old timers
+    Object.values(timerIntervals).forEach(clearInterval);
+    timerIntervals = {};
+
+    var filtered = allItems.filter(function(it) {
+      if (it.estado !== currentTab) return false;
+      if (searchQ) {
+        var q = searchQ.toLowerCase();
+        var haystack = [
+          it.producto_nombre || '',
+          it.mesa_numero ? 'mesa ' + it.mesa_numero : '',
+          it.notas || ''
+        ].join(' ').toLowerCase();
+        if (haystack.indexOf(q) < 0) return false;
+      }
+      return true;
+    });
+
+    if (filtered.length === 0) {
+      grid.innerHTML = '<div class="c-empty">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/></svg>' +
+        'No hay pedidos en esta sección</div>';
+      return;
+    }
+
+    grid.innerHTML = filtered.map(function(item) {
+      var sec = elapsed(item.enviado_at);
+      var pct = progressPct(sec);
+      var color = progressColor(pct);
+      var bc = badgeClass(item);
+      var bl = badgeLabel(item);
+      var buttons = '';
+      if (item.estado === 'preparando') {
+        buttons = '<div class="c-btn-row">' +
+          '<button class="c-btn c-btn-listo" onclick="markState(' + item.id + ',\'listo\')">✓ Listo</button>' +
+          '<button class="c-btn c-btn-rechazar" onclick="markState(' + item.id + ',\'rechazado\')">✕</button>' +
+          '</div>';
+      } else if (item.estado === 'listo') {
+        buttons = '<div class="c-btn-row">' +
+          '<button class="c-btn c-btn-listo" onclick="markState(' + item.id + ',\'entregado\')">Entregar</button>' +
+          '</div>';
+      }
+      var nota = item.notas ? '<span class="c-note">' + item.notas + '</span>' : '';
+      return '<div class="c-card" id="card-' + item.id + '">' +
+        '<span class="c-mesa-badge ' + bc + '">' + bl + '</span>' +
+        '<div class="c-product">' + (item.producto_nombre || 'Producto') + '</div>' +
+        '<div class="c-qty">Cantidad: ' + (item.cantidad || 1) + '</div>' +
+        nota +
+        '<div>' +
+          '<div class="c-timer-row">' +
+            '<span class="c-timer" id="timer-' + item.id + '">' + fmtTimer(sec) + '</span>' +
+            '<span class="c-timer-goal">/ ' + GOAL_MIN + ' min</span>' +
+          '</div>' +
+          '<div class="c-progress"><div class="c-progress-fill" id="prog-' + item.id + '" style="width:' + pct + '%;background:' + color + '"></div></div>' +
+        '</div>' +
+        buttons +
+      '</div>';
+    }).join('');
+
+    // Start per-card timers for active states
+    filtered.forEach(function(item) {
+      if (item.estado !== 'preparando' && item.estado !== 'listo') return;
+      timerIntervals[item.id] = setInterval(function() {
+        var timerEl = document.getElementById('timer-' + item.id);
+        var progEl  = document.getElementById('prog-' + item.id);
+        if (!timerEl) { clearInterval(timerIntervals[item.id]); return; }
+        var sec = elapsed(item.enviado_at);
+        timerEl.textContent = fmtTimer(sec);
+        if (progEl) {
+          var pct = progressPct(sec);
+          progEl.style.width = pct + '%';
+          progEl.style.background = progressColor(pct);
+        }
+      }, 1000);
+    });
+  }
+
+  // ------ Tab counts ------
+  function updateCounts() {
+    var counts = { preparando: 0, listo: 0, servido: 0, rechazado: 0 };
+    allItems.forEach(function(it) { if (counts[it.estado] !== undefined) counts[it.estado]++; });
+    document.getElementById('tabCntPreparando').textContent = counts.preparando;
+    document.getElementById('tabCntListo').textContent = counts.listo;
+    document.getElementById('tabCntServido').textContent = counts.servido;
+    document.getElementById('tabCntRechazado').textContent = counts.rechazado;
+    // KPIs
+    var mesas = new Set(allItems.filter(function(i){ return i.estado==='preparando'||i.estado==='listo'; }).map(function(i){ return i.mesa_id; })).size;
+    document.getElementById('kpiMesas').textContent = mesas;
+    var urgentes = allItems.filter(function(i){ return (i.estado==='preparando'||i.estado==='listo') && elapsed(i.enviado_at) > GOAL_MIN * 60; }).length;
+    document.getElementById('kpiUrgentes').textContent = urgentes;
+  }
+
+  // ------ State action ------
+  window.markState = function(id, estado) {
+    var mapped = { listo:'listo', rechazado:'rechazado', entregado:'entregado' };
+    fetch('/cocina/item/' + id + '/estado', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ estado: mapped[estado] || estado })
+    }).then(function(r) {
+      if (!r.ok) throw new Error('fail');
+      loadItems();
+    }).catch(function(e) {
+      console.error(e);
+    });
+  };
+
+  // ------ Data load ------
+  function loadItems() {
+    dot.classList.add('active');
+    fetch('/cocina/cola').then(function(r){ return r.json(); }).then(function(data) {
+      allItems = data || [];
+      updateCounts();
+      render();
+      dot.classList.remove('active');
+    }).catch(function() { dot.classList.remove('active'); });
+  }
+
+  // ------ Tab switch ------
+  document.querySelectorAll('.c-tab-btn').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      currentTab = btn.dataset.tab;
+      document.querySelectorAll('.c-tab-btn').forEach(function(b){ b.classList.remove('active'); });
+      btn.classList.add('active');
+      render();
+    });
+  });
+
+  // ------ Search ------
+  document.getElementById('cSearchInput').addEventListener('input', function(e) {
+    searchQ = e.target.value.trim();
+    render();
+  });
+
+  // ------ Init & auto-refresh ------
+  allItems = serverItems;
+  updateCounts();
+  render();
+  setInterval(loadItems, 10000);
+})();
+</script>
 </body>
 </html>
-
-

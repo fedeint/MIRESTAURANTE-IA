@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const { requireRole } = require('../middleware/auth');
+const { renderForDevice } = require('../lib/deviceRouter');
 
 // Rutas para la vista/cola de cocina
 // - Renderiza pedidos/items en orden de envío (FIFO por enviado_at, luego created_at)
@@ -20,7 +21,7 @@ router.get('/', requireRole(['cocinero', 'mesero', 'administrador']), async (req
             ORDER BY COALESCE(i.enviado_at, i.created_at) ASC, i.id ASC
         `);
 
-        res.render('cocina', { items: items || [] });
+        renderForDevice(req, res, 'cocina', { items: items || [] });
     } catch (error) {
         console.error('Error al cargar cocina:', error);
         res.status(500).render('error', { error: { message: 'Error al cargar cocina', stack: process.env.NODE_ENV !== 'production' ? error.stack : null } });
