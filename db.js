@@ -361,10 +361,18 @@ async function ensureSchema() {
             )`);
             await pgNativeQuery(`CREATE INDEX IF NOT EXISTS idx_dallia_log_tenant ON dallia_actions_log(tenant_id, created_at DESC)`);
             await pgNativeQuery(`CREATE INDEX IF NOT EXISTS idx_dallia_log_estado ON dallia_actions_log(estado, created_at DESC)`);
-            // Seed: registrar la primera accion
-            await pgNativeQuery(`INSERT INTO dallia_actions (nombre, descripcion, tipo_trigger)
-                VALUES ('enviar_pedido_proveedor', 'Detecta insumos bajo minimo y propone enviar pedido WhatsApp al proveedor', 'manual')
-                ON CONFLICT (nombre) DO NOTHING`);
+            // Seed: registrar acciones conocidas
+            const actionSeeds = [
+                ['enviar_pedido_proveedor',  'Detecta insumos bajo minimo y propone enviar pedido WhatsApp al proveedor', 'manual'],
+                ['vencimiento_ingredientes', 'Detecta lotes de almacen proximos a vencer (<=3 dias) para evitar desperdicio', 'manual'],
+                ['resumen_cierre_dia',       'Genera resumen de ventas del dia vs ayer con comparativo de pedidos y ticket promedio', 'scheduled'],
+                ['recordatorio_cerrar_caja', 'Recuerda al administrador cerrar cajas abiertas despues de las 22:00', 'scheduled'],
+            ];
+            for (const [nombre, descripcion, tipo_trigger] of actionSeeds) {
+                await pgNativeQuery(`INSERT INTO dallia_actions (nombre, descripcion, tipo_trigger)
+                    VALUES ('${nombre}', '${descripcion}', '${tipo_trigger}')
+                    ON CONFLICT (nombre) DO UPDATE SET descripcion = EXCLUDED.descripcion`);
+            }
         } catch (_) {}
 
         // ALTER tenants — add geo columns (ignore if already exist)
