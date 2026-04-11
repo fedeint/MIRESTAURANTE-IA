@@ -1212,6 +1212,10 @@ app.use((req, res, next) => {
     next();
 });
 
+// Próximamente / En construcción (PWA placeholder para módulos sin backend)
+const enConstruccionRoutes = require('./routes/en-construccion');
+app.use('/proximamente', requireAuth, enConstruccionRoutes);
+
 // Manejo de errores 404
 app.use((req, res, next) => {
     console.log('404 - Ruta no encontrada:', req.url);

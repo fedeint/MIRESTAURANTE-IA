@@ -12,7 +12,14 @@ const {
 
 const RP_NAME = 'MiRestcon IA';
 const RP_ID = process.env.WEBAUTHN_RP_ID || 'mirestconia.com';
-const ORIGIN = process.env.WEBAUTHN_ORIGIN || 'https://mirestconia.com';
+// Accept both apex and www, plus any comma-separated overrides from WEBAUTHN_ORIGIN.
+// @simplewebauthn/server rejects the response if the browser origin doesn't exactly match.
+const ORIGIN = (() => {
+  const configured = (process.env.WEBAUTHN_ORIGIN || '').split(',').map(s => s.trim()).filter(Boolean);
+  const defaults = [`https://${RP_ID}`, `https://www.${RP_ID}`];
+  const set = new Set([...configured, ...defaults]);
+  return Array.from(set);
+})();
 
 // ---------------------------------------------------------------------------
 // GET /auth/webauthn/register/options

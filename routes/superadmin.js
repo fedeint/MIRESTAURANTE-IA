@@ -969,7 +969,12 @@ const {
 } = require('@simplewebauthn/server');
 
 const VAULT_RP_ID     = process.env.WEBAUTHN_RP_ID  || 'mirestconia.com';
-const VAULT_ORIGIN    = process.env.WEBAUTHN_ORIGIN  || 'https://mirestconia.com';
+// Accept apex + www so biometric auth works regardless of which host the user hit.
+const VAULT_ORIGIN    = (() => {
+  const configured = (process.env.WEBAUTHN_ORIGIN || '').split(',').map(s => s.trim()).filter(Boolean);
+  const defaults = [`https://${VAULT_RP_ID}`, `https://www.${VAULT_RP_ID}`];
+  return Array.from(new Set([...configured, ...defaults]));
+})();
 const VAULT_TOKEN_TTL = 30 * 60 * 1000; // 30 min
 
 // AES-256-GCM helpers -------------------------------------------------------

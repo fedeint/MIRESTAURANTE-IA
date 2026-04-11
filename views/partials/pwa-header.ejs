@@ -1,0 +1,153 @@
+<%# @variant: pwa-partial — unified PWA page header with role chip %>
+<%#
+  Uso:
+    <%- include('partials/pwa-header', { title: 'Cocina', subtitle: 'Opcional', backUrl: '/opcional' }) %>
+
+  Variables disponibles (heredadas del scope del view que lo incluye):
+    - user        : objeto de sesión (user.nombre, user.rol)
+    - title       : título de la página
+    - subtitle    : subtítulo opcional
+    - backUrl     : si se pasa, muestra flecha de regreso en lugar del logo
+%>
+<%
+  const _hUser   = (typeof user !== 'undefined' && user) ? user : {};
+  const _hRol    = String(_hUser.rol || 'usuario').toLowerCase();
+  const _hNombre = _hUser.nombre || _hUser.usuario || 'Usuario';
+  const _hInitial = _hNombre.charAt(0).toUpperCase();
+  const _hTitle  = (typeof title !== 'undefined') ? title : 'MiRest';
+  const _hSub    = (typeof subtitle !== 'undefined') ? subtitle : '';
+  const _hBack   = (typeof backUrl !== 'undefined') ? backUrl : null;
+
+  const _hRolLabels = {
+    administrador: 'Admin',
+    cajero:        'Cajero',
+    mesero:        'Mesero',
+    cocinero:      'Chef',
+    almacenero:    'Almacén',
+    superadmin:    'Super',
+  };
+  const _hRolLabel = _hRolLabels[_hRol] || _hRol.charAt(0).toUpperCase() + _hRol.slice(1);
+%>
+
+<style>
+  .pwa-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 16px 12px;
+    background: #0f172a;
+  }
+  .pwa-header-back {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.08);
+    color: #fff;
+    text-decoration: none;
+    flex-shrink: 0;
+  }
+  .pwa-header-back svg { width: 18px; height: 18px; }
+  .pwa-header-titles {
+    flex: 1;
+    min-width: 0;
+  }
+  .pwa-header-title {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.2;
+    margin: 0;
+  }
+  .pwa-header-subtitle {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    color: rgba(255,255,255,0.5);
+    margin: 2px 0 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  /* Role chip */
+  .pwa-role-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.07);
+    border-radius: 40px;
+    padding: 5px 10px 5px 5px;
+    flex-shrink: 0;
+    text-decoration: none;
+  }
+  .pwa-role-avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+  }
+  .pwa-role-info { display: flex; flex-direction: column; }
+  .pwa-role-name {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    color: #fff;
+    line-height: 1.2;
+    max-width: 80px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .pwa-role-label {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 9px;
+    font-weight: 500;
+    opacity: 0.6;
+    line-height: 1.2;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  /* Role colors */
+  .pwa-role-avatar.role-administrador { background: linear-gradient(135deg,#ef520f,#df2c05); }
+  .pwa-role-avatar.role-cajero        { background: linear-gradient(135deg,#22c55e,#16a34a); }
+  .pwa-role-avatar.role-mesero        { background: linear-gradient(135deg,#8b5cf6,#7c3aed); }
+  .pwa-role-avatar.role-cocinero      { background: linear-gradient(135deg,#ef4444,#dc2626); }
+  .pwa-role-avatar.role-almacenero    { background: linear-gradient(135deg,#3b82f6,#2563eb); }
+  .pwa-role-avatar.role-superadmin    { background: linear-gradient(135deg,#f59e0b,#d97706); }
+  .pwa-role-avatar.role-usuario       { background: linear-gradient(135deg,#6b7280,#4b5563); }
+</style>
+
+<header class="pwa-header">
+  <% if (_hBack) { %>
+    <a href="<%= _hBack %>" class="pwa-header-back" aria-label="Volver">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M15 18l-6-6 6-6"/>
+      </svg>
+    </a>
+  <% } %>
+
+  <div class="pwa-header-titles">
+    <h1 class="pwa-header-title"><%= _hTitle %></h1>
+    <% if (_hSub) { %>
+      <p class="pwa-header-subtitle"><%= _hSub %></p>
+    <% } %>
+  </div>
+
+  <a href="/configuracion" class="pwa-role-chip" aria-label="Perfil de <%= _hNombre %>">
+    <div class="pwa-role-avatar role-<%= _hRol %>"><%= _hInitial %></div>
+    <div class="pwa-role-info">
+      <span class="pwa-role-name"><%= _hNombre.split(' ')[0] %></span>
+      <span class="pwa-role-label"><%= _hRolLabel %></span>
+    </div>
+  </a>
+</header>

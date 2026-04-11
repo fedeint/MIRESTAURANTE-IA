@@ -1,78 +1,113 @@
+<%# @variant: pwa-partial — bottom nav for all PWA views %>
 <%
-  /* Limelight Quick Nav - acceso rapido a secciones principales
-     Incluir con: include('partials/limelight-nav')
-     Requiere: /css/limelight-nav.css en el head
-  */
-  const rl = (typeof reqPath !== 'undefined') ? reqPath : '';
-  const ur = (typeof user !== 'undefined' && user) ? String(user.rol || '').toLowerCase() : '';
+  const _rp = (typeof reqPath !== 'undefined') ? reqPath : (req && req.path ? req.path : '');
+  function _isActive(path) {
+    if (path === '/') return _rp === '/';
+    return _rp.startsWith(path);
+  }
 %>
-<div class="limelight-nav" id="limelightNav">
-  <a href="/" class="limelight-nav-item <%= rl === '/' ? 'active' : '' %>" data-index="0">
-    <i class="bi bi-columns-gap"></i>
-    <span class="limelight-label">Inicio</span>
-  </a>
-  <% if (ur === 'administrador' || ur === 'mesero') { %>
-  <a href="/mesas" class="limelight-nav-item <%= rl === '/mesas' ? 'active' : '' %>" data-index="1">
-    <i class="bi bi-grid-3x3-gap-fill"></i>
-    <span class="limelight-label">Mesas</span>
-  </a>
-  <% } %>
-  <% if (ur === 'administrador' || ur === 'mesero' || ur === 'cocinero') { %>
-  <a href="/cocina" class="limelight-nav-item <%= rl === '/cocina' ? 'active' : '' %>" data-index="2">
-    <i class="bi bi-fire"></i>
-    <span class="limelight-label">Cocina</span>
-  </a>
-  <% } %>
-  <% if (ur === 'administrador' || ur === 'mesero' || ur === 'almacenero') { %>
-  <a href="/productos" class="limelight-nav-item <%= rl === '/productos' ? 'active' : '' %>" data-index="3">
-    <i class="bi bi-egg-fried"></i>
-    <span class="limelight-label">Productos</span>
-  </a>
-  <% } %>
-  <% if (ur === 'administrador') { %>
-  <a href="/chat" class="limelight-nav-item <%= rl === '/chat' ? 'active' : '' %>" data-index="4">
-    <i class="bi bi-stars"></i>
-    <span class="limelight-label">DalIA</span>
-  </a>
-  <% } %>
-  <div class="limelight-indicator" id="limelightIndicator" style="left:-999px">
-    <div class="limelight-beam"></div>
-  </div>
-</div>
-
-<script>
-(function() {
-  var nav = document.getElementById('limelightNav');
-  var indicator = document.getElementById('limelightIndicator');
-  if (!nav || !indicator) return;
-
-  var items = nav.querySelectorAll('.limelight-nav-item');
-  var activeItem = nav.querySelector('.limelight-nav-item.active');
-
-  function moveIndicator(item) {
-    if (!item) return;
-    var left = item.offsetLeft + item.offsetWidth / 2 - indicator.offsetWidth / 2;
-    indicator.style.left = left + 'px';
+<style>
+  .ll-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: stretch;
+    background: #0f172a;
+    border-top: 1px solid rgba(255,255,255,0.08);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    height: calc(60px + env(safe-area-inset-bottom, 0px));
   }
-
-  // Set initial position without animation
-  if (activeItem) {
-    indicator.style.transition = 'none';
-    moveIndicator(activeItem);
-    // Enable animation after initial position is set
-    setTimeout(function() {
-      indicator.style.transition = '';
-    }, 50);
+  .ll-tab {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    text-decoration: none;
+    color: rgba(255,255,255,0.45);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 10px;
+    font-weight: 500;
+    padding: 8px 4px;
+    transition: color 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
   }
+  .ll-tab.active {
+    color: #ef520f;
+  }
+  .ll-tab svg {
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+  }
+  .ll-tab.active svg {
+    filter: drop-shadow(0 0 6px rgba(239,82,15,0.6));
+  }
+  .ll-tab:active {
+    opacity: 0.7;
+  }
+  /* space for content above nav */
+  .ll-nav-spacer {
+    height: calc(60px + env(safe-area-inset-bottom, 0px));
+  }
+</style>
 
-  // Hover effect
-  items.forEach(function(item) {
-    item.addEventListener('mouseenter', function() {
-      moveIndicator(item);
-    });
-    item.addEventListener('mouseleave', function() {
-      if (activeItem) moveIndicator(activeItem);
-    });
-  });
-})();
-</script>
+<nav class="ll-nav" role="navigation" aria-label="Navegación principal">
+
+  <%# INICIO %>
+  <a href="/" class="ll-tab <%= _isActive('/') ? 'active' : '' %>" aria-label="Inicio">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 9.5L12 3l9 6.5V21a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z"/>
+      <path d="M9 22V12h6v10"/>
+    </svg>
+    <span>Inicio</span>
+  </a>
+
+  <%# PEDIDOS %>
+  <a href="/pedidos" class="ll-tab <%= _isActive('/pedidos') ? 'active' : '' %>" aria-label="Pedidos">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/>
+      <rect x="9" y="3" width="6" height="4" rx="1"/>
+      <line x1="9" y1="12" x2="15" y2="12"/>
+      <line x1="9" y1="16" x2="13" y2="16"/>
+    </svg>
+    <span>Pedidos</span>
+  </a>
+
+  <%# COCINA %>
+  <a href="/cocina" class="ll-tab <%= _isActive('/cocina') ? 'active' : '' %>" aria-label="Cocina">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 2C8 2 5 5 5 9c0 2.4 1.1 4.5 2.8 5.9L8 21h8l.2-6.1C17.9 13.5 19 11.4 19 9c0-4-3-7-7-7z"/>
+      <line x1="12" y1="2" x2="12" y2="9"/>
+    </svg>
+    <span>Cocina</span>
+  </a>
+
+  <%# CAJA %>
+  <a href="/caja" class="ll-tab <%= _isActive('/caja') ? 'active' : '' %>" aria-label="Caja">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="2" y="7" width="20" height="14" rx="2"/>
+      <path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2"/>
+      <line x1="12" y1="12" x2="12" y2="16"/>
+      <line x1="10" y1="14" x2="14" y2="14"/>
+    </svg>
+    <span>Caja</span>
+  </a>
+
+  <%# MÁS %>
+  <a href="/mas" class="ll-tab <%= _isActive('/mas') ? 'active' : '' %>" aria-label="Más opciones">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="5" cy="12" r="1.5" fill="currentColor" stroke="none"/>
+      <circle cx="12" cy="12" r="1.5" fill="currentColor" stroke="none"/>
+      <circle cx="19" cy="12" r="1.5" fill="currentColor" stroke="none"/>
+    </svg>
+    <span>Más</span>
+  </a>
+
+</nav>
+<div class="ll-nav-spacer"></div>
