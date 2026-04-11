@@ -1,13 +1,7 @@
 <%# @variant: pwa-partial — unified PWA page header with role chip %>
 <%#
-  Uso:
-    <%- include('partials/pwa-header', { title: 'Cocina', subtitle: 'Opcional', backUrl: '/opcional' }) %>
-
-  Variables disponibles (heredadas del scope del view que lo incluye):
-    - user        : objeto de sesión (user.nombre, user.rol)
-    - title       : título de la página
-    - subtitle    : subtítulo opcional
-    - backUrl     : si se pasa, muestra flecha de regreso en lugar del logo
+  Uso: include('partials/pwa-header', { title: 'Cocina', subtitle: 'Opcional', backUrl: '/opcional' })
+  Variables: user (nombre, rol), title, subtitle (opcional), backUrl (opcional)
 %>
 <%
   const _hUser   = (typeof user !== 'undefined' && user) ? user : {};
