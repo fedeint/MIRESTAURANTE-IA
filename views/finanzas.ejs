@@ -130,7 +130,9 @@
         <h1>Finanzas Pro</h1>
         <p>Flujo de caja · Proyecciones · Historial</p>
       </div>
-      <div class="fn-icon"><i class="bi bi-graph-up-arrow"></i></div>
+      <a href="/chat?prompt=Analiza+mis+finanzas+de+hoy+y+dame+recomendaciones" class="fn-icon" style="text-decoration:none;display:flex;align-items:center;gap:6px;background:rgba(239,82,15,.12);border-radius:12px;padding:8px 12px;color:#ef520f;font-size:11px;font-weight:700;">
+        <i class="bi bi-robot" style="font-size:16px;"></i><span>DalIA</span>
+      </a>
     </div>
   </div>
 
@@ -304,6 +306,8 @@ function switchTab(panel, btn) {
   btn.classList.add('active');
   document.getElementById('panel-' + panel).classList.add('active');
 }
+// Auto-refresh every 60 seconds so KPIs stay current during the day
+setInterval(function() { window.location.reload(); }, 60 * 1000);
 </script>
 </body>
 </html>
