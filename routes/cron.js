@@ -226,6 +226,16 @@ router.get('/cleanup', async (req, res) => {
       results.ip_blacklist_expired = r6.rowCount || 0
     } catch (e) { results.ip_blacklist_expired = 'error: ' + e.message }
 
+    // Clean up expired login_attempts rows (older than 24h and no longer locked)
+    try {
+      const [r7] = await db.query(`
+        DELETE FROM login_attempts
+        WHERE (locked_until IS NULL OR locked_until < NOW())
+          AND last_attempt < NOW() - INTERVAL '24 hours'
+      `)
+      results.login_attempts_expired = r7.rowCount || 0
+    } catch (e) { results.login_attempts_expired = 'error: ' + e.message }
+
     // Reset monthly alert counters
     try {
       await db.query("UPDATE alertas_estado SET conteo = 0 WHERE ultimo_envio < date_trunc('month', CURRENT_DATE)")
