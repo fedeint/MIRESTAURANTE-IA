@@ -136,8 +136,17 @@ module.exports = {
 };
 
 // Auto-register known handlers (lazy require to avoid circular deps)
-try {
-    register(require('./dallia-actions/enviar-pedido-proveedor'));
-} catch (err) {
-    console.error('Failed to register dallia-actions handler:', err.message);
+const HANDLERS = [
+    './dallia-actions/enviar-pedido-proveedor',
+    './dallia-actions/vencimiento-ingredientes',
+    './dallia-actions/resumen-cierre-dia',
+    './dallia-actions/recordatorio-cerrar-caja',
+];
+
+for (const handlerPath of HANDLERS) {
+    try {
+        register(require(handlerPath));
+    } catch (err) {
+        console.error(`Failed to register dallia-actions handler ${handlerPath}:`, err.message);
+    }
 }

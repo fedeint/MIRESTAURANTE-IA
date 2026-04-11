@@ -31,7 +31,7 @@
     "sync:to-cloud": "node scripts/sync-to-cloud.js",
     "sync:from-cloud": "node scripts/sync-from-cloud.js",
     "sync:from-cloud:full": "node scripts/sync-from-cloud.js --full",
-    "test": "node --test tests/dallia-actions.test.js tests/dallia-actions-enviar-pedido-proveedor.test.js tests/descuento.test.js"
+    "test": "node --test tests/dallia-actions.test.js tests/dallia-actions-enviar-pedido-proveedor.test.js tests/dallia-actions-nuevos.test.js tests/descuento.test.js"
   },
   "dependencies": {
     "@andresaya/edge-tts": "^1.8.0",
