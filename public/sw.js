@@ -1,4 +1,4 @@
-const CACHE_NAME = 'dignita-v1';
+const CACHE_NAME = 'dignita-v2';
 const STATIC_ASSETS = [
   '/vendor/bootstrap/css/bootstrap.min.css',
   '/vendor/bootstrap/js/bootstrap.bundle.min.js',
