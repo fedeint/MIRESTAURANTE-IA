@@ -1,0 +1,298 @@
+<%# @variant: desktop — Proveedores Hub: supplier directory with purchase history. %>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1280, initial-scale=1">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <title>Proveedores Hub — mirestconia.com</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <%- include('partials/desktop-layout') %>
+</head>
+<body>
+<div class="dg-root">
+  <%- include('partials/sidebar', { active: 'proveedores-hub' }) %>
+  <main class="dg-main">
+    <div class="dg-content">
+
+      <!-- PAGE HEADER -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px">
+        <div style="display:flex;align-items:center;gap:14px">
+          <div style="width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,#ef520f,#df2c05);display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff;flex-shrink:0">
+            <i class="bi bi-truck"></i>
+          </div>
+          <div>
+            <h1 style="font-size:22px;font-weight:700;color:#1f2430;margin:0">Proveedores</h1>
+            <p style="font-size:13px;color:#7a8090;margin:2px 0 0"><%= proveedores.length %> proveedor<%= proveedores.length !== 1 ? 'es' : '' %> activo<%= proveedores.length !== 1 ? 's' : '' %></p>
+          </div>
+        </div>
+        <button onclick="openModal()" style="padding:10px 20px;background:linear-gradient(180deg,#f08a4f 0%,#d9501f 100%);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:8px">
+          <i class="bi bi-plus-lg"></i> Nuevo proveedor
+        </button>
+      </div>
+
+      <% if (!detalleId) { %>
+      <!-- LIST VIEW -->
+
+      <!-- Search -->
+      <div style="position:relative;margin-bottom:20px;max-width:400px">
+        <i class="bi bi-search" style="position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#7a8090"></i>
+        <input type="text" id="search-input" placeholder="Buscar proveedor…" oninput="filterCards()"
+          style="width:100%;padding:10px 14px 10px 40px;border:1.5px solid #e5e7eb;border-radius:10px;font-size:14px;font-family:inherit;background:#fff;outline:none">
+      </div>
+
+      <% if (!proveedores || proveedores.length === 0) { %>
+        <div style="text-align:center;padding:60px;color:#7a8090;background:#ffffffc7;border-radius:12px">
+          <div style="font-size:48px;margin-bottom:16px">🚚</div>
+          <div style="font-size:16px;font-weight:600">Sin proveedores registrados</div>
+          <div style="font-size:13px;margin-top:6px">Haz clic en "Nuevo proveedor" para agregar el primero</div>
+        </div>
+      <% } else { %>
+        <div style="background:#ffffffc7;backdrop-filter:blur(20px);border-radius:12px;box-shadow:0 14px 26px #0f172a14;overflow:hidden">
+          <table style="width:100%;border-collapse:collapse;font-size:13px" id="pv-table">
+            <thead>
+              <tr style="border-bottom:2px solid #F0F2F8">
+                <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:700;color:#7a8090;text-transform:uppercase;letter-spacing:.5px">Proveedor</th>
+                <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:700;color:#7a8090;text-transform:uppercase;letter-spacing:.5px">Tipo</th>
+                <th style="padding:12px 16px;text-align:left;font-size:11px;font-weight:700;color:#7a8090;text-transform:uppercase;letter-spacing:.5px">Contacto</th>
+                <th style="padding:12px 16px;text-align:right;font-size:11px;font-weight:700;color:#7a8090;text-transform:uppercase;letter-spacing:.5px">Órdenes</th>
+                <th style="padding:12px 16px;text-align:right;font-size:11px;font-weight:700;color:#7a8090;text-transform:uppercase;letter-spacing:.5px">Total comprado</th>
+                <th style="padding:12px 16px;text-align:center;font-size:11px;font-weight:700;color:#7a8090;text-transform:uppercase;letter-spacing:.5px">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% for (const p of proveedores) { %>
+              <tr style="border-bottom:1px solid #F0F2F8" data-name="<%= (p.nombre||'').toLowerCase() %>">
+                <td style="padding:14px 16px">
+                  <div style="font-weight:700;color:#1f2430"><%= p.nombre %></div>
+                  <div style="font-size:11px;color:#7a8090"><%= p.ruc || '—' %></div>
+                </td>
+                <td style="padding:14px 16px">
+                  <%
+                    const badgeColors = {
+                      mayorista: '#dbeafe:#1d4ed8',
+                      minorista: '#f0fdf4:#15803d',
+                      productor: '#fef3c7:#b45309',
+                      distribuidor: '#f5f3ff:#6d28d9'
+                    };
+                    const [bg, fg] = (badgeColors[p.tipo] || '#F0F2F8:#7a8090').split(':');
+                  %>
+                  <span style="font-size:11px;padding:3px 10px;border-radius:99px;font-weight:600;background:<%= bg %>;color:<%= fg %>"><%= p.tipo %></span>
+                </td>
+                <td style="padding:14px 16px;color:#1f2430">
+                  <div style="font-size:13px"><%= p.contacto_nombre || '—' %></div>
+                  <% if (p.telefono) { %>
+                  <div style="font-size:11px;color:#7a8090"><i class="bi bi-telephone-fill"></i> <%= p.telefono %></div>
+                  <% } %>
+                </td>
+                <td style="padding:14px 16px;text-align:right;font-weight:600"><%= Number(p.total_ordenes||0) %></td>
+                <td style="padding:14px 16px;text-align:right;font-weight:700;color:#1f2430">S/<%= Number(p.total_comprado||0).toFixed(0) %></td>
+                <td style="padding:14px 16px;text-align:center">
+                  <a href="/proveedores-hub/<%= p.id %>" style="color:#ef520f;font-size:18px;text-decoration:none" title="Ver detalle"><i class="bi bi-eye"></i></a>
+                  <% if (p.telefono) { %>
+                  <a href="https://wa.me/<%= p.telefono.replace(/\D/g,'') %>" target="_blank" style="color:#22c55e;font-size:18px;margin-left:10px;text-decoration:none" title="WhatsApp"><i class="bi bi-whatsapp"></i></a>
+                  <% } %>
+                </td>
+              </tr>
+              <% } %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
+
+      <% } else { %>
+      <!-- DETAIL VIEW -->
+      <%
+        const p = detalle;
+        const tipoLabels = { mayorista:'Mayorista', minorista:'Minorista', productor:'Productor', distribuidor:'Distribuidor' };
+      %>
+      <div style="margin-bottom:16px">
+        <a href="/proveedores-hub" style="color:#7a8090;text-decoration:none;font-size:13px;display:flex;align-items:center;gap:6px">
+          <i class="bi bi-arrow-left"></i> Volver a proveedores
+        </a>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1.4fr;gap:20px;margin-bottom:20px">
+        <!-- Left: info card -->
+        <div style="background:#ffffffc7;backdrop-filter:blur(20px);border-radius:12px;padding:24px;box-shadow:0 14px 26px #0f172a14">
+          <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px">
+            <div style="width:52px;height:52px;border-radius:15px;background:linear-gradient(135deg,#ef520f,#df2c05);display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:700;color:#fff;flex-shrink:0">
+              <%= p.nombre.charAt(0).toUpperCase() %>
+            </div>
+            <div>
+              <div style="font-size:18px;font-weight:700;color:#1f2430"><%= p.nombre %></div>
+              <div style="font-size:12px;color:#7a8090"><%= tipoLabels[p.tipo] || p.tipo %></div>
+            </div>
+          </div>
+
+          <!-- Stats -->
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px">
+            <div style="text-align:center;background:#F0F2F8;border-radius:10px;padding:12px">
+              <div style="font-size:20px;font-weight:800;color:#1f2430"><%= Number(p.stats?.total_ordenes||0) %></div>
+              <div style="font-size:10px;color:#7a8090;font-weight:600">Órdenes</div>
+            </div>
+            <div style="text-align:center;background:#F0F2F8;border-radius:10px;padding:12px">
+              <div style="font-size:16px;font-weight:800;color:#1f2430">S/<%= Number(p.stats?.total_comprado||0).toFixed(0) %></div>
+              <div style="font-size:10px;color:#7a8090;font-weight:600">Comprado</div>
+            </div>
+            <div style="text-align:center;background:#F0F2F8;border-radius:10px;padding:12px">
+              <div style="font-size:14px;font-weight:800;color:#1f2430"><%= p.stats?.ultima_orden ? new Date(p.stats.ultima_orden).toLocaleDateString('es-PE',{day:'2-digit',month:'short'}) : '—' %></div>
+              <div style="font-size:10px;color:#7a8090;font-weight:600">Última orden</div>
+            </div>
+          </div>
+
+          <!-- Contact actions -->
+          <div style="display:flex;gap:8px;margin-bottom:20px">
+            <% if (p.telefono) { %>
+              <a href="https://wa.me/<%= p.telefono.replace(/\D/g,'') %>" target="_blank"
+                style="flex:1;padding:10px;background:#22c55e;color:#fff;border-radius:8px;text-align:center;text-decoration:none;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px">
+                <i class="bi bi-whatsapp"></i> WhatsApp
+              </a>
+              <a href="tel:<%= p.telefono %>"
+                style="flex:1;padding:10px;background:#3b82f6;color:#fff;border-radius:8px;text-align:center;text-decoration:none;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px">
+                <i class="bi bi-telephone-fill"></i> Llamar
+              </a>
+            <% } %>
+            <% if (p.email) { %>
+              <a href="mailto:<%= p.email %>"
+                style="flex:1;padding:10px;background:#8b5cf6;color:#fff;border-radius:8px;text-align:center;text-decoration:none;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px">
+                <i class="bi bi-envelope-fill"></i> Email
+              </a>
+            <% } %>
+          </div>
+
+          <!-- Info fields -->
+          <% const fields = [ ['RUC', p.ruc, 'bi-card-text'], ['Teléfono', p.telefono, 'bi-telephone'], ['Email', p.email, 'bi-envelope'], ['Contacto', p.contacto_nombre, 'bi-person'], ['Dirección', p.direccion, 'bi-geo-alt'], ['Crédito', p.dias_credito > 0 ? p.dias_credito + ' días' : 'Pago inmediato', 'bi-credit-card'] ]; %>
+          <% for (const [label, val, icon] of fields) { if (!val) continue; %>
+            <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #F0F2F8">
+              <i class="bi <%= icon %>" style="color:#7a8090;width:16px;text-align:center"></i>
+              <div>
+                <div style="font-size:11px;color:#7a8090"><%= label %></div>
+                <div style="font-size:13px;font-weight:600;color:#1f2430"><%= val %></div>
+              </div>
+            </div>
+          <% } %>
+        </div>
+
+        <!-- Right: order history -->
+        <div style="background:#ffffffc7;backdrop-filter:blur(20px);border-radius:12px;padding:22px;box-shadow:0 14px 26px #0f172a14;overflow-y:auto;max-height:480px">
+          <div style="font-size:13px;font-weight:700;margin-bottom:14px">Historial de órdenes</div>
+          <% if (!p.ordenes || p.ordenes.length === 0) { %>
+            <div style="text-align:center;padding:30px;color:#7a8090;font-size:13px">Sin órdenes registradas</div>
+          <% } else { %>
+            <% for (const o of p.ordenes) {
+              const estadoColors = {recibida:'#f0fdf4:#16a34a', enviada:'#eff6ff:#2563eb', borrador:'#F0F2F8:#7a8090', parcial:'#fff7ed:#f97316', cancelada:'#fef2f2:#ef4444'};
+              const [ebg, efg] = (estadoColors[o.estado] || '#F0F2F8:#7a8090').split(':');
+            %>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #F0F2F8">
+                <div>
+                  <div style="font-size:13px;font-weight:600;color:#1f2430">#<%= o.numero_orden || o.id %></div>
+                  <div style="font-size:11px;color:#7a8090"><%= o.fecha_orden ? new Date(o.fecha_orden).toLocaleDateString('es-PE',{day:'2-digit',month:'short',year:'numeric'}) : '—' %></div>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px">
+                  <span style="font-size:10px;padding:3px 8px;border-radius:99px;font-weight:600;background:<%= ebg %>;color:<%= efg %>"><%= o.estado %></span>
+                  <span style="font-size:14px;font-weight:700;color:#1f2430">S/<%= Number(o.total||0).toFixed(0) %></span>
+                </div>
+              </div>
+            <% } %>
+          <% } %>
+        </div>
+      </div>
+
+      <% } %>
+
+    </div>
+  </main>
+</div>
+
+<!-- NEW SUPPLIER MODAL -->
+<div id="modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:100;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:16px;padding:32px;width:480px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 40px rgba(0,0,0,.2)">
+    <h3 style="font-size:17px;font-weight:700;margin-bottom:20px">Nuevo proveedor</h3>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+      <div style="grid-column:1/-1">
+        <label style="font-size:11px;font-weight:700;color:#7a8090;display:block;margin-bottom:5px">Nombre *</label>
+        <input id="f-nombre" type="text" style="width:100%;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;font-family:inherit;outline:none" placeholder="Distribuidora San Martín">
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#7a8090;display:block;margin-bottom:5px">RUC</label>
+        <input id="f-ruc" type="text" style="width:100%;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;font-family:inherit;outline:none" maxlength="11">
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#7a8090;display:block;margin-bottom:5px">Teléfono</label>
+        <input id="f-telefono" type="tel" style="width:100%;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;font-family:inherit;outline:none" placeholder="51987654321">
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#7a8090;display:block;margin-bottom:5px">Email</label>
+        <input id="f-email" type="email" style="width:100%;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;font-family:inherit;outline:none">
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#7a8090;display:block;margin-bottom:5px">Contacto</label>
+        <input id="f-contacto" type="text" style="width:100%;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;font-family:inherit;outline:none">
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#7a8090;display:block;margin-bottom:5px">Tipo</label>
+        <select id="f-tipo" style="width:100%;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;font-family:inherit;outline:none">
+          <option value="mayorista">Mayorista</option>
+          <option value="minorista">Minorista</option>
+          <option value="productor">Productor</option>
+          <option value="distribuidor">Distribuidor</option>
+        </select>
+      </div>
+      <div>
+        <label style="font-size:11px;font-weight:700;color:#7a8090;display:block;margin-bottom:5px">Días de crédito</label>
+        <input id="f-credito" type="number" min="0" style="width:100%;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;font-family:inherit;outline:none" value="0">
+      </div>
+    </div>
+    <div id="modal-msg" style="font-size:12px;margin-top:12px;min-height:16px"></div>
+    <div style="display:flex;gap:10px;margin-top:20px">
+      <button onclick="closeModal()" style="flex:1;padding:12px;background:#F0F2F8;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Cancelar</button>
+      <button onclick="guardarProveedor()" style="flex:2;padding:12px;background:linear-gradient(180deg,#f08a4f 0%,#d9501f 100%);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function openModal()  { document.getElementById('modal').style.display = 'flex'; }
+function closeModal() { document.getElementById('modal').style.display = 'none'; }
+
+async function guardarProveedor() {
+  const nombre = document.getElementById('f-nombre').value.trim();
+  const msg = document.getElementById('modal-msg');
+  if (!nombre) { msg.innerHTML = '<span style="color:#ef4444">El nombre es requerido.</span>'; return; }
+  try {
+    const r = await fetch('/proveedores-hub', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        nombre,
+        ruc:             document.getElementById('f-ruc').value || null,
+        telefono:        document.getElementById('f-telefono').value || null,
+        email:           document.getElementById('f-email').value || null,
+        contacto_nombre: document.getElementById('f-contacto').value || null,
+        tipo:            document.getElementById('f-tipo').value,
+        dias_credito:    parseInt(document.getElementById('f-credito').value) || 0
+      })
+    });
+    const data = await r.json();
+    if (data.ok) {
+      msg.innerHTML = '<span style="color:#16a34a">✓ Creado</span>';
+      setTimeout(() => location.reload(), 600);
+    } else {
+      msg.innerHTML = '<span style="color:#ef4444">' + (data.error || 'Error') + '</span>';
+    }
+  } catch (e) {
+    msg.innerHTML = '<span style="color:#ef4444">Error de conexión</span>';
+  }
+}
+
+function filterCards() {
+  const q = document.getElementById('search-input')?.value.toLowerCase() || '';
+  document.querySelectorAll('#pv-table tbody tr').forEach(r => {
+    r.style.display = r.dataset.name.includes(q) ? '' : 'none';
+  });
+}
+</script>
+</body>
+</html>

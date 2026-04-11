@@ -1231,6 +1231,11 @@ const finanzasRoutes = require('./routes/finanzas');
 app.use('/finanzas', requireAuth, requireRole('administrador'), finanzasRoutes);
 app.use('/api/finanzas', requireAuth, requireRole('administrador'), finanzasRoutes);
 
+// Proveedores Hub
+const proveedoresHubRoutes = require('./routes/proveedores-hub');
+app.use('/proveedores-hub', requireAuth, requireRole(['administrador', 'almacenero']), proveedoresHubRoutes);
+app.use('/api/proveedores-hub', requireAuth, requireRole(['administrador', 'almacenero']), proveedoresHubRoutes);
+
 // Manejo de errores 404
 app.use((req, res, next) => {
     console.log('404 - Ruta no encontrada:', req.url);
