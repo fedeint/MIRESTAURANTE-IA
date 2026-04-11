@@ -781,7 +781,7 @@ app.get('/', requireAuth, async (req, res) => {
         const [
             [[vh]], [[vm]], [[mt]], [[mo]],
             [[ph]], [[cl]], [tp], [[al]],
-            [[cajaRow]], [[pTotal]], [[pPagados]], [[meseros]], [[va]]
+            [[cajaRow]], [[pTotal]], [[pPagados]], [[meseros]], [[va]], [[venc]]
         ] = await Promise.all([
             db.query(`SELECT COUNT(*) as c, COALESCE(SUM(total),0) as m FROM facturas WHERE (fecha AT TIME ZONE 'America/Lima')::date = ${HOY}`),
             db.query(`SELECT COALESCE(SUM(total),0) as m FROM facturas WHERE fecha >= NOW() - INTERVAL '30 days'`),
@@ -796,6 +796,7 @@ app.get('/', requireAuth, async (req, res) => {
             db.query(`SELECT COUNT(DISTINCT personal_id) as t FROM planilla_pagos WHERE tenant_id=? AND (fecha AT TIME ZONE 'America/Lima')::date = ${HOY}`, [tid]).catch(() => [[{ t: 0 }]]),
             db.query(`SELECT COUNT(*) as t FROM usuarios WHERE rol='mesero' AND activo=true`).catch(() => [[{ t: 0 }]]),
             db.query(`SELECT COALESCE(SUM(total),0) as m FROM facturas WHERE (fecha AT TIME ZONE 'America/Lima')::date = ${HOY} - INTERVAL '1 day'`).catch(() => [[{ m: 0 }]]),
+            db.query(`SELECT COUNT(*) as t FROM almacen_lotes WHERE tenant_id=? AND cantidad_disponible>0 AND fecha_vencimiento IS NOT NULL AND fecha_vencimiento >= CURRENT_DATE AND fecha_vencimiento <= CURRENT_DATE + 2`, [tid]).catch(() => [[{ t: 0 }]]),
         ]);
 
         dashboard.ventasHoy          = Number(vh.m).toFixed(2);
@@ -813,6 +814,7 @@ app.get('/', requireAuth, async (req, res) => {
         dashboard.meserosActivos     = meseros.t;
         dashboard.ratioMesasPorMesero = meseros.t > 0 ? Math.round(dashboard.mesasTotal / meseros.t) : 0;
         dashboard.ventasAyer         = Number(va.m).toFixed(2);
+        dashboard.vencimientoProximo = Number(venc?.t || 0);
 
         // === PENDIENTES DINAMICOS CON PRIORIDAD ===
         // Prioridad: 1=critico (bloquea operacion), 2=urgente (afecta servicio), 3=importante (afecta finanzas), 4=info
@@ -961,6 +963,11 @@ app.get('/', requireAuth, async (req, res) => {
         // Caja
         if (!dashboard.cajaAbierta) {
             iaInsights.push({ color: '#EF4444', texto: 'Caja cerrada. Abrela para empezar a operar' });
+        }
+
+        // Vencimientos próximos
+        if (dashboard.vencimientoProximo > 0) {
+            iaInsights.push({ color: '#F97316', texto: dashboard.vencimientoProximo + ' lote' + (dashboard.vencimientoProximo !== 1 ? 's' : '') + ' vence' + (dashboard.vencimientoProximo !== 1 ? 'n' : '') + ' en 2 días. Úsalos hoy' });
         }
 
         dashboard.iaInsights = iaInsights;
