@@ -1,0 +1,150 @@
+<%# @variant: desktop — Finanzas Pro: cash-flow overview, category breakdown, projection. %>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1280, initial-scale=1">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <title>Finanzas Pro — mirestconia.com</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <%- include('partials/desktop-layout') %>
+</head>
+<body>
+<div class="dg-root">
+  <%- include('partials/sidebar', { active: 'finanzas' }) %>
+  <main class="dg-main">
+    <div class="dg-content">
+
+      <!-- PAGE HEADER -->
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:28px">
+        <div style="width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,#ef520f,#df2c05);display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff;flex-shrink:0">
+          <i class="bi bi-graph-up-arrow"></i>
+        </div>
+        <div>
+          <h1 style="font-size:22px;font-weight:700;color:#1f2430;margin:0">Finanzas Pro</h1>
+          <p style="font-size:13px;color:#7a8090;margin:2px 0 0">Flujo de caja · Proyecciones · Historial</p>
+        </div>
+      </div>
+
+      <%
+        function fmt(n) { return 'S/' + Number(n||0).toFixed(0); }
+        function netoColor(n) { return Number(n) >= 0 ? '#16a34a' : '#ef4444'; }
+        const conceptoLabels = {
+          'venta_factura':'Venta / Factura','propina':'Propinas','retiro_caja_fuerte':'Retiro Caja Fuerte',
+          'retiro_banco':'Retiro Banco','retiro_propietario':'Retiro Propietario','gasto_compra_almacen':'Compra Almacén',
+          'gasto_servicio':'Gasto Servicio','gasto_otro':'Gasto Otro','pago_planilla':'Pago Planilla',
+          'devolucion_cliente':'Devolución Cliente','fondo_inicial':'Fondo Inicial','ajuste':'Ajuste'
+        };
+        const conceptoIcon = {
+          'venta_factura':'🧾','propina':'💵','retiro_caja_fuerte':'🔐','retiro_banco':'🏦',
+          'retiro_propietario':'👤','gasto_compra_almacen':'🛒','gasto_servicio':'💡','gasto_otro':'📦',
+          'pago_planilla':'👷','devolucion_cliente':'↩️','fondo_inicial':'💰','ajuste':'⚖️'
+        };
+      %>
+
+      <!-- KPI ROW: HOY / SEMANA / MES -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:24px">
+        <% [['Hoy', hoy], ['Esta semana', semana], ['Este mes', mes]].forEach(([label, d]) => { %>
+          <div style="background:#ffffffc7;backdrop-filter:blur(20px);border-radius:12px;padding:22px;box-shadow:0 14px 26px #0f172a14">
+            <div style="font-size:11px;font-weight:700;color:#7a8090;text-transform:uppercase;letter-spacing:.7px;margin-bottom:12px"><%= label %></div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center">
+              <div>
+                <div style="font-size:10px;color:#7a8090;font-weight:600">Ingresos</div>
+                <div style="font-size:18px;font-weight:800;color:#16a34a"><%= fmt(d.ingresos) %></div>
+              </div>
+              <div>
+                <div style="font-size:10px;color:#7a8090;font-weight:600">Egresos</div>
+                <div style="font-size:18px;font-weight:800;color:#ef4444"><%= fmt(d.egresos) %></div>
+              </div>
+              <div>
+                <div style="font-size:10px;color:#7a8090;font-weight:600">Neto</div>
+                <div style="font-size:18px;font-weight:800;color:<%= netoColor(d.neto) %>"><%= fmt(d.neto) %></div>
+              </div>
+            </div>
+          </div>
+        <% }); %>
+      </div>
+
+      <!-- PROYECCION + CATEGORÍAS (2 columns) -->
+      <div style="display:grid;grid-template-columns:1fr 1.5fr;gap:20px;margin-bottom:24px">
+
+        <!-- Projection card -->
+        <div style="background:linear-gradient(135deg,#10152f,#0a0f24);border-radius:12px;padding:24px;box-shadow:0 14px 26px #0f172a22">
+          <div style="font-size:11px;font-weight:700;color:#8B8FAD;text-transform:uppercase;letter-spacing:.7px;margin-bottom:12px">Proyección fin de mes</div>
+          <div style="font-size:36px;font-weight:800;color:#fff;line-height:1;margin-bottom:10px"><%= fmt(proyeccion.fin_de_mes) %></div>
+          <div style="font-size:12px;color:#8B8FAD">Promedio diario: <strong style="color:#fff"><%= fmt(proyeccion.promedio_diario) %></strong></div>
+          <div style="font-size:12px;color:#8B8FAD;margin-top:4px">Días restantes: <strong style="color:#fff"><%= proyeccion.dias_restantes %></strong></div>
+          <div style="margin-top:16px;height:4px;background:#1e2742;border-radius:99px;overflow:hidden">
+            <%
+              const diasEnMes = new Date(new Date().getFullYear(), new Date().getMonth()+1, 0).getDate();
+              const pMes = Math.round((new Date().getDate() / diasEnMes) * 100);
+            %>
+            <div style="height:100%;width:<%= pMes %>%;background:linear-gradient(90deg,#ef520f,#df2c05);border-radius:99px"></div>
+          </div>
+          <div style="font-size:10px;color:#8B8FAD;margin-top:4px">Día <%= new Date().getDate() %> de <%= diasEnMes %> (<%= pMes %>% del mes)</div>
+        </div>
+
+        <!-- Categorías -->
+        <div style="background:#ffffffc7;backdrop-filter:blur(20px);border-radius:12px;padding:22px;box-shadow:0 14px 26px #0f172a14;overflow-y:auto;max-height:280px">
+          <div style="font-size:11px;font-weight:700;color:#7a8090;text-transform:uppercase;letter-spacing:.7px;margin-bottom:14px">Categorías este mes</div>
+          <% if (!conceptos || conceptos.length === 0) { %>
+            <p style="color:#7a8090;font-size:13px;text-align:center;padding:20px 0">Sin movimientos este mes.</p>
+          <% } else { %>
+            <% for (const c of conceptos) { %>
+              <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f0f2f8">
+                <div style="width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;background:<%= c.tipo === 'ingreso' ? '#f0fdf4' : '#fef2f2' %>"><%= conceptoIcon[c.concepto] || '💳' %></div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:13px;font-weight:600;color:#1f2430;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"><%= conceptoLabels[c.concepto] || c.concepto %></div>
+                  <div style="font-size:11px;color:#7a8090"><%= c.cantidad %> movimiento<%= c.cantidad != 1 ? 's' : '' %></div>
+                </div>
+                <div style="font-size:14px;font-weight:700;flex-shrink:0;color:<%= c.tipo === 'ingreso' ? '#16a34a' : '#ef4444' %>">
+                  <%= c.tipo === 'ingreso' ? '+' : '-' %><%= fmt(c.total) %>
+                </div>
+              </div>
+            <% } %>
+          <% } %>
+        </div>
+      </div>
+
+      <!-- HISTORIAL CAJAS -->
+      <div style="background:#ffffffc7;backdrop-filter:blur(20px);border-radius:12px;padding:22px;box-shadow:0 14px 26px #0f172a14">
+        <div style="font-size:13px;font-weight:700;color:#1f2430;margin-bottom:16px">Historial de cajas cerradas</div>
+        <% if (!histCajas || histCajas.length === 0) { %>
+          <p style="color:#7a8090;font-size:13px;text-align:center;padding:20px 0">No hay cajas cerradas aún.</p>
+        <% } else { %>
+          <table style="width:100%;border-collapse:collapse;font-size:13px">
+            <thead>
+              <tr style="border-bottom:2px solid #F0F2F8">
+                <th style="padding:6px 12px;text-align:left;color:#7a8090;font-weight:600;font-size:11px;text-transform:uppercase">Fecha cierre</th>
+                <th style="padding:6px 12px;text-align:left;color:#7a8090;font-weight:600;font-size:11px;text-transform:uppercase">Caja</th>
+                <th style="padding:6px 12px;text-align:right;color:#7a8090;font-weight:600;font-size:11px;text-transform:uppercase">Apertura</th>
+                <th style="padding:6px 12px;text-align:right;color:#7a8090;font-weight:600;font-size:11px;text-transform:uppercase">Cierre real</th>
+                <th style="padding:6px 12px;text-align:right;color:#7a8090;font-weight:600;font-size:11px;text-transform:uppercase">Diferencia</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% for (const c of histCajas) {
+                const fecha = c.fecha_cierre ? new Date(c.fecha_cierre).toLocaleDateString('es-PE', {day:'2-digit',month:'short',year:'numeric'}) : '—';
+                const diff = Number(c.diferencia || 0);
+              %>
+                <tr style="border-bottom:1px solid #F0F2F8">
+                  <td style="padding:10px 12px;color:#1f2430"><%= fecha %></td>
+                  <td style="padding:10px 12px;color:#7a8090"><%= c.nombre_caja || 'Caja' %></td>
+                  <td style="padding:10px 12px;text-align:right"><%= fmt(c.monto_apertura) %></td>
+                  <td style="padding:10px 12px;text-align:right;font-weight:600;color:#1f2430"><%= fmt(c.monto_cierre_real) %></td>
+                  <td style="padding:10px 12px;text-align:right;font-weight:700;color:<%= Math.abs(diff) < 0.01 ? '#7a8090' : diff < 0 ? '#ef4444' : '#16a34a' %>">
+                    <%= Math.abs(diff) < 0.01 ? '—' : (diff < 0 ? '' : '+') + fmt(diff) %>
+                  </td>
+                </tr>
+              <% } %>
+            </tbody>
+          </table>
+        <% } %>
+      </div>
+
+    </div>
+  </main>
+</div>
+</body>
+</html>

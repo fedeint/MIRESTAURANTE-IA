@@ -1226,6 +1226,11 @@ const metasRoutes = require('./routes/metas');
 app.use('/metas', requireAuth, requireRole('administrador'), metasRoutes);
 app.use('/api/metas', requireAuth, requireRole('administrador'), metasRoutes);
 
+// Finanzas Pro
+const finanzasRoutes = require('./routes/finanzas');
+app.use('/finanzas', requireAuth, requireRole('administrador'), finanzasRoutes);
+app.use('/api/finanzas', requireAuth, requireRole('administrador'), finanzasRoutes);
+
 // Manejo de errores 404
 app.use((req, res, next) => {
     console.log('404 - Ruta no encontrada:', req.url);
