@@ -325,6 +325,8 @@
         <%- include('partials/limelight-nav', { reqPath: '/pedidos' }) %>
     </div>
 
+    <script src="/js/dallia-fab.js"></script>
+    <script src="/js/salva-alerts.js"></script>
     <script>
         document.querySelectorAll('.ped-tab').forEach(function(btn){
             btn.addEventListener('click', function(){
@@ -339,6 +341,9 @@
                 history.replaceState(null, '', url);
             });
         });
+
+        // Auto-refresh every 30s so new orders appear without manual reload
+        setInterval(function() { window.location.reload(); }, 30 * 1000);
     </script>
 </body>
 </html>

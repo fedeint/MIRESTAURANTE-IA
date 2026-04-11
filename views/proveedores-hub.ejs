@@ -210,6 +210,7 @@
         <p><%= proveedores.length %> proveedor<%= proveedores.length !== 1 ? 'es' : '' %> activo<%= proveedores.length !== 1 ? 's' : '' %></p>
       </div>
       <div class="pv-header-icon"><i class="bi bi-truck"></i></div>
+      <a href="/chat?prompt=Revisa+el+stock+y+propone+enviar+pedidos+a+proveedores+con+insumos+bajo+el+minimo" class="pv-add-btn" title="DalIA: Pedir insumos" style="background:rgba(239,82,15,.2);color:#ef520f;text-decoration:none">🤖</a>
       <button class="pv-add-btn" onclick="openModal()"><i class="bi bi-plus-lg"></i></button>
     </div>
   </div>
@@ -437,5 +438,6 @@ function filterCards() {
   });
 }
 </script>
+<script src="/js/dallia-fab.js"></script>
 </body>
 </html>

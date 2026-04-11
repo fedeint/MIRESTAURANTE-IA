@@ -249,6 +249,11 @@ function abrirMesa(mesaId, numero, estado) {
   // Navigate to new order flow for this mesa
   window.location.href = '/pedido-nuevo?mesa=' + mesaId;
 }
+
+// Auto-refresh every 30s to reflect table state changes
+setInterval(function() { window.location.reload(); }, 30 * 1000);
 </script>
+<script src="/js/dallia-fab.js"></script>
+<script src="/js/salva-alerts.js"></script>
 </body>
 </html>
