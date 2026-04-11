@@ -1,0 +1,207 @@
+<%# @variant: desktop — Metas diarias: set daily sales goals and track progress. %>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=1280, initial-scale=1">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <title>Metas del día — mirestconia.com</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <style>
+    :root {
+      --dg-bg-start: #fff8f0;
+      --dg-bg-end: #fafaf7;
+      --dg-main-bg: #ffffffc7;
+      --dg-text-primary: #1f2430;
+      --dg-text-secondary: #7a8090;
+      --dg-card-shadow: 0 14px 26px #0f172a14;
+      --dg-orange-btn: linear-gradient(180deg, #f08a4f 0%, #d9501f 100%);
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      font-family: 'Inter', sans-serif;
+      color: var(--dg-text-primary);
+      background: linear-gradient(135deg, var(--dg-bg-start) 0%, var(--dg-bg-end) 100%);
+      background-attachment: fixed;
+      min-height: 100vh;
+    }
+  </style>
+  <%- include('partials/desktop-layout') %>
+</head>
+<body>
+<div class="dg-root">
+  <%- include('partials/sidebar', { active: 'metas' }) %>
+  <main class="dg-main">
+    <div class="dg-content">
+
+      <!-- PAGE HEADER -->
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:28px">
+        <div style="width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,#ef520f,#df2c05);display:flex;align-items:center;justify-content:center;font-size:22px;color:#fff;flex-shrink:0">
+          <i class="bi bi-trophy"></i>
+        </div>
+        <div>
+          <h1 style="font-size:22px;font-weight:700;color:var(--dg-text-primary);margin:0">Metas del día</h1>
+          <p style="font-size:13px;color:var(--dg-text-secondary);margin:2px 0 0">Seguimiento de objetivos en tiempo real</p>
+        </div>
+      </div>
+
+      <%
+        function pct(real, meta) {
+          if (!meta || meta <= 0) return null;
+          return Math.min(Math.round((real / meta) * 100), 100);
+        }
+        function pctClass(p) {
+          if (p === null) return 'text-muted';
+          if (p >= 80) return 'text-success';
+          if (p >= 50) return 'text-warning';
+          return 'text-danger';
+        }
+        function barClass(p) {
+          if (p === null) return '';
+          if (p >= 80) return 'success';
+          if (p >= 50) return 'warning';
+          return 'danger';
+        }
+
+        const metaVentas   = metas.ventas || 0;
+        const metaPedidos  = metas.pedidos || 0;
+        const metaTicket   = metas.ticket_promedio || 0;
+        const realVentas   = progreso.ventas || 0;
+        const realPedidos  = progreso.pedidos || 0;
+        const realTicket   = progreso.ticket_promedio || 0;
+
+        const pVentas  = pct(realVentas, metaVentas);
+        const pPedidos = pct(realPedidos, metaPedidos);
+        const pTicket  = pct(realTicket, metaTicket);
+      %>
+
+      <!-- KPI CARDS ROW -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:28px">
+
+        <!-- Ventas -->
+        <div style="background:var(--dg-main-bg);backdrop-filter:blur(20px);border-radius:12px;padding:22px;box-shadow:var(--dg-card-shadow)">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+            <div style="width:38px;height:38px;border-radius:10px;background:#fff7ed;display:flex;align-items:center;justify-content:center;font-size:18px;color:#ef520f"><i class="bi bi-cash-coin"></i></div>
+            <div>
+              <div style="font-size:13px;font-weight:600;color:var(--dg-text-primary)">Ventas</div>
+              <div style="font-size:11px;color:var(--dg-text-secondary)">Ingresos del día</div>
+            </div>
+          </div>
+          <div style="font-size:30px;font-weight:800;color:var(--dg-text-primary);margin-bottom:6px">
+            S/<%= realVentas.toFixed(0) %>
+          </div>
+          <div style="font-size:12px;color:var(--dg-text-secondary);margin-bottom:10px">
+            <% if (metaVentas > 0) { %>Meta: S/<%= metaVentas.toFixed(0) %>
+            <span style="margin-left:8px;font-weight:700;color:<%= pVentas >= 80 ? '#16a34a' : pVentas >= 50 ? '#f97316' : '#ef4444' %>"><%= pVentas %>%</span>
+            <% } else { %><span style="color:#aaa">Sin meta establecida</span><% } %>
+          </div>
+          <div style="height:6px;background:#F0F2F8;border-radius:99px;overflow:hidden">
+            <div style="height:100%;width:<%= pVentas !== null ? pVentas : 0 %>%;background:<%= pVentas >= 80 ? '#22c55e' : pVentas >= 50 ? '#f97316' : pVentas !== null ? '#ef4444' : '#ccc' %>;border-radius:99px;transition:width .5s"></div>
+          </div>
+        </div>
+
+        <!-- Pedidos -->
+        <div style="background:var(--dg-main-bg);backdrop-filter:blur(20px);border-radius:12px;padding:22px;box-shadow:var(--dg-card-shadow)">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+            <div style="width:38px;height:38px;border-radius:10px;background:#f0fdf4;display:flex;align-items:center;justify-content:center;font-size:18px;color:#16a34a"><i class="bi bi-bag-check"></i></div>
+            <div>
+              <div style="font-size:13px;font-weight:600;color:var(--dg-text-primary)">Pedidos</div>
+              <div style="font-size:11px;color:var(--dg-text-secondary)">Cantidad de órdenes</div>
+            </div>
+          </div>
+          <div style="font-size:30px;font-weight:800;color:var(--dg-text-primary);margin-bottom:6px">
+            <%= realPedidos %>
+          </div>
+          <div style="font-size:12px;color:var(--dg-text-secondary);margin-bottom:10px">
+            <% if (metaPedidos > 0) { %>Meta: <%= metaPedidos %> pedidos
+            <span style="margin-left:8px;font-weight:700;color:<%= pPedidos >= 80 ? '#16a34a' : pPedidos >= 50 ? '#f97316' : '#ef4444' %>"><%= pPedidos %>%</span>
+            <% } else { %><span style="color:#aaa">Sin meta establecida</span><% } %>
+          </div>
+          <div style="height:6px;background:#F0F2F8;border-radius:99px;overflow:hidden">
+            <div style="height:100%;width:<%= pPedidos !== null ? pPedidos : 0 %>%;background:<%= pPedidos >= 80 ? '#22c55e' : pPedidos >= 50 ? '#f97316' : pPedidos !== null ? '#ef4444' : '#ccc' %>;border-radius:99px;transition:width .5s"></div>
+          </div>
+        </div>
+
+        <!-- Ticket promedio -->
+        <div style="background:var(--dg-main-bg);backdrop-filter:blur(20px);border-radius:12px;padding:22px;box-shadow:var(--dg-card-shadow)">
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+            <div style="width:38px;height:38px;border-radius:10px;background:#eff6ff;display:flex;align-items:center;justify-content:center;font-size:18px;color:#2563eb"><i class="bi bi-receipt"></i></div>
+            <div>
+              <div style="font-size:13px;font-weight:600;color:var(--dg-text-primary)">Ticket promedio</div>
+              <div style="font-size:11px;color:var(--dg-text-secondary)">Gasto medio por pedido</div>
+            </div>
+          </div>
+          <div style="font-size:30px;font-weight:800;color:var(--dg-text-primary);margin-bottom:6px">
+            S/<%= realTicket.toFixed(0) %>
+          </div>
+          <div style="font-size:12px;color:var(--dg-text-secondary);margin-bottom:10px">
+            <% if (metaTicket > 0) { %>Meta: S/<%= metaTicket.toFixed(0) %>
+            <span style="margin-left:8px;font-weight:700;color:<%= pTicket >= 80 ? '#16a34a' : pTicket >= 50 ? '#f97316' : '#ef4444' %>"><%= pTicket %>%</span>
+            <% } else { %><span style="color:#aaa">Sin meta establecida</span><% } %>
+          </div>
+          <div style="height:6px;background:#F0F2F8;border-radius:99px;overflow:hidden">
+            <div style="height:100%;width:<%= pTicket !== null ? pTicket : 0 %>%;background:<%= pTicket >= 80 ? '#22c55e' : pTicket >= 50 ? '#f97316' : pTicket !== null ? '#ef4444' : '#ccc' %>;border-radius:99px;transition:width .5s"></div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- SET META FORM -->
+      <div style="background:var(--dg-main-bg);backdrop-filter:blur(20px);border-radius:12px;padding:24px;box-shadow:var(--dg-card-shadow);max-width:520px">
+        <h3 style="font-size:15px;font-weight:700;margin-bottom:16px">Establecer meta</h3>
+        <div style="display:flex;gap:12px;align-items:flex-end">
+          <div style="flex:1">
+            <label style="font-size:12px;font-weight:600;color:var(--dg-text-secondary);display:block;margin-bottom:6px">Indicador</label>
+            <select id="meta-tipo" style="width:100%;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;font-family:inherit;background:#fafafa;color:var(--dg-text-primary);outline:none">
+              <option value="ventas">Ventas (S/)</option>
+              <option value="pedidos">Pedidos (#)</option>
+              <option value="ticket_promedio">Ticket promedio (S/)</option>
+            </select>
+          </div>
+          <div style="width:130px">
+            <label style="font-size:12px;font-weight:600;color:var(--dg-text-secondary);display:block;margin-bottom:6px">Valor meta</label>
+            <input type="number" id="meta-valor" min="0" placeholder="500" style="width:100%;padding:10px 14px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:14px;font-family:inherit;background:#fafafa;color:var(--dg-text-primary);outline:none">
+          </div>
+          <button onclick="guardarMeta()" style="padding:10px 20px;background:var(--dg-orange-btn);color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap">
+            Guardar
+          </button>
+        </div>
+        <div id="form-msg" style="font-size:12px;margin-top:8px;min-height:16px"></div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script>
+async function guardarMeta() {
+  const tipo = document.getElementById('meta-tipo').value;
+  const valor = document.getElementById('meta-valor').value;
+  const msg = document.getElementById('form-msg');
+
+  if (!valor || parseFloat(valor) < 0) {
+    msg.innerHTML = '<span style="color:#ef4444">Ingresa un valor válido.</span>';
+    return;
+  }
+
+  try {
+    const r = await fetch('/metas', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tipo, meta_valor: parseFloat(valor) })
+    });
+    const data = await r.json();
+    if (data.ok) {
+      msg.innerHTML = '<span style="color:#16a34a">✓ Meta guardada</span>';
+      setTimeout(() => location.reload(), 800);
+    } else {
+      msg.innerHTML = '<span style="color:#ef4444">' + (data.error || 'Error') + '</span>';
+    }
+  } catch (e) {
+    msg.innerHTML = '<span style="color:#ef4444">Error de conexión</span>';
+  }
+}
+</script>
+</body>
+</html>

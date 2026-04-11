@@ -21,6 +21,7 @@ const REGISTERED_PAIRS = [
     { pwa: 'cocina.ejs', desktop: 'cocina-desktop.ejs' },
     { pwa: 'caja.ejs',  desktop: 'caja-desktop.ejs' },
     { pwa: 'mesas.ejs', desktop: 'mesas-desktop.ejs' },
+    { pwa: 'metas.ejs', desktop: 'metas-desktop.ejs' },
 ];
 
 for (const { pwa, desktop } of REGISTERED_PAIRS) {

@@ -1221,6 +1221,11 @@ app.use((req, res, next) => {
 const enConstruccionRoutes = require('./routes/en-construccion');
 app.use('/proximamente', requireAuth, enConstruccionRoutes);
 
+// Metas diarias
+const metasRoutes = require('./routes/metas');
+app.use('/metas', requireAuth, requireRole('administrador'), metasRoutes);
+app.use('/api/metas', requireAuth, requireRole('administrador'), metasRoutes);
+
 // Manejo de errores 404
 app.use((req, res, next) => {
     console.log('404 - Ruta no encontrada:', req.url);

@@ -1,0 +1,364 @@
+<%# @variant: pwa — Metas diarias: set daily sales goals and track progress. %>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#10152f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Metas del día</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      font-family: 'DM Sans', sans-serif;
+      background: #F0F2F8;
+      color: #0a0f24;
+      min-height: 100dvh;
+      -webkit-font-smoothing: antialiased;
+      overscroll-behavior: none;
+    }
+    .shell {
+      max-width: 480px;
+      margin: 0 auto;
+      min-height: 100dvh;
+      padding-bottom: calc(90px + env(safe-area-inset-bottom, 0px));
+    }
+
+    /* HEADER */
+    .meta-header {
+      background: linear-gradient(180deg, #10152f 0%, #0a0f24 100%);
+      border-radius: 0 0 20px 20px;
+      padding: calc(52px + env(safe-area-inset-top, 0px)) 20px 24px;
+    }
+    .meta-header-row { display: flex; align-items: center; justify-content: space-between; }
+    .meta-header h1 { font-size: 22px; font-weight: 700; color: #fff; }
+    .meta-header p { font-size: 13px; color: #8B8FAD; margin-top: 4px; }
+    .meta-header-icon {
+      width: 44px; height: 44px; border-radius: 14px;
+      background: linear-gradient(135deg, #ef520f, #df2c05);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; color: #fff; flex-shrink: 0;
+    }
+
+    /* PROGRESS SECTION */
+    .section { padding: 20px 16px 8px; }
+    .section-title { font-size: 13px; font-weight: 600; color: #8B8FAD; text-transform: uppercase; letter-spacing: .7px; margin-bottom: 12px; }
+
+    .meta-card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.06);
+    }
+    .meta-card-header { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+    .meta-card-icon {
+      width: 40px; height: 40px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; flex-shrink: 0;
+    }
+    .meta-card-icon.ventas { background: #fff7ed; color: #ef520f; }
+    .meta-card-icon.pedidos { background: #f0fdf4; color: #16a34a; }
+    .meta-card-icon.ticket { background: #eff6ff; color: #2563eb; }
+    .meta-card-label { font-size: 14px; font-weight: 600; color: #0a0f24; }
+    .meta-card-sub { font-size: 12px; color: #8B8FAD; margin-top: 1px; }
+
+    .meta-values { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 10px; }
+    .meta-real { font-size: 26px; font-weight: 700; color: #0a0f24; line-height: 1; }
+    .meta-real span { font-size: 14px; font-weight: 400; color: #8B8FAD; }
+    .meta-target { text-align: right; }
+    .meta-target-val { font-size: 13px; font-weight: 600; color: #8B8FAD; }
+    .meta-pct { font-size: 20px; font-weight: 700; }
+    .meta-pct.on-track { color: #16a34a; }
+    .meta-pct.warning { color: #f97316; }
+    .meta-pct.danger { color: #ef4444; }
+    .meta-pct.no-meta { color: #8B8FAD; }
+
+    /* Progress bar */
+    .progress-bar-track {
+      height: 8px; background: #F0F2F8; border-radius: 99px; overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%; border-radius: 99px; transition: width .5s ease;
+      background: linear-gradient(90deg, #ef520f, #df2c05);
+    }
+    .progress-bar-fill.on-track { background: linear-gradient(90deg, #22c55e, #16a34a); }
+    .progress-bar-fill.warning { background: linear-gradient(90deg, #fb923c, #f97316); }
+    .progress-bar-fill.danger { background: linear-gradient(90deg, #f87171, #ef4444); }
+
+    /* SET META FORM */
+    .set-meta-form {
+      background: #fff;
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.06);
+    }
+    .form-row { display: flex; gap: 10px; align-items: flex-end; }
+    .form-group { flex: 1; }
+    .form-group label { font-size: 12px; font-weight: 600; color: #8B8FAD; display: block; margin-bottom: 6px; }
+    .form-group select, .form-group input {
+      width: 100%; padding: 10px 14px; border: 1.5px solid #e5e7eb;
+      border-radius: 10px; font-size: 14px; font-family: 'DM Sans', sans-serif;
+      background: #fafafa; color: #0a0f24; outline: none;
+      transition: border-color .2s;
+    }
+    .form-group select:focus, .form-group input:focus { border-color: #ef520f; }
+    .btn-set-meta {
+      padding: 10px 18px; background: linear-gradient(135deg, #ef520f, #df2c05);
+      color: #fff; border: none; border-radius: 10px; font-size: 14px; font-weight: 600;
+      font-family: 'DM Sans', sans-serif; cursor: pointer; white-space: nowrap;
+      transition: opacity .2s;
+    }
+    .btn-set-meta:active { opacity: .8; }
+    .form-msg { font-size: 12px; margin-top: 8px; min-height: 16px; }
+    .form-msg.ok { color: #16a34a; }
+    .form-msg.err { color: #ef4444; }
+
+    /* DalIA tip banner */
+    .dallia-tip {
+      background: linear-gradient(135deg, #10152f, #0a0f24);
+      border-radius: 16px; padding: 16px; margin-bottom: 12px;
+      display: flex; gap: 12px; align-items: flex-start; cursor: pointer;
+    }
+    .dallia-tip-orb {
+      width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
+      background: linear-gradient(135deg, #ef520f, #df2c05);
+      display: flex; align-items: center; justify-content: center; font-size: 18px;
+    }
+    .dallia-tip-text { flex: 1; }
+    .dallia-tip-text strong { font-size: 13px; color: #fff; display: block; margin-bottom: 3px; }
+    .dallia-tip-text p { font-size: 12px; color: #8B8FAD; line-height: 1.4; }
+
+    /* No meta set badge */
+    .badge-no-meta {
+      display: inline-flex; align-items: center; gap: 4px;
+      background: #F0F2F8; color: #8B8FAD; border-radius: 99px;
+      font-size: 11px; padding: 3px 10px; font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+<div class="shell">
+  <!-- HEADER -->
+  <div class="meta-header">
+    <div class="meta-header-row">
+      <div>
+        <h1>Metas del día</h1>
+        <p>Seguimiento de objetivos en tiempo real</p>
+      </div>
+      <div class="meta-header-icon"><i class="bi bi-trophy"></i></div>
+    </div>
+  </div>
+
+  <!-- PROGRESS CARDS -->
+  <div class="section">
+    <div class="section-title">Progreso hoy</div>
+
+    <%
+      function pct(real, meta) {
+        if (!meta || meta <= 0) return null;
+        return Math.min(Math.round((real / meta) * 100), 100);
+      }
+      function pctClass(p) {
+        if (p === null) return 'no-meta';
+        if (p >= 80) return 'on-track';
+        if (p >= 50) return 'warning';
+        return 'danger';
+      }
+
+      const metaVentas     = metas.ventas || 0;
+      const metaPedidos    = metas.pedidos || 0;
+      const metaTicket     = metas.ticket_promedio || 0;
+      const realVentas     = progreso.ventas || 0;
+      const realPedidos    = progreso.pedidos || 0;
+      const realTicket     = progreso.ticket_promedio || 0;
+
+      const pVentas  = pct(realVentas, metaVentas);
+      const pPedidos = pct(realPedidos, metaPedidos);
+      const pTicket  = pct(realTicket, metaTicket);
+    %>
+
+    <!-- Ventas -->
+    <div class="meta-card" id="card-ventas">
+      <div class="meta-card-header">
+        <div class="meta-card-icon ventas"><i class="bi bi-cash-coin"></i></div>
+        <div>
+          <div class="meta-card-label">Ventas</div>
+          <div class="meta-card-sub">Ingresos del día</div>
+        </div>
+      </div>
+      <div class="meta-values">
+        <div class="meta-real">S/<%= realVentas.toFixed(0) %><span> soles</span></div>
+        <div class="meta-target">
+          <% if (metaVentas > 0) { %>
+            <div class="meta-target-val">Meta: S/<%= metaVentas.toFixed(0) %></div>
+            <div class="meta-pct <%= pctClass(pVentas) %>"><%= pVentas %>%</div>
+          <% } else { %>
+            <span class="badge-no-meta"><i class="bi bi-dash-circle"></i> Sin meta</span>
+          <% } %>
+        </div>
+      </div>
+      <div class="progress-bar-track">
+        <div class="progress-bar-fill <%= pctClass(pVentas) %>" style="width:<%= pVentas !== null ? pVentas : 0 %>%"></div>
+      </div>
+    </div>
+
+    <!-- Pedidos -->
+    <div class="meta-card" id="card-pedidos">
+      <div class="meta-card-header">
+        <div class="meta-card-icon pedidos"><i class="bi bi-bag-check"></i></div>
+        <div>
+          <div class="meta-card-label">Pedidos</div>
+          <div class="meta-card-sub">Cantidad de órdenes</div>
+        </div>
+      </div>
+      <div class="meta-values">
+        <div class="meta-real"><%= realPedidos %><span> pedidos</span></div>
+        <div class="meta-target">
+          <% if (metaPedidos > 0) { %>
+            <div class="meta-target-val">Meta: <%= metaPedidos %></div>
+            <div class="meta-pct <%= pctClass(pPedidos) %>"><%= pPedidos %>%</div>
+          <% } else { %>
+            <span class="badge-no-meta"><i class="bi bi-dash-circle"></i> Sin meta</span>
+          <% } %>
+        </div>
+      </div>
+      <div class="progress-bar-track">
+        <div class="progress-bar-fill <%= pctClass(pPedidos) %>" style="width:<%= pPedidos !== null ? pPedidos : 0 %>%"></div>
+      </div>
+    </div>
+
+    <!-- Ticket promedio -->
+    <div class="meta-card" id="card-ticket">
+      <div class="meta-card-header">
+        <div class="meta-card-icon ticket"><i class="bi bi-receipt"></i></div>
+        <div>
+          <div class="meta-card-label">Ticket promedio</div>
+          <div class="meta-card-sub">Gasto medio por pedido</div>
+        </div>
+      </div>
+      <div class="meta-values">
+        <div class="meta-real">S/<%= realTicket.toFixed(0) %><span> / pedido</span></div>
+        <div class="meta-target">
+          <% if (metaTicket > 0) { %>
+            <div class="meta-target-val">Meta: S/<%= metaTicket.toFixed(0) %></div>
+            <div class="meta-pct <%= pctClass(pTicket) %>"><%= pTicket %>%</div>
+          <% } else { %>
+            <span class="badge-no-meta"><i class="bi bi-dash-circle"></i> Sin meta</span>
+          <% } %>
+        </div>
+      </div>
+      <div class="progress-bar-track">
+        <div class="progress-bar-fill <%= pctClass(pTicket) %>" style="width:<%= pTicket !== null ? pTicket : 0 %>%"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SET META FORM -->
+  <div class="section">
+    <div class="section-title">Establecer meta</div>
+    <div class="set-meta-form">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Indicador</label>
+          <select id="meta-tipo">
+            <option value="ventas">Ventas (S/)</option>
+            <option value="pedidos">Pedidos (#)</option>
+            <option value="ticket_promedio">Ticket promedio (S/)</option>
+          </select>
+        </div>
+        <div class="form-group" style="max-width:120px">
+          <label>Valor meta</label>
+          <input type="number" id="meta-valor" min="0" step="1" placeholder="500">
+        </div>
+        <button class="btn-set-meta" onclick="guardarMeta()">Guardar</button>
+      </div>
+      <div id="form-msg" class="form-msg"></div>
+    </div>
+  </div>
+
+  <!-- DALIA TIP -->
+  <div class="section" style="padding-top:0">
+    <div class="dallia-tip" onclick="window.location.href='/chat?agent=salva&contexto=metas&prompt=¿Cómo van mis metas de hoy?'">
+      <div class="dallia-tip-orb">🤖</div>
+      <div class="dallia-tip-text">
+        <strong>Pregúntale a DalIA</strong>
+        <p>¿Voy a llegar a mi meta de ventas? ¿Qué productos impulsar esta tarde?</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<%- include('partials/limelight-nav', { reqPath: '/metas' }) %>
+
+<script>
+async function guardarMeta() {
+  const tipo = document.getElementById('meta-tipo').value;
+  const valor = document.getElementById('meta-valor').value;
+  const msg = document.getElementById('form-msg');
+
+  if (!valor || parseFloat(valor) < 0) {
+    msg.textContent = 'Ingresa un valor válido.';
+    msg.className = 'form-msg err';
+    return;
+  }
+
+  try {
+    const r = await fetch('/metas', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tipo, meta_valor: parseFloat(valor) })
+    });
+    const data = await r.json();
+    if (data.ok) {
+      msg.textContent = '✓ Meta guardada';
+      msg.className = 'form-msg ok';
+      setTimeout(() => location.reload(), 800);
+    } else {
+      msg.textContent = data.error || 'Error al guardar';
+      msg.className = 'form-msg err';
+    }
+  } catch (e) {
+    msg.textContent = 'Error de conexión';
+    msg.className = 'form-msg err';
+  }
+}
+
+// Auto-refresh every 60s
+setInterval(async () => {
+  try {
+    const r = await fetch('/metas/progreso');
+    const { metas, progreso } = await r.json();
+    if (!progreso) return;
+
+    // Update ventas card
+    updateCard('ventas', progreso.ventas, metas.ventas, 'S/', ' soles');
+    updateCard('pedidos', progreso.pedidos, metas.pedidos, '', ' pedidos');
+    updateCard('ticket', progreso.ticket_promedio, metas.ticket_promedio, 'S/', ' / pedido');
+  } catch (_) {}
+}, 60000);
+
+function updateCard(tipo, real, meta, prefix, suffix) {
+  const card = document.getElementById('card-' + tipo);
+  if (!card) return;
+  const realEl = card.querySelector('.meta-real');
+  if (realEl) realEl.innerHTML = prefix + Math.round(real) + '<span>' + suffix + '</span>';
+
+  if (meta > 0) {
+    const p = Math.min(Math.round((real / meta) * 100), 100);
+    const cls = p >= 80 ? 'on-track' : p >= 50 ? 'warning' : 'danger';
+    const fill = card.querySelector('.progress-bar-fill');
+    if (fill) { fill.style.width = p + '%'; fill.className = 'progress-bar-fill ' + cls; }
+    const pctEl = card.querySelector('.meta-pct');
+    if (pctEl) { pctEl.textContent = p + '%'; pctEl.className = 'meta-pct ' + cls; }
+  }
+}
+</script>
+</body>
+</html>
