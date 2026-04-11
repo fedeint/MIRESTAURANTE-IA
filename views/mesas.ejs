@@ -251,7 +251,19 @@ function abrirMesa(mesaId, numero, estado) {
 }
 
 // Auto-refresh every 30s to reflect table state changes
+// Track occupied count to flash title on new table
+var _prevOcupadas = document.querySelectorAll('.m-card[data-estado="ocupada"]').length;
 setInterval(function() { window.location.reload(); }, 30 * 1000);
+// On page restore from bfcache, re-check title
+window.addEventListener('pageshow', function() {
+  var now = document.querySelectorAll('.m-card[data-estado="ocupada"]').length;
+  if (now > _prevOcupadas) {
+    document.title = '🍽️ (' + now + ') Mesas';
+    if (navigator.vibrate) navigator.vibrate([80, 40, 80]);
+    setTimeout(function() { document.title = 'Mesas'; }, 4000);
+  }
+  _prevOcupadas = now;
+});
 </script>
 <script src="/js/dallia-fab.js"></script>
 <script src="/js/salva-alerts.js"></script>

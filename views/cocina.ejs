@@ -509,11 +509,41 @@
     });
   };
 
+  // ------ Sound alert on new orders ------
+  var prevPendingCount = -1; // -1 = first load, skip beep
+
+  function beepNewOrder() {
+    try {
+      var ctx = new (window.AudioContext || window.webkitAudioContext)();
+      [440, 550, 660].forEach(function(freq, i) {
+        var osc = ctx.createOscillator();
+        var gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.frequency.value = freq;
+        osc.type = 'sine';
+        gain.gain.setValueAtTime(0.18, ctx.currentTime + i * 0.12);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.12 + 0.18);
+        osc.start(ctx.currentTime + i * 0.12);
+        osc.stop(ctx.currentTime + i * 0.12 + 0.2);
+      });
+    } catch(_) {}
+    // Also vibrate if supported
+    if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
+  }
+
   // ------ Data load ------
   function loadItems() {
     dot.classList.add('active');
     fetch('/cocina/cola').then(function(r){ return r.json(); }).then(function(data) {
       allItems = data || [];
+      var pendingNow = allItems.filter(function(i){ return i.estado === 'preparando'; }).length;
+      if (prevPendingCount >= 0 && pendingNow > prevPendingCount) {
+        beepNewOrder();
+        document.title = '🔔 (' + pendingNow + ') Cocina';
+        setTimeout(function() { document.title = 'Cocina'; }, 5000);
+      }
+      prevPendingCount = pendingNow;
       updateCounts();
       render();
       dot.classList.remove('active');
