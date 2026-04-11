@@ -367,6 +367,7 @@ async function ensureSchema() {
                 ['vencimiento_ingredientes', 'Detecta lotes de almacen proximos a vencer (<=3 dias) para evitar desperdicio', 'manual'],
                 ['resumen_cierre_dia',       'Genera resumen de ventas del dia vs ayer con comparativo de pedidos y ticket promedio', 'scheduled'],
                 ['recordatorio_cerrar_caja', 'Recuerda al administrador cerrar cajas abiertas despues de las 22:00', 'scheduled'],
+                ['meta_alcanzada',           'Celebra cuando las ventas del dia alcanzan la meta configurada en metas_diarias', 'manual'],
             ];
             for (const [nombre, descripcion, tipo_trigger] of actionSeeds) {
                 await pgNativeQuery(`INSERT INTO dallia_actions (nombre, descripcion, tipo_trigger)

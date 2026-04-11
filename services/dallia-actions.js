@@ -141,6 +141,7 @@ const HANDLERS = [
     './dallia-actions/vencimiento-ingredientes',
     './dallia-actions/resumen-cierre-dia',
     './dallia-actions/recordatorio-cerrar-caja',
+    './dallia-actions/meta-alcanzada',
 ];
 
 for (const handlerPath of HANDLERS) {

@@ -166,7 +166,64 @@ test('recordatorio_cerrar_caja: execute acknowledges reminder', async () => {
     assert.equal(result.cajas_en_recordatorio, 2);
 });
 
-test('recordatorio_cerrar_caja: all three handlers are registered in dallia-actions', () => {
+// ─────────────────────────────────────────────────────────────────────────────
+// meta_alcanzada
+// ─────────────────────────────────────────────────────────────────────────────
+
+test('meta_alcanzada: shouldPropose=false when no meta configured', async () => {
+    const handler = require('../services/dallia-actions/meta-alcanzada');
+    const db = makeFakeDb([ [[]] ]); // no meta rows
+    const result = await handler.detect(1, { db });
+    assert.equal(result.shouldPropose, false);
+    assert.ok(result.message);
+});
+
+test('meta_alcanzada: shouldPropose=false when ingresos below meta', async () => {
+    const handler = require('../services/dallia-actions/meta-alcanzada');
+    const db = makeFakeDb([
+        [[{ meta_valor: 1000 }]],   // metas_diarias
+        [[{ ingresos: 750, movimientos: 5 }]], // caja_movimientos
+    ]);
+    const result = await handler.detect(1, { db });
+    assert.equal(result.shouldPropose, false);
+    assert.ok(result.message.includes('250')); // faltante
+});
+
+test('meta_alcanzada: shouldPropose=true when ingresos >= meta and no prior proposal', async () => {
+    const handler = require('../services/dallia-actions/meta-alcanzada');
+    const db = makeFakeDb([
+        [[{ meta_valor: 1000 }]],           // metas_diarias
+        [[{ ingresos: 1200, movimientos: 30 }]], // caja_movimientos
+        [[]],                               // dallia_actions_log (no prior proposal)
+        [[{ pedidos: 30 }]],               // pedidos count
+    ]);
+    const result = await handler.detect(1, { db });
+    assert.equal(result.shouldPropose, true);
+    assert.equal(result.metaValor, 1000);
+    assert.equal(result.ingresosHoy, 1200);
+    assert.equal(result.exceso, 200);
+    assert.equal(result.pct, 120);
+});
+
+test('meta_alcanzada: draft includes celebration message with pct', async () => {
+    const handler = require('../services/dallia-actions/meta-alcanzada');
+    const detection = { shouldPropose: true, ingresosHoy: 1500, metaValor: 1000, exceso: 500, pct: 150, pedidosHoy: 40 };
+    const db = makeFakeDb();
+    const result = await handler.draft(1, detection, { db });
+    assert.ok(result.texto.includes('1500') || result.texto.includes('1,500'));
+    assert.ok(result.texto.includes('150%'));
+    assert.ok(result.texto.includes('500') || result.texto.includes('exceso'));
+});
+
+test('meta_alcanzada: execute returns acknowledged with ingresos', async () => {
+    const handler = require('../services/dallia-actions/meta-alcanzada');
+    const db = makeFakeDb();
+    const result = await handler.execute(1, 99, JSON.stringify({ ingresosHoy: 1200 }), { db });
+    assert.equal(result.acknowledged, true);
+    assert.ok(result.mensaje.includes('1200') || result.mensaje.includes('Meta'));
+});
+
+test('all five handlers are registered in dallia-actions', () => {
     delete require.cache[require.resolve('../services/dallia-actions')];
     const daliaActions = require('../services/dallia-actions');
     const list = daliaActions.listActions();
@@ -175,4 +232,5 @@ test('recordatorio_cerrar_caja: all three handlers are registered in dallia-acti
     assert.ok(names.includes('vencimiento_ingredientes'), 'vencimiento_ingredientes should be registered');
     assert.ok(names.includes('resumen_cierre_dia'), 'resumen_cierre_dia should be registered');
     assert.ok(names.includes('recordatorio_cerrar_caja'), 'recordatorio_cerrar_caja should be registered');
+    assert.ok(names.includes('meta_alcanzada'), 'meta_alcanzada should be registered');
 });

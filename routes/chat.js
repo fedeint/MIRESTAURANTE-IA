@@ -49,6 +49,14 @@ function detectCerrarCajaIntent(text) {
         lower.includes('olvide cerrar') || lower.includes('recordatorio caja');
 }
 
+function detectMetaAlcanzadaIntent(text) {
+    const lower = (text || '').toLowerCase();
+    return lower.includes('meta') || lower.includes('objetivo') ||
+        lower.includes('meta de ventas') || lower.includes('alcancé') ||
+        lower.includes('alcance la meta') || lower.includes('cumplí la meta') ||
+        lower.includes('cumpli la meta') || lower.includes('llegué a la meta');
+}
+
 // Helper: Detectar categoría de pregunta basada en palabras clave
 function detectarCategoria(texto) {
   const texto_lower = (texto || '').toLowerCase();
@@ -583,6 +591,23 @@ router.post('/', async (req, res) => {
             });
         } catch (err) {
             console.error('[dallia-actions cerrar_caja] run failed:', err.message);
+        }
+    }
+
+    if (detectMetaAlcanzadaIntent(mensaje) && (rol === 'administrador' || rol === 'superadmin')) {
+        try {
+            const result = await daliaActions.run('meta_alcanzada', tid, { db, llm });
+            if (!result.shouldPropose) {
+                return res.json({ respuesta: result.message, provider: 'dallia-actions', type: 'text' });
+            }
+            return res.json({
+                respuesta: result.draft.texto,
+                provider: 'dallia-actions',
+                type: 'action_card',
+                action_card: { logId: result.logId, actionName: result.actionName, detection: result.detection, draft: result.draft }
+            });
+        } catch (err) {
+            console.error('[dallia-actions meta_alcanzada] run failed:', err.message);
         }
     }
     // ─────────────────────────────────────────────────────────────────────────
