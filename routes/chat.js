@@ -26,6 +26,29 @@ function detectStockIntent(text) {
     return matches >= 2 || lower.includes('revisa mi stock') || lower.includes('haz el pedido');
 }
 
+function detectVencimientoIntent(text) {
+    const lower = (text || '').toLowerCase();
+    return lower.includes('venc') || lower.includes('caducidad') || lower.includes('expira') ||
+        lower.includes('caduca') || lower.includes('vencimiento') ||
+        (lower.includes('insumo') && (lower.includes('malo') || lower.includes('perecible')));
+}
+
+function detectResumenDiaIntent(text) {
+    const lower = (text || '').toLowerCase();
+    return lower.includes('resumen del día') || lower.includes('resumen de hoy') ||
+        lower.includes('cierre del día') || lower.includes('cómo me fue') ||
+        lower.includes('como me fue') || lower.includes('ventas de hoy') ||
+        lower.includes('cuánto vendí') || lower.includes('cuanto vendi') ||
+        (lower.includes('resumen') && lower.includes('dia'));
+}
+
+function detectCerrarCajaIntent(text) {
+    const lower = (text || '').toLowerCase();
+    return lower.includes('caja abierta') || lower.includes('cerrar caja') ||
+        lower.includes('caja sin cerrar') || lower.includes('olvidé cerrar') ||
+        lower.includes('olvide cerrar') || lower.includes('recordatorio caja');
+}
+
 // Helper: Detectar categoría de pregunta basada en palabras clave
 function detectarCategoria(texto) {
   const texto_lower = (texto || '').toLowerCase();
@@ -509,6 +532,57 @@ router.post('/', async (req, res) => {
         } catch (err) {
             console.error('[dallia-actions] run failed:', err.message);
             // Fall through to normal LLM chat on error
+        }
+    }
+
+    if (detectVencimientoIntent(mensaje) && (rol === 'administrador' || rol === 'almacenero' || rol === 'superadmin')) {
+        try {
+            const result = await daliaActions.run('vencimiento_ingredientes', tid, { db, llm });
+            if (!result.shouldPropose) {
+                return res.json({ respuesta: result.message, provider: 'dallia-actions', type: 'text' });
+            }
+            return res.json({
+                respuesta: result.draft.texto,
+                provider: 'dallia-actions',
+                type: 'action_card',
+                action_card: { logId: result.logId, actionName: result.actionName, detection: result.detection, draft: result.draft }
+            });
+        } catch (err) {
+            console.error('[dallia-actions vencimiento] run failed:', err.message);
+        }
+    }
+
+    if (detectResumenDiaIntent(mensaje) && (rol === 'administrador' || rol === 'superadmin')) {
+        try {
+            const result = await daliaActions.run('resumen_cierre_dia', tid, { db, llm });
+            if (!result.shouldPropose) {
+                return res.json({ respuesta: result.message, provider: 'dallia-actions', type: 'text' });
+            }
+            return res.json({
+                respuesta: result.draft.texto,
+                provider: 'dallia-actions',
+                type: 'action_card',
+                action_card: { logId: result.logId, actionName: result.actionName, detection: result.detection, draft: result.draft }
+            });
+        } catch (err) {
+            console.error('[dallia-actions resumen_dia] run failed:', err.message);
+        }
+    }
+
+    if (detectCerrarCajaIntent(mensaje) && (rol === 'administrador' || rol === 'cajero' || rol === 'superadmin')) {
+        try {
+            const result = await daliaActions.run('recordatorio_cerrar_caja', tid, { db, llm });
+            if (!result.shouldPropose) {
+                return res.json({ respuesta: result.message, provider: 'dallia-actions', type: 'text' });
+            }
+            return res.json({
+                respuesta: result.draft.texto,
+                provider: 'dallia-actions',
+                type: 'action_card',
+                action_card: { logId: result.logId, actionName: result.actionName, detection: result.detection, draft: result.draft }
+            });
+        } catch (err) {
+            console.error('[dallia-actions cerrar_caja] run failed:', err.message);
         }
     }
     // ─────────────────────────────────────────────────────────────────────────
