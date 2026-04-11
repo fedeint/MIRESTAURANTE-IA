@@ -19,6 +19,7 @@ const REGISTERED_PAIRS = [
     { pwa: 'pedidos.ejs', desktop: 'pedidos-desktop.ejs' },
     { pwa: 'superadmin/boveda.ejs', desktop: 'superadmin/boveda-desktop.ejs' },
     { pwa: 'cocina.ejs', desktop: 'cocina-desktop.ejs' },
+    { pwa: 'caja.ejs',  desktop: 'caja-desktop.ejs' },
 ];
 
 for (const { pwa, desktop } of REGISTERED_PAIRS) {

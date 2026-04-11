@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const { registrarAudit } = require('../services/audit');
+const { renderForDevice } = require('../lib/deviceRouter');
 
 // Auto-ensure mesero columns exist
 (async () => {
@@ -64,10 +65,10 @@ router.get('/', async (req, res) => {
           GROUP BY m.mesero_asignado_id
         `, [tid]);
 
-        res.render('caja', { cajaAbierta, movimientos, totales, turnos, metodos, meseros, mesasAll, productosPorMesero });
+        renderForDevice(req, res, 'caja', { cajaAbierta, movimientos, totales, turnos, metodos, meseros, mesasAll, productosPorMesero });
     } catch (e) {
         console.error('Caja error:', e.message);
-        res.render('caja', { cajaAbierta: null, movimientos: [], totales: { ingresos: 0, egresos: 0, efectivo_actual: 0 }, turnos: [], metodos: [], meseros: [], mesasAll: [], productosPorMesero: [] });
+        renderForDevice(req, res, 'caja', { cajaAbierta: null, movimientos: [], totales: { ingresos: 0, egresos: 0, efectivo_actual: 0 }, turnos: [], metodos: [], meseros: [], mesasAll: [], productosPorMesero: [] });
     }
 });
 
