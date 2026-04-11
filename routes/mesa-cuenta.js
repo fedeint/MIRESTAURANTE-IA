@@ -2,6 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const { calcularDescuento, validarPromo } = require('../lib/descuento');
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -283,26 +284,10 @@ router.post('/descuento/validar', async (req, res) => {
       [tenantId, codigo.trim().toUpperCase()]
     );
 
-    if (!promo) {
-      return res.json({ valido: false, motivo: 'Código inválido o expirado' });
-    }
-    if (promo.usos_maximo && promo.usos_actual >= promo.usos_maximo) {
-      return res.json({ valido: false, motivo: 'Este código ya alcanzó el límite de usos' });
-    }
+    const motivo = validarPromo(promo);
+    if (motivo) return res.json({ valido: false, motivo });
 
-    const base = Number(total_actual || 0);
-    let descuento_monto = 0;
-    let descuento_porcentaje = 0;
-
-    if (promo.tipo === 'porcentaje') {
-      descuento_porcentaje = Number(promo.valor);
-      descuento_monto = Math.round(base * (descuento_porcentaje / 100) * 100) / 100;
-    } else if (promo.tipo === 'monto_fijo') {
-      descuento_monto = Math.min(Number(promo.valor), base);
-      descuento_porcentaje = base > 0 ? Math.round((descuento_monto / base) * 100) : 0;
-    }
-
-    const total_final = Math.max(0, Math.round((base - descuento_monto) * 100) / 100);
+    const { descuento_monto, descuento_porcentaje, total_final } = calcularDescuento(promo, total_actual);
 
     return res.json({
       valido: true,
