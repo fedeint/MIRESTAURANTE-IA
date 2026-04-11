@@ -520,6 +520,9 @@ app.use('/onboarding-dallia', requireAuth, onboardingDalliaRoutes);
 const setupSistemaRoutes = require('./routes/setup-sistema');
 app.use('/setup-sistema', requireAuth, setupSistemaRoutes);
 
+const pwaSetupRoutes = require('./routes/pwa-setup');
+app.use('/setup-pwa', requireAuth, pwaSetupRoutes);
+
 // Pantallas de estado del trial (requieren auth pero NO trial activo)
 app.get('/espera-verificacion', requireAuth, async (req, res) => {
     const tenantId = req.tenantId || req.session?.user?.tenant_id;

@@ -1,0 +1,437 @@
+<%# @variant: pwa %>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Bienvenido a MiRestcon</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      font-family: 'DM Sans', sans-serif;
+      background: linear-gradient(160deg, #0f172a 0%, #0a0f24 50%, #090d1d 100%);
+      color: #fff;
+      height: 100dvh;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .wizard-shell {
+      display: flex; flex-direction: column;
+      height: 100dvh; max-width: 480px; margin: 0 auto;
+      padding: env(safe-area-inset-top, 0px) 0 env(safe-area-inset-bottom, 0px);
+    }
+
+    /* PROGRESS BAR */
+    .wiz-progress {
+      height: 4px; background: rgba(255,255,255,0.1);
+      margin: 0;
+    }
+    .wiz-progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #ef520f, #df2c05);
+      transition: width 0.35s ease;
+    }
+
+    /* STEP DOTS */
+    .step-dots {
+      display: flex; justify-content: center; gap: 8px;
+      padding: 16px;
+    }
+    .step-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      transition: all 0.25s;
+    }
+    .step-dot.active {
+      background: #ef520f;
+      width: 24px; border-radius: 4px;
+    }
+    .step-dot.done { background: rgba(239,82,15,0.5); }
+
+    /* STEP CONTENT */
+    .steps-container {
+      flex: 1; overflow: hidden; position: relative;
+    }
+    .step {
+      position: absolute; inset: 0;
+      display: flex; flex-direction: column;
+      padding: 8px 24px 24px;
+      opacity: 0; transform: translateX(40px);
+      transition: opacity 0.3s, transform 0.3s;
+      pointer-events: none;
+    }
+    .step.active {
+      opacity: 1; transform: translateX(0);
+      pointer-events: auto;
+    }
+    .step.exit {
+      opacity: 0; transform: translateX(-40px);
+    }
+
+    /* STEP 1 - WELCOME */
+    .wiz-orb {
+      width: 96px; height: 96px; border-radius: 50%;
+      background: linear-gradient(135deg, #ef520f, #df2c05);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 48px; margin: 24px auto 20px;
+      animation: orbPulse 2.4s ease-in-out infinite;
+      flex-shrink: 0;
+    }
+    @keyframes orbPulse {
+      0%,100% { box-shadow: 0 0 0 0 rgba(239,82,15,0.4); }
+      50%      { box-shadow: 0 0 0 20px rgba(239,82,15,0); }
+    }
+    .wiz-title {
+      font-size: 26px; font-weight: 800;
+      text-align: center; margin-bottom: 8px;
+    }
+    .wiz-subtitle {
+      font-size: 15px; color: rgba(255,255,255,0.6);
+      text-align: center; line-height: 1.5; margin-bottom: 24px;
+    }
+    .preview-cards {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 10px; margin-top: auto;
+    }
+    .preview-card {
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 14px; padding: 14px;
+      display: flex; flex-direction: column; align-items: flex-start; gap: 6px;
+    }
+    .preview-card .pc-icon { font-size: 24px; }
+    .preview-card .pc-label {
+      font-size: 12px; font-weight: 600;
+      color: rgba(255,255,255,0.7);
+    }
+
+    /* STEPS 2-4 — tour steps */
+    .tour-list {
+      display: flex; flex-direction: column; gap: 10px;
+      overflow-y: auto; flex: 1;
+      scrollbar-width: none;
+    }
+    .tour-list::-webkit-scrollbar { display: none; }
+    .tour-item {
+      display: flex; gap: 14px; align-items: flex-start;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.09);
+      border-radius: 14px; padding: 14px;
+    }
+    .tour-num {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: linear-gradient(135deg,#ef520f,#df2c05);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700; flex-shrink: 0;
+    }
+    .tour-item-body { flex: 1; }
+    .tour-item-title {
+      font-size: 14px; font-weight: 700; margin-bottom: 2px;
+    }
+    .tour-item-desc {
+      font-size: 12px; color: rgba(255,255,255,0.55); line-height: 1.4;
+    }
+
+    /* STEP 4 — DalIA meet */
+    .dallia-hero {
+      background: linear-gradient(135deg, rgba(239,82,15,0.15), rgba(223,44,5,0.08));
+      border: 1px solid rgba(239,82,15,0.25);
+      border-radius: 20px; padding: 24px;
+      text-align: center; margin-bottom: 16px;
+    }
+    .dallia-hero-orb {
+      width: 72px; height: 72px; border-radius: 50%;
+      background: linear-gradient(135deg,#ef520f,#df2c05);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 36px; margin: 0 auto 14px;
+    }
+    .dallia-hero h3 { font-size: 18px; font-weight: 800; margin-bottom: 6px; }
+    .dallia-hero p { font-size: 13px; color: rgba(255,255,255,0.6); line-height: 1.5; }
+    .dallia-feat-list {
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .dallia-feat {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 13px; color: rgba(255,255,255,0.7);
+    }
+    .dallia-feat span { font-size: 16px; flex-shrink: 0; }
+
+    /* STEP 5 — ready */
+    .ready-hero {
+      display: flex; flex-direction: column;
+      align-items: center; text-align: center;
+      padding-top: 32px; flex: 1;
+    }
+    .ready-check {
+      width: 80px; height: 80px; border-radius: 50%;
+      background: linear-gradient(135deg,#22c55e,#16a34a);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 40px; margin-bottom: 20px;
+    }
+    .ready-title { font-size: 28px; font-weight: 800; margin-bottom: 10px; }
+    .ready-sub {
+      font-size: 15px; color: rgba(255,255,255,0.55);
+      line-height: 1.6; max-width: 320px;
+    }
+
+    /* STEP SECTION HEADER */
+    .step-header { margin-bottom: 16px; }
+    .step-header h2 { font-size: 22px; font-weight: 800; }
+    .step-header p { font-size: 13px; color: rgba(255,255,255,0.55); margin-top: 4px; }
+
+    /* CTA FOOTER */
+    .wiz-footer {
+      padding: 16px 24px; display: flex; flex-direction: column; gap: 10px;
+      flex-shrink: 0;
+    }
+    .btn-next {
+      width: 100%; padding: 16px;
+      background: linear-gradient(135deg,#ef520f,#df2c05);
+      color: white; border: none; border-radius: 16px;
+      font-family: 'DM Sans', sans-serif; font-size: 16px; font-weight: 700;
+      cursor: pointer; transition: opacity 0.15s;
+    }
+    .btn-next:active { opacity: 0.85; }
+    .btn-skip {
+      width: 100%; padding: 12px;
+      background: transparent; color: rgba(255,255,255,0.4); border: none;
+      font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+<div class="wizard-shell">
+
+  <!-- Progress bar -->
+  <div class="wiz-progress">
+    <div class="wiz-progress-fill" id="progressFill" style="width:20%"></div>
+  </div>
+
+  <!-- Step dots -->
+  <div class="step-dots" id="stepDots">
+    <div class="step-dot active" data-step="0"></div>
+    <div class="step-dot" data-step="1"></div>
+    <div class="step-dot" data-step="2"></div>
+    <div class="step-dot" data-step="3"></div>
+    <div class="step-dot" data-step="4"></div>
+  </div>
+
+  <!-- Steps -->
+  <div class="steps-container">
+
+    <!-- STEP 1: Bienvenida -->
+    <div class="step active" id="step-0">
+      <div class="wiz-orb">🤖</div>
+      <h1 class="wiz-title">¡Bienvenido,<br><%= userName %>!</h1>
+      <p class="wiz-subtitle">Vamos a conocer tu nuevo sistema en 2 minutos.</p>
+      <div class="preview-cards">
+        <div class="preview-card">
+          <span class="pc-icon">🍽️</span>
+          <span class="pc-label">Mesas y pedidos</span>
+        </div>
+        <div class="preview-card">
+          <span class="pc-icon">👨‍🍳</span>
+          <span class="pc-label">Cocina en vivo</span>
+        </div>
+        <div class="preview-card">
+          <span class="pc-icon">💵</span>
+          <span class="pc-label">Caja y cobros</span>
+        </div>
+        <div class="preview-card">
+          <span class="pc-icon">🤖</span>
+          <span class="pc-label">DalIA, tu IA</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 2: Operación diaria -->
+    <div class="step" id="step-1">
+      <div class="step-header">
+        <h2>Operación diaria</h2>
+        <p>Cómo funciona un día normal en tu restaurante</p>
+      </div>
+      <div class="tour-list">
+        <div class="tour-item">
+          <div class="tour-num">1</div>
+          <div class="tour-item-body">
+            <div class="tour-item-title">Abrir caja al inicio</div>
+            <div class="tour-item-desc">Ve a Caja → ingresa el monto de apertura → abre el turno.</div>
+          </div>
+        </div>
+        <div class="tour-item">
+          <div class="tour-num">2</div>
+          <div class="tour-item-body">
+            <div class="tour-item-title">Tomar un pedido</div>
+            <div class="tour-item-desc">Mesas → toca la mesa → selecciona productos → confirma.</div>
+          </div>
+        </div>
+        <div class="tour-item">
+          <div class="tour-num">3</div>
+          <div class="tour-item-body">
+            <div class="tour-item-title">Enviar a cocina</div>
+            <div class="tour-item-desc">El cocinero ve el pedido en Cocina con un timer en vivo.</div>
+          </div>
+        </div>
+        <div class="tour-item">
+          <div class="tour-num">4</div>
+          <div class="tour-item-body">
+            <div class="tour-item-title">Cocinero marca "Listo"</div>
+            <div class="tour-item-desc">El pedido se actualiza. El mesero lo sirve y cierra.</div>
+          </div>
+        </div>
+        <div class="tour-item">
+          <div class="tour-num">5</div>
+          <div class="tour-item-body">
+            <div class="tour-item-title">Cobrar y emitir boleta</div>
+            <div class="tour-item-desc">Cuenta → Cobrar → método de pago → ¡listo! Mesa queda libre.</div>
+          </div>
+        </div>
+        <div class="tour-item">
+          <div class="tour-num">6</div>
+          <div class="tour-item-body">
+            <div class="tour-item-title">Cerrar caja al final</div>
+            <div class="tour-item-desc">Caja → Cerrar caja → se genera el reporte del turno.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 3: Administración -->
+    <div class="step" id="step-2">
+      <div class="step-header">
+        <h2>Tu panel "Más"</h2>
+        <p>Todo lo que necesitas para administrar</p>
+      </div>
+      <div class="tour-list">
+        <div class="tour-item">
+          <div class="tour-num">💙</div>
+          <div class="tour-item-body">
+            <div class="tour-item-title">Corazón del negocio</div>
+            <div class="tour-item-desc">Almacén, Productos, Recetas — todo tu inventario en un lugar.</div>
+          </div>
+        </div>
+        <div class="tour-item">
+          <div class="tour-num">📊</div>
+          <div class="tour-item-body">
+            <div class="tour-item-title">Marketing con Delfino</div>
+            <div class="tour-item-desc">Análisis SOSTAC, objetivos, fidelidad y promociones para crecer.</div>
+          </div>
+        </div>
+        <div class="tour-item">
+          <div class="tour-num">👥</div>
+          <div class="tour-item-body">
+            <div class="tour-item-title">Usuarios y permisos</div>
+            <div class="tour-item-desc">Crea cuentas para meseros, cocineros y cajeros con su propio acceso.</div>
+          </div>
+        </div>
+        <div class="tour-item">
+          <div class="tour-num">📈</div>
+          <div class="tour-item-body">
+            <div class="tour-item-title">Reportes automáticos</div>
+            <div class="tour-item-desc">Ventas del día, semana y mes generados automáticamente.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STEP 4: Meet DalIA -->
+    <div class="step" id="step-3">
+      <div class="dallia-hero">
+        <div class="dallia-hero-orb">🤖</div>
+        <h3>Conoce a DalIA</h3>
+        <p>Tu asistente IA personal para el restaurante. Pregúntale lo que quieras.</p>
+      </div>
+      <div class="dallia-feat-list">
+        <div class="dallia-feat"><span>📊</span> "¿Cómo van las ventas hoy?"</div>
+        <div class="dallia-feat"><span>📦</span> "¿Qué ingredientes están por acabarse?"</div>
+        <div class="dallia-feat"><span>🎯</span> "Crea una promoción para el almuerzo"</div>
+        <div class="dallia-feat"><span>🔔</span> Alertas proactivas de caja, stock y metas</div>
+        <div class="dallia-feat"><span>🎤</span> También puedes hablarle por voz</div>
+      </div>
+      <div style="margin-top:16px;">
+        <button class="btn-next" style="background:rgba(239,82,15,0.15);border:1px solid rgba(239,82,15,0.4);"
+                onclick="window.location='/chat?prompt=Hola DalIA, acabo de empezar a usar el sistema. ¿Qué me recomiendas hacer primero?'">
+          💬 Hablar con DalIA ahora
+        </button>
+      </div>
+    </div>
+
+    <!-- STEP 5: Ready -->
+    <div class="step" id="step-4">
+      <div class="ready-hero">
+        <div class="ready-check">✅</div>
+        <h2 class="ready-title">¡Todo listo!</h2>
+        <p class="ready-sub">Ya conoces tu sistema. Puedes volver a ver este tour desde<br><strong>Más → Sistema → Tour</strong>.</p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Footer CTA -->
+  <div class="wiz-footer">
+    <button class="btn-next" id="btnNext" type="button">Siguiente</button>
+    <button class="btn-skip" id="btnSkip" type="button">Saltar tour</button>
+  </div>
+
+</div>
+
+<script>
+(function() {
+  const TOTAL = 5;
+  let current = 0;
+
+  const progressFill = document.getElementById('progressFill');
+  const btnNext      = document.getElementById('btnNext');
+  const btnSkip      = document.getElementById('btnSkip');
+
+  function goTo(n) {
+    const prev = document.getElementById('step-' + current);
+    prev.classList.remove('active');
+    prev.classList.add('exit');
+    setTimeout(function() { prev.classList.remove('exit'); }, 310);
+
+    current = n;
+
+    const curr = document.getElementById('step-' + current);
+    curr.classList.add('active');
+
+    progressFill.style.width = Math.round(((current + 1) / TOTAL) * 100) + '%';
+
+    // Dots
+    document.querySelectorAll('.step-dot').forEach(function(d, i) {
+      d.classList.remove('active', 'done');
+      if (i < current) d.classList.add('done');
+      else if (i === current) d.classList.add('active');
+    });
+
+    // Footer labels
+    if (current === TOTAL - 1) {
+      btnNext.textContent = 'Empezar a operar';
+      btnSkip.style.display = 'none';
+    } else {
+      btnNext.textContent = 'Siguiente';
+      btnSkip.style.display = '';
+    }
+  }
+
+  function complete() {
+    try { localStorage.setItem('pwa_tour_done', '1'); } catch(_) {}
+    window.location.href = '/';
+  }
+
+  btnNext.addEventListener('click', function() {
+    if (current < TOTAL - 1) goTo(current + 1);
+    else complete();
+  });
+
+  btnSkip.addEventListener('click', complete);
+})();
+</script>
+</body>
+</html>
