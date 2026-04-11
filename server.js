@@ -1236,6 +1236,10 @@ const proveedoresHubRoutes = require('./routes/proveedores-hub');
 app.use('/proveedores-hub', requireAuth, requireRole(['administrador', 'almacenero']), proveedoresHubRoutes);
 app.use('/api/proveedores-hub', requireAuth, requireRole(['administrador', 'almacenero']), proveedoresHubRoutes);
 
+// Alertas Salva (proactive alerts for Agente Salva)
+const alertasSalvaRoutes = require('./routes/alertas-salva');
+app.use('/api/alertas/salva', requireAuth, requireRole(['administrador', 'cajero']), alertasSalvaRoutes);
+
 // Manejo de errores 404
 app.use((req, res, next) => {
     console.log('404 - Ruta no encontrada:', req.url);
