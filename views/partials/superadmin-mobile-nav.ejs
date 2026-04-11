@@ -28,36 +28,64 @@
     }
 
     /* Sticky module header — anchored title bar at the top of the page.
-       Targets the common pattern: `.container-fluid > div.d-flex:first-child`
-       used by dashboard, tenants, billing, solicitudes, cotizador, analytics. */
+       Targets: `.container-fluid > div.d-flex:first-child` (used by dashboard,
+       tenants, billing, solicitudes, cotizador, analytics) and the existing
+       `.mobile-sa-header` partial used by boveda. */
     .dg-main .container-fluid > .d-flex:first-child,
     .dg-main > .mobile-sa-header {
       position: sticky;
       top: 0;
       z-index: 100;
       background: linear-gradient(180deg, #10152f 0%, #0a0f24 100%) !important;
-      padding: 18px 20px 22px !important;
-      margin: 0 0 16px 0 !important;
-      border-radius: 0 0 24px 24px !important;
+      padding: 14px 18px 16px !important;
+      margin: 0 0 14px 0 !important;
+      border-radius: 0 0 20px 20px !important;
       box-shadow: 0 6px 20px rgba(10, 15, 36, 0.18);
       border: none !important;
       border-bottom: none !important;
       display: flex !important;
       align-items: center !important;
+      justify-content: space-between !important;
+      gap: 10px;
+      flex-wrap: wrap;
     }
     .dg-main .container-fluid > .d-flex:first-child *,
     .dg-main > .mobile-sa-header * {
       color: #ffffff !important;
     }
+    /* Scale down the header title — Bootstrap's default h3 (1.75rem) is too big
+       on mobile inside a tight sticky bar */
+    .dg-main .container-fluid > .d-flex:first-child h1,
+    .dg-main .container-fluid > .d-flex:first-child h2,
+    .dg-main .container-fluid > .d-flex:first-child h3,
+    .dg-main > .mobile-sa-header .mobile-sa-header-title {
+      font-size: 20px !important;
+      line-height: 1.15 !important;
+      margin: 2px 0 2px 0 !important;
+      font-weight: 800 !important;
+    }
+    .dg-main .container-fluid > .d-flex:first-child p,
+    .dg-main .container-fluid > .d-flex:first-child .text-muted {
+      font-size: 11px !important;
+      margin: 0 !important;
+      opacity: 0.65;
+    }
     .dg-main .container-fluid > .d-flex:first-child .sa-section-title,
     .dg-main > .mobile-sa-header .sa-section-title {
       color: rgba(255, 255, 255, 0.55) !important;
+      font-size: 10px !important;
+      letter-spacing: 1.4px;
+      margin-bottom: 2px !important;
     }
+    /* Action buttons on the right of the header (Tenants / Billing / Solicitudes) */
     .dg-main .container-fluid > .d-flex:first-child .btn,
     .dg-main .container-fluid > .d-flex:first-child button {
       background: rgba(255, 255, 255, 0.08) !important;
       border: 1px solid rgba(255, 255, 255, 0.12) !important;
       color: #fff !important;
+      font-size: 11px !important;
+      padding: 6px 10px !important;
+      border-radius: 8px !important;
     }
 
     /* Page content padding — applied to everything AFTER the sticky header */
