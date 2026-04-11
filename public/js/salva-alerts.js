@@ -50,7 +50,10 @@
         <div style="flex:1;min-width:0">
           <div style="font-size:13px;font-weight:700;color:${TEXT[a.tipo]||'#1f2430'}">${a.titulo}</div>
           <div style="font-size:12px;color:#4b5563;margin-top:2px;line-height:1.4">${a.mensaje}</div>
-          ${a.accion ? `<a href="${a.accion.href}" style="font-size:11px;font-weight:700;color:${TEXT[a.tipo]||'#ef520f'};text-decoration:none;margin-top:5px;display:inline-block">${a.accion.label} →</a>` : ''}
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:5px">
+            ${a.accion ? `<a href="${a.accion.href}" style="font-size:11px;font-weight:700;color:${TEXT[a.tipo]||'#ef520f'};text-decoration:none">${a.accion.label} →</a>` : ''}
+            ${a.dallia ? `<a href="${a.dallia.href}" style="font-size:11px;font-weight:700;color:#6366f1;text-decoration:none">🤖 ${a.dallia.label}</a>` : ''}
+          </div>
         </div>
         <button onclick="salvaDismiss('${a.id}',this.closest('[data-alert-id]'))" data-alert-id="${a.id}"
           style="background:none;border:none;cursor:pointer;font-size:16px;color:#9ca3af;padding:0;line-height:1;flex-shrink:0">✕</button>

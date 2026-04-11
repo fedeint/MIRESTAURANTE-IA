@@ -49,7 +49,8 @@ async function checkCaja(tid, alerts) {
           icono: '⚠️',
           titulo: 'Caja no abierta',
           mensaje: 'Es hora de iniciar operaciones. ¿Abriste la caja de hoy?',
-          accion: { label: 'Abrir caja', href: '/caja' }
+          accion: { label: 'Abrir caja', href: '/caja' },
+          dallia: { label: 'Preguntarle a DalIA', href: '/chat?agent=salva&contexto=caja&prompt=No+abrí+caja+aún%2C+qué+hago%3F' }
         });
       }
       return;
@@ -65,7 +66,8 @@ async function checkCaja(tid, alerts) {
         icono: '💰',
         titulo: `Efectivo alto: S/${efectivo.toFixed(0)}`,
         mensaje: `El fondo supera tu umbral de S/${umbral.toFixed(0)}. Considera un retiro a caja fuerte.`,
-        accion: { label: 'Ver caja', href: '/caja' }
+        accion: { label: 'Ver caja', href: '/caja' },
+        dallia: { label: 'Preguntarle a DalIA', href: `/chat?agent=salva&contexto=caja&prompt=Tengo+S%2F${efectivo.toFixed(0)}+en+caja%2C+qué+hago%3F` }
       });
     }
   } catch (_) {}
@@ -90,7 +92,8 @@ async function checkStock(tid, alerts) {
         icono: '🔴',
         titulo: `${cnt} ingrediente${cnt !== 1 ? 's' : ''} en stock crítico`,
         mensaje: `${cnt} item${cnt !== 1 ? 's' : ''} ${cnt !== 1 ? 'están' : 'está'} en o bajo el stock mínimo.`,
-        accion: { label: 'Ver almacén', href: '/almacen' }
+        accion: { label: 'Ver almacén', href: '/almacen' },
+        dallia: { label: 'Pedir a proveedores', href: `/chat?prompt=Revisa+mi+stock%2C+qué+me+falta+comprar%3F` }
       });
     }
   } catch (_) {}
@@ -177,7 +180,8 @@ async function checkVencimiento(tid, alerts) {
         icono: '🚨',
         titulo: `${hoy} lote${hoy !== 1 ? 's' : ''} vencen HOY`,
         mensaje: `Usa estos insumos inmediatamente o coordina devolución con tu proveedor.`,
-        accion: { label: 'Ver almacén', href: '/almacen' }
+        accion: { label: 'Ver almacén', href: '/almacen' },
+        dallia: { label: 'Ver lista completa', href: '/chat?prompt=Qué+insumos+vencen+hoy%3F' }
       });
     } else if (manana > 0) {
       alerts.push({
@@ -186,7 +190,8 @@ async function checkVencimiento(tid, alerts) {
         icono: '⏰',
         titulo: `${manana} lote${manana !== 1 ? 's' : ''} vencen mañana`,
         mensaje: `Prioriza el uso de estos insumos hoy mismo para evitar pérdidas.`,
-        accion: { label: 'Ver almacén', href: '/almacen' }
+        accion: { label: 'Ver almacén', href: '/almacen' },
+        dallia: { label: 'Ver con DalIA', href: '/chat?prompt=Insumos+próximos+a+vencerse' }
       });
     } else if (pronto > 0) {
       alerts.push({
@@ -195,7 +200,8 @@ async function checkVencimiento(tid, alerts) {
         icono: '📅',
         titulo: `${pronto} lote${pronto !== 1 ? 's' : ''} vencen en 2-3 días`,
         mensaje: `Planifica el uso de estos insumos esta semana.`,
-        accion: { label: 'Ver almacén', href: '/almacen' }
+        accion: { label: 'Ver almacén', href: '/almacen' },
+        dallia: { label: 'Ver con DalIA', href: '/chat?prompt=Insumos+próximos+a+vencerse' }
       });
     }
   } catch (_) {}
