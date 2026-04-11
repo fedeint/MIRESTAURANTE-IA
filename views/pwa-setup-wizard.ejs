@@ -420,8 +420,11 @@
     }
   }
 
-  function complete() {
+  async function complete() {
     try { localStorage.setItem('pwa_tour_done', '1'); } catch(_) {}
+    try {
+      await fetch('/setup-pwa/completar', { method: 'POST', headers: { 'Content-Type': 'application/json' } });
+    } catch(_) {}
     window.location.href = '/';
   }
 
