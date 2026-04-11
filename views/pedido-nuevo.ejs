@@ -1,3 +1,4 @@
+<%# @variant: pwa %>
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -214,34 +215,8 @@
     }
     .cta-btn:active { opacity: 0.85; }
     .cta-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    /* BOTTOM NAV */
-    .bottom-nav {
-      position: fixed;
-      bottom: 0;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 100%;
-      max-width: 480px;
-      background: white;
-      display: flex;
-      justify-content: space-around;
-      padding: 8px 0;
-      padding-bottom: max(8px, env(safe-area-inset-bottom));
-      box-shadow: 0 -2px 16px rgba(0,0,0,0.08);
-      z-index: 100;
-    }
-    .nav-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 2px;
-      color: #8B8FAD;
-      text-decoration: none;
-      font-size: 10px;
-      font-weight: 500;
-    }
-    .nav-item.active { color: #ef520f; }
-    .nav-icon { font-size: 22px; }
+    /* STICKY CTA: dejar espacio para el nav pill */
+    .sticky-cta { bottom: 100px; }
     /* TOAST */
     .toast {
       position: fixed;
@@ -323,19 +298,13 @@
     </button>
   </div>
 
-  <!-- BOTTOM NAV -->
-  <nav class="bottom-nav">
-    <a href="/" class="nav-item"><span class="nav-icon">&#127968;</span><span>Inicio</span></a>
-    <a href="/pedidos" class="nav-item active"><span class="nav-icon">&#128203;</span><span>Pedidos</span></a>
-    <a href="/cocina-display" class="nav-item"><span class="nav-icon">&#128293;</span><span>Cocina</span></a>
-    <a href="/caja" class="nav-item"><span class="nav-icon">&#128181;</span><span>Caja</span></a>
-    <a href="/mas" class="nav-item"><span class="nav-icon">&#9776;</span><span>Mas</span></a>
-  </nav>
 
 </div>
 
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
+
+<%- include('partials/limelight-nav', { reqPath: '/pedidos' }) %>
 
 <script>
 // ── Data ──────────────────────────────────────────────────────────────
@@ -635,6 +604,18 @@ function escHtml(str) {
 
 // ── Init ──────────────────────────────────────────────────────────────
 renderMesas();
+
+// Auto-seleccionar mesa si viene con ?mesa=X desde la vista de mesas
+(function() {
+  var params = new URLSearchParams(window.location.search);
+  var mesaParam = params.get('mesa');
+  if (mesaParam) {
+    var mesaId = Number(mesaParam);
+    if (mesaId && MESAS_DATA.find(function(m) { return m.id === mesaId; })) {
+      selectMesa(mesaId);
+    }
+  }
+})();
 </script>
 <script src="/js/dallia-fab.js"></script>
 </body>
