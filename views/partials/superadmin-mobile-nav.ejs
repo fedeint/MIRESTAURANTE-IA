@@ -1,14 +1,116 @@
-<%# Superadmin mobile pill bottom nav — include in all superadmin pages.
-    Set activeTab before including, then include this partial.
-    Valid values: inicio | tenants | solicitudes | mensajes | mas
+<%# Superadmin mobile pill bottom nav + PWA lightmode overrides + popup.
+    Included by every superadmin view; pass activeTab via include options.
+    Valid tabs: inicio | tenants | solicitudes | mensajes | mas
 %>
 <style>
   .sa-mobile-nav { display: none; }
-  @media (max-width: 991.98px) {
-    /* Push page content above the fixed bottom pill so it never scrolls underneath it */
-    body { padding-bottom: calc(90px + env(safe-area-inset-bottom, 0px)); }
-    .dg-main { padding-bottom: calc(90px + env(safe-area-inset-bottom, 0px)) !important; min-height: 100vh; }
+  .sa-mas-popup { display: none; }
 
+  @media (max-width: 991.98px) {
+    /* ============================================================
+       PWA LIGHTMODE — overrides the dark desktop palette on mobile
+       ============================================================ */
+    body {
+      background: #F0F2F8 !important;
+      padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px)) !important;
+      font-family: 'DM Sans', sans-serif !important;
+      color: #0a0f24;
+    }
+    .dg-main {
+      background: #F0F2F8 !important;
+      min-height: 100vh;
+      padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px)) !important;
+    }
+    .dg-main main { overflow: visible; }
+    .dg-main .container-fluid {
+      padding: 0 !important;
+      max-width: 100% !important;
+    }
+
+    /* Sticky module header — anchored title bar at the top of the page.
+       Targets the common pattern: `.container-fluid > div.d-flex:first-child`
+       used by dashboard, tenants, billing, solicitudes, cotizador, analytics. */
+    .dg-main .container-fluid > .d-flex:first-child,
+    .dg-main > .mobile-sa-header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: linear-gradient(180deg, #10152f 0%, #0a0f24 100%) !important;
+      padding: 18px 20px 22px !important;
+      margin: 0 0 16px 0 !important;
+      border-radius: 0 0 24px 24px !important;
+      box-shadow: 0 6px 20px rgba(10, 15, 36, 0.18);
+      border: none !important;
+      border-bottom: none !important;
+      display: flex !important;
+      align-items: center !important;
+    }
+    .dg-main .container-fluid > .d-flex:first-child *,
+    .dg-main > .mobile-sa-header * {
+      color: #ffffff !important;
+    }
+    .dg-main .container-fluid > .d-flex:first-child .sa-section-title,
+    .dg-main > .mobile-sa-header .sa-section-title {
+      color: rgba(255, 255, 255, 0.55) !important;
+    }
+    .dg-main .container-fluid > .d-flex:first-child .btn,
+    .dg-main .container-fluid > .d-flex:first-child button {
+      background: rgba(255, 255, 255, 0.08) !important;
+      border: 1px solid rgba(255, 255, 255, 0.12) !important;
+      color: #fff !important;
+    }
+
+    /* Page content padding — applied to everything AFTER the sticky header */
+    .dg-main .container-fluid > *:not(:first-child) {
+      margin-left: 16px !important;
+      margin-right: 16px !important;
+    }
+
+    /* Cards → white with subtle border + shadow */
+    .sa-card {
+      background: #FFFFFF !important;
+      border: 1px solid rgba(10, 15, 36, 0.06) !important;
+      box-shadow: 0 2px 10px rgba(10, 15, 36, 0.05) !important;
+      color: #0a0f24 !important;
+      border-radius: 16px !important;
+    }
+    .sa-kpi-value { color: #0a0f24 !important; }
+    .sa-kpi-label { color: #8B8FAD !important; }
+    .sa-section-title { color: #64748b !important; }
+
+    /* Tables */
+    .sa-table th {
+      color: #8B8FAD !important;
+      border-bottom-color: rgba(10, 15, 36, 0.08) !important;
+    }
+    .sa-table td {
+      color: #0a0f24 !important;
+      border-bottom-color: rgba(10, 15, 36, 0.04) !important;
+    }
+    .sa-table tr:hover td { background: rgba(249, 115, 22, 0.04) !important; }
+
+    /* Override inline dark text when cards are on a light card background */
+    .sa-card [style*="color:#fff"],
+    .sa-card [style*="color: #fff"],
+    .sa-card [style*="color:#ffffff"] { color: #0a0f24 !important; }
+    .sa-card [style*="color:#e2e8f0"],
+    .sa-card [style*="color: #e2e8f0"] { color: #0a0f24 !important; }
+    .sa-card [style*="color:#cbd5e1"],
+    .sa-card [style*="color: #cbd5e1"] { color: #475569 !important; }
+    .sa-card [style*="color:#94a3b8"],
+    .sa-card [style*="color: #94a3b8"] { color: #64748b !important; }
+    .sa-card [style*="background:#0f172a"],
+    .sa-card [style*="background: #0f172a"],
+    .sa-card [style*="background:#1e2235"],
+    .sa-card [style*="background: #1e2235"] {
+      background: #f8fafc !important;
+      border-color: rgba(10, 15, 36, 0.06) !important;
+      color: #0a0f24 !important;
+    }
+
+    /* ============================================================
+       BOTTOM PILL NAV
+       ============================================================ */
     .sa-mobile-nav {
       display: flex !important;
       position: fixed;
@@ -25,11 +127,11 @@
       border-radius: 36px;
       padding: 4px;
       display: flex;
-      height: 64px;
+      height: 66px;
       width: 100%;
       max-width: 560px;
       margin: 0 auto;
-      box-shadow: 0 8px 24px rgba(0,0,0,0.45), 0 0 0 1px rgba(255,255,255,0.04);
+      box-shadow: 0 10px 26px rgba(10, 15, 36, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.04);
       pointer-events: auto;
     }
     .sa-nav-tab {
@@ -46,13 +148,118 @@
       color: #8B8FAD;
       gap: 3px;
       border-radius: 28px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
       transition: color .15s;
+      padding: 0;
     }
     .sa-nav-tab i { font-size: 20px; }
     .sa-nav-tab.active {
       background: linear-gradient(135deg, #fefbf5, #fdb75e 4%, #fd9931 9%, #ef520f 38%, #df2c05 79%, #ee6d2d 100%);
       color: #fff;
-      box-shadow: 0 4px 12px rgba(223,44,5,0.28), 0 8px 16px rgba(239,82,15,0.20);
+      box-shadow: 0 4px 12px rgba(223, 44, 5, 0.28), 0 8px 16px rgba(239, 82, 15, 0.20);
+    }
+
+    /* ============================================================
+       "MÁS OPCIONES" POPUP
+       ============================================================ */
+    .sa-mas-popup {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 2000;
+    }
+    .sa-mas-popup.show { display: block; }
+    .sa-mas-popup .sa-mas-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(10, 15, 36, 0.55);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      animation: sa-mas-fade .2s ease-out;
+    }
+    @keyframes sa-mas-fade { from { opacity: 0; } to { opacity: 1; } }
+    .sa-mas-popup .sa-mas-sheet {
+      position: relative;
+      background: #F0F2F8;
+      width: 100%;
+      max-width: 560px;
+      min-height: 100vh;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      animation: sa-mas-slide .28s cubic-bezier(.2,.9,.3,1.2);
+      padding-bottom: calc(120px + env(safe-area-inset-bottom, 0px));
+    }
+    @keyframes sa-mas-slide {
+      from { transform: translateY(16px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+    .sa-mas-popup .sa-mas-header {
+      background: linear-gradient(180deg, #10152f 0%, #0a0f24 100%);
+      padding: 20px 20px 22px;
+      border-radius: 0 0 24px 24px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      box-shadow: 0 6px 20px rgba(10, 15, 36, 0.18);
+    }
+    .sa-mas-popup .sa-mas-close {
+      background: transparent;
+      border: none;
+      padding: 4px 2px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+    }
+    .sa-mas-popup .sa-mas-close i {
+      color: #ef520f;
+      font-size: 24px;
+    }
+    .sa-mas-popup .sa-mas-title {
+      color: #fff;
+      font-size: 19px;
+      font-weight: 700;
+      font-family: 'DM Sans', sans-serif;
+    }
+    .sa-mas-popup .sa-mas-body {
+      padding: 20px 16px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .sa-mas-popup .sa-mas-item {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 14px 16px;
+      background: #ffffff;
+      border: 1px solid rgba(10, 15, 36, 0.06);
+      border-radius: 16px;
+      text-decoration: none;
+      color: #0a0f24;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      transition: transform .15s, box-shadow .15s;
+      box-shadow: 0 2px 6px rgba(10, 15, 36, 0.04);
+    }
+    .sa-mas-popup .sa-mas-item:active {
+      transform: scale(0.98);
+      box-shadow: 0 1px 3px rgba(10, 15, 36, 0.08);
+    }
+    .sa-mas-popup .sa-mas-ico {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: linear-gradient(180deg, #10152f 0%, #0a0f24 100%);
+      color: #ffffff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
     }
   }
 </style>
@@ -75,9 +282,70 @@
       <i class="bi bi-envelope-fill"></i>
       <span>MENSAJES</span>
     </a>
-    <a href="/superadmin/observabilidad" class="sa-nav-tab <%= (typeof activeTab !== 'undefined' && activeTab === 'mas') ? 'active' : '' %>">
+    <button type="button" id="saMasTabBtn" class="sa-nav-tab <%= (typeof activeTab !== 'undefined' && activeTab === 'mas') ? 'active' : '' %>">
       <i class="bi bi-three-dots"></i>
       <span>MÁS</span>
-    </a>
+    </button>
   </div>
 </nav>
+
+<!-- "Más opciones" popup -->
+<div class="sa-mas-popup" id="saMasPopup" role="dialog" aria-modal="true" aria-labelledby="saMasPopupTitle">
+  <div class="sa-mas-backdrop" id="saMasBackdrop"></div>
+  <div class="sa-mas-sheet">
+    <div class="sa-mas-header">
+      <button type="button" class="sa-mas-close" id="saMasClose" aria-label="Cerrar">
+        <i class="bi bi-list"></i>
+      </button>
+      <span class="sa-mas-title" id="saMasPopupTitle">Más opciones</span>
+    </div>
+    <div class="sa-mas-body">
+      <a href="/superadmin/observabilidad" class="sa-mas-item">
+        <div class="sa-mas-ico"><i class="bi bi-activity"></i></div>
+        <span>Observabilidad</span>
+      </a>
+      <a href="/contratos" class="sa-mas-item">
+        <div class="sa-mas-ico"><i class="bi bi-file-earmark-text"></i></div>
+        <span>Contratos</span>
+      </a>
+      <a href="/nda-equipo" class="sa-mas-item">
+        <div class="sa-mas-ico"><i class="bi bi-shield-lock"></i></div>
+        <span>NDA Equipo</span>
+      </a>
+      <a href="/superadmin/cotizador" class="sa-mas-item">
+        <div class="sa-mas-ico"><i class="bi bi-calculator"></i></div>
+        <span>Cotizador</span>
+      </a>
+      <a href="/superadmin/boveda" class="sa-mas-item">
+        <div class="sa-mas-ico"><i class="bi bi-safe2"></i></div>
+        <span>Bóveda</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    var popup = document.getElementById('saMasPopup');
+    var btn = document.getElementById('saMasTabBtn');
+    var closeBtn = document.getElementById('saMasClose');
+    var backdrop = document.getElementById('saMasBackdrop');
+    if (!popup || !btn) return;
+
+    function openPopup() {
+      popup.classList.add('show');
+      document.body.style.overflow = 'hidden';
+    }
+    function closePopup() {
+      popup.classList.remove('show');
+      document.body.style.overflow = '';
+    }
+
+    btn.addEventListener('click', function (e) { e.preventDefault(); openPopup(); });
+    if (closeBtn) closeBtn.addEventListener('click', closePopup);
+    if (backdrop) backdrop.addEventListener('click', closePopup);
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && popup.classList.contains('show')) closePopup();
+    });
+  })();
+</script>
