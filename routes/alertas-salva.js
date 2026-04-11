@@ -18,6 +18,7 @@ router.get('/', async (req, res) => {
     checkCaja(tid, alerts),
     checkStock(tid, alerts),
     checkMetas(tid, alerts),
+    checkVencimiento(tid, alerts),
   ]);
 
   // Sort by severity: error > warning > info
@@ -142,6 +143,60 @@ async function checkMetas(tid, alerts) {
           });
         }
       }
+    }
+  } catch (_) {}
+}
+
+async function checkVencimiento(tid, alerts) {
+  try {
+    const [[row]] = await db.query(`
+      SELECT
+        COUNT(*) FILTER (WHERE fecha_vencimiento = CURRENT_DATE)             AS vencen_hoy,
+        COUNT(*) FILTER (WHERE fecha_vencimiento = CURRENT_DATE + 1)         AS vencen_manana,
+        COUNT(*) FILTER (WHERE fecha_vencimiento BETWEEN CURRENT_DATE + 2
+                                                     AND CURRENT_DATE + 3)   AS vencen_pronto
+      FROM almacen_lotes
+      WHERE tenant_id = $1
+        AND cantidad_disponible > 0
+        AND fecha_vencimiento IS NOT NULL
+        AND fecha_vencimiento >= CURRENT_DATE
+        AND fecha_vencimiento <= CURRENT_DATE + 3
+    `, [tid]);
+
+    const hoy    = Number(row?.vencen_hoy    || 0);
+    const manana = Number(row?.vencen_manana || 0);
+    const pronto = Number(row?.vencen_pronto || 0);
+    const total  = hoy + manana + pronto;
+
+    if (total === 0) return;
+
+    if (hoy > 0) {
+      alerts.push({
+        id: 'vencimiento_hoy',
+        tipo: 'error',
+        icono: '🚨',
+        titulo: `${hoy} lote${hoy !== 1 ? 's' : ''} vencen HOY`,
+        mensaje: `Usa estos insumos inmediatamente o coordina devolución con tu proveedor.`,
+        accion: { label: 'Ver almacén', href: '/almacen' }
+      });
+    } else if (manana > 0) {
+      alerts.push({
+        id: 'vencimiento_manana',
+        tipo: 'warning',
+        icono: '⏰',
+        titulo: `${manana} lote${manana !== 1 ? 's' : ''} vencen mañana`,
+        mensaje: `Prioriza el uso de estos insumos hoy mismo para evitar pérdidas.`,
+        accion: { label: 'Ver almacén', href: '/almacen' }
+      });
+    } else if (pronto > 0) {
+      alerts.push({
+        id: 'vencimiento_pronto',
+        tipo: 'info',
+        icono: '📅',
+        titulo: `${pronto} lote${pronto !== 1 ? 's' : ''} vencen en 2-3 días`,
+        mensaje: `Planifica el uso de estos insumos esta semana.`,
+        accion: { label: 'Ver almacén', href: '/almacen' }
+      });
     }
   } catch (_) {}
 }

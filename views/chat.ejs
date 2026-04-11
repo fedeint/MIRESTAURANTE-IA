@@ -1142,46 +1142,66 @@
             });
         }
 
+        var ACTION_TITLES = {
+            'enviar_pedido_proveedor': 'DalIA propone enviar pedidos',
+            'vencimiento_ingredientes': 'Alerta de vencimiento — Almacén',
+            'resumen_cierre_dia': 'Resumen del día',
+            'recordatorio_cerrar_caja': 'Recordatorio de cierre de caja'
+        };
+        var ACTION_APPROVE_LABELS = {
+            'enviar_pedido_proveedor': '<i class="bi bi-check-circle"></i> Aprobar y enviar',
+            'vencimiento_ingredientes': '<i class="bi bi-check-circle"></i> Entendido',
+            'resumen_cierre_dia': '<i class="bi bi-check-circle"></i> Aceptar resumen',
+            'recordatorio_cerrar_caja': '<i class="bi bi-check-circle"></i> Voy a cerrar la caja'
+        };
+
         function renderActionCard(data) {
             var card = data.action_card;
             var draft = card.draft;
+            var actionName = card.actionName || 'enviar_pedido_proveedor';
             var container = document.createElement('div');
             container.className = 'message dallia-message action-card';
             container.dataset.logId = card.logId;
+            container.dataset.actionName = actionName;
 
-            var html = '<div class="action-card-header"><i class="bi bi-robot"></i> <strong>DallIA propone enviar pedidos</strong></div>';
+            var title = ACTION_TITLES[actionName] || 'DalIA propone una acción';
+            var html = '<div class="action-card-header"><i class="bi bi-robot"></i> <strong>' + escapeHtml(title) + '</strong></div>';
 
             if (data.respuesta) {
-                html += '<p style="margin-bottom:10px;">' + escapeHtml(data.respuesta) + '</p>';
+                html += '<p style="margin-bottom:10px;white-space:pre-wrap;">' + escapeHtml(data.respuesta) + '</p>';
             }
 
-            for (var i = 0; i < draft.messages.length; i++) {
-                var msg = draft.messages[i];
-                html += '<div class="action-card-proveedor">' +
-                    '<div class="prov-header">' +
-                        '<strong>' + escapeHtml(msg.proveedor_nombre) + '</strong>' +
-                        '<span class="badge bg-secondary">' + msg.items.length + ' item(s)</span>' +
-                    '</div>' +
-                    '<pre class="prov-message">' + escapeHtml(msg.texto) + '</pre>' +
-                '</div>';
+            // Generic text-based actions (vencimiento, resumen, caja reminder)
+            if (draft.texto && actionName !== 'enviar_pedido_proveedor') {
+                html += '<pre class="prov-message" style="max-height:300px;overflow-y:auto;">' + escapeHtml(draft.texto) + '</pre>';
             }
 
-            if (draft.sinProveedor && draft.sinProveedor.length > 0) {
-                html += '<div class="action-card-warning"><strong>Sin proveedor asignado:</strong><ul>';
-                for (var j = 0; j < draft.sinProveedor.length; j++) {
-                    var it = draft.sinProveedor[j];
-                    html += '<li>' + escapeHtml(it.nombre) + ' (' + escapeHtml(it.razon) + ')</li>';
+            // enviar_pedido_proveedor specific rendering
+            if (actionName === 'enviar_pedido_proveedor' && Array.isArray(draft.messages)) {
+                for (var i = 0; i < draft.messages.length; i++) {
+                    var msg = draft.messages[i];
+                    html += '<div class="action-card-proveedor">' +
+                        '<div class="prov-header">' +
+                            '<strong>' + escapeHtml(msg.proveedor_nombre) + '</strong>' +
+                            '<span class="badge bg-secondary">' + msg.items.length + ' item(s)</span>' +
+                        '</div>' +
+                        '<pre class="prov-message">' + escapeHtml(msg.texto) + '</pre>' +
+                    '</div>';
                 }
-                html += '</ul></div>';
+                if (draft.sinProveedor && draft.sinProveedor.length > 0) {
+                    html += '<div class="action-card-warning"><strong>Sin proveedor asignado:</strong><ul>';
+                    for (var j = 0; j < draft.sinProveedor.length; j++) {
+                        var it = draft.sinProveedor[j];
+                        html += '<li>' + escapeHtml(it.nombre) + ' (' + escapeHtml(it.razon) + ')</li>';
+                    }
+                    html += '</ul></div>';
+                }
             }
 
+            var approveLabel = ACTION_APPROVE_LABELS[actionName] || '<i class="bi bi-check-circle"></i> Aprobar';
             html += '<div class="action-card-buttons">' +
-                '<button class="btn btn-primary" onclick="approveAction(this)">' +
-                    '<i class="bi bi-check-circle"></i> Aprobar y enviar' +
-                '</button>' +
-                '<button class="btn btn-outline-secondary" onclick="rejectAction(this)">' +
-                    'Cancelar' +
-                '</button>' +
+                '<button class="btn btn-primary" onclick="approveAction(this)">' + approveLabel + '</button>' +
+                '<button class="btn btn-outline-secondary" onclick="rejectAction(this)">Cancelar</button>' +
             '</div>' +
             '<div class="action-card-status"></div>';
 
@@ -1196,9 +1216,10 @@
         async function approveAction(btn) {
             var card = btn.closest('.action-card');
             var logId = card.dataset.logId;
+            var actionName = card.dataset.actionName || 'enviar_pedido_proveedor';
             var statusDiv = card.querySelector('.action-card-status');
             btn.disabled = true;
-            statusDiv.textContent = 'Enviando…';
+            statusDiv.textContent = 'Procesando…';
             try {
                 var res = await fetch('/api/chat/action/' + logId + '/approve', {
                     method: 'POST',
@@ -1206,9 +1227,17 @@
                 });
                 var data = await res.json();
                 if (!res.ok) throw new Error(data.error || 'Error desconocido');
-                var msg = 'Listo! Envié ' + data.result.sent.length + ' mensaje(s)';
-                if (data.result.failed.length > 0) {
-                    msg += '. Fallaron ' + data.result.failed.length + ': ' + data.result.failed.map(function(f){return f.proveedor_nombre;}).join(', ');
+                var result = data.result || {};
+                var msg;
+                if (result.acknowledged) {
+                    msg = result.mensaje || '¡Entendido! Acción registrada.';
+                } else if (Array.isArray(result.sent)) {
+                    msg = 'Listo! Envié ' + result.sent.length + ' mensaje(s)';
+                    if (result.failed && result.failed.length > 0) {
+                        msg += '. Fallaron ' + result.failed.length + ': ' + result.failed.map(function(f){return f.proveedor_nombre;}).join(', ');
+                    }
+                } else {
+                    msg = '¡Acción completada!';
                 }
                 statusDiv.textContent = msg;
                 statusDiv.className = 'action-card-status success';
