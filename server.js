@@ -352,14 +352,16 @@ const csrfTokenGen = (req, res, next) => {
 
 // Device Preview sync bridge — cargado desde preview-v4/bridge/sync-bridge.js
 // WebSocket relay en ws://localhost:3001/sync (reemplaza BroadcastChannel)
+// Solo en desarrollo — no inyectar en producción para evitar errores de CSP
 const _syncBridgePath = require('path').join(__dirname, 'preview-v4', 'bridge', 'sync-bridge.js');
-const _syncBridgeCode = require('fs').existsSync(_syncBridgePath)
+const _syncBridgeCode = process.env.NODE_ENV !== 'production' && require('fs').existsSync(_syncBridgePath)
   ? require('fs').readFileSync(_syncBridgePath, 'utf-8')
   : '';
-const SYNC_BRIDGE = `<script id="__dp_bridge__">${_syncBridgeCode}</script>`;
+const SYNC_BRIDGE = _syncBridgeCode ? `<script id="__dp_bridge__">${_syncBridgeCode}</script>` : '';
 
 app.use((req, res, next) => {
-    // Inject sync bridge into HTML pages
+    // Inject sync bridge into HTML pages (dev only — SYNC_BRIDGE es '' en producción)
+    if (!SYNC_BRIDGE) return next();
     const origRender = res.render.bind(res);
     res.render = function(view, opts, cb) {
         const done = typeof opts === 'function' ? opts : cb;
