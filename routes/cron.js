@@ -369,4 +369,86 @@ router.get('/whatsapp-trial-sequence', async (req, res) => {
   }
 })
 
+// ---------------------------------------------------------------------------
+// Daily digest — every day at 8am (summarizes YESTERDAY to admin via WhatsApp)
+// ---------------------------------------------------------------------------
+router.get('/daily-digest', async (req, res) => {
+  const results = { sent: 0, skipped: 0, errors: [] }
+  const whatsapp = require('../services/whatsapp-api')
+
+  try {
+    // Get all active tenants with an admin phone number
+    const [tenants] = await db.query(`
+      SELECT t.id, t.nombre,
+             u.nombre AS admin_nombre,
+             u.telefono AS admin_telefono
+      FROM tenants t
+      JOIN usuarios u ON u.tenant_id = t.id AND u.rol = 'administrador'
+      WHERE t.activo = true
+        AND u.telefono IS NOT NULL
+        AND u.telefono != ''
+      ORDER BY t.id
+    `)
+
+    for (const tenant of (tenants || [])) {
+      try {
+        // Yesterday's metrics
+        const [[ventasRow]] = await db.query(`
+          SELECT
+            COALESCE(SUM(CASE WHEN cm.tipo='ingreso' AND NOT cm.anulado THEN cm.monto ELSE 0 END), 0) AS ingresos,
+            COALESCE(SUM(CASE WHEN cm.tipo='egreso'  AND NOT cm.anulado THEN cm.monto ELSE 0 END), 0) AS egresos
+          FROM caja_movimientos cm
+          WHERE cm.tenant_id = ?
+            AND (cm.created_at AT TIME ZONE 'America/Lima')::date = (CURRENT_DATE - 1)
+        `, [tenant.id])
+
+        const [[pedidosRow]] = await db.query(`
+          SELECT COUNT(*) AS total
+          FROM pedidos
+          WHERE tenant_id = ?
+            AND estado NOT IN ('cancelado')
+            AND fecha = CURRENT_DATE - 1
+        `, [tenant.id])
+
+        const ingresos = Number(ventasRow?.ingresos || 0)
+        const egresos  = Number(ventasRow?.egresos  || 0)
+        const pedidos  = Number(pedidosRow?.total   || 0)
+        const ticket   = pedidos > 0 ? Math.round((ingresos / pedidos) * 100) / 100 : 0
+
+        // Skip if no activity yesterday
+        if (ingresos === 0 && pedidos === 0) {
+          results.skipped++
+          continue
+        }
+
+        const fmt = n => `S/ ${Number(n).toFixed(2)}`
+        const ayer = new Date()
+        ayer.setDate(ayer.getDate() - 1)
+        const fechaStr = ayer.toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'short', timeZone: 'America/Lima' })
+
+        const mensaje =
+          `📊 *Resumen de ${fechaStr}*\n` +
+          `${tenant.nombre}\n\n` +
+          `💰 Ventas: ${fmt(ingresos)}\n` +
+          `🧾 Pedidos: ${pedidos}\n` +
+          `🎟️ Ticket prom: ${fmt(ticket)}\n` +
+          `💸 Egresos: ${fmt(egresos)}\n\n` +
+          `Para más detalles abre MiRestcon → DalIA`
+
+        await whatsapp.sendText(tenant.admin_telefono, mensaje)
+        results.sent++
+
+      } catch (tenantErr) {
+        results.errors.push({ tenant_id: tenant.id, error: tenantErr.message })
+      }
+    }
+
+    logger.info('CRON_DAILY_DIGEST_OK', results)
+    res.json({ ok: true, ...results })
+  } catch (err) {
+    logger.error('CRON_DAILY_DIGEST_FAILED', { error: err.message })
+    res.status(500).json({ error: err.message })
+  }
+})
+
 module.exports = router
