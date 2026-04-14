@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const tenantAi = require('../lib/tenant-ai');
 
 // JSONB columns return objects in PG, strings in MySQL — handle both
 function parseJson(val, fallback) {
@@ -418,6 +419,91 @@ router.post('/dallia/automatizaciones', async (req, res) => {
   } catch (e) {
     console.error('[dallia/automatizaciones POST]', e);
     res.status(500).json({ error: 'Error al guardar automatizaciones' });
+  }
+});
+
+// ═══════════════════════════════════════════════════════════════════════════
+// BYOK — Bring Your Own Key de Google AI Studio
+// ═══════════════════════════════════════════════════════════════════════════
+
+// GET /config/dallia/api-key — info actual (masked, plan, validación)
+router.get('/dallia/api-key', async (req, res) => {
+  const tid = req.tenantId;
+  try {
+    const info = await tenantAi.getTenantKeyInfo(tid);
+    res.json(info);
+  } catch (e) {
+    console.error('[api-key GET]', e);
+    res.status(500).json({ error: 'Error al leer credenciales' });
+  }
+});
+
+// POST /config/dallia/api-key — validar y guardar nueva key
+router.post('/dallia/api-key', async (req, res) => {
+  const tid = req.tenantId;
+  const { apiKey } = req.body || {};
+  if (!apiKey || typeof apiKey !== 'string') {
+    return res.status(400).json({ error: 'apiKey requerido' });
+  }
+  const clean = String(apiKey).trim();
+  if (!clean.startsWith('AIza') || clean.length < 30 || clean.length > 120) {
+    return res.status(400).json({ error: 'Formato inválido. Las keys de Google AI empiezan con AIza...' });
+  }
+
+  try {
+    // 1) Validar contra Gemini antes de guardar
+    const validation = await tenantAi.validateGoogleKey(clean);
+    if (!validation.ok) {
+      return res.status(400).json({
+        error: 'La API key no es válida o no tiene permisos de Gemini',
+        detalle: validation.razon
+      });
+    }
+
+    // 2) Cifrar y guardar
+    const { preview } = await tenantAi.saveTenantGoogleKey(tid, clean, true);
+    res.json({ ok: true, preview, validada: true });
+  } catch (e) {
+    console.error('[api-key POST]', e);
+    res.status(500).json({ error: 'Error al guardar API key' });
+  }
+});
+
+// DELETE /config/dallia/api-key — revocar la key del tenant
+router.delete('/dallia/api-key', async (req, res) => {
+  const tid = req.tenantId;
+  try {
+    await tenantAi.deleteTenantGoogleKey(tid);
+    res.json({ ok: true });
+  } catch (e) {
+    console.error('[api-key DELETE]', e);
+    res.status(500).json({ error: 'Error al revocar key' });
+  }
+});
+
+// GET /config/dallia/plan — plan actual + uso de voz
+router.get('/dallia/plan', async (req, res) => {
+  const tid = req.tenantId;
+  try {
+    const info = await tenantAi.getTenantKeyInfo(tid);
+    const precios = {
+      basico:  { nombre: 'Básico',  precio_soles: 0,  voz_minutos_dia: 0,   descripcion: 'Gratis con tu propia API key de Google AI Studio (500 req/día)' },
+      premium: { nombre: 'Premium', precio_soles: 50, voz_minutos_dia: 60,  descripcion: 'Voz hasta 1 hora/día con nuestra API key — sin configuración' },
+      trial:   { nombre: 'Prueba',  precio_soles: 0,  voz_minutos_dia: 30,  descripcion: '7 días gratis con todas las funciones' }
+    };
+    res.json({
+      plan_actual: info.plan,
+      plan_info: precios[info.plan] || precios.basico,
+      planes_disponibles: precios,
+      uso: {
+        voz_hoy: info.vozHoy,
+        voz_limite_dia: info.vozLimite,
+        tiene_key_propia: info.tieneKey
+      }
+    });
+  } catch (e) {
+    console.error('[plan GET]', e);
+    res.status(500).json({ error: 'Error al leer plan' });
   }
 });
 

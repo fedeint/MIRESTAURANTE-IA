@@ -15,6 +15,7 @@ const {
 const daliaActions = require('../services/dallia-actions');
 const whatsappApi = require('../services/whatsapp-api');
 const llm = require('../lib/llm');
+const tenantAi = require('../lib/tenant-ai');
 
 // Keywords that trigger the enviar_pedido_proveedor action
 const STOCK_INTENT_KEYWORDS = ['revisa', 'revisar', 'stock', 'falta', 'pedido', 'compras', 'comprar', 'insumos'];
@@ -391,6 +392,49 @@ function buildMessages(historial, mensaje, budgetTokens = 8000) {
     return messages;
 }
 
+// ── Gemini 2.5 Flash via AI Studio (BYOK o master key) ─────────────────────
+async function chatWithGemini(apiKey, systemPrompt, messages) {
+    // Convertir historial al formato Gemini (role: user/model con parts)
+    const geminiContents = messages.map(m => ({
+        role: m.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: m.content }]
+    }));
+
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(apiKey)}`;
+    const resp = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            systemInstruction: { parts: [{ text: systemPrompt }] },
+            contents: geminiContents,
+            generationConfig: {
+                temperature: 0.7,
+                topP: 0.9,
+                maxOutputTokens: 2048
+            }
+        })
+    });
+    const data = await resp.json();
+    if (!resp.ok) {
+        const msg = data?.error?.message || `Gemini error ${resp.status}`;
+        const err = new Error(msg);
+        err.status = resp.status;
+        err.isQuota = resp.status === 429 || /quota|rate|exceed/i.test(msg);
+        err.isInvalidKey = resp.status === 400 || resp.status === 403;
+        throw err;
+    }
+    const parts = data?.candidates?.[0]?.content?.parts || [];
+    const text = parts.filter(p => p.text).map(p => p.text).join('\n');
+    return {
+        text,
+        usage: {
+            prompt_tokens:       data?.usageMetadata?.promptTokenCount ?? 0,
+            completion_tokens:   data?.usageMetadata?.candidatesTokenCount ?? 0,
+            prompt_cache_hit_tokens: data?.usageMetadata?.cachedContentTokenCount ?? 0
+        }
+    };
+}
+
 // ── DeepSeek V3 (más barato, tono lo maneja el prompt) ──────────────────────
 async function chatWithDeepSeek(apiKey, systemPrompt, messages) {
     const resp = await fetch('https://api.deepseek.com/chat/completions', {
@@ -628,14 +672,15 @@ router.get('/tokens', async (req, res) => {
 });
 
 // POST /api/chat - Send message to AI
-// Priority: DEEPSEEK_API_KEY > KIMI_API_KEY > ANTHROPIC_API_KEY
+// Priority: Gemini (tenant key o master) > DeepSeek > Kimi > Claude
 router.post('/', async (req, res) => {
     const deepseekKey  = process.env.DEEPSEEK_API_KEY;
     const kimiKey      = process.env.KIMI_API_KEY;
     const anthropicKey = process.env.ANTHROPIC_API_KEY;
 
-    if (!deepseekKey && !kimiKey && !anthropicKey) {
-        return res.status(500).json({ error: 'Configura DEEPSEEK_API_KEY, KIMI_API_KEY o ANTHROPIC_API_KEY en .env' });
+    if (!deepseekKey && !kimiKey && !anthropicKey &&
+        !process.env.GOOGLE_AI_API_KEY && !process.env.GEMINI_API_KEY) {
+        return res.status(500).json({ error: 'Configura al menos una API key (GOOGLE_AI, DEEPSEEK, KIMI o ANTHROPIC)' });
     }
 
     const { mensaje, historial, agent, contexto: contextoChat } = req.body;
@@ -817,18 +862,59 @@ router.post('/', async (req, res) => {
         let respuesta;
         let modelo;
         let usageReal = null;
+        let keySource = 'master'; // 'tenant' | 'master' | 'fallback'
         const tiempoInicio = Date.now();
-        if (deepseekKey) {
-            const result = await chatWithDeepSeek(deepseekKey, systemPrompt, messages);
-            respuesta = result.text;
-            usageReal = result.usage;
-            modelo = 'deepseek-chat';
-        } else if (kimiKey) {
-            respuesta = await chatWithKimi(kimiKey, systemPrompt, messages);
-            modelo = 'moonshotai/kimi-k2';
-        } else {
-            respuesta = await chatWithClaude(anthropicKey, systemPrompt, messages);
-            modelo = 'claude-sonnet-4-20250514';
+
+        // Paso 1: resolver API key del tenant (BYOK o master)
+        const resolved = await tenantAi.resolveApiKey(tid);
+
+        // Paso 2: intentar Gemini primero si hay key disponible
+        let geminiTried = false;
+        if (resolved) {
+            try {
+                geminiTried = true;
+                const result = await chatWithGemini(resolved.key, systemPrompt, messages);
+                respuesta = result.text;
+                usageReal = result.usage;
+                modelo = 'gemini-2.5-flash';
+                keySource = resolved.source;
+            } catch (err) {
+                console.warn(`[chat] Gemini falló (${err.status || '?'}): ${err.message}`);
+                await tenantAi.logFallback(tid, 'gemini', 'deepseek', err.message, 'chat');
+
+                // Plan básico sin DeepSeek master = mostrar upgrade si es quota
+                if (err.isQuota && resolved.plan === 'basico' && !deepseekKey) {
+                    return res.json({
+                        respuesta: '⚠️ Alcanzaste tu límite diario gratuito de Google AI (500 req/día). Vuelve mañana o contrata el plan Premium para uso ilimitado.',
+                        provider: 'quota-exceeded',
+                        upgradeRequired: true
+                    });
+                }
+                // si no, cae al fallback abajo
+            }
+        }
+
+        // Paso 3: fallback chain → DeepSeek → Kimi → Claude
+        if (!respuesta) {
+            if (deepseekKey) {
+                const result = await chatWithDeepSeek(deepseekKey, systemPrompt, messages);
+                respuesta = result.text;
+                usageReal = result.usage;
+                modelo = 'deepseek-chat';
+                keySource = 'fallback';
+            } else if (kimiKey) {
+                respuesta = await chatWithKimi(kimiKey, systemPrompt, messages);
+                modelo = 'moonshotai/kimi-k2';
+                keySource = 'fallback';
+            } else if (anthropicKey) {
+                respuesta = await chatWithClaude(anthropicKey, systemPrompt, messages);
+                modelo = 'claude-sonnet-4-20250514';
+                keySource = 'fallback';
+            } else {
+                return res.status(502).json({
+                    error: 'Todos los proveedores IA fallaron. Intenta de nuevo en un momento.'
+                });
+            }
         }
         const tiempoMs = Date.now() - tiempoInicio;
 

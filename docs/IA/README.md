@@ -11,6 +11,8 @@ Resumen completo de la inteligencia artificial del proyecto. DalIA es la asisten
 5. [**agentes.md**](./agentes.md) — Salva (caja), Delfino (SOSTAC), y roadmap multi-agente.
 6. [**catalogo-preguntas.md**](./catalogo-preguntas.md) — 100+ preguntas de ejemplo por categoría, rol e intents ejecutables.
 7. [**panel-configuracion.md**](./panel-configuracion.md) — Panel `/config/dallia`: medidor de tokens, desglose por fuente, FAQ cache, automatizaciones por tenant.
+8. [**planes.md**](./planes.md) — Planes Básico (BYOK gratis) vs Premium (S/ 50) con proyección de ingresos.
+9. [**byok-setup.md**](./byok-setup.md) — Arquitectura técnica del Bring Your Own Key: cifrado AES-256, fallback chain, endpoints, tablas.
 
 ## En una frase
 

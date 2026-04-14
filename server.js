@@ -419,6 +419,7 @@ const canalesRoutes = require('./routes/canales');
 const reportesRoutes = require('./routes/reportes');
 const featuresRoutes = require('./routes/features');
 const ttsRoutes = require('./routes/tts');
+const sttRoutes = require('./routes/stt');
 const onboardingRoutes = require('./routes/onboarding');
 const superadminRoutes = require('./routes/superadmin');
 const syncRoutes       = require('./routes/sync');
@@ -1185,6 +1186,7 @@ app.use('/api/canales', requireAuth, canalesRoutes);
 
 // TTS - Text to Speech (mascota)
 app.use('/api/tts', requireAuth, ttsRoutes);
+app.use('/api/stt', requireAuth, sttRoutes);
 
 // Reportes PDF (admin)
 app.use('/reportes', requireAuth, requireRole('administrador'), reportesRoutes);

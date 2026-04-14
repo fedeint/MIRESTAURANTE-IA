@@ -267,6 +267,66 @@
     </div>
 
     <!-- ════════════════════════════════════════════════════════════════ -->
+    <!-- PLAN + API KEY PROPIA (BYOK)                                     -->
+    <!-- ════════════════════════════════════════════════════════════════ -->
+
+    <!-- Plan actual -->
+    <div class="card" id="planCard" style="background:linear-gradient(135deg,#fff7ed,#ffedd5);border:1.5px solid #fb923c;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div class="card-label" style="color:#9a3412;">Tu plan</div>
+          <div id="planNombre" style="font-size:22px;font-weight:800;color:#7c2d12;margin-top:2px;">Básico</div>
+          <div id="planDescripcion" style="font-size:12px;color:#9a3412;margin-top:4px;">Cargando…</div>
+        </div>
+        <button id="btnUpgrade" onclick="mostrarUpgrade()"
+          style="background:linear-gradient(135deg,#ef520f,#df2c05);color:#fff;border:none;padding:10px 14px;border-radius:10px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:13px;cursor:pointer;box-shadow:0 2px 8px rgba(239,82,15,0.35);">
+          Upgrade
+        </button>
+      </div>
+      <div id="planUso" style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(154,52,18,0.2);font-size:12px;color:#9a3412;">
+        <div>Voz usada hoy: <strong id="vozUso">0</strong> / <strong id="vozLimite">0</strong> minutos</div>
+      </div>
+    </div>
+
+    <!-- API Key propia (BYOK) -->
+    <div class="card">
+      <div class="card-label">🔑 Mi API Key de Google AI</div>
+
+      <div id="keyStatus" style="margin-top:4px;margin-bottom:12px;padding:10px;background:#F8F9FB;border-radius:10px;display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--dark);">Key configurada</div>
+            <div id="keyPreview" style="font-size:12px;color:var(--text2);margin-top:2px;font-family:monospace;">—</div>
+          </div>
+          <button onclick="revocarKey()"
+            style="background:#FEF2F2;color:#B91C1C;border:1.5px solid #FCA5A5;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:600;cursor:pointer;">
+            Revocar
+          </button>
+        </div>
+      </div>
+
+      <div id="keyForm">
+        <input type="password" id="apiKeyInput" placeholder="Pega tu key (AIza...)"
+          style="width:100%;padding:12px 14px;border:1.5px solid #E5E7EB;border-radius:12px;font-family:monospace;font-size:13px;color:var(--dark);background:#F8F9FB;outline:none;"
+          maxlength="120" autocomplete="off">
+        <button onclick="guardarApiKey()"
+          style="width:100%;margin-top:10px;padding:12px;background:linear-gradient(135deg,#22C55E,#16A34A);color:#fff;border:none;border-radius:12px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:14px;cursor:pointer;">
+          Validar y guardar
+        </button>
+      </div>
+
+      <details style="margin-top:12px;">
+        <summary style="cursor:pointer;font-size:12px;color:var(--orange);font-weight:600;">¿Cómo obtengo mi API key gratis? (3 pasos)</summary>
+        <ol style="margin-top:8px;padding-left:20px;font-size:12px;color:var(--text2);line-height:1.6;">
+          <li>Abre <a href="https://aistudio.google.com/api-keys" target="_blank" style="color:var(--orange);font-weight:600;">aistudio.google.com/api-keys</a> en una pestaña nueva</li>
+          <li>Inicia sesión con tu Gmail y dale <strong>Create API key</strong></li>
+          <li>Copia la clave (empieza con <code>AIza</code>) y pégala arriba</li>
+        </ol>
+        <div style="margin-top:8px;font-size:11px;color:#22C55E;font-weight:600;">✓ Es gratis · ✓ No pide tarjeta · ✓ 500 consultas gratis al día</div>
+      </details>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════════════ -->
     <!-- CONSUMO DE TOKENS                                                -->
     <!-- ════════════════════════════════════════════════════════════════ -->
     <div class="card">
@@ -586,10 +646,92 @@
     } catch (e) { alert('Error al limpiar cache'); }
   }
 
+  // ═══════════════════════════════════════════════════════════════════
+  // BYOK + Plan
+  // ═══════════════════════════════════════════════════════════════════
+  async function cargarPlan() {
+    try {
+      const r = await fetch('/config/dallia/plan');
+      const d = await r.json();
+      const info = d.plan_info || {};
+      document.getElementById('planNombre').textContent = info.nombre || 'Básico';
+      document.getElementById('planDescripcion').textContent = info.descripcion || '';
+      document.getElementById('vozUso').textContent = d.uso.voz_hoy || 0;
+      document.getElementById('vozLimite').textContent = d.uso.voz_limite_dia || '—';
+
+      const btn = document.getElementById('btnUpgrade');
+      if (d.plan_actual === 'premium') {
+        btn.style.display = 'none';
+      } else {
+        btn.textContent = 'Upgrade S/ 50';
+      }
+    } catch (e) { console.error('plan fail', e); }
+  }
+
+  async function cargarApiKeyInfo() {
+    try {
+      const r = await fetch('/config/dallia/api-key');
+      const d = await r.json();
+      const $status = document.getElementById('keyStatus');
+      const $form   = document.getElementById('keyForm');
+      if (d.tieneKey) {
+        document.getElementById('keyPreview').textContent = d.keyPreview || '—';
+        $status.style.display = 'block';
+        $form.style.display = 'none';
+      } else {
+        $status.style.display = 'none';
+        $form.style.display = 'block';
+      }
+    } catch (e) { console.error('api-key info fail', e); }
+  }
+
+  async function guardarApiKey() {
+    const input = document.getElementById('apiKeyInput');
+    const apiKey = input.value.trim();
+    if (!apiKey.startsWith('AIza')) {
+      alert('La key debe empezar con AIza. Copiala desde aistudio.google.com/api-keys');
+      return;
+    }
+    try {
+      const r = await fetch('/config/dallia/api-key', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ apiKey })
+      });
+      const d = await r.json();
+      if (r.ok && d.ok) {
+        alert('✓ API key validada y guardada. Ya puedes usar DalIA con voz.');
+        input.value = '';
+        cargarApiKeyInfo();
+      } else {
+        alert('Error: ' + (d.error || 'No se pudo guardar') + (d.detalle ? '\n' + d.detalle : ''));
+      }
+    } catch (e) {
+      alert('Error de red: ' + e.message);
+    }
+  }
+
+  async function revocarKey() {
+    if (!confirm('¿Revocar tu API key? DalIA dejará de funcionar hasta que configures otra o contrates Premium.')) return;
+    try {
+      const r = await fetch('/config/dallia/api-key', { method: 'DELETE' });
+      if (r.ok) {
+        alert('Key revocada');
+        cargarApiKeyInfo();
+      }
+    } catch (e) { alert('Error: ' + e.message); }
+  }
+
+  function mostrarUpgrade() {
+    alert('Plan Premium: S/ 50/mes\n\n✓ Voz hasta 1 hora al día\n✓ Sin configurar API key\n✓ Usamos nuestra cuenta Google\n✓ Soporte prioritario\n\nContáctanos por WhatsApp para activar.');
+  }
+
   // Init
   cargarStats();
   cargarTopPreguntas();
   cargarAutomatizaciones();
+  cargarPlan();
+  cargarApiKeyInfo();
 </script>
 </body>
 </html>

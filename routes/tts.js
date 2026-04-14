@@ -6,6 +6,7 @@
 
 const express = require('express');
 const router = express.Router();
+const tenantAi = require('../lib/tenant-ai');
 
 const GEMINI_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent';
 const DEFAULT_VOICE = 'Aoede'; // femenina suave — elegida para DalIA
@@ -45,10 +46,17 @@ function pcmToWav(pcmBuffer, sampleRate = 24000, numChannels = 1, bitDepth = 16)
 
 // POST /api/tts — genera audio de un texto con la voz de DalIA
 router.post('/', async (req, res) => {
-    const apiKey = process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-        return res.status(500).json({ error: 'Configura GOOGLE_AI_API_KEY en .env' });
+    const tid = req.tenantId || 1;
+
+    // BYOK: resolver key del tenant (propia o maestra según plan)
+    const resolved = await tenantAi.resolveApiKey(tid);
+    if (!resolved) {
+        return res.status(402).json({
+            error: 'Tu plan básico requiere configurar tu propia API key de Google AI Studio en /config/dallia. O contrata Premium para voz con nuestra cuenta.',
+            upgradeRequired: true
+        });
     }
+    const apiKey = resolved.key;
 
     const { texto, voz } = req.body;
     if (!texto || !String(texto).trim()) {
@@ -78,10 +86,21 @@ router.post('/', async (req, res) => {
         const data = await resp.json();
         if (!resp.ok) {
             console.error('[TTS] Gemini error:', data);
-            return res.status(502).json({
-                error: data?.error?.message || 'Gemini TTS error',
-                status: resp.status
-            });
+            const isQuota = resp.status === 429;
+            const msg = data?.error?.message || 'Gemini TTS error';
+
+            await tenantAi.logFallback(tid, 'gemini', 'none', msg, 'tts').catch(()=>{});
+
+            if (isQuota) {
+                return res.status(429).json({
+                    error: resolved.plan === 'basico'
+                        ? '⚠️ Alcanzaste tu límite gratuito diario de Google AI. Vuelve mañana o contrata Premium.'
+                        : 'Google AI saturado. Reintenta en unos segundos.',
+                    upgradeRequired: resolved.plan === 'basico'
+                });
+            }
+
+            return res.status(502).json({ error: msg, status: resp.status });
         }
 
         const part = data?.candidates?.[0]?.content?.parts?.[0];
@@ -93,12 +112,17 @@ router.post('/', async (req, res) => {
         const pcm = Buffer.from(b64, 'base64');
         const wav = pcmToWav(pcm);
 
+        // Registrar uso para facturación Premium
+        const duracionSeg = Math.ceil(pcm.length / (24000 * 2)); // 24kHz * 2 bytes/sample
+        tenantAi.recordVoiceUsage(tid, 'tts', duracionSeg, textoLimpio.length, 'gemini-2.5-flash-tts', resolved.source).catch(()=>{});
+
         res.set({
             'Content-Type': 'audio/wav',
             'Content-Length': wav.length,
             'Cache-Control': 'private, max-age=3600',
             'X-TTS-Voice': voiceName,
-            'X-TTS-Provider': 'gemini-2.5-flash-tts'
+            'X-TTS-Provider': 'gemini-2.5-flash-tts',
+            'X-TTS-Source': resolved.source
         });
         res.send(wav);
     } catch (err) {
