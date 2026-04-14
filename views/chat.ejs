@@ -766,8 +766,7 @@
             messagesEl.appendChild(div);
             scrollBottom();
 
-            // Auto-read AI responses
-            if (role === 'assistant' && !isError) leerEnVozAlta(content);
+            // TTS is triggered externally after fetch to allow parallel execution
         }
 
         function showTyping() {
@@ -828,6 +827,13 @@
                 if (data.type === 'action_card') {
                     renderActionCard(data);
                 } else {
+                    // Extraer primera oración para TTS (más rápido que texto completo)
+                    var ttsText = data.respuesta || '';
+                    var m = ttsText.replace(/\*\*/g,'').replace(/`/g,'').match(/[^.!?\n]{1,180}[.!?]/);
+                    var primeraOracion = m ? m[0].trim() : ttsText.replace(/\*\*/g,'').replace(/`/g,'').slice(0, 150);
+
+                    // Disparar TTS en paralelo — no esperar para mostrar el texto
+                    leerEnVozAlta(primeraOracion);
                     addMessage('assistant', data.respuesta);
                     historial.push({ role: 'assistant', content: data.respuesta });
                     saveToHistory(text, data.respuesta);
@@ -1122,7 +1128,8 @@
             if (!voiceAutoRead || !voiceAutoRead.checked) return;
             var clean = texto.replace(/\*\*/g, '').replace(/`/g, '').trim();
             if (!clean) return;
-            var speakable = clean.length > 300 ? clean.substring(0, 297) + '...' : clean;
+            // Limitar a 200 chars para TTS rápido
+            var speakable = clean.length > 200 ? clean.substring(0, 197) + '...' : clean;
 
             isSpeaking = true;
             if (stopTtsBtn) stopTtsBtn.style.display = 'flex';
