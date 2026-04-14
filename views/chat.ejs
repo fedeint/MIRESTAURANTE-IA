@@ -540,7 +540,7 @@
                             <i class="bi bi-robot"></i>
                         </div>
                         <div>
-                            <h5 class="mb-0 fw-bold">Asistente IA</h5>
+                            <h5 class="mb-0 fw-bold"><%= typeof dalliaNombre !== 'undefined' ? dalliaNombre : 'Asistente IA' %></h5>
                             <div class="text-muted small">Hola <%= typeof userName !== 'undefined' ? userName : 'Usuario' %> &middot; Pregunta cualquier cosa sobre tu negocio</div>
                         </div>
                         <div class="ms-auto d-flex align-items-center gap-2">
@@ -637,8 +637,9 @@
     <script>
     (function() {
         // ─── User role from session (no need to ask) ───
-        var userRol = '<%= typeof userRol !== "undefined" ? userRol : "administrador" %>';
-        var userName = '<%= typeof userName !== "undefined" ? userName : "Usuario" %>';
+        var userRol      = '<%= typeof userRol !== "undefined" ? userRol : "administrador" %>';
+        var userName     = '<%= typeof userName !== "undefined" ? userName : "Usuario" %>';
+        var dalliaNombre = '<%= typeof dalliaNombre !== "undefined" ? dalliaNombre : "DalIA" %>';
 
         var messagesEl = document.getElementById('chatMessages');
         var inputEl = document.getElementById('chatInput');
@@ -741,7 +742,7 @@
         if (_agent === 'salva' && _contexto === 'caja') {
             welcomeMsg = '**' + saludo + ', ' + userName + '!** Soy Salva, tu agente de caja.\n\nEstoy monitoreando tu efectivo, movimientos y metas en tiempo real. ¿En qué te ayudo?';
         } else {
-            welcomeMsg = '**' + saludo + ', ' + userName + '!** Soy DalIA, tu asistente.\n\nRecuerda que para iniciar operaciones necesitas **abrir caja** primero. Si necesitas ayuda con cualquier cosa sobre la gestion del restaurante, aqui estoy para ti.';
+            welcomeMsg = '**' + saludo + ', ' + userName + '!** Soy ' + dalliaNombre + ', tu asistente.\n\nRecuerda que para iniciar operaciones necesitas **abrir caja** primero. Si necesitas ayuda con cualquier cosa sobre la gestion del restaurante, aqui estoy para ti.';
         }
         addMessage('assistant', welcomeMsg);
         inputEl.focus();

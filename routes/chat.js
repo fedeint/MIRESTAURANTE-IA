@@ -83,12 +83,16 @@ function detectarCategoria(texto) {
 }
 
 // GET /chat - Render chat view
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
     const u = req.session.user || {};
+    const tid = req.tenantId || req.session?.user?.tenant_id || 1;
     capturarChatAbierto(req, { seccion: req.query.from || 'dashboard' });
+    const dalliaConfig = await loadDalliaConfig(tid);
     res.render('chat', {
-        userRol: u.rol || 'administrador',
-        userName: u.nombre || u.usuario || 'Usuario'
+        userRol:      u.rol || 'administrador',
+        userName:     u.nombre || u.usuario || 'Usuario',
+        dalliaNombre: dalliaConfig.nombre,
+        dalliaVoz:    dalliaConfig.voz,
     });
 });
 
