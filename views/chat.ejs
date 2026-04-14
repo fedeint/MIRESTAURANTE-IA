@@ -640,6 +640,7 @@
         var userRol      = '<%= typeof userRol !== "undefined" ? userRol : "administrador" %>';
         var userName     = '<%= typeof userName !== "undefined" ? userName : "Usuario" %>';
         var dalliaNombre = '<%= typeof dalliaNombre !== "undefined" ? dalliaNombre : "DalIA" %>';
+        var DALLIA_VOZ   = '<%= typeof dalliaVoz !== "undefined" ? dalliaVoz : "Aoede" %>';
 
         var messagesEl = document.getElementById('chatMessages');
         var inputEl = document.getElementById('chatInput');
@@ -1114,35 +1115,70 @@
         var stopTtsBtn = document.getElementById('stopTtsBtn');
         var isSpeaking = false;
 
+        var _ttsAudio = null;
+
         function leerEnVozAlta(texto) {
             if (!voiceAutoRead || !voiceAutoRead.checked) return;
-            if (!window.speechSynthesis) return;
-            window.speechSynthesis.cancel();
-            var utt = new SpeechSynthesisUtterance(texto.replace(/\*\*/g, '').replace(/`/g, ''));
-            utt.lang = 'es-PE';
-            utt.rate = 1.1;
-            utt.onstart = function() {
-                isSpeaking = true;
-                if (stopTtsBtn) stopTtsBtn.style.display = 'flex';
-            };
-            utt.onend = function() {
-                isSpeaking = false;
-                if (stopTtsBtn) stopTtsBtn.style.display = 'none';
-            };
-            utt.onerror = function() {
-                isSpeaking = false;
-                if (stopTtsBtn) stopTtsBtn.style.display = 'none';
-            };
-            window.speechSynthesis.speak(utt);
+            var clean = texto.replace(/\*\*/g, '').replace(/`/g, '').trim();
+            if (!clean) return;
+            var speakable = clean.length > 300 ? clean.substring(0, 297) + '...' : clean;
+
+            isSpeaking = true;
+            if (stopTtsBtn) stopTtsBtn.style.display = 'flex';
+
+            fetch('/api/tts', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ texto: speakable, voz: DALLIA_VOZ })
+            }).then(function(r) {
+                if (!r.ok) throw new Error('tts-http-' + r.status);
+                return r.blob();
+            }).then(function(blob) {
+                var url = URL.createObjectURL(blob);
+                _ttsAudio = new Audio(url);
+                _ttsAudio.onended = function() {
+                    URL.revokeObjectURL(url);
+                    isSpeaking = false;
+                    if (stopTtsBtn) stopTtsBtn.style.display = 'none';
+                };
+                _ttsAudio.onerror = function() {
+                    URL.revokeObjectURL(url);
+                    isSpeaking = false;
+                    if (stopTtsBtn) stopTtsBtn.style.display = 'none';
+                };
+                _ttsAudio.play();
+            }).catch(function() {
+                // Fallback: browser Web Speech API
+                if (!window.speechSynthesis) {
+                    isSpeaking = false;
+                    if (stopTtsBtn) stopTtsBtn.style.display = 'none';
+                    return;
+                }
+                window.speechSynthesis.cancel();
+                var utt = new SpeechSynthesisUtterance(speakable);
+                utt.lang = 'es-PE';
+                utt.rate = 1.1;
+                utt.onend = function() {
+                    isSpeaking = false;
+                    if (stopTtsBtn) stopTtsBtn.style.display = 'none';
+                };
+                utt.onerror = function() {
+                    isSpeaking = false;
+                    if (stopTtsBtn) stopTtsBtn.style.display = 'none';
+                };
+                window.speechSynthesis.speak(utt);
+            });
         }
 
         if (stopTtsBtn) {
             stopTtsBtn.addEventListener('click', function() {
-                if (window.speechSynthesis) {
-                    window.speechSynthesis.cancel();
-                    isSpeaking = false;
-                    stopTtsBtn.style.display = 'none';
+                if (_ttsAudio) {
+                    _ttsAudio.pause();
+                    _ttsAudio = null;
                 }
+                if (window.speechSynthesis) window.speechSynthesis.cancel();
+                isSpeaking = false;
+                stopTtsBtn.style.display = 'none';
             });
         }
 
