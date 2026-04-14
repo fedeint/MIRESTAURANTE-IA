@@ -441,6 +441,64 @@ async function chatWithGemini(apiKey, systemPrompt, messages) {
     };
 }
 
+// ── Gemini 2.5 Flash — streaming (async generator) ────────────────────────
+async function* streamGemini(apiKey, systemPrompt, messages) {
+    const geminiContents = messages.map(m => ({
+        role: m.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: m.content }]
+    }));
+
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse&key=${encodeURIComponent(apiKey)}`;
+
+    const resp = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            systemInstruction: { parts: [{ text: systemPrompt }] },
+            contents: geminiContents,
+            generationConfig: { temperature: 0.7, topP: 0.9, maxOutputTokens: 2048 }
+        })
+    });
+
+    if (!resp.ok) {
+        const data = await resp.json().catch(() => ({}));
+        const msg = data?.error?.message || `Gemini error ${resp.status}`;
+        const err = new Error(msg);
+        err.status = resp.status;
+        err.isQuota = resp.status === 429 || /quota|rate|exceed/i.test(msg);
+        throw err;
+    }
+
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+
+    try {
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split('\n');
+            buffer = lines.pop();
+
+            for (const line of lines) {
+                if (!line.startsWith('data: ')) continue;
+                const jsonStr = line.slice(6).trim();
+                if (!jsonStr || jsonStr === '[DONE]') continue;
+                try {
+                    const chunk = JSON.parse(jsonStr);
+                    const text = chunk?.candidates?.[0]?.content?.parts?.[0]?.text;
+                    if (text) yield { type: 'chunk', text };
+                    if (chunk?.usageMetadata) yield { type: 'usage', usage: chunk.usageMetadata };
+                } catch (_) {}
+            }
+        }
+    } finally {
+        reader.cancel().catch(() => {});
+    }
+}
+
 // ── DeepSeek V3 (más barato, tono lo maneja el prompt) ──────────────────────
 async function chatWithDeepSeek(apiKey, systemPrompt, messages) {
     const resp = await fetch('https://api.deepseek.com/chat/completions', {
@@ -1003,6 +1061,159 @@ router.post('/', async (req, res) => {
         });
 
         res.status(500).json({ error: msg });
+    }
+});
+
+// POST /api/chat/stream — Gemini SSE streaming endpoint
+// Streams text chunks as server-sent events. Falls back to { fallback: true }
+// when Gemini is unavailable; client retries with the non-streaming endpoint.
+router.post('/stream', async (req, res) => {
+    const { mensaje, historial, agent, contexto: contextoChat } = req.body;
+    const rol = req.session?.user?.rol || '';
+
+    if (!mensaje || !String(mensaje).trim()) {
+        return res.status(400).json({ error: 'Mensaje requerido' });
+    }
+
+    const tid    = req.tenantId || 1;
+    const userId = req.session?.user?.id || null;
+
+    res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache, no-transform');
+    res.setHeader('Connection', 'keep-alive');
+    res.setHeader('X-Accel-Buffering', 'no');
+    res.flushHeaders();
+
+    const sse = (obj) => { if (!res.writableEnded) res.write(`data: ${JSON.stringify(obj)}\n\n`); };
+
+    try {
+        // ── Token gate ────────────────────────────────────────────────────────
+        const tokenInfo = await getTokenInfo(tid);
+        if (tokenInfo !== null) {
+            const remaining = (Number(tokenInfo.tokens_total) || 0) - (Number(tokenInfo.tokens_consumidos) || 0);
+            if (remaining <= 0) {
+                sse({ error: '⚠️ Tus tokens de IA se han agotado. Contacta a tu administrador para adquirir mas tokens.', tokensAgotados: true });
+                return res.end();
+            }
+        }
+
+        // ── Resolver API key ──────────────────────────────────────────────────
+        const resolved = await tenantAi.resolveApiKey(tid);
+        if (!resolved) {
+            sse({ fallback: true });
+            return res.end();
+        }
+
+        const categoria = detectarCategoria(mensaje);
+        capturarPreguntaEnviada(req, { categoria, preguntaTexto: mensaje, fuente: 'chat' });
+
+        // ── FAQ cache ─────────────────────────────────────────────────────────
+        const cached = await faqCacheLookup(tid, rol, mensaje, categoria);
+        if (cached) {
+            await recordTokenUsage(tid, userId, 0, 'cache', {
+                tipo: 'chat', pregunta: mensaje, categoria,
+                cacheHit: true, tokensAhorrados: cached.tokensAhorrados, costoUSD: 0
+            });
+            sse({ respuesta: cached.respuesta, provider: 'faq-cache', cacheHit: true });
+            return res.end();
+        }
+
+        // ── DalIA Actions (intent detection) ──────────────────────────────────
+        const isAdmin = rol === 'administrador' || rol === 'superadmin';
+
+        const _streamAction = async (actionName, extraArgs = {}) => {
+            const result = await daliaActions.run(actionName, tid, { db, llm, whatsapp: whatsappApi, ...extraArgs });
+            if (!result.shouldPropose) {
+                sse({ respuesta: result.message, provider: 'dallia-actions' });
+            } else {
+                sse({ respuesta: result.draft?.texto || 'Revisé tu almacén. Te propongo enviar estos pedidos:', provider: 'dallia-actions', type: 'action_card', action_card: { logId: result.logId, actionName: result.actionName, detection: result.detection, draft: result.draft } });
+            }
+        };
+
+        if (detectStockIntent(mensaje) && isAdmin) {
+            try { await _streamAction('enviar_pedido_proveedor'); return res.end(); } catch (e) { console.error('[stream action stock]', e.message); }
+        }
+        if (detectVencimientoIntent(mensaje) && (isAdmin || rol === 'almacenero')) {
+            try { await _streamAction('vencimiento_ingredientes'); return res.end(); } catch (e) { console.error('[stream action venc]', e.message); }
+        }
+        if (detectResumenDiaIntent(mensaje) && isAdmin) {
+            try { await _streamAction('resumen_cierre_dia'); return res.end(); } catch (e) { console.error('[stream action resumen]', e.message); }
+        }
+        if (detectCerrarCajaIntent(mensaje) && (isAdmin || rol === 'cajero')) {
+            try { await _streamAction('recordatorio_cerrar_caja'); return res.end(); } catch (e) { console.error('[stream action caja]', e.message); }
+        }
+        if (detectMetaAlcanzadaIntent(mensaje) && isAdmin) {
+            try { await _streamAction('meta_alcanzada'); return res.end(); } catch (e) { console.error('[stream action meta]', e.message); }
+        }
+
+        // ── Build context + system prompt ─────────────────────────────────────
+        const [contexto, kbContext, dalliaConfig] = await Promise.all([
+            obtenerContextoNegocio(tid),
+            buildContext(tid),
+            loadDalliaConfig(tid)
+        ]);
+
+        const kbBlock = kbContext
+            ? `${kbContext}\n\nUsa el CONTEXTO DEL NEGOCIO para dar respuestas personalizadas. Si el usuario pregunta sobre ventas, inventario u objetivos, responde con datos reales.\n\n`
+            : '';
+        const rawSystemPrompt = buildSystemPrompt(contexto, rol || '', dalliaConfig.nombre);
+        const salvaBlock = (agent === 'salva') ? buildSalvaBlock(contextoChat, contexto) : '';
+        const systemPrompt = salvaBlock + kbBlock + rawSystemPrompt;
+        const messages     = buildMessages(historial, mensaje);
+
+        // ── Stream Gemini ─────────────────────────────────────────────────────
+        let fullText  = '';
+        let usageMeta = null;
+
+        try {
+            for await (const event of streamGemini(resolved.key, systemPrompt, messages)) {
+                if (res.writableEnded) break;
+                if (event.type === 'chunk') {
+                    fullText += event.text;
+                    sse({ chunk: event.text });
+                } else if (event.type === 'usage') {
+                    usageMeta = event.usage;
+                }
+            }
+        } catch (geminiErr) {
+            console.warn('[chat/stream] Gemini falló:', geminiErr.message);
+            await tenantAi.logFallback(tid, 'gemini', 'none', geminiErr.message, 'chat-stream').catch(() => {});
+            sse({ fallback: true });
+            return res.end();
+        }
+
+        // ── Token accounting ──────────────────────────────────────────────────
+        const inputTokens  = usageMeta?.promptTokenCount   ?? Math.ceil((systemPrompt + messages.map(m => m.content).join(' ')).length / 4);
+        const outputTokens = usageMeta?.candidatesTokenCount ?? Math.ceil(fullText.length / 4);
+        const tokensUsed   = inputTokens + outputTokens;
+        const modelo       = 'gemini-2.5-flash';
+        const costoUSD     = estimarCostoUSD(modelo, inputTokens, outputTokens);
+
+        recordTokenUsage(tid, userId, tokensUsed, modelo, {
+            tipo: 'chat', pregunta: mensaje, categoria,
+            cacheHit: false, tokensAhorrados: 0, costoUSD
+        }).catch(() => {});
+
+        faqCacheStore(tid, mensaje, fullText, categoria, modelo, tokensUsed).catch(() => {});
+        capturarRespuestaGenerada(req, { categoria, tokensUsados: tokensUsed, tiempoMs: 0, modelo });
+
+        // ── Low-token warning ─────────────────────────────────────────────────
+        let advertenciaTokens = false;
+        if (tokenInfo !== null) {
+            const nuevoConsumo = (Number(tokenInfo.tokens_consumidos) || 0) + tokensUsed;
+            const total        = Number(tokenInfo.tokens_total) || 2000000;
+            if (nuevoConsumo >= total * 0.9) advertenciaTokens = true;
+        }
+
+        sse({ done: true, provider: modelo, tokensUsed, advertenciaTokens });
+        res.end();
+
+    } catch (err) {
+        console.error('[chat/stream] error inesperado:', err.message);
+        if (!res.writableEnded) {
+            sse({ fallback: true });
+            res.end();
+        }
     }
 });
 

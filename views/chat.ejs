@@ -795,7 +795,7 @@
             return html;
         }
 
-        // ─── Send message ───
+        // ─── Send message (streaming-first, non-streaming fallback) ───
         async function sendMessage(text) {
             if (sending || !text.trim()) return;
             sending = true;
@@ -808,44 +808,164 @@
 
             showTyping();
 
+            var streamOk = false;
+
             try {
-                var resp = await fetch('/api/chat', {
+                var sResp = await fetch('/api/chat/stream', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        mensaje: text,
-                        historial: historial.slice(-20),
-                        rol: userRol
-                    })
+                    body: JSON.stringify({ mensaje: text, historial: historial.slice(-20), rol: userRol })
                 });
 
-                hideTyping();
+                if (sResp.ok && sResp.body) {
+                    hideTyping();
 
-                var data = await resp.json();
-                if (!resp.ok) throw new Error(data.error || 'Error del servidor');
+                    // Create the streaming bubble
+                    var streamDiv = document.createElement('div');
+                    streamDiv.className = 'chat-msg chat-msg-ai';
+                    messagesEl.appendChild(streamDiv);
+                    scrollBottom();
 
-                if (data.type === 'action_card') {
-                    renderActionCard(data);
-                } else {
-                    // Extraer primera oración para TTS (más rápido que texto completo)
-                    var ttsText = data.respuesta || '';
-                    var m = ttsText.replace(/\*\*/g,'').replace(/`/g,'').match(/[^.!?\n]{1,180}[.!?]/);
-                    var primeraOracion = m ? m[0].trim() : ttsText.replace(/\*\*/g,'').replace(/`/g,'').slice(0, 150);
+                    var fullText = '';
+                    var ttsFired = false;
+                    var sReader = sResp.body.getReader();
+                    var sDecoder = new TextDecoder();
+                    var sBuf = '';
+                    var gotFallback = false;
 
-                    // Disparar TTS en paralelo — no esperar para mostrar el texto
-                    leerEnVozAlta(primeraOracion);
-                    addMessage('assistant', data.respuesta);
-                    historial.push({ role: 'assistant', content: data.respuesta });
-                    saveToHistory(text, data.respuesta);
+                    outerLoop: while (true) {
+                        var rr = await sReader.read();
+                        if (rr.done) break;
+
+                        sBuf += sDecoder.decode(rr.value, { stream: true });
+                        var lines = sBuf.split('\n');
+                        sBuf = lines.pop();
+
+                        for (var li = 0; li < lines.length; li++) {
+                            var ln = lines[li];
+                            if (!ln.startsWith('data: ')) continue;
+                            var evtObj;
+                            try { evtObj = JSON.parse(ln.slice(6)); } catch(_) { continue; }
+
+                            // Server asks client to retry with non-streaming
+                            if (evtObj.fallback) {
+                                streamDiv.remove();
+                                gotFallback = true;
+                                break outerLoop;
+                            }
+
+                            // Tokens exhausted
+                            if (evtObj.tokensAgotados) {
+                                streamDiv.innerHTML = formatAI(evtObj.error || '⚠️ Tokens agotados.');
+                                streamOk = true;
+                                break outerLoop;
+                            }
+
+                            // Error (non-fallback)
+                            if (evtObj.error && !evtObj.fallback) {
+                                streamDiv.innerHTML = '<span style="color:var(--bs-danger,#ef4444)">' + escapeHtml(evtObj.error) + '</span>';
+                                streamOk = true;
+                                break outerLoop;
+                            }
+
+                            // Instant complete response (cache hit or DalIA action)
+                            if (evtObj.respuesta) {
+                                if (evtObj.type === 'action_card') {
+                                    streamDiv.remove();
+                                    renderActionCard(evtObj);
+                                } else {
+                                    var ttsText0 = evtObj.respuesta || '';
+                                    var m0 = ttsText0.replace(/\*\*/g,'').replace(/`/g,'').match(/[^.!?\n]{1,180}[.!?]/);
+                                    var first0 = m0 ? m0[0].trim() : ttsText0.replace(/\*\*/g,'').replace(/`/g,'').slice(0, 150);
+                                    leerEnVozAlta(first0);
+                                    streamDiv.innerHTML = formatAI(evtObj.respuesta);
+                                    historial.push({ role: 'assistant', content: evtObj.respuesta });
+                                    saveToHistory(text, evtObj.respuesta);
+                                    scrollBottom();
+                                }
+                                streamOk = true;
+                                break outerLoop;
+                            }
+
+                            // Incremental text chunk
+                            if (evtObj.chunk) {
+                                fullText += evtObj.chunk;
+                                streamDiv.innerHTML = formatAI(fullText);
+                                scrollBottom();
+
+                                // Fire TTS on first sentence boundary
+                                if (!ttsFired && voiceAutoRead && voiceAutoRead.checked) {
+                                    var m1 = fullText.replace(/\*\*/g,'').replace(/`/g,'').match(/[^.!?\n]{1,180}[.!?]/);
+                                    if (m1) {
+                                        ttsFired = true;
+                                        leerEnVozAlta(m1[0].trim());
+                                    }
+                                }
+                            }
+
+                            // Stream complete
+                            if (evtObj.done) {
+                                historial.push({ role: 'assistant', content: fullText });
+                                saveToHistory(text, fullText);
+                                if (evtObj.advertenciaTokens) {
+                                    streamDiv.innerHTML += formatAI('\n\n⚠️ *Te quedan menos del 10% de tus tokens de IA. Contacta a tu administrador para renovar tu cuota.*');
+                                }
+                                var prov = document.getElementById('chatProvider');
+                                if (prov) prov.textContent = 'Los datos se consultan en tiempo real de tu base de datos';
+                                streamOk = true;
+                                break outerLoop;
+                            }
+                        }
+                    }
+
+                    sReader.cancel().catch(function(){});
+
+                    // Stream ended without explicit done — use accumulated text
+                    if (!streamOk && !gotFallback && fullText) {
+                        historial.push({ role: 'assistant', content: fullText });
+                        saveToHistory(text, fullText);
+                        streamOk = true;
+                    }
+
+                    if (gotFallback) showTyping();
                 }
-
-                var prov = document.getElementById('chatProvider');
-                if (prov && data.provider) {
-                    prov.textContent = 'Los datos se consultan en tiempo real de tu base de datos';
-                }
-            } catch (err) {
+            } catch (_) {
+                // Network error on streaming — fall through to non-streaming
                 hideTyping();
-                addMessage('error', err.message || 'Error al comunicarse con la IA', true);
+                showTyping();
+            }
+
+            // ── Non-streaming fallback ────────────────────────────────────────
+            if (!streamOk) {
+                try {
+                    var resp2 = await fetch('/api/chat', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ mensaje: text, historial: historial.slice(-20), rol: userRol })
+                    });
+
+                    hideTyping();
+                    var data2 = await resp2.json();
+                    if (!resp2.ok) throw new Error(data2.error || 'Error del servidor');
+
+                    if (data2.type === 'action_card') {
+                        renderActionCard(data2);
+                    } else {
+                        var ttsText2 = data2.respuesta || '';
+                        var m2 = ttsText2.replace(/\*\*/g,'').replace(/`/g,'').match(/[^.!?\n]{1,180}[.!?]/);
+                        var first2 = m2 ? m2[0].trim() : ttsText2.replace(/\*\*/g,'').replace(/`/g,'').slice(0, 150);
+                        leerEnVozAlta(first2);
+                        addMessage('assistant', data2.respuesta);
+                        historial.push({ role: 'assistant', content: data2.respuesta });
+                        saveToHistory(text, data2.respuesta);
+                    }
+
+                    var prov2 = document.getElementById('chatProvider');
+                    if (prov2 && data2.provider) prov2.textContent = 'Los datos se consultan en tiempo real de tu base de datos';
+                } catch (err2) {
+                    hideTyping();
+                    addMessage('error', err2.message || 'Error al comunicarse con la IA', true);
+                }
             }
 
             sending = false;
