@@ -121,6 +121,32 @@
       text-decoration: none;
     }
 
+    .hero-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin: 24px 0 32px;
+      max-width: 600px;
+    }
+    .hero-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 100px;
+      font-size: 13px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.85);
+      white-space: nowrap;
+    }
+    .hero-chip i {
+      color: #FF6B35;
+      font-size: 14px;
+    }
+
     .hero-social-proof {
       margin-top: 28px;
       font-size: 13px;
@@ -774,18 +800,24 @@
   <img src="/isotipo.png" style="width:64px;height:64px;border-radius:16px;margin-bottom:24px;box-shadow:0 8px 32px rgba(255,107,53,0.25);" alt="DallIA">
 
   <div class="hero-label">
-    <i class="bi bi-stars"></i>
-    DallIA — Tu IA de restaurante
+    <i class="bi bi-soundwave"></i>
+    DallIA · IA con voz · Automatizaciones
   </div>
 
   <h1 class="hero-title">
-    DEJA DE OPERAR <span>SOFTWARE.</span><br>
-    CONVERSA CON TU RESTAURANTE.
+    TU RESTAURANTE<br>
+    OPERA <span>HABLANDO.</span>
   </h1>
 
   <p class="hero-subtitle">
-    Pedidos, cocina, inventario, reportes —<br>todo con una conversación.
+    Pregúntale por voz a DallIA. Ella revisa stock, envía pedidos a proveedores y cierra tu día — tú solo conversas.
   </p>
+
+  <div class="hero-chips">
+    <span class="hero-chip"><i class="bi bi-mic-fill"></i> Habla y escucha</span>
+    <span class="hero-chip"><i class="bi bi-lightning-charge-fill"></i> Automatizaciones</span>
+    <span class="hero-chip"><i class="bi bi-chat-heart-fill"></i> Español peruano</span>
+  </div>
 
   <a href="/auth/google" class="btn-cta">
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;">
