@@ -260,7 +260,7 @@
   <!-- Top bar -->
   <div class="voz-topbar">
     <button class="voz-close-top" onclick="closeVoz()" aria-label="Cerrar voz">&#8964;</button>
-    <span class="voz-title">DallIA &middot; Voz</span>
+    <span class="voz-title"><%= dalliaNombre %> &middot; Voz</span>
     <button class="voz-chat-link" onclick="window.location='/dallia'" aria-label="Ir al chat">💬</button>
   </div>
 
@@ -286,6 +286,9 @@
 </div>
 
 <script>
+  // ── Config ────────────────────────────────────────────────────────────────
+  const DALLIA_VOZ = '<%= dalliaVoz || "Aoede" %>';
+
   // ── State ─────────────────────────────────────────────────────────────────
   const recentHistory = [];
   let recognition     = null;
@@ -451,34 +454,52 @@
   }
 
   // ── Speech synthesis ──────────────────────────────────────────────────────
-  function speakText(text, onEnd) {
-    if (!('speechSynthesis' in window)) {
-      if (onEnd) onEnd();
-      return;
-    }
-    window.speechSynthesis.cancel();
+  async function speakText(text, onEnd) {
+    isSpeaking = true;
+    setOrbState('speaking');
 
     // Truncate long responses for voice
     const speakable = text.length > 300 ? text.substring(0, 297) + '...' : text;
 
+    // Try Gemini TTS via /api/tts first
+    try {
+      const r = await fetch('/api/tts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ texto: speakable, voz: DALLIA_VOZ })
+      });
+      if (r.ok) {
+        const blob = await r.blob();
+        const url  = URL.createObjectURL(blob);
+        const audio = new Audio(url);
+        audio.onended = function() {
+          URL.revokeObjectURL(url);
+          isSpeaking = false;
+          if (onEnd) onEnd();
+        };
+        audio.onerror = function() {
+          URL.revokeObjectURL(url);
+          isSpeaking = false;
+          if (onEnd) onEnd();
+        };
+        audio.play();
+        return;
+      }
+    } catch (_) { /* fallback to browser SpeechSynthesis */ }
+
+    // Fallback: browser Web Speech API
+    if (!('speechSynthesis' in window)) {
+      isSpeaking = false;
+      if (onEnd) onEnd();
+      return;
+    }
+    window.speechSynthesis.cancel();
     const utt = new SpeechSynthesisUtterance(speakable);
     utt.lang  = 'es-PE';
     utt.rate  = 1.05;
     utt.pitch = 1.0;
-
-    isSpeaking = true;
-    setOrbState('speaking');
-
-    utt.onend = function() {
-      isSpeaking = false;
-      if (onEnd) onEnd();
-    };
-
-    utt.onerror = function() {
-      isSpeaking = false;
-      if (onEnd) onEnd();
-    };
-
+    utt.onend = function() { isSpeaking = false; if (onEnd) onEnd(); };
+    utt.onerror = function() { isSpeaking = false; if (onEnd) onEnd(); };
     window.speechSynthesis.speak(utt);
   }
 

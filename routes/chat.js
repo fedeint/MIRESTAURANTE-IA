@@ -129,8 +129,9 @@ ${cajaData ? `\n## ESTADO ACTUAL DE CAJA\n${cajaData}` : ''}
 `;
 }
 
-function buildSystemPrompt(contextoRaw, rol) {
+function buildSystemPrompt(contextoRaw, rol, nombre) {
     const contexto = (!rol || rol === 'administrador') ? contextoRaw : filtrarContextoPorRol(contextoRaw, rol);
+    const aiName = (nombre && nombre.trim()) ? nombre.trim() : 'DalIA';
     return `# ESTILO PERUANO OBLIGATORIO (no negociable)
 Tu voz es la de un limeño/norteño gente de restaurante, no un bot corporativo.
 Hablas natural, cercano, directo. Sin floreos ni frases acartonadas.
@@ -155,7 +156,7 @@ EJEMPLOS de cómo SUENAS:
 ---
 
 # IDENTIDAD
-Eres **DalIA**, la asistente inteligente del sistema **MiRest con IA** (mirestconia.com).
+Eres **${aiName}**, la asistente inteligente del sistema **MiRest con IA** (mirestconia.com).
 Creado por **Leonidas Yauri, CEO de mirestconia.com**.
 Tu personalidad es amigable, atenta y profesional — como una colega experta en gestion de restaurantes.
 
@@ -845,16 +846,17 @@ router.post('/', async (req, res) => {
     // ─────────────────────────────────────────────────────────────────────────
 
     try {
-        const [contexto, kbContext] = await Promise.all([
+        const [contexto, kbContext, dalliaConfig] = await Promise.all([
             obtenerContextoNegocio(tid),
-            buildContext(tid)
+            buildContext(tid),
+            loadDalliaConfig(tid)
         ]);
 
         const kbBlock = kbContext
             ? `${kbContext}\n\nUsa el CONTEXTO DEL NEGOCIO para dar respuestas personalizadas. Si el usuario pregunta sobre ventas, inventario u objetivos, responde con datos reales.\n\n`
             : '';
 
-        const rawSystemPrompt = buildSystemPrompt(contexto, rol || '');
+        const rawSystemPrompt = buildSystemPrompt(contexto, rol || '', dalliaConfig.nombre);
         const salvaBlock = (agent === 'salva') ? buildSalvaBlock(contextoChat, contexto) : '';
         const systemPrompt = salvaBlock + kbBlock + rawSystemPrompt;
         const messages    = buildMessages(historial, mensaje);
@@ -1282,6 +1284,27 @@ async function obtenerContextoNegocio(tenantId) {
 
 // ─── PASO 6: DallIA Chat + Voz ────────────────────────────────────────────────
 
+// Helper: carga la config de DalIA del tenant (nombre + voz + personalidad)
+async function loadDalliaConfig(tid) {
+    try {
+        const [[row]] = await db.query(
+            'SELECT config_json FROM tenant_dallia_config WHERE tenant_id = ? LIMIT 1',
+            [tid]
+        );
+        const cfg = row?.config_json
+            ? (typeof row.config_json === 'string' ? JSON.parse(row.config_json) : row.config_json)
+            : {};
+        return {
+            nombre:       cfg.nombre       || 'DalIA',
+            voz:          cfg.voz          || 'Aoede',
+            trato:        cfg.trato        || 'tu',
+            personalidad: cfg.personalidad || 'amigable',
+        };
+    } catch (_) {
+        return { nombre: 'DalIA', voz: 'Aoede', trato: 'tu', personalidad: 'amigable' };
+    }
+}
+
 // GET /dallia — mobile chat view
 router.get('/dallia', async (req, res) => {
     const tid = req.tenantId || req.session?.user?.tenant_id || 1;
@@ -1295,17 +1318,26 @@ router.get('/dallia', async (req, res) => {
     } catch(_) {}
 
     const u = req.session.user || {};
+    const dalliaConfig = await loadDalliaConfig(tid);
     res.render('dallia-chat', {
         user: u,
         historial,
-        userName: u.nombre || u.usuario || 'Usuario',
-        userRol: u.rol || 'administrador'
+        userName:     u.nombre || u.usuario || 'Usuario',
+        userRol:      u.rol || 'administrador',
+        dalliaNombre: dalliaConfig.nombre,
+        dalliaVoz:    dalliaConfig.voz,
     });
 });
 
 // GET /dallia/voz — voice orb view
-router.get('/dallia/voz', (req, res) => {
-    res.render('dallia-voz', { user: req.session.user || {} });
+router.get('/dallia/voz', async (req, res) => {
+    const tid = req.tenantId || req.session?.user?.tenant_id || 1;
+    const dalliaConfig = await loadDalliaConfig(tid);
+    res.render('dallia-voz', {
+        user:         req.session.user || {},
+        dalliaNombre: dalliaConfig.nombre,
+        dalliaVoz:    dalliaConfig.voz,
+    });
 });
 
 // GET /dallia/alertas — proactive alerts JSON

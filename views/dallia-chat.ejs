@@ -492,7 +492,7 @@
     <div class="dallia-info">
       <div class="dallia-avatar">🤖</div>
       <div>
-        <p class="dallia-name">DallIA</p>
+        <p class="dallia-name"><%= dalliaNombre %></p>
         <p class="dallia-status online" id="statusText">● En línea</p>
       </div>
     </div>
@@ -529,7 +529,7 @@
         <div class="dallia-avatar-sm">🤖</div>
         <div class="bubble dallia-bubble">
           <p style="font-weight:600;margin-bottom:8px">¡Hola <%= escapeHtml(userName) %>! 👋</p>
-          <p style="margin-bottom:10px;color:#4B5563">Soy DallIA, tu asistente de restaurante. ¿En qué te ayudo hoy?</p>
+          <p style="margin-bottom:10px;color:#4B5563">Soy <%= dalliaNombre %>, tu asistente de restaurante. ¿En qué te ayudo hoy?</p>
           <div class="quick-replies">
             <button class="quick-reply" onclick="sendQuick(this)">¿Cómo van las ventas hoy?</button>
             <button class="quick-reply" onclick="sendQuick(this)">¿Qué producto se vendió más?</button>
@@ -557,7 +557,7 @@
   <!-- Input bar -->
   <div class="input-bar">
     <button class="plus-btn" aria-label="Adjuntar">+</button>
-    <input type="text" id="msgInput" placeholder="Pregunta a DallIA..." autocomplete="off" autocorrect="off">
+    <input type="text" id="msgInput" placeholder="Pregunta a <%= dalliaNombre %>..." autocomplete="off" autocorrect="off">
     <button class="mic-btn" id="micBtn" aria-label="Micrófono">🎤</button>
     <button class="send-btn" id="sendBtn" aria-label="Enviar">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>

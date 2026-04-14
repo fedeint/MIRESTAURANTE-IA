@@ -205,6 +205,20 @@
       </div>
     </div>
 
+    <!-- Voz del asistente -->
+    <div class="card">
+      <div class="card-label">Voz del asistente</div>
+      <div class="chip-group" id="vozGroup">
+        <button class="chip <%= (!config.voz || config.voz === 'Aoede') ? 'active' : '' %>" data-val="Aoede" onclick="selectChip('voz', this)">Aoede · Femenina suave</button>
+        <button class="chip <%= config.voz === 'Kore' ? 'active' : '' %>" data-val="Kore" onclick="selectChip('voz', this)">Kore · Femenina clara</button>
+        <button class="chip <%= config.voz === 'Puck' ? 'active' : '' %>" data-val="Puck" onclick="selectChip('voz', this)">Puck · Enérgica</button>
+        <button class="chip <%= config.voz === 'Charon' ? 'active' : '' %>" data-val="Charon" onclick="selectChip('voz', this)">Charon · Grave</button>
+        <button class="chip <%= config.voz === 'Fenrir' ? 'active' : '' %>" data-val="Fenrir" onclick="selectChip('voz', this)">Fenrir · Firme</button>
+        <button class="chip <%= config.voz === 'Leda' ? 'active' : '' %>" data-val="Leda" onclick="selectChip('voz', this)">Leda · Cálida</button>
+      </div>
+      <div class="name-hint" style="margin-top:8px;">Requiere API key de Google AI configurada abajo</div>
+    </div>
+
     <!-- Capacidades -->
     <div class="card">
       <div class="card-label">Capacidades activas</div>
@@ -453,7 +467,7 @@
 
   <!-- Bottom Nav -->
   <nav class="bottom-nav">
-    <a href="/dashboard" class="nav-tab">
+    <a href="/" class="nav-tab">
       <span class="nav-icon"><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
       <span>INICIO</span>
     </a>
@@ -478,7 +492,8 @@
 <script>
   const state = {
     trato: '<%= config.trato || "tu" %>',
-    personalidad: '<%= config.personalidad || "amigable" %>'
+    personalidad: '<%= config.personalidad || "amigable" %>',
+    voz: '<%= config.voz || "Aoede" %>'
   };
 
   function selectChip(group, btn) {
@@ -493,6 +508,7 @@
       nombre: document.getElementById('nombreDallia').value.trim() || 'DallIA',
       trato: state.trato,
       personalidad: state.personalidad,
+      voz: state.voz,
       cap_alertas: document.getElementById('cap_alertas').checked,
       cap_pregunta: document.getElementById('cap_pregunta').checked,
       cap_rutina: document.getElementById('cap_rutina').checked,

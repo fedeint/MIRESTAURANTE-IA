@@ -56,7 +56,7 @@ router.get('/dallia', async (req, res) => {
 router.post('/dallia', async (req, res) => {
   try {
     const tenantId = req.tenantId;
-    const allowed = ['nombre','trato','personalidad','cap_alertas','cap_pregunta','cap_rutina','cap_voz','cap_fab'];
+    const allowed = ['nombre','trato','personalidad','voz','cap_alertas','cap_pregunta','cap_rutina','cap_voz','cap_fab'];
     const data = {};
     allowed.forEach(k => { if (req.body[k] !== undefined) data[k] = req.body[k]; });
     const json = JSON.stringify(data);
