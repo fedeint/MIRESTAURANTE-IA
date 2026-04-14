@@ -1,7 +1,9 @@
 const express = require('express');
+const crypto = require('crypto');
 const router = express.Router();
 const db = require('../db');
 const { buildContext } = require('../services/knowledge-base');
+const { estimarCostoUSD } = require('../lib/llm');
 const {
   capturarPreguntaEnviada,
   capturarRespuestaGenerada,
@@ -128,7 +130,30 @@ ${cajaData ? `\n## ESTADO ACTUAL DE CAJA\n${cajaData}` : ''}
 
 function buildSystemPrompt(contextoRaw, rol) {
     const contexto = (!rol || rol === 'administrador') ? contextoRaw : filtrarContextoPorRol(contextoRaw, rol);
-    return `# IDENTIDAD
+    return `# ESTILO PERUANO OBLIGATORIO (no negociable)
+Tu voz es la de un limeño/norteño gente de restaurante, no un bot corporativo.
+Hablas natural, cercano, directo. Sin floreos ni frases acartonadas.
+
+SÍ USA (modismos peruanos naturales): "dale", "listo", "de una", "bacán", "chévere",
+  "ya fue", "a todo dar", "qué tal", "manyas", "chamba", "habla", "compadre", "pe",
+  "ya pues", "normal", "tranquilo", "al toque"
+NO USES (otros países): "vos", "che", "güey", "tío", "vale", "genial", "estupendo",
+  "¡claro que sí!", "por supuesto", "entiendo perfectamente"
+
+LONGITUD: 1–3 oraciones por defecto. Solo extiende si piden pasos explicitos.
+ARRANQUE: va directo al grano, sin "¡Claro!" / "Por supuesto" / "Entiendo".
+
+EJEMPLOS de cómo SUENAS:
+- "Ya, S/ 450 hoy en 12 facturas. El estrella fue Arroz con Pollo."
+- "Dale, abre caja primero desde /caja. Sin eso no facturas, pe."
+- "Manyas, la mesa 5 tiene 3 items preparándose hace 12 min. Toca apurar."
+- "Chévere, ya cumpliste la meta. ¿Cierras caja o seguimos?"
+- "Tranquilo, te guío al toque. Ve a /productos y dale en + Nuevo."
+- "Normal que te pase. Primero revisa stock en /almacen y ahí vemos."
+
+---
+
+# IDENTIDAD
 Eres **DalIA**, la asistente inteligente del sistema **MiRest con IA** (mirestconia.com).
 Creado por **Leonidas Yauri, CEO de mirestconia.com**.
 Tu personalidad es amigable, atenta y profesional — como una colega experta en gestion de restaurantes.
@@ -366,6 +391,94 @@ function buildMessages(historial, mensaje, budgetTokens = 8000) {
     return messages;
 }
 
+// ── DeepSeek V3 (más barato, tono lo maneja el prompt) ──────────────────────
+async function chatWithDeepSeek(apiKey, systemPrompt, messages) {
+    const resp = await fetch('https://api.deepseek.com/chat/completions', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+            model: 'deepseek-chat',
+            max_tokens: 2048,
+            temperature: 0.7,
+            top_p: 0.9,
+            messages: [
+                { role: 'system', content: systemPrompt },
+                ...messages
+            ]
+        })
+    });
+    const data = await resp.json();
+    if (!resp.ok) {
+        throw new Error(data?.error?.message || `DeepSeek API error ${resp.status}`);
+    }
+    return {
+        text: data.choices?.[0]?.message?.content || '',
+        usage: data.usage || {}
+    };
+}
+
+// ── FAQ cache helpers ──────────────────────────────────────────────────────
+// Solo cacheamos categorías "estáticas" cuya respuesta NO depende de datos vivos.
+// Categorías peligrosas (ventas, inventario): NUNCA cachear — cambian en minutos.
+const CATEGORIAS_CACHEABLES = new Set(['legal', 'mantenimiento', 'general']);
+
+function normalizarPregunta(texto) {
+    return String(texto || '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')         // quitar tildes
+        .replace(/[¿?¡!.,;:()\[\]"']/g, '')       // quitar puntuación
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+function hashPregunta(texto) {
+    return crypto.createHash('sha256').update(normalizarPregunta(texto)).digest('hex').slice(0, 40);
+}
+
+async function faqCacheLookup(tenantId, rol, pregunta, categoria) {
+    if (rol !== 'administrador' && rol !== 'superadmin') return null; // seguridad: no-admin siempre pasa por filtro
+    if (!CATEGORIAS_CACHEABLES.has(categoria)) return null;
+    try {
+        const hash = hashPregunta(pregunta);
+        const [[row]] = await db.query(
+            `SELECT id, respuesta, tokens_originales FROM dallia_faq_cache
+             WHERE tenant_id=? AND question_hash=? AND expires_at > NOW()
+             LIMIT 1`,
+            [tenantId, hash]
+        );
+        if (!row) return null;
+        // Marcar hit
+        db.query(
+            `UPDATE dallia_faq_cache SET hits = hits + 1, last_hit_at = NOW() WHERE id=?`,
+            [row.id]
+        ).catch(() => {});
+        return { respuesta: row.respuesta, tokensAhorrados: Number(row.tokens_originales || 0) };
+    } catch (e) {
+        console.warn('[faq-cache] lookup failed (non-fatal):', e.message);
+        return null;
+    }
+}
+
+async function faqCacheStore(tenantId, pregunta, respuesta, categoria, modelo, tokensOriginales) {
+    if (!CATEGORIAS_CACHEABLES.has(categoria)) return;
+    try {
+        const hash = hashPregunta(pregunta);
+        await db.query(
+            `INSERT INTO dallia_faq_cache
+             (tenant_id, question_hash, question_text, respuesta, categoria, modelo, tokens_originales)
+             VALUES (?, ?, ?, ?, ?, ?, ?)
+             ON CONFLICT (tenant_id, question_hash) DO NOTHING`,
+            [tenantId, hash, String(pregunta).slice(0, 500), respuesta, categoria, modelo, tokensOriginales]
+        );
+    } catch (e) {
+        console.warn('[faq-cache] store failed (non-fatal):', e.message);
+    }
+}
+
 // ---- KIMI via OpenRouter (FREE) ----
 async function chatWithKimi(apiKey, systemPrompt, messages) {
     const body = {
@@ -439,27 +552,56 @@ async function getTokenInfo(tenantId) {
 /**
  * Record token consumption after a successful AI call.
  * Never throws — errors are silently logged so chat is not disrupted.
+ *
+ * @param {object} meta — { tipo, pregunta, categoria, cacheHit, tokensAhorrados, costoUSD }
  */
-async function recordTokenUsage(tenantId, userId, tokensUsed, modelo) {
-    try {
-        await db.query(
-            `UPDATE tenant_suscripciones
-             SET tokens_consumidos = tokens_consumidos + ?
-             WHERE tenant_id = ?`,
-            [tokensUsed, tenantId]
-        );
-    } catch (e) {
-        console.warn('Token UPDATE failed (non-fatal):', e.message);
+async function recordTokenUsage(tenantId, userId, tokensUsed, modelo, meta = {}) {
+    const {
+        tipo = 'chat',
+        pregunta = null,
+        categoria = null,
+        cacheHit = false,
+        tokensAhorrados = 0,
+        costoUSD = 0
+    } = meta;
+
+    // Si fue cache hit, NO descontamos de la cuota (ahorro real)
+    if (!cacheHit) {
+        try {
+            await db.query(
+                `UPDATE tenant_suscripciones
+                 SET tokens_consumidos = tokens_consumidos + ?
+                 WHERE tenant_id = ?`,
+                [tokensUsed, tenantId]
+            );
+        } catch (e) {
+            console.warn('Token UPDATE failed (non-fatal):', e.message);
+        }
     }
 
     try {
         await db.query(
-            `INSERT INTO token_consumo (tenant_id, usuario_id, tipo, tokens_usados, modelo)
-             VALUES (?, ?, 'chat', ?, ?)`,
-            [tenantId, userId || null, tokensUsed, modelo]
+            `INSERT INTO token_consumo
+             (tenant_id, usuario_id, tipo, tokens_usados, modelo,
+              pregunta_texto, categoria, cache_hit, tokens_ahorrados, costo_estimado_usd)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+                tenantId, userId || null, tipo, tokensUsed, modelo,
+                pregunta ? String(pregunta).slice(0, 500) : null,
+                categoria, cacheHit, tokensAhorrados, costoUSD
+            ]
         );
     } catch (e) {
-        console.warn('Token INSERT failed (non-fatal):', e.message);
+        // Fallback sin las columnas nuevas (por si la migration aún no corrió)
+        try {
+            await db.query(
+                `INSERT INTO token_consumo (tenant_id, usuario_id, tipo, tokens_usados, modelo)
+                 VALUES (?, ?, ?, ?, ?)`,
+                [tenantId, userId || null, tipo, tokensUsed, modelo]
+            );
+        } catch (e2) {
+            console.warn('Token INSERT failed (non-fatal):', e2.message);
+        }
     }
 }
 
@@ -486,13 +628,14 @@ router.get('/tokens', async (req, res) => {
 });
 
 // POST /api/chat - Send message to AI
-// Priority: KIMI_API_KEY > ANTHROPIC_API_KEY
+// Priority: DEEPSEEK_API_KEY > KIMI_API_KEY > ANTHROPIC_API_KEY
 router.post('/', async (req, res) => {
+    const deepseekKey  = process.env.DEEPSEEK_API_KEY;
     const kimiKey      = process.env.KIMI_API_KEY;
     const anthropicKey = process.env.ANTHROPIC_API_KEY;
 
-    if (!kimiKey && !anthropicKey) {
-        return res.status(500).json({ error: 'Configura KIMI_API_KEY o ANTHROPIC_API_KEY en .env' });
+    if (!deepseekKey && !kimiKey && !anthropicKey) {
+        return res.status(500).json({ error: 'Configura DEEPSEEK_API_KEY, KIMI_API_KEY o ANTHROPIC_API_KEY en .env' });
     }
 
     const { mensaje, historial, agent, contexto: contextoChat } = req.body;
@@ -512,6 +655,35 @@ router.post('/', async (req, res) => {
         preguntaTexto: mensaje,
         fuente: 'chat'
     });
+
+    // ── FAQ cache lookup ─────────────────────────────────────────────────────
+    // Si la pregunta cae en categoría cacheable (legal, mantenimiento, general)
+    // y ya existe en cache para este tenant, devolvemos sin llamar al LLM.
+    // Solo admins: los filtros por rol aplican en el contexto del LLM, no en cache.
+    const cached = await faqCacheLookup(tid, rol, mensaje, categoria);
+    if (cached) {
+        await recordTokenUsage(tid, userId, 0, 'cache', {
+            tipo: 'chat',
+            pregunta: mensaje,
+            categoria,
+            cacheHit: true,
+            tokensAhorrados: cached.tokensAhorrados,
+            costoUSD: 0
+        });
+        capturarRespuestaGenerada(req, {
+            categoria,
+            tokensUsados: 0,
+            tiempoMs: 0,
+            modelo: 'faq-cache'
+        });
+        return res.json({
+            respuesta: cached.respuesta,
+            provider: 'faq-cache',
+            tokensUsed: 0,
+            cacheHit: true,
+            tokensAhorrados: cached.tokensAhorrados
+        });
+    }
 
     // ── DallIA Actions intent detection ──────────────────────────────────────
     if (detectStockIntent(mensaje) && (rol === 'administrador' || rol === 'superadmin')) {
@@ -642,21 +814,51 @@ router.post('/', async (req, res) => {
         const systemPrompt = salvaBlock + kbBlock + rawSystemPrompt;
         const messages    = buildMessages(historial, mensaje);
 
-        const modelo = kimiKey ? 'kimi' : 'claude';
         let respuesta;
+        let modelo;
+        let usageReal = null;
         const tiempoInicio = Date.now();
-        if (kimiKey) {
+        if (deepseekKey) {
+            const result = await chatWithDeepSeek(deepseekKey, systemPrompt, messages);
+            respuesta = result.text;
+            usageReal = result.usage;
+            modelo = 'deepseek-chat';
+        } else if (kimiKey) {
             respuesta = await chatWithKimi(kimiKey, systemPrompt, messages);
+            modelo = 'moonshotai/kimi-k2';
         } else {
             respuesta = await chatWithClaude(anthropicKey, systemPrompt, messages);
+            modelo = 'claude-sonnet-4-20250514';
         }
         const tiempoMs = Date.now() - tiempoInicio;
 
         // ── Token accounting ─────────────────────────────────────────────────
-        // Rough estimate: ~4 chars per token (industry standard approximation)
-        const promptText  = systemPrompt + messages.map(m => m.content).join(' ') + String(mensaje);
-        const tokensUsed  = Math.ceil((promptText.length + respuesta.length) / 4);
-        await recordTokenUsage(tid, userId, tokensUsed, modelo);
+        // Prefer real usage from API response when available (DeepSeek); fallback a estimación.
+        let tokensUsed, inputTokens, outputTokens, cacheHitTokens = 0;
+        if (usageReal && usageReal.prompt_tokens) {
+            inputTokens    = usageReal.prompt_tokens;
+            outputTokens   = usageReal.completion_tokens || 0;
+            cacheHitTokens = usageReal.prompt_cache_hit_tokens || 0;
+            tokensUsed     = inputTokens + outputTokens;
+        } else {
+            const promptText = systemPrompt + messages.map(m => m.content).join(' ') + String(mensaje);
+            tokensUsed   = Math.ceil((promptText.length + respuesta.length) / 4);
+            inputTokens  = Math.ceil(promptText.length / 4);
+            outputTokens = Math.ceil(respuesta.length / 4);
+        }
+        const costoUSD = estimarCostoUSD(modelo, inputTokens - cacheHitTokens, outputTokens) +
+                         estimarCostoUSD(modelo, cacheHitTokens, 0, true);
+        await recordTokenUsage(tid, userId, tokensUsed, modelo, {
+            tipo: 'chat',
+            pregunta: mensaje,
+            categoria,
+            cacheHit: false,
+            tokensAhorrados: 0,
+            costoUSD
+        });
+
+        // ── Guardar en FAQ cache si la categoría es segura ───────────────────
+        faqCacheStore(tid, mensaje, respuesta, categoria, modelo, tokensUsed).catch(() => {});
 
         // 📊 Capturar evento: respuesta generada
         capturarRespuestaGenerada(req, {

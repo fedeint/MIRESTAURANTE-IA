@@ -266,6 +266,136 @@
 
     </div>
 
+    <!-- ════════════════════════════════════════════════════════════════ -->
+    <!-- CONSUMO DE TOKENS                                                -->
+    <!-- ════════════════════════════════════════════════════════════════ -->
+    <div class="card">
+      <div class="card-label">Consumo de tokens</div>
+
+      <!-- Cuota con progress bar -->
+      <div id="cuotaCard" style="margin-top: 4px;">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;">
+          <span style="font-size:13px;color:var(--text2);">Usado este mes</span>
+          <span id="cuotaPct" style="font-size:18px;font-weight:800;color:var(--dark);">—%</span>
+        </div>
+        <div style="height:10px;background:#F0F2F8;border-radius:6px;overflow:hidden;">
+          <div id="cuotaBar" style="height:100%;width:0%;background:linear-gradient(90deg,#22C55E,#F97316);transition:width .4s;"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:11px;color:var(--text2);">
+          <span id="cuotaUsado">0 tokens</span>
+          <span id="cuotaTotal">de 2M</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Desglose por fuente -->
+    <div class="card">
+      <div class="card-label">¿A dónde se van los tokens? (30 días)</div>
+      <div id="desgloseList" style="display:flex;flex-direction:column;gap:8px;margin-top:4px;">
+        <div style="color:var(--text2);font-size:13px;text-align:center;padding:12px 0;">Cargando…</div>
+      </div>
+    </div>
+
+    <!-- Ahorro por cache -->
+    <div class="card" style="background:linear-gradient(135deg,#ECFDF5,#D1FAE5);">
+      <div class="card-label" style="color:#065F46;">Ahorro por cache inteligente</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:6px;">
+        <div>
+          <div id="ahorroTokens" style="font-size:22px;font-weight:800;color:#065F46;">0</div>
+          <div style="font-size:11px;color:#047857;font-weight:600;">tokens ahorrados</div>
+        </div>
+        <div>
+          <div id="ahorroLlamadas" style="font-size:22px;font-weight:800;color:#065F46;">0</div>
+          <div style="font-size:11px;color:#047857;font-weight:600;">preguntas en cache</div>
+        </div>
+      </div>
+      <div id="ahorroCosto" style="margin-top:10px;font-size:12px;color:#047857;font-weight:600;">
+        Equivalente: $0.00 USD
+      </div>
+    </div>
+
+    <!-- Top preguntas -->
+    <div class="card">
+      <div class="card-label">Top preguntas frecuentes (30 días)</div>
+      <div id="topPreguntas" style="display:flex;flex-direction:column;gap:6px;margin-top:4px;">
+        <div style="color:var(--text2);font-size:13px;text-align:center;padding:12px 0;">Cargando…</div>
+      </div>
+    </div>
+
+    <!-- Botón limpiar cache -->
+    <div class="card">
+      <div class="card-label">Mantenimiento</div>
+      <button onclick="limpiarFaqCache()"
+        style="width:100%;padding:12px;background:#FEF2F2;color:#B91C1C;border:1.5px solid #FCA5A5;border-radius:12px;font-family:'DM Sans',sans-serif;font-weight:600;font-size:14px;cursor:pointer;">
+        Limpiar cache de preguntas
+      </button>
+      <div class="name-hint" style="margin-top:8px;">
+        Borra las respuestas guardadas. Útil cuando cambias información del negocio.
+      </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════════════ -->
+    <!-- AUTOMATIZACIONES                                                  -->
+    <!-- ════════════════════════════════════════════════════════════════ -->
+    <div class="card">
+      <div class="card-label">Automatizaciones (consumen tokens)</div>
+
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-title">Resumen diario al cerrar</div>
+          <div class="toggle-sub">DalIA redacta el cierre del día automático</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="auto_resumen" onchange="guardarAutomatizacion('resumen_diario_activo', this.checked)">
+          <div class="toggle-track"><div class="toggle-dot"></div></div>
+        </label>
+      </div>
+
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-title">Alerta de vencimientos</div>
+          <div class="toggle-sub">Avisa cuando insumos están por vencer</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="auto_vencimiento" onchange="guardarAutomatizacion('vencimiento_activo', this.checked)">
+          <div class="toggle-track"><div class="toggle-dot"></div></div>
+        </label>
+      </div>
+
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-title">Recordatorio cerrar caja</div>
+          <div class="toggle-sub">Avisa si caja quedó abierta al final del día</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="auto_caja" onchange="guardarAutomatizacion('recordatorio_caja_activo', this.checked)">
+          <div class="toggle-track"><div class="toggle-dot"></div></div>
+        </label>
+      </div>
+
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-title">Celebrar meta alcanzada</div>
+          <div class="toggle-sub">DalIA celebra cuando cumples tu meta</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="auto_meta" onchange="guardarAutomatizacion('meta_alcanzada_activo', this.checked)">
+          <div class="toggle-track"><div class="toggle-dot"></div></div>
+        </label>
+      </div>
+
+      <div class="toggle-row">
+        <div class="toggle-info">
+          <div class="toggle-title">Pedido a proveedor automático</div>
+          <div class="toggle-sub">Envía pedidos sin aprobación manual (riesgoso)</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="auto_pedido" onchange="guardarAutomatizacion('enviar_pedido_auto', this.checked)">
+          <div class="toggle-track"><div class="toggle-dot"></div></div>
+        </label>
+      </div>
+    </div>
+
   </div>
 
   <!-- Bottom Nav -->
@@ -326,6 +456,140 @@
       }
     } catch(e) { alert('Error al guardar'); }
   }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // Panel de consumo de tokens
+  // ═══════════════════════════════════════════════════════════════════
+  const ETIQUETAS_TIPO = {
+    chat: '💬 Chat conversacional',
+    action: '⚡ Acciones propuestas',
+    resumen_dia: '📊 Resumen diario',
+    vencimiento: '⏰ Alertas vencimiento',
+    recordatorio_caja: '💰 Recordatorios caja',
+    meta_alcanzada: '🎯 Meta alcanzada',
+    onboarding: '🚀 Onboarding',
+    sostac: '🐬 Brief SOSTAC',
+    cache: '💾 Cache (sin costo)'
+  };
+
+  function fmtNum(n) {
+    n = Number(n) || 0;
+    if (n >= 1_000_000) return (n / 1_000_000).toFixed(2) + 'M';
+    if (n >= 1_000)     return (n / 1_000).toFixed(1) + 'k';
+    return String(n);
+  }
+
+  async function cargarStats() {
+    try {
+      const r = await fetch('/config/dallia/stats');
+      const data = await r.json();
+
+      // Cuota
+      const pct = data.cuota.porcentaje || 0;
+      document.getElementById('cuotaPct').textContent = pct + '%';
+      document.getElementById('cuotaBar').style.width = Math.min(pct, 100) + '%';
+      document.getElementById('cuotaUsado').textContent = fmtNum(data.cuota.usado) + ' tokens';
+      document.getElementById('cuotaTotal').textContent = 'de ' + fmtNum(data.cuota.total);
+
+      // Desglose
+      const $d = document.getElementById('desgloseList');
+      if (!data.desglose || data.desglose.length === 0) {
+        $d.innerHTML = '<div style="color:var(--text2);font-size:13px;text-align:center;padding:12px 0;">Sin consumo este mes</div>';
+      } else {
+        const max = Math.max(...data.desglose.map(d => Number(d.tokens) || 0));
+        $d.innerHTML = data.desglose.map(d => {
+          const w = max > 0 ? Math.max(8, (Number(d.tokens) / max) * 100) : 0;
+          const costo = Number(d.costo || 0).toFixed(4);
+          return `
+            <div>
+              <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px;">
+                <span style="font-weight:600;color:var(--dark);">${ETIQUETAS_TIPO[d.tipo] || d.tipo}</span>
+                <span style="color:var(--text2);">${fmtNum(d.tokens)} · $${costo}</span>
+              </div>
+              <div style="height:6px;background:#F0F2F8;border-radius:4px;overflow:hidden;">
+                <div style="height:100%;width:${w}%;background:linear-gradient(90deg,#ef520f,#df2c05);"></div>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      // Ahorro
+      document.getElementById('ahorroTokens').textContent = fmtNum(data.ahorro.tokens);
+      document.getElementById('ahorroLlamadas').textContent = fmtNum(data.ahorro.llamadas);
+      document.getElementById('ahorroCosto').textContent = 'Equivalente: $' + Number(data.ahorro.costo).toFixed(4) + ' USD';
+    } catch (e) {
+      console.error('stats fail', e);
+    }
+  }
+
+  async function cargarTopPreguntas() {
+    try {
+      const r = await fetch('/config/dallia/top-preguntas');
+      const data = await r.json();
+      const $p = document.getElementById('topPreguntas');
+      if (!data.preguntas || data.preguntas.length === 0) {
+        $p.innerHTML = '<div style="color:var(--text2);font-size:13px;text-align:center;padding:12px 0;">Aún sin preguntas registradas</div>';
+        return;
+      }
+      $p.innerHTML = data.preguntas.slice(0, 10).map((p, i) => `
+        <div style="padding:8px 10px;background:#F8F9FB;border-radius:8px;">
+          <div style="display:flex;justify-content:space-between;align-items:baseline;">
+            <span style="font-size:11px;color:var(--text2);font-weight:600;">#${i+1} · ${p.categoria || 'general'}</span>
+            <span style="font-size:11px;color:var(--orange);font-weight:700;">${p.veces}×</span>
+          </div>
+          <div style="font-size:13px;color:var(--dark);margin-top:3px;line-height:1.3;">
+            ${(p.pregunta_texto || '').slice(0, 80)}${(p.pregunta_texto || '').length > 80 ? '…' : ''}
+          </div>
+        </div>
+      `).join('');
+    } catch (e) {
+      console.error('top-preguntas fail', e);
+    }
+  }
+
+  async function cargarAutomatizaciones() {
+    try {
+      const r = await fetch('/config/dallia/automatizaciones');
+      const { automatizaciones: a } = await r.json();
+      const map = {
+        auto_resumen: 'resumen_diario_activo',
+        auto_vencimiento: 'vencimiento_activo',
+        auto_caja: 'recordatorio_caja_activo',
+        auto_meta: 'meta_alcanzada_activo',
+        auto_pedido: 'enviar_pedido_auto'
+      };
+      Object.entries(map).forEach(([id, key]) => {
+        const el = document.getElementById(id);
+        if (el) el.checked = !!a[key];
+      });
+    } catch (e) { console.error('autom fail', e); }
+  }
+
+  async function guardarAutomatizacion(key, valor) {
+    try {
+      await fetch('/config/dallia/automatizaciones', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ [key]: valor })
+      });
+    } catch (e) { alert('Error al guardar'); }
+  }
+
+  async function limpiarFaqCache() {
+    if (!confirm('¿Borrar el cache de preguntas? Las próximas consultas se generarán de nuevo con IA.')) return;
+    try {
+      const r = await fetch('/config/dallia/faq-cache/limpiar', { method: 'POST' });
+      const d = await r.json();
+      alert('Cache limpiada (' + (d.eliminados || 0) + ' entradas).');
+      cargarStats();
+    } catch (e) { alert('Error al limpiar cache'); }
+  }
+
+  // Init
+  cargarStats();
+  cargarTopPreguntas();
+  cargarAutomatizaciones();
 </script>
 </body>
 </html>

@@ -9,6 +9,8 @@ Resumen completo de la inteligencia artificial del proyecto. DalIA es la asisten
 3. [**tareas-y-acciones.md**](./tareas-y-acciones.md) — Qué puede responder, qué puede **ejecutar** (DalIA Actions), detectores de intención.
 4. [**roles-y-permisos.md**](./roles-y-permisos.md) — Qué ve/no ve cada rol (administrador, mesero, cocinero, cajero).
 5. [**agentes.md**](./agentes.md) — Salva (caja), Delfino (SOSTAC), y roadmap multi-agente.
+6. [**catalogo-preguntas.md**](./catalogo-preguntas.md) — 100+ preguntas de ejemplo por categoría, rol e intents ejecutables.
+7. [**panel-configuracion.md**](./panel-configuracion.md) — Panel `/config/dallia`: medidor de tokens, desglose por fuente, FAQ cache, automatizaciones por tenant.
 
 ## En una frase
 

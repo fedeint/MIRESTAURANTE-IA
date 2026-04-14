@@ -1,14 +1,23 @@
 # Arquitectura técnica de la IA
 
-## Proveedores LLM (en `lib/llm.js`)
+## Proveedores LLM (en `lib/llm.js` y `routes/chat.js`)
 
-Prioridad de uso definida por variables de entorno:
+Prioridad de uso (primera que exista gana):
 
-1. **`KIMI_API_KEY`** → Moonshot Kimi (`moonshot-v1-8k`) vía `api.moonshot.cn`
-   También hay una variante vía OpenRouter (`moonshotai/kimi-k2`) en `routes/chat.js:chatWithKimi()`
-2. **`ANTHROPIC_API_KEY`** → Claude (`claude-sonnet-4-20250514`)
+1. **`DEEPSEEK_API_KEY`** → DeepSeek V3 (`deepseek-chat`) — **default actual**, ~4x más barato que Kimi
+2. **`KIMI_API_KEY`** → Moonshot Kimi (`moonshot-v1-8k` directo, o `moonshotai/kimi-k2` vía OpenRouter en chat.js)
+3. **`ANTHROPIC_API_KEY`** → Claude (`claude-sonnet-4-20250514`)
 
-Si ninguna está configurada, el chat responde `500: Configura KIMI_API_KEY o ANTHROPIC_API_KEY`.
+El **tono peruano** está forzado en el system prompt (bloque `# ESTILO PERUANO OBLIGATORIO` en `chat.js:131+`), así que cualquier modelo lo replica. No dependemos del fine-tuning del modelo.
+
+### Precios (USD/M tokens)
+| Modelo | Input | Output | Cache hit |
+|---|---|---|---|
+| deepseek-chat | $0.28 | $0.42 | $0.028 (10%) |
+| moonshot-v1-8k | $0.60 | $2.50 | — |
+| claude-sonnet-4 | $3.00 | $15.00 | $0.30 (10%) |
+
+Constantes en `lib/llm.js:PRICING`.
 
 ## Flujo de una consulta al chat
 
