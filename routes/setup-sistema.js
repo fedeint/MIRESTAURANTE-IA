@@ -76,9 +76,7 @@ router.get('/', async (req, res) => {
     });
   } catch (err) {
     console.error('[setup-sistema GET /]', err);
-    return res.status(500).send(
-      `Error cargando el setup: ${err.code || ''} ${err.message || err}`.trim()
-    );
+    return res.status(500).send('Error cargando el setup');
   }
 });
 
