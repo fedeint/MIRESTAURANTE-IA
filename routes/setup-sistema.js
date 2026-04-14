@@ -17,66 +17,106 @@ router.get('/', async (req, res) => {
     if (!tenantId) return res.redirect('/login');
 
     const [[tenant]] = await db.query(
-      `SELECT nombre, setup_dia1_ok, setup_dia2_ok, setup_dia3_ok,
-              setup_completado, num_personal, regimen_tributario,
-              tiene_mesas, num_mesas, perfil_operativo
-       FROM tenants WHERE id = ?`,
+      'SELECT setup_completado FROM tenants WHERE id = ?',
       [tenantId]
     );
-
     if (!tenant) return res.redirect('/login');
-
     if (tenant.setup_completado) return res.redirect('/');
 
-    const perfil = typeof tenant.perfil_operativo === 'string'
-      ? JSON.parse(tenant.perfil_operativo || '{}')
-      : (tenant.perfil_operativo || {});
-
-    // productos count
-    const [[{ productos_count }]] = await db.query(
-      'SELECT COUNT(*) AS productos_count FROM productos WHERE tenant_id = ? AND activo = true',
-      [tenantId]
-    );
-
-    // distinct categorias
-    const [catRows] = await db.query(
-      'SELECT DISTINCT categoria FROM productos WHERE tenant_id = ? AND categoria IS NOT NULL',
-      [tenantId]
-    );
-    const categorias = catRows.map(r => r.categoria);
-
-    // insumos count
-    let insumos_count = 0;
-    try {
-      const [[{ cnt }]] = await db.query(
-        'SELECT COUNT(*) AS cnt FROM almacen_ingredientes WHERE tenant_id = ?',
-        [tenantId]
-      );
-      insumos_count = cnt || 0;
-    } catch (_) {
-      // table may not exist yet
+    // Detect done state per step from real tables (best-effort)
+    async function tableQuery(sql, params, fallback) {
+      try {
+        const [[row]] = await db.query(sql, params);
+        return row;
+      } catch (_) { return fallback; }
     }
 
-    return res.render('setup-sistema', {
-      user:    req.session.user,
-      tenant:  {
-        nombre:              tenant.nombre,
-        setup_dia1_ok:       !!tenant.setup_dia1_ok,
-        setup_dia2_ok:       !!tenant.setup_dia2_ok,
-        setup_dia3_ok:       !!tenant.setup_dia3_ok,
-        num_personal:        tenant.num_personal,
-        regimen_tributario:  tenant.regimen_tributario,
-        tiene_mesas:         !!tenant.tiene_mesas,
-        num_mesas:           tenant.num_mesas || 0,
-        perfil_operativo:    perfil
+    const dalliaRow = await tableQuery(
+      'SELECT 1 AS ok FROM tenant_dallia_config WHERE tenant_id = ? LIMIT 1',
+      [tenantId], null
+    );
+    const alertasRow = await tableQuery(
+      'SELECT 1 AS ok FROM tenant_alertas_config WHERE tenant_id = ? LIMIT 1',
+      [tenantId], null
+    );
+    const modulosRow = await tableQuery(
+      'SELECT 1 AS ok FROM tenant_modulos_config WHERE tenant_id = ? LIMIT 1',
+      [tenantId], null
+    );
+    const horariosRow = await tableQuery(
+      'SELECT 1 AS ok FROM tenant_horarios_config WHERE tenant_id = ? LIMIT 1',
+      [tenantId], null
+    );
+
+    const steps = [
+      {
+        key: 'dallia',
+        title: 'Personalizar DalIA',
+        sub: 'Nombre, tono, personalidad y capacidades',
+        icon: '🤖', ic: 'ic-orange',
+        href: '/config/dallia',
+        done: !!dalliaRow
       },
-      productos_count: parseInt(productos_count) || 0,
-      categorias,
-      insumos_count
+      {
+        key: 'alertas',
+        title: 'Alertas y notificaciones',
+        sub: 'Qué te avisa DalIA y por qué canal',
+        icon: '🔔', ic: 'ic-yellow',
+        href: '/config/alertas',
+        done: !!alertasRow
+      },
+      {
+        key: 'modulos',
+        title: 'Módulos del sistema',
+        sub: 'Activa solo los que usarás',
+        icon: '🧩', ic: 'ic-blue',
+        href: '/config/modulos',
+        done: !!modulosRow
+      },
+      {
+        key: 'horarios',
+        title: 'Horarios de operación',
+        sub: 'Apertura, cierre y días laborales',
+        icon: '🕐', ic: 'ic-green',
+        href: '/config/horarios',
+        done: !!horariosRow
+      },
+      {
+        key: 'tour',
+        title: 'Onboarding tour',
+        sub: 'Conoce el sistema en 2 minutos',
+        icon: '🎓', ic: 'ic-purple',
+        href: '/config/tour',
+        done: false
+      }
+    ];
+
+    const done = steps.filter(s => s.done).length;
+    const total = steps.length;
+    const pct = total ? Math.round((done / total) * 100) : 0;
+
+    return res.render('setup-sistema', {
+      user: req.session.user,
+      steps,
+      progress: { done, total, pct }
     });
   } catch (err) {
     console.error('[setup-sistema GET /]', err);
     return res.status(500).send('Error cargando el setup');
+  }
+});
+
+// ─── POST /api/completar ─────────────────────────────────────────────────────
+// Marks setup as completed (whether user finished all 5 steps or chose to skip).
+router.post('/api/completar', async (req, res) => {
+  try {
+    const tenantId = req.session?.user?.tenant_id;
+    if (!tenantId) return res.status(401).json({ error: 'No autenticado' });
+    await db.query('UPDATE tenants SET setup_completado = true WHERE id = ?', [tenantId]);
+    return res.json({ ok: true, redirect: '/' });
+  } catch (err) {
+    console.error('[setup-sistema POST /api/completar]', err);
+    return res.status(500).json({ error: 'Error completando setup' });
   }
 });
 
