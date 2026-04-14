@@ -177,3 +177,64 @@ Estas van al allowlist `ALLOWED_DESKTOP_ORPHANS` en `tests/view-variants.test.js
 - Naranja activo: gradiente 8-stop `#fefbf5` → `#fdb75e` → `#fd9931` → `#ef520f` → `#df2c05` → `#e13809` → `#fba251` → `#ee6d2d`
 
 **Diseno PWA:** Los templates PWA usan DM Sans, max-width 480px centrado, bottom nav, safe-area insets. No tocar su logica cuando hagas cambios al desktop y viceversa.
+
+## Multi-Tenant Isolation
+
+### Regla 1 — Tenant nace vacío
+Cuando se crea un tenant nuevo, lo único que se inserta automáticamente es la fila en `tenants`, el usuario admin y la suscripción. **Prohibido** auto-poblar productos, mesas, almacén, recetas, clientes, proveedores, ni ninguna tabla de negocio.
+
+### Regla 2 — Toda query a tabla de negocio DEBE filtrar por tenant_id
+
+**Tablas de negocio** (requieren `WHERE tenant_id = ?`):
+```
+productos, mesas, pedidos, pedido_items, pedido_envios,
+caja_movimientos, caja_aperturas, caja_cierres, cajas,
+almacen_ingredientes, almacen_lotes, almacen_movimientos,
+recetas, receta_items,
+usuarios (excepto rol='superadmin'),
+clientes, proveedores, cortesias,
+facturas, factura_items, descuentos_aplicados, promociones,
+metas_diarias, gastos, deliveries,
+reservas, eventos, personal_eventual,
+configuracion_impresion, config_sunat, config_pwa,
+sostac_briefs, solicitudes_registro,
+mesero_asignaciones, firma_documentos,
+dallia_actions_log, dallia_preferencias,
+audit_log (filtrar por tenant_id cuando aplique)
+```
+
+**Tablas globales** (NO requieren filtro tenant):
+```
+tenants, tenant_suscripciones, planes,
+ip_blacklist, ip_whitelist, ataques_log,
+request_counts, login_attempts,
+dallia_actions (catálogo), sessions, migrations_history
+```
+
+**Patrón obligatorio:**
+```js
+// ✅ Correcto
+const tenantId = req.tenantId || req.session?.user?.tenant_id;
+if (!tenantId) return res.status(403).json({ error: 'tenant no resuelto' });
+const [rows] = await db.query('SELECT ... FROM productos WHERE tenant_id = ?', [tenantId]);
+
+// ❌ Prohibido
+const [rows] = await db.query('SELECT * FROM productos');
+```
+
+### Regla 3 — Todo INSERT a tabla de negocio DEBE incluir tenant_id
+```js
+// ✅
+await db.query('INSERT INTO productos (tenant_id, nombre, precio) VALUES (?,?,?)', [tenantId, nombre, precio]);
+// ❌
+await db.query('INSERT INTO productos (nombre, precio) VALUES (?,?)', [nombre, precio]);
+```
+
+### Regla 4 — Scripts en `scripts/` no corren en producción
+Todo script que haga INSERT/UPDATE/DELETE debe empezar con el guard:
+```js
+if (process.env.NODE_ENV === 'production' && !process.argv.includes('--force-prod')) {
+  console.error('❌ Bloqueado en producción.'); process.exit(1);
+}
+```
+Scripts destructivos (`load-demo-data.js`, `seed-*.js`) también deben llevar header `// ⚠️ SCRIPT DE DESARROLLO — NO EJECUTAR EN PRODUCCIÓN`.
