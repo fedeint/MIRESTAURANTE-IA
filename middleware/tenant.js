@@ -88,8 +88,42 @@ function attachTenant(req, res, next) {
   const userTenantId = req.session?.user?.tenant_id;
   const userRole = req.session?.user?.rol;
 
-  // Superadmin: siempre tenant 1 con enterprise
+  const slug = extractSlugFromPath(req.path);
+
+  // Superadmin: si abre una URL con slug de tenant, procesarla como tenant path.
+  // Si no hay slug (ej. /superadmin/*, /home, /login), default a tenant 1 enterprise.
   if (userRole === 'superadmin') {
+    if (slug) {
+      // Intentar resolver slug como tenant — si existe, el superadmin opera en ese tenant
+      return resolveTenantBySlug(slug).then(tenant => {
+        if (tenant) {
+          setTenantOnReq(req, res, tenant);
+          res.locals.tenantSlug = slug;
+          res.locals.isTenantPath = true;
+        } else {
+          // Slug no existe: caer al default superadmin (tenant 1)
+          req.tenantId = 1;
+          req.tenant = { id: 1, plan: 'enterprise', estado_trial: 'activo', activo: true };
+          req.planLimits = PLAN_LIMITS.enterprise;
+          res.locals.tenantId = 1;
+          res.locals.tenant = req.tenant;
+          res.locals.planLimits = req.planLimits;
+          res.locals.tenantSlug = null;
+          res.locals.isTenantPath = false;
+        }
+        next();
+      }).catch(() => {
+        req.tenantId = 1;
+        req.tenant = { id: 1, plan: 'enterprise', estado_trial: 'activo', activo: true };
+        req.planLimits = PLAN_LIMITS.enterprise;
+        res.locals.tenantId = 1;
+        res.locals.tenant = req.tenant;
+        res.locals.planLimits = req.planLimits;
+        res.locals.tenantSlug = null;
+        res.locals.isTenantPath = false;
+        next();
+      });
+    }
     req.tenantId = 1;
     req.tenant = { id: 1, plan: 'enterprise', estado_trial: 'activo', activo: true };
     req.planLimits = PLAN_LIMITS.enterprise;
@@ -100,8 +134,6 @@ function attachTenant(req, res, next) {
     res.locals.isTenantPath = false;
     return next();
   }
-
-  const slug = extractSlugFromPath(req.path);
 
   if (slug) {
     // Path-based tenant: mirestconia.com/:slug/...
