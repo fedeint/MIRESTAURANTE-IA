@@ -1,32 +1,118 @@
+// routes/tts.js
+// DalIA voice — Gemini 2.5 Flash TTS via AI Studio.
+// Devuelve WAV (PCM 24kHz wrap) para reproducción nativa en navegador.
+
+'use strict';
+
 const express = require('express');
 const router = express.Router();
-const { EdgeTTS } = require('@andresaya/edge-tts');
 
-// POST /api/tts - Generate speech audio from text
+const GEMINI_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent';
+const DEFAULT_VOICE = 'Aoede'; // femenina suave — elegida para DalIA
+const ALLOWED_VOICES = new Set([
+    'Aoede','Kore','Puck','Charon','Fenrir','Leda','Orus','Zephyr',
+    'Callirrhoe','Autonoe','Enceladus','Iapetus','Umbriel','Algieba',
+    'Despina','Erinome','Algenib','Rasalgethi','Laomedeia','Achernar',
+    'Alnilam','Schedar','Gacrux','Pulcherrima','Achird','Zubenelgenubi',
+    'Vindemiatrix','Sadachbia','Sadaltager','Sulafat'
+]);
+
+/**
+ * Wrap raw PCM (24kHz, 16-bit mono LE) as a WAV para que <audio> lo reproduzca directo.
+ */
+function pcmToWav(pcmBuffer, sampleRate = 24000, numChannels = 1, bitDepth = 16) {
+    const byteRate   = sampleRate * numChannels * bitDepth / 8;
+    const blockAlign = numChannels * bitDepth / 8;
+    const dataSize   = pcmBuffer.length;
+
+    const header = Buffer.alloc(44);
+    header.write('RIFF', 0);
+    header.writeUInt32LE(36 + dataSize, 4);
+    header.write('WAVE', 8);
+    header.write('fmt ', 12);
+    header.writeUInt32LE(16, 16);            // fmt chunk size
+    header.writeUInt16LE(1, 20);              // PCM
+    header.writeUInt16LE(numChannels, 22);
+    header.writeUInt32LE(sampleRate, 24);
+    header.writeUInt32LE(byteRate, 28);
+    header.writeUInt16LE(blockAlign, 32);
+    header.writeUInt16LE(bitDepth, 34);
+    header.write('data', 36);
+    header.writeUInt32LE(dataSize, 40);
+
+    return Buffer.concat([header, pcmBuffer]);
+}
+
+// POST /api/tts — genera audio de un texto con la voz de DalIA
 router.post('/', async (req, res) => {
+    const apiKey = process.env.GOOGLE_AI_API_KEY || process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+        return res.status(500).json({ error: 'Configura GOOGLE_AI_API_KEY en .env' });
+    }
+
     const { texto, voz } = req.body;
     if (!texto || !String(texto).trim()) {
         return res.status(400).json({ error: 'Texto requerido' });
     }
 
+    const voiceName = ALLOWED_VOICES.has(voz) ? voz : DEFAULT_VOICE;
+    const textoLimpio = String(texto).trim().slice(0, 5000); // hard cap
+
     try {
-        const tts = new EdgeTTS();
-        await tts.synthesize(String(texto).trim(), voz || 'es-MX-DaliaNeural', {
-            rate: '+5%',
-            pitch: '+10Hz'
+        const resp = await fetch(`${GEMINI_ENDPOINT}?key=${apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: textoLimpio }] }],
+                generationConfig: {
+                    responseModalities: ['AUDIO'],
+                    speechConfig: {
+                        voiceConfig: {
+                            prebuiltVoiceConfig: { voiceName }
+                        }
+                    }
+                }
+            })
         });
 
-        const audioBuffer = tts.toBuffer();
+        const data = await resp.json();
+        if (!resp.ok) {
+            console.error('[TTS] Gemini error:', data);
+            return res.status(502).json({
+                error: data?.error?.message || 'Gemini TTS error',
+                status: resp.status
+            });
+        }
+
+        const part = data?.candidates?.[0]?.content?.parts?.[0];
+        const b64  = part?.inlineData?.data;
+        if (!b64) {
+            return res.status(502).json({ error: 'Gemini TTS no devolvió audio' });
+        }
+
+        const pcm = Buffer.from(b64, 'base64');
+        const wav = pcmToWav(pcm);
+
         res.set({
-            'Content-Type': 'audio/mpeg',
-            'Content-Length': audioBuffer.length,
-            'Cache-Control': 'public, max-age=3600'
+            'Content-Type': 'audio/wav',
+            'Content-Length': wav.length,
+            'Cache-Control': 'private, max-age=3600',
+            'X-TTS-Voice': voiceName,
+            'X-TTS-Provider': 'gemini-2.5-flash-tts'
         });
-        res.send(audioBuffer);
-    } catch (error) {
-        console.error('Error TTS:', error);
+        res.send(wav);
+    } catch (err) {
+        console.error('[TTS] fallo:', err);
         res.status(500).json({ error: 'Error al generar audio' });
     }
+});
+
+// GET /api/tts/voices — lista de voces disponibles (para UI)
+router.get('/voices', (req, res) => {
+    res.json({
+        default: DEFAULT_VOICE,
+        voices: Array.from(ALLOWED_VOICES).sort()
+    });
 });
 
 module.exports = router;

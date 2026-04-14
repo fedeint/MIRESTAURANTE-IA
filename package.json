@@ -34,7 +34,6 @@
     "test": "node --test tests/dallia-actions.test.js tests/dallia-actions-enviar-pedido-proveedor.test.js tests/dallia-actions-nuevos.test.js tests/descuento.test.js"
   },
   "dependencies": {
-    "@andresaya/edge-tts": "^1.8.0",
     "@anthropic-ai/sdk": "^0.79.0",
     "@simplewebauthn/server": "^13.3.0",
     "@supabase/supabase-js": "^2.99.3",

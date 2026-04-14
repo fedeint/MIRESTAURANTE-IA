@@ -19,6 +19,22 @@ El **tono peruano** está forzado en el system prompt (bloque `# ESTILO PERUANO 
 
 Constantes en `lib/llm.js:PRICING`.
 
+## Voz (TTS) — Gemini 2.5 Flash via AI Studio
+
+Endpoint: **`POST /api/tts`** en `routes/tts.js`.
+
+- **Proveedor**: Google AI Studio (Gemini 2.5 Flash TTS Preview)
+- **Voz default**: **Aoede** (femenina suave, elegida para DalIA)
+- **Voces disponibles**: 30 prebuilt (Kore, Puck, Charon, Fenrir, Leda, Aoede, Zephyr, etc.)
+- **Formato**: recibe PCM 24kHz 16-bit mono, lo wrap como WAV → navegador lo reproduce con `<audio>`
+- **Env var**: `GOOGLE_AI_API_KEY` (la misma sirve para texto Gemini si algún día se migra)
+- **Free tier**: 500 req/día Gemini 2.5 Flash — suficiente para 99% de restaurantes
+- **Paid tier**: ~$0.50/M input + $10/M audio output (~$1.50/mes perfil mediano)
+- **Request body**: `{ texto: string, voz?: string }`
+- **Response**: `audio/wav` binary
+
+Listar voces disponibles: `GET /api/tts/voices`.
+
 ## Flujo de una consulta al chat
 
 ```
