@@ -1298,13 +1298,16 @@ async function loadDalliaConfig(tid) {
         const cfg = row?.config_json
             ? (typeof row.config_json === 'string' ? JSON.parse(row.config_json) : row.config_json)
             : {};
-        return {
+        const result = {
             nombre:       cfg.nombre       || 'DalIA',
             voz:          cfg.voz          || 'Aoede',
             trato:        cfg.trato        || 'tu',
             personalidad: cfg.personalidad || 'amigable',
         };
-    } catch (_) {
+        console.log(`[loadDalliaConfig] tid=${tid} row=${row ? 'found' : 'NOT_FOUND'} nombre="${result.nombre}" raw_nombre="${cfg.nombre}"`);
+        return result;
+    } catch (err) {
+        console.error(`[loadDalliaConfig] tid=${tid} ERROR:`, err.message);
         return { nombre: 'DalIA', voz: 'Aoede', trato: 'tu', personalidad: 'amigable' };
     }
 }
