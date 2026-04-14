@@ -5,7 +5,10 @@ const db = require('../db');
 // GET /clientes - Mostrar página de clientes
 router.get('/', async (req, res) => {
     try {
-        const [clientes] = await db.query('SELECT * FROM clientes ORDER BY nombre');
+        const tenantId = req.tenantId || req.session?.user?.tenant_id;
+        if (!tenantId) return res.status(403).render('error', { error: { message: 'tenant no resuelto' } });
+
+        const [clientes] = await db.query('SELECT * FROM clientes WHERE tenant_id = ? ORDER BY nombre', [tenantId]);
         res.render('clientes', { clientes: clientes || [] });
     } catch (error) {
         console.error('Error al obtener clientes:', error);
@@ -21,15 +24,18 @@ router.get('/', async (req, res) => {
 // GET /clientes/buscar - Buscar clientes
 router.get('/buscar', async (req, res) => {
     try {
+        const tenantId = req.tenantId || req.session?.user?.tenant_id;
+        if (!tenantId) return res.status(403).json({ error: 'tenant no resuelto' });
+
         const query = req.query.q || '';
         const sql = `
-            SELECT * FROM clientes 
-            WHERE nombre LIKE ? OR telefono LIKE ?
+            SELECT * FROM clientes
+            WHERE tenant_id = ? AND (nombre LIKE ? OR telefono LIKE ?)
             ORDER BY nombre
             LIMIT 10
         `;
         const searchTerm = `%${query}%`;
-        const [clientes] = await db.query(sql, [searchTerm, searchTerm]);
+        const [clientes] = await db.query(sql, [tenantId, searchTerm, searchTerm]);
         res.json(clientes);
     } catch (error) {
         console.error('Error al buscar clientes:', error);
@@ -40,7 +46,10 @@ router.get('/buscar', async (req, res) => {
 // GET /clientes/:id - Obtener un cliente específico
 router.get('/:id', async (req, res) => {
     try {
-        const [clientes] = await db.query('SELECT * FROM clientes WHERE id = ?', [req.params.id]);
+        const tenantId = req.tenantId || req.session?.user?.tenant_id;
+        if (!tenantId) return res.status(403).json({ error: 'tenant no resuelto' });
+
+        const [clientes] = await db.query('SELECT * FROM clientes WHERE id = ? AND tenant_id = ?', [req.params.id, tenantId]);
         const cliente = clientes[0];
         if (!cliente) {
             return res.status(404).json({ error: 'Cliente no encontrado' });
@@ -55,6 +64,9 @@ router.get('/:id', async (req, res) => {
 // POST /clientes - Crear nuevo cliente
 router.post('/', async (req, res) => {
     try {
+        const tenantId = req.tenantId || req.session?.user?.tenant_id;
+        if (!tenantId) return res.status(403).json({ error: 'tenant no resuelto' });
+
         console.log('Datos recibidos:', req.body);
         const { nombre, direccion, telefono, tipo_documento, numero_documento, email } = req.body;
 
@@ -63,8 +75,8 @@ router.post('/', async (req, res) => {
         }
 
         const [result] = await db.query(
-            'INSERT INTO clientes (nombre, direccion, telefono, tipo_documento, numero_documento, email) VALUES (?, ?, ?, ?, ?, ?) RETURNING id',
-            [nombre, direccion || null, telefono || null, tipo_documento || 'DNI', numero_documento || null, email || null]
+            'INSERT INTO clientes (tenant_id, nombre, direccion, telefono, tipo_documento, numero_documento, email) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id',
+            [tenantId, nombre, direccion || null, telefono || null, tipo_documento || 'DNI', numero_documento || null, email || null]
         );
 
         console.log('Cliente creado:', result);
@@ -82,6 +94,9 @@ router.post('/', async (req, res) => {
 // PUT /clientes/:id - Actualizar cliente
 router.put('/:id', async (req, res) => {
     try {
+        const tenantId = req.tenantId || req.session?.user?.tenant_id;
+        if (!tenantId) return res.status(403).json({ error: 'tenant no resuelto' });
+
         const { nombre, direccion, telefono, tipo_documento, numero_documento, email } = req.body;
 
         if (!nombre) {
@@ -89,8 +104,8 @@ router.put('/:id', async (req, res) => {
         }
 
         const [result] = await db.query(
-            'UPDATE clientes SET nombre = ?, direccion = ?, telefono = ?, tipo_documento = ?, numero_documento = ?, email = ? WHERE id = ?',
-            [nombre, direccion || null, telefono || null, tipo_documento || 'DNI', numero_documento || null, email || null, req.params.id]
+            'UPDATE clientes SET nombre = ?, direccion = ?, telefono = ?, tipo_documento = ?, numero_documento = ?, email = ? WHERE id = ? AND tenant_id = ?',
+            [nombre, direccion || null, telefono || null, tipo_documento || 'DNI', numero_documento || null, email || null, req.params.id, tenantId]
         );
 
         if ((result?.affectedRows || 0) === 0) {
@@ -107,7 +122,10 @@ router.put('/:id', async (req, res) => {
 // DELETE /clientes/:id - Eliminar cliente
 router.delete('/:id', async (req, res) => {
     try {
-        const [result] = await db.query('DELETE FROM clientes WHERE id = ?', [req.params.id]);
+        const tenantId = req.tenantId || req.session?.user?.tenant_id;
+        if (!tenantId) return res.status(403).json({ error: 'tenant no resuelto' });
+
+        const [result] = await db.query('DELETE FROM clientes WHERE id = ? AND tenant_id = ?', [req.params.id, tenantId]);
 
         if ((result?.affectedRows || 0) === 0) {
             return res.status(404).json({ error: 'Cliente no encontrado' });
@@ -123,4 +141,4 @@ router.delete('/:id', async (req, res) => {
     }
 });
 
-module.exports = router; 
+module.exports = router;
