@@ -210,14 +210,25 @@
     <div class="card">
       <div class="card-label">Voz del asistente</div>
       <div class="chip-group" id="vozGroup">
-        <button class="chip <%= (!config.voz || config.voz === 'Aoede') ? 'active' : '' %>" data-val="Aoede" onclick="selectChip('voz', this)">Aoede · Femenina suave</button>
-        <button class="chip <%= config.voz === 'Kore' ? 'active' : '' %>" data-val="Kore" onclick="selectChip('voz', this)">Kore · Femenina clara</button>
-        <button class="chip <%= config.voz === 'Puck' ? 'active' : '' %>" data-val="Puck" onclick="selectChip('voz', this)">Puck · Enérgica</button>
-        <button class="chip <%= config.voz === 'Charon' ? 'active' : '' %>" data-val="Charon" onclick="selectChip('voz', this)">Charon · Grave</button>
-        <button class="chip <%= config.voz === 'Fenrir' ? 'active' : '' %>" data-val="Fenrir" onclick="selectChip('voz', this)">Fenrir · Firme</button>
-        <button class="chip <%= config.voz === 'Leda' ? 'active' : '' %>" data-val="Leda" onclick="selectChip('voz', this)">Leda · Cálida</button>
+        <button class="chip <%= (!config.voz || config.voz === 'Aoede') ? 'active' : '' %>" data-val="Aoede" onclick="selectChip('voz', this)">Aoede · Mujer 1</button>
+        <button class="chip <%= config.voz === 'Vindemiatrix' ? 'active' : '' %>" data-val="Vindemiatrix" onclick="selectChip('voz', this)">Vindemiatrix · Mujer 2</button>
+        <button class="chip <%= config.voz === 'Algieba' ? 'active' : '' %>" data-val="Algieba" onclick="selectChip('voz', this)">Algieba · Hombre 1</button>
+        <button class="chip <%= config.voz === 'Charon' ? 'active' : '' %>" data-val="Charon" onclick="selectChip('voz', this)">Charon · Hombre 2</button>
       </div>
       <div class="name-hint" style="margin-top:8px;">Requiere API key de Google AI configurada abajo</div>
+    </div>
+
+    <!-- Estilo de voz -->
+    <div class="card">
+      <div class="card-label">Estilo de voz</div>
+      <textarea
+        id="estiloVoz"
+        class="name-input"
+        rows="3"
+        maxlength="500"
+        placeholder="Ej: Cálida, amigable, emocionada. Que se note su respiración y cuando hay punto aparte haga un pequeño gesto de umm."
+        style="resize:vertical;min-height:80px;font-weight:400;font-size:13px;line-height:1.5;"><%= config.estilo || '' %></textarea>
+      <div class="name-hint">Instrucciones de personalidad para la voz generada por IA</div>
     </div>
 
     <!-- Capacidades -->
@@ -510,6 +521,7 @@
       trato: state.trato,
       personalidad: state.personalidad,
       voz: state.voz,
+      estilo: document.getElementById('estiloVoz').value.trim(),
       cap_alertas: document.getElementById('cap_alertas').checked,
       cap_pregunta: document.getElementById('cap_pregunta').checked,
       cap_rutina: document.getElementById('cap_rutina').checked,

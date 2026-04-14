@@ -58,29 +58,35 @@ router.post('/', async (req, res) => {
     }
     const apiKey = resolved.key;
 
-    const { texto, voz } = req.body;
+    const { texto, voz, estilo } = req.body;
     if (!texto || !String(texto).trim()) {
         return res.status(400).json({ error: 'Texto requerido' });
     }
 
     const voiceName = ALLOWED_VOICES.has(voz) ? voz : DEFAULT_VOICE;
     const textoLimpio = String(texto).trim().slice(0, 5000); // hard cap
+    const estiloLimpio = estilo ? String(estilo).trim().slice(0, 500) : null;
+
+    const reqBody = {
+        contents: [{ parts: [{ text: textoLimpio }] }],
+        generationConfig: {
+            responseModalities: ['AUDIO'],
+            speechConfig: {
+                voiceConfig: {
+                    prebuiltVoiceConfig: { voiceName }
+                }
+            }
+        }
+    };
+    if (estiloLimpio) {
+        reqBody.system_instruction = { parts: [{ text: estiloLimpio }] };
+    }
 
     try {
         const resp = await fetch(`${GEMINI_ENDPOINT}?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                contents: [{ parts: [{ text: textoLimpio }] }],
-                generationConfig: {
-                    responseModalities: ['AUDIO'],
-                    speechConfig: {
-                        voiceConfig: {
-                            prebuiltVoiceConfig: { voiceName }
-                        }
-                    }
-                }
-            })
+            body: JSON.stringify(reqBody)
         });
 
         const data = await resp.json();

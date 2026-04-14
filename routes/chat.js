@@ -93,6 +93,7 @@ router.get('/', async (req, res) => {
         userName:     u.nombre || u.usuario || 'Usuario',
         dalliaNombre: dalliaConfig.nombre,
         dalliaVoz:    dalliaConfig.voz,
+        dalliaEstilo: dalliaConfig.estilo,
     });
 });
 
@@ -1301,11 +1302,12 @@ async function loadDalliaConfig(tid) {
         return {
             nombre:       cfg.nombre       || 'DalIA',
             voz:          cfg.voz          || 'Aoede',
+            estilo:       cfg.estilo       || '',
             trato:        cfg.trato        || 'tu',
             personalidad: cfg.personalidad || 'amigable',
         };
     } catch (_) {
-        return { nombre: 'DalIA', voz: 'Aoede', trato: 'tu', personalidad: 'amigable' };
+        return { nombre: 'DalIA', voz: 'Aoede', estilo: '', trato: 'tu', personalidad: 'amigable' };
     }
 }
 
@@ -1330,6 +1332,7 @@ router.get('/dallia', async (req, res) => {
         userRol:      u.rol || 'administrador',
         dalliaNombre: dalliaConfig.nombre,
         dalliaVoz:    dalliaConfig.voz,
+        dalliaEstilo: dalliaConfig.estilo,
     });
 });
 
@@ -1341,6 +1344,7 @@ router.get('/dallia/voz', async (req, res) => {
         user:         req.session.user || {},
         dalliaNombre: dalliaConfig.nombre,
         dalliaVoz:    dalliaConfig.voz,
+        dalliaEstilo: dalliaConfig.estilo,
     });
 });
 
