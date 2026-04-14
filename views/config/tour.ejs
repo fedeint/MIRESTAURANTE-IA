@@ -205,18 +205,17 @@
       <% pasos.forEach(function(p) {
         const isDone   = p.done;
         const isActive = siguiente && p.n === siguiente.n;
-        const isLocked = !isDone && !isActive;
         const rowClass = isDone ? 'done-row' : (isActive ? 'active-row' : 'locked-row');
         const numClass = isDone ? 'done' : (isActive ? 'active' : 'locked');
         const numIcon  = isDone ? '✓' : p.n;
       %>
-      <a href="<%= isDone || isActive ? p.url : '#' %>" class="step-row <%= rowClass %>">
+      <a href="<%= p.url %>" class="step-row <%= rowClass %>">
         <div class="step-num <%= numClass %>"><%= numIcon %></div>
         <div class="step-info">
           <div class="step-title"><%= p.title %></div>
           <div class="step-sub"><%= p.sub %></div>
         </div>
-        <span class="step-arrow"><%= isLocked ? '🔒' : '›' %></span>
+        <span class="step-arrow">›</span>
       </a>
       <% }); %>
 
