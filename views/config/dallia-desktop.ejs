@@ -113,10 +113,11 @@
           </div>
           <div class="card-body">
             <div class="chip-group">
-              <button class="chip <%= (!config.voz || config.voz === 'Aoede') ? 'active' : '' %>" data-val="Aoede" onclick="selectChip('voz', this)">Aoede · Mujer 1</button>
-              <button class="chip <%= config.voz === 'Vindemiatrix' ? 'active' : '' %>" data-val="Vindemiatrix" onclick="selectChip('voz', this)">Vindemiatrix · Mujer 2</button>
-              <button class="chip <%= config.voz === 'Algieba' ? 'active' : '' %>" data-val="Algieba" onclick="selectChip('voz', this)">Algieba · Hombre 1</button>
-              <button class="chip <%= config.voz === 'Charon' ? 'active' : '' %>" data-val="Charon" onclick="selectChip('voz', this)">Charon · Hombre 2</button>
+              <% var vozActiva = ['Aoede','Vindemiatrix','Algieba','Charon'].includes(config.voz) ? config.voz : 'Aoede'; %>
+              <button class="chip <%= vozActiva === 'Aoede' ? 'active' : '' %>" data-val="Aoede" onclick="selectChip('voz', this)">Aoede · Mujer 1</button>
+              <button class="chip <%= vozActiva === 'Vindemiatrix' ? 'active' : '' %>" data-val="Vindemiatrix" onclick="selectChip('voz', this)">Vindemiatrix · Mujer 2</button>
+              <button class="chip <%= vozActiva === 'Algieba' ? 'active' : '' %>" data-val="Algieba" onclick="selectChip('voz', this)">Algieba · Hombre 1</button>
+              <button class="chip <%= vozActiva === 'Charon' ? 'active' : '' %>" data-val="Charon" onclick="selectChip('voz', this)">Charon · Hombre 2</button>
             </div>
             <div class="form-text">Requiere API key de Google AI configurada</div>
           </div>
@@ -319,7 +320,7 @@
   const state = {
     trato: '<%= config.trato || "tu" %>',
     personalidad: '<%= config.personalidad || "amigable" %>',
-    voz: '<%= config.voz || "Aoede" %>'
+    voz: '<%= ["Aoede","Vindemiatrix","Algieba","Charon"].includes(config.voz) ? config.voz : "Aoede" %>'
   };
 
   function selectChip(group, btn) {

@@ -602,7 +602,7 @@
                         </div>
                     </div>
                     <div class="text-center mt-1">
-                        <span class="text-muted" id="chatProvider" style="font-size:0.72rem;">Powered by Kimi AI (Moonshot) &middot; Los datos se consultan en tiempo real de tu base de datos</span>
+                        <span class="text-muted" id="chatProvider" style="font-size:0.72rem;">Los datos se consultan en tiempo real de tu base de datos</span>
                     </div>
                 </div>
             </div>
@@ -835,8 +835,7 @@
 
                 var prov = document.getElementById('chatProvider');
                 if (prov && data.provider) {
-                    var name = data.provider === 'kimi' ? 'Kimi AI (Moonshot)' : data.provider === 'claude' ? 'Claude AI (Anthropic)' : 'DallIA Actions';
-                    prov.textContent = 'Powered by ' + name + ' \u00B7 Datos en tiempo real de tu BD';
+                    prov.textContent = 'Los datos se consultan en tiempo real de tu base de datos';
                 }
             } catch (err) {
                 hideTyping();
