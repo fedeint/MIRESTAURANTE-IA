@@ -16,8 +16,8 @@ const SETUP_CHAIN = {
   dallia:   { next: '/config/alertas?setup=1',  label: 'Siguiente: Alertas' },
   alertas:  { next: '/config/modulos?setup=1',  label: 'Siguiente: Módulos' },
   modulos:  { next: '/config/horarios?setup=1', label: 'Siguiente: Horarios' },
-  horarios: { next: '/dashboard',               label: 'Ir al Dashboard', finish: true },
-  tour:     { next: '/dashboard',               label: 'Ir al Dashboard', finish: true }
+  horarios: { next: '/',                        label: 'Ir al Dashboard', finish: true },
+  tour:     { next: '/',                        label: 'Ir al Dashboard', finish: true }
 };
 
 // Expose setup-flow context to every /config view

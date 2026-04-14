@@ -620,6 +620,9 @@ app.get('/api/health', async (req, res) => {
     res.json(info);
 });
 
+// /dashboard alias — redirige a / para compatibilidad con links en vistas
+app.get('/dashboard', requireAuth, (req, res) => res.redirect('/'));
+
 // Ruta principal - Dashboard (requiere login)
 app.get('/', requireAuth, async (req, res) => {
     const rol = String(req.session?.user?.rol || '').toLowerCase();
