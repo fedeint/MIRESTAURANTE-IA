@@ -24,6 +24,7 @@ const REGISTERED_PAIRS = [
     { pwa: 'metas.ejs', desktop: 'metas-desktop.ejs' },
     { pwa: 'finanzas.ejs', desktop: 'finanzas-desktop.ejs' },
     { pwa: 'proveedores-hub.ejs', desktop: 'proveedores-hub-desktop.ejs' },
+    { pwa: 'config/dallia.ejs', desktop: 'config/dallia-desktop.ejs' },
 ];
 
 for (const { pwa, desktop } of REGISTERED_PAIRS) {

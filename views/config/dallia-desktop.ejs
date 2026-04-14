@@ -1,0 +1,474 @@
+<%# @variant: desktop %>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Asistente IA · Configuración</title>
+  <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+  <link rel="stylesheet" href="/css/theme.css">
+  <style>
+    .chip-group { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip {
+      padding: 6px 14px;
+      border-radius: 50px;
+      border: 1.5px solid #dee2e6;
+      background: #f8f9fa;
+      font-size: 13px;
+      cursor: pointer;
+      transition: all .15s;
+      color: #0a0f24;
+    }
+    .chip:hover { border-color: #ef520f; }
+    .chip.active {
+      background: linear-gradient(135deg, #ef520f, #df2c05);
+      border-color: transparent;
+      color: #fff;
+    }
+    .toggle-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #f0f2f8;
+    }
+    .toggle-row:last-child { border-bottom: none; padding-bottom: 0; }
+    .form-switch .form-check-input:checked {
+      background-color: #ef520f;
+      border-color: #ef520f;
+    }
+  </style>
+</head>
+<body>
+  <%- include('../partials/sidebar') %>
+  <div class="dg-main">
+  <main class="flex-grow-1">
+  <div class="container mt-4">
+
+    <div class="d-flex align-items-center gap-3 mb-4">
+      <h2 class="mb-0">
+        <i class="bi bi-robot me-2 text-warning"></i>Asistente IA
+      </h2>
+      <span class="badge bg-warning text-dark">DalIA</span>
+    </div>
+
+    <div class="row g-4">
+
+      <!-- ── Columna izquierda: personalización ── -->
+      <div class="col-lg-7">
+
+        <!-- Nombre -->
+        <div class="card mb-3">
+          <div class="card-header fw-semibold">
+            <i class="bi bi-person-badge me-1"></i>Nombre del asistente
+          </div>
+          <div class="card-body">
+            <input
+              type="text"
+              class="form-control"
+              id="nombreDallia"
+              value="<%= config.nombre || 'DalIA' %>"
+              maxlength="30"
+              placeholder="Ej: Chef IA, Asistente, Lola..."
+            >
+            <div class="form-text">El asistente usará este nombre al saludarte</div>
+          </div>
+        </div>
+
+        <!-- Trato -->
+        <div class="card mb-3">
+          <div class="card-header fw-semibold">
+            <i class="bi bi-chat-heart me-1"></i>Forma de trato
+          </div>
+          <div class="card-body">
+            <div class="chip-group">
+              <button class="chip <%= config.trato === 'tu' ? 'active' : '' %>" data-val="tu" onclick="selectChip('trato', this)">Tutear (tú)</button>
+              <button class="chip <%= config.trato === 'usted' ? 'active' : '' %>" data-val="usted" onclick="selectChip('trato', this)">Formal (usted)</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Personalidad -->
+        <div class="card mb-3">
+          <div class="card-header fw-semibold">
+            <i class="bi bi-stars me-1"></i>Personalidad
+          </div>
+          <div class="card-body">
+            <div class="chip-group">
+              <button class="chip <%= config.personalidad === 'profesional' ? 'active' : '' %>" data-val="profesional" onclick="selectChip('personalidad', this)">Profesional</button>
+              <button class="chip <%= config.personalidad === 'amigable' ? 'active' : '' %>" data-val="amigable" onclick="selectChip('personalidad', this)">Amigable</button>
+              <button class="chip <%= config.personalidad === 'directo' ? 'active' : '' %>" data-val="directo" onclick="selectChip('personalidad', this)">Directo</button>
+              <button class="chip <%= config.personalidad === 'motivador' ? 'active' : '' %>" data-val="motivador" onclick="selectChip('personalidad', this)">Motivador</button>
+              <button class="chip <%= config.personalidad === 'formal' ? 'active' : '' %>" data-val="formal" onclick="selectChip('personalidad', this)">Formal</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Voz -->
+        <div class="card mb-3">
+          <div class="card-header fw-semibold">
+            <i class="bi bi-mic me-1"></i>Voz del asistente
+          </div>
+          <div class="card-body">
+            <div class="chip-group">
+              <button class="chip <%= (!config.voz || config.voz === 'Aoede') ? 'active' : '' %>" data-val="Aoede" onclick="selectChip('voz', this)">Aoede · Femenina suave</button>
+              <button class="chip <%= config.voz === 'Kore' ? 'active' : '' %>" data-val="Kore" onclick="selectChip('voz', this)">Kore · Femenina clara</button>
+              <button class="chip <%= config.voz === 'Puck' ? 'active' : '' %>" data-val="Puck" onclick="selectChip('voz', this)">Puck · Enérgica</button>
+              <button class="chip <%= config.voz === 'Charon' ? 'active' : '' %>" data-val="Charon" onclick="selectChip('voz', this)">Charon · Grave</button>
+              <button class="chip <%= config.voz === 'Fenrir' ? 'active' : '' %>" data-val="Fenrir" onclick="selectChip('voz', this)">Fenrir · Firme</button>
+              <button class="chip <%= config.voz === 'Leda' ? 'active' : '' %>" data-val="Leda" onclick="selectChip('voz', this)">Leda · Cálida</button>
+            </div>
+            <div class="form-text">Requiere API key de Google AI configurada</div>
+          </div>
+        </div>
+
+        <!-- Capacidades -->
+        <div class="card mb-3">
+          <div class="card-header fw-semibold">
+            <i class="bi bi-toggles me-1"></i>Capacidades activas
+          </div>
+          <div class="card-body">
+            <div class="toggle-row">
+              <div>
+                <div class="fw-semibold small">Alertas proactivas</div>
+                <div class="text-muted" style="font-size:12px;">Te avisa de stock bajo, metas y más</div>
+              </div>
+              <div class="form-check form-switch mb-0">
+                <input class="form-check-input" type="checkbox" role="switch" id="cap_alertas" <%= config.cap_alertas !== false ? 'checked' : '' %>>
+              </div>
+            </div>
+            <div class="toggle-row">
+              <div>
+                <div class="fw-semibold small">Pregunta diaria</div>
+                <div class="text-muted" style="font-size:12px;">"¿Hoy trabajas solo?" al abrir</div>
+              </div>
+              <div class="form-check form-switch mb-0">
+                <input class="form-check-input" type="checkbox" role="switch" id="cap_pregunta" <%= config.cap_pregunta !== false ? 'checked' : '' %>>
+              </div>
+            </div>
+            <div class="toggle-row">
+              <div>
+                <div class="fw-semibold small">Rutina de cierre</div>
+                <div class="text-muted" style="font-size:12px;">Reporte automático al cerrar caja</div>
+              </div>
+              <div class="form-check form-switch mb-0">
+                <input class="form-check-input" type="checkbox" role="switch" id="cap_rutina" <%= config.cap_rutina !== false ? 'checked' : '' %>>
+              </div>
+            </div>
+            <div class="toggle-row">
+              <div>
+                <div class="fw-semibold small">Modo voz</div>
+                <div class="text-muted" style="font-size:12px;">Hablar con el asistente con micrófono</div>
+              </div>
+              <div class="form-check form-switch mb-0">
+                <input class="form-check-input" type="checkbox" role="switch" id="cap_voz" <%= config.cap_voz !== false ? 'checked' : '' %>>
+              </div>
+            </div>
+            <div class="toggle-row">
+              <div>
+                <div class="fw-semibold small">FAB flotante</div>
+                <div class="text-muted" style="font-size:12px;">Botón del robot en todas las pantallas</div>
+              </div>
+              <div class="form-check form-switch mb-0">
+                <input class="form-check-input" type="checkbox" role="switch" id="cap_fab" <%= config.cap_fab !== false ? 'checked' : '' %>>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex gap-2 mb-4">
+          <button type="button" class="btn btn-primary" onclick="guardar()" id="btnGuardar">
+            <i class="bi bi-check-lg me-1"></i>Guardar cambios
+          </button>
+          <a href="/configuracion" class="btn btn-outline-secondary">Volver</a>
+        </div>
+
+      </div>
+
+      <!-- ── Columna derecha: API Key + estadísticas ── -->
+      <div class="col-lg-5">
+
+        <!-- API Key -->
+        <div class="card mb-3">
+          <div class="card-header fw-semibold">
+            <i class="bi bi-key me-1"></i>Mi API Key de Google AI
+          </div>
+          <div class="card-body">
+            <p class="text-muted small mb-3">
+              Opcional: conecta tu propia cuenta de Google AI Studio para 500 consultas gratis al día.
+            </p>
+
+            <div id="keyStatus" class="alert alert-success py-2 d-none mb-3">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <div class="small fw-semibold">Key configurada ✓</div>
+                  <div id="keyPreview" class="small text-muted font-monospace mt-1">—</div>
+                </div>
+                <button onclick="revocarKey()" class="btn btn-outline-danger btn-sm">Revocar</button>
+              </div>
+            </div>
+
+            <div id="keyForm">
+              <input type="password" id="apiKeyInput" class="form-control mb-2"
+                placeholder="Pega tu key (AIza...)" maxlength="120" autocomplete="off">
+              <button onclick="guardarApiKey()" class="btn btn-success w-100">
+                <i class="bi bi-check-circle me-1"></i>Validar y guardar
+              </button>
+            </div>
+
+            <details class="mt-3">
+              <summary class="small text-warning fw-semibold" style="cursor:pointer;">¿Cómo obtengo mi API key gratis?</summary>
+              <ol class="mt-2 small text-muted" style="padding-left:18px;line-height:1.6;">
+                <li>Abre <a href="https://aistudio.google.com/api-keys" target="_blank" class="text-warning">aistudio.google.com/api-keys</a></li>
+                <li>Inicia sesión con tu Gmail y crea la key</li>
+                <li>Copia la clave (empieza con <code>AIza</code>) y pégala arriba</li>
+              </ol>
+            </details>
+          </div>
+        </div>
+
+        <!-- Plan actual -->
+        <div class="card mb-3 border-warning">
+          <div class="card-header fw-semibold bg-warning bg-opacity-10">
+            <i class="bi bi-lightning-charge me-1 text-warning"></i>Tu plan
+          </div>
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start">
+              <div>
+                <div id="planNombre" class="fs-4 fw-bold">—</div>
+                <div id="planDescripcion" class="small text-muted mt-1">Cargando…</div>
+                <div class="small text-muted mt-2">
+                  Voz hoy: <strong id="vozUso">0</strong> / <strong id="vozLimite">—</strong> min
+                </div>
+              </div>
+              <button id="btnUpgrade" onclick="mostrarUpgrade()" class="btn btn-warning btn-sm fw-bold">Upgrade</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Consumo de tokens -->
+        <div class="card mb-3">
+          <div class="card-header fw-semibold">
+            <i class="bi bi-bar-chart me-1"></i>Consumo de tokens
+          </div>
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-baseline mb-1">
+              <span class="small text-muted">Usado este mes</span>
+              <span id="cuotaPct" class="fs-5 fw-bold">—%</span>
+            </div>
+            <div class="progress mb-2" style="height:8px;">
+              <div id="cuotaBar" class="progress-bar bg-warning" style="width:0%;"></div>
+            </div>
+            <div class="d-flex justify-content-between small text-muted mb-3">
+              <span id="cuotaUsado">0 tokens</span>
+              <span id="cuotaTotal">de 2M</span>
+            </div>
+            <div id="desgloseList" class="d-flex flex-column gap-2">
+              <div class="small text-muted text-center py-2">Cargando…</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Ahorro por cache -->
+        <div class="card mb-3 border-success">
+          <div class="card-header fw-semibold bg-success bg-opacity-10">
+            <i class="bi bi-piggy-bank me-1 text-success"></i>Ahorro por cache
+          </div>
+          <div class="card-body">
+            <div class="row g-3 text-center">
+              <div class="col-6">
+                <div id="ahorroTokens" class="fs-4 fw-bold text-success">0</div>
+                <div class="small text-muted">tokens ahorrados</div>
+              </div>
+              <div class="col-6">
+                <div id="ahorroLlamadas" class="fs-4 fw-bold text-success">0</div>
+                <div class="small text-muted">preguntas en cache</div>
+              </div>
+            </div>
+            <div id="ahorroCosto" class="small text-success fw-semibold mt-2 text-center">$0.00 USD</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+  </main>
+  <%- include('../partials/footer') %>
+  </div><!-- dg-main -->
+
+  <script src="/vendor/jquery/jquery.min.js"></script>
+  <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script>
+  const state = {
+    trato: '<%= config.trato || "tu" %>',
+    personalidad: '<%= config.personalidad || "amigable" %>',
+    voz: '<%= config.voz || "Aoede" %>'
+  };
+
+  function selectChip(group, btn) {
+    const parent = btn.closest('.chip-group');
+    parent.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    state[group] = btn.dataset.val;
+  }
+
+  async function guardar() {
+    const payload = {
+      nombre:       document.getElementById('nombreDallia').value.trim() || 'DalIA',
+      trato:        state.trato,
+      personalidad: state.personalidad,
+      voz:          state.voz,
+      cap_alertas:  document.getElementById('cap_alertas').checked,
+      cap_pregunta: document.getElementById('cap_pregunta').checked,
+      cap_rutina:   document.getElementById('cap_rutina').checked,
+      cap_voz:      document.getElementById('cap_voz').checked,
+      cap_fab:      document.getElementById('cap_fab').checked,
+    };
+    try {
+      const r = await fetch('/config/dallia', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(payload)
+      });
+      const btn = document.getElementById('btnGuardar');
+      if (r.ok) {
+        btn.innerHTML = '<i class="bi bi-check-lg me-1"></i>Guardado';
+        btn.classList.replace('btn-primary', 'btn-success');
+        setTimeout(() => {
+          btn.innerHTML = '<i class="bi bi-check-lg me-1"></i>Guardar cambios';
+          btn.classList.replace('btn-success', 'btn-primary');
+        }, 2500);
+      } else {
+        alert('Error al guardar');
+      }
+    } catch(e) { alert('Error al guardar'); }
+  }
+
+  // ── Token stats ──────────────────────────────────────────────────────
+  const ETIQUETAS_TIPO = {
+    chat: '💬 Chat', action: '⚡ Acciones', resumen_dia: '📊 Resumen',
+    vencimiento: '⏰ Vencimiento', recordatorio_caja: '💰 Caja',
+    meta_alcanzada: '🎯 Meta', onboarding: '🚀 Onboarding',
+    sostac: '🐬 SOSTAC', cache: '💾 Cache'
+  };
+
+  function fmtNum(n) {
+    n = Number(n) || 0;
+    if (n >= 1_000_000) return (n/1_000_000).toFixed(2)+'M';
+    if (n >= 1_000) return (n/1_000).toFixed(1)+'k';
+    return String(n);
+  }
+
+  async function cargarStats() {
+    try {
+      const r = await fetch('/config/dallia/stats');
+      const data = await r.json();
+      const pct = data.cuota.porcentaje || 0;
+      document.getElementById('cuotaPct').textContent = pct + '%';
+      document.getElementById('cuotaBar').style.width = Math.min(pct, 100) + '%';
+      document.getElementById('cuotaUsado').textContent = fmtNum(data.cuota.usado) + ' tokens';
+      document.getElementById('cuotaTotal').textContent = 'de ' + fmtNum(data.cuota.total);
+
+      const $d = document.getElementById('desgloseList');
+      if (!data.desglose || data.desglose.length === 0) {
+        $d.innerHTML = '<div class="small text-muted text-center py-2">Sin consumo este mes</div>';
+      } else {
+        const max = Math.max(...data.desglose.map(d => Number(d.tokens) || 0));
+        $d.innerHTML = data.desglose.map(d => {
+          const w = max > 0 ? Math.max(8, (Number(d.tokens)/max)*100) : 0;
+          const costo = Number(d.costo || 0).toFixed(4);
+          return `<div>
+            <div class="d-flex justify-content-between small mb-1">
+              <span class="fw-semibold">${ETIQUETAS_TIPO[d.tipo] || d.tipo}</span>
+              <span class="text-muted">${fmtNum(d.tokens)} · $${costo}</span>
+            </div>
+            <div class="progress" style="height:5px;">
+              <div class="progress-bar bg-warning" style="width:${w}%;"></div>
+            </div>
+          </div>`;
+        }).join('');
+      }
+
+      document.getElementById('ahorroTokens').textContent = fmtNum(data.ahorro.tokens);
+      document.getElementById('ahorroLlamadas').textContent = fmtNum(data.ahorro.llamadas);
+      document.getElementById('ahorroCosto').textContent = '$' + Number(data.ahorro.costo).toFixed(4) + ' USD';
+    } catch(e) { console.error('stats fail', e); }
+  }
+
+  async function cargarPlan() {
+    try {
+      const r = await fetch('/config/dallia/plan');
+      const d = await r.json();
+      const info = d.plan_info || {};
+      document.getElementById('planNombre').textContent = info.nombre || 'Básico';
+      document.getElementById('planDescripcion').textContent = info.descripcion || '';
+      document.getElementById('vozUso').textContent = d.uso.voz_hoy || 0;
+      document.getElementById('vozLimite').textContent = d.uso.voz_limite_dia || '—';
+      if (d.plan_actual === 'premium') {
+        document.getElementById('btnUpgrade').style.display = 'none';
+      }
+    } catch(e) { console.error('plan fail', e); }
+  }
+
+  async function cargarApiKeyInfo() {
+    try {
+      const r = await fetch('/config/dallia/api-key');
+      const d = await r.json();
+      const $status = document.getElementById('keyStatus');
+      const $form   = document.getElementById('keyForm');
+      if (d.tieneKey) {
+        document.getElementById('keyPreview').textContent = d.keyPreview || '—';
+        $status.classList.remove('d-none');
+        $form.style.display = 'none';
+      } else {
+        $status.classList.add('d-none');
+        $form.style.display = 'block';
+      }
+    } catch(e) { console.error('api-key info fail', e); }
+  }
+
+  async function guardarApiKey() {
+    const input = document.getElementById('apiKeyInput');
+    const apiKey = input.value.trim();
+    if (!apiKey.startsWith('AIza')) {
+      alert('La key debe empezar con AIza. Copiala desde aistudio.google.com/api-keys');
+      return;
+    }
+    try {
+      const r = await fetch('/config/dallia/api-key', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ apiKey })
+      });
+      const d = await r.json();
+      if (r.ok && d.ok) {
+        alert('✓ API key validada y guardada. Ya puedes usar DalIA con voz.');
+        input.value = '';
+        cargarApiKeyInfo();
+      } else {
+        alert('Error: ' + (d.error || 'No se pudo guardar'));
+      }
+    } catch(e) { alert('Error de red: ' + e.message); }
+  }
+
+  async function revocarKey() {
+    if (!confirm('¿Revocar tu API key?')) return;
+    try {
+      const r = await fetch('/config/dallia/api-key', { method: 'DELETE' });
+      if (r.ok) { alert('Key revocada'); cargarApiKeyInfo(); }
+    } catch(e) { alert('Error: ' + e.message); }
+  }
+
+  function mostrarUpgrade() {
+    alert('Plan Premium: S/ 50/mes\n\n✓ Voz hasta 1 hora al día\n✓ Sin configurar API key\n✓ Soporte prioritario\n\nContáctanos por WhatsApp para activar.');
+  }
+
+  cargarStats();
+  cargarPlan();
+  cargarApiKeyInfo();
+  </script>
+</body>
+</html>

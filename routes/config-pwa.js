@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 const tenantAi = require('../lib/tenant-ai');
+const { renderForDevice } = require('../lib/deviceRouter');
 
 // JSONB columns return objects in PG, strings in MySQL — handle both
 function parseJson(val, fallback) {
@@ -41,14 +42,14 @@ router.get('/dallia', async (req, res) => {
       nombre: 'DallIA', trato: 'tu', personalidad: 'amigable',
       cap_alertas: true, cap_pregunta: true, cap_rutina: true, cap_voz: true, cap_fab: true,
     });
-    res.render('config/dallia', { config });
+    renderForDevice(req, res, 'config/dallia', { config });
   } catch (e) {
     console.error(e);
     const config = {
       nombre: 'DallIA', trato: 'tu', personalidad: 'amigable',
       cap_alertas: true, cap_pregunta: true, cap_rutina: true, cap_voz: true, cap_fab: true,
     };
-    res.render('config/dallia', { config });
+    renderForDevice(req, res, 'config/dallia', { config });
   }
 });
 
