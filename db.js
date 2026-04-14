@@ -450,6 +450,114 @@ async function ensureSchema() {
             await pgNativeQuery(`CREATE INDEX IF NOT EXISTS idx_sostac_objetivos_brief ON sostac_objetivos(brief_id, tenant_id)`);
         } catch (_) {}
 
+        // ── BYOK: credenciales IA por tenant ────────────────────────────────
+        try {
+            await pgNativeQuery(`CREATE TABLE IF NOT EXISTS tenant_ai_credentials (
+                tenant_id                INTEGER     PRIMARY KEY,
+                google_ai_key_encrypted  TEXT,
+                google_ai_key_preview    VARCHAR(20),
+                google_ai_key_validated  BOOLEAN     DEFAULT FALSE,
+                google_ai_key_last_test  TIMESTAMP,
+                plan_tipo                VARCHAR(20) DEFAULT 'basico',
+                voice_minutos_dia        INTEGER     DEFAULT 0,
+                voice_minutos_mes        INTEGER     DEFAULT 0,
+                voice_minutos_limite_dia INTEGER     DEFAULT 0,
+                plan_ia_billing          VARCHAR(10) DEFAULT 'mensual',
+                plan_ia_precio_soles     DECIMAL(10,2) DEFAULT 0,
+                plan_ia_fecha_inicio     DATE,
+                plan_ia_fecha_fin        DATE,
+                created_at               TIMESTAMP   DEFAULT NOW(),
+                updated_at               TIMESTAMP   DEFAULT NOW()
+            )`);
+            await pgNativeQuery(`CREATE INDEX IF NOT EXISTS idx_tenant_ai_cred_plan ON tenant_ai_credentials (plan_tipo)`);
+
+            await pgNativeQuery(`CREATE TABLE IF NOT EXISTS tenant_voice_usage (
+                id            SERIAL PRIMARY KEY,
+                tenant_id     INTEGER     NOT NULL,
+                tipo          VARCHAR(10) NOT NULL,
+                duracion_seg  INTEGER     NOT NULL,
+                caracteres    INTEGER,
+                modelo        VARCHAR(50),
+                source_key    VARCHAR(10) DEFAULT 'tenant',
+                created_at    TIMESTAMP   DEFAULT NOW()
+            )`);
+            await pgNativeQuery(`CREATE INDEX IF NOT EXISTS idx_voice_usage_tenant_fecha ON tenant_voice_usage (tenant_id, created_at DESC)`);
+
+            await pgNativeQuery(`CREATE TABLE IF NOT EXISTS ai_fallback_log (
+                id           SERIAL PRIMARY KEY,
+                tenant_id    INTEGER     NOT NULL,
+                origen       VARCHAR(30) NOT NULL,
+                destino      VARCHAR(30) NOT NULL,
+                razon        VARCHAR(100),
+                tipo_call    VARCHAR(20),
+                created_at   TIMESTAMP   DEFAULT NOW()
+            )`);
+        } catch (_) {}
+
+        // ── DalIA: automatizaciones + FAQ cache ─────────────────────────────
+        try {
+            await pgNativeQuery(`CREATE TABLE IF NOT EXISTS tenant_dallia_automatizaciones (
+                tenant_id                   INTEGER   PRIMARY KEY,
+                resumen_diario_activo       BOOLEAN   DEFAULT FALSE,
+                resumen_diario_hora         TIME      DEFAULT '23:00',
+                vencimiento_activo          BOOLEAN   DEFAULT TRUE,
+                recordatorio_caja_activo    BOOLEAN   DEFAULT TRUE,
+                meta_alcanzada_activo       BOOLEAN   DEFAULT TRUE,
+                enviar_pedido_auto          BOOLEAN   DEFAULT FALSE,
+                notificaciones_whatsapp     BOOLEAN   DEFAULT FALSE,
+                updated_at                  TIMESTAMP DEFAULT NOW()
+            )`);
+
+            await pgNativeQuery(`CREATE TABLE IF NOT EXISTS dallia_faq_cache (
+                id              SERIAL PRIMARY KEY,
+                tenant_id       INTEGER      NOT NULL,
+                question_hash   VARCHAR(64)  NOT NULL,
+                question_text   TEXT         NOT NULL,
+                respuesta       TEXT         NOT NULL,
+                categoria       VARCHAR(30)  DEFAULT 'general',
+                modelo          VARCHAR(50),
+                tokens_originales INTEGER    DEFAULT 0,
+                hits            INTEGER      DEFAULT 0,
+                created_at      TIMESTAMP    DEFAULT NOW(),
+                last_hit_at     TIMESTAMP,
+                expires_at      TIMESTAMP    DEFAULT (NOW() + INTERVAL '7 days'),
+                UNIQUE (tenant_id, question_hash)
+            )`);
+            await pgNativeQuery(`CREATE INDEX IF NOT EXISTS idx_faq_cache_tenant_hash ON dallia_faq_cache (tenant_id, question_hash)`);
+            await pgNativeQuery(`CREATE INDEX IF NOT EXISTS idx_faq_cache_expires ON dallia_faq_cache (expires_at)`);
+
+            // Columnas extra en token_consumo (idempotente con try/catch por columna)
+            const tcCols = [
+                `ALTER TABLE token_consumo ADD COLUMN IF NOT EXISTS pregunta_texto TEXT`,
+                `ALTER TABLE token_consumo ADD COLUMN IF NOT EXISTS categoria VARCHAR(30)`,
+                `ALTER TABLE token_consumo ADD COLUMN IF NOT EXISTS cache_hit BOOLEAN DEFAULT FALSE`,
+                `ALTER TABLE token_consumo ADD COLUMN IF NOT EXISTS tokens_ahorrados INTEGER DEFAULT 0`,
+                `ALTER TABLE token_consumo ADD COLUMN IF NOT EXISTS costo_estimado_usd DECIMAL(10,6) DEFAULT 0`,
+            ];
+            for (const col of tcCols) {
+                try { await pgNativeQuery(col); } catch (_) {}
+            }
+
+            // Columnas extra en tenant_suscripciones para plan IA
+            const tsCols = [
+                `ALTER TABLE tenant_suscripciones ADD COLUMN IF NOT EXISTS plan_tipo VARCHAR(20) DEFAULT 'basico'`,
+                `ALTER TABLE tenant_suscripciones ADD COLUMN IF NOT EXISTS plan_precio_soles DECIMAL(10,2) DEFAULT 0`,
+                `ALTER TABLE tenant_suscripciones ADD COLUMN IF NOT EXISTS licencia_tipo VARCHAR(20) DEFAULT 'trial'`,
+                `ALTER TABLE tenant_suscripciones ADD COLUMN IF NOT EXISTS licencia_precio_soles DECIMAL(10,2) DEFAULT 0`,
+                `ALTER TABLE tenant_suscripciones ADD COLUMN IF NOT EXISTS licencia_fecha_inicio DATE`,
+                `ALTER TABLE tenant_suscripciones ADD COLUMN IF NOT EXISTS licencia_fecha_fin DATE`,
+                `ALTER TABLE tenant_suscripciones ADD COLUMN IF NOT EXISTS nube_tipo VARCHAR(20) DEFAULT 'incluida'`,
+                `ALTER TABLE tenant_suscripciones ADD COLUMN IF NOT EXISTS nube_precio_soles DECIMAL(10,2) DEFAULT 0`,
+                `ALTER TABLE tenant_suscripciones ADD COLUMN IF NOT EXISTS nube_fecha_inicio DATE`,
+                `ALTER TABLE tenant_suscripciones ADD COLUMN IF NOT EXISTS nube_fecha_fin DATE`,
+                `ALTER TABLE tenant_suscripciones ADD COLUMN IF NOT EXISTS tokens_total BIGINT DEFAULT 2000000`,
+                `ALTER TABLE tenant_suscripciones ADD COLUMN IF NOT EXISTS tokens_consumidos BIGINT DEFAULT 0`,
+            ];
+            for (const col of tsCols) {
+                try { await pgNativeQuery(col); } catch (_) {}
+            }
+        } catch (_) {}
+
         // ── Config PWA tables (5 pantallas de configuración mobile) ──────
         try {
             await pgNativeQuery(`CREATE TABLE IF NOT EXISTS tenant_dallia_config (

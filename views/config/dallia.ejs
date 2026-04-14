@@ -267,7 +267,7 @@
     </div>
 
     <!-- ════════════════════════════════════════════════════════════════ -->
-    <!-- PLAN + API KEY PROPIA (BYOK)                                     -->
+    <!-- PLAN                                                             -->
     <!-- ════════════════════════════════════════════════════════════════ -->
 
     <!-- Plan actual -->
@@ -286,44 +286,6 @@
       <div id="planUso" style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(154,52,18,0.2);font-size:12px;color:#9a3412;">
         <div>Voz usada hoy: <strong id="vozUso">0</strong> / <strong id="vozLimite">0</strong> minutos</div>
       </div>
-    </div>
-
-    <!-- API Key propia (BYOK) -->
-    <div class="card">
-      <div class="card-label">🔑 Mi API Key de Google AI</div>
-
-      <div id="keyStatus" style="margin-top:4px;margin-bottom:12px;padding:10px;background:#F8F9FB;border-radius:10px;display:none;">
-        <div style="display:flex;justify-content:space-between;align-items:center;">
-          <div>
-            <div style="font-size:13px;font-weight:600;color:var(--dark);">Key configurada</div>
-            <div id="keyPreview" style="font-size:12px;color:var(--text2);margin-top:2px;font-family:monospace;">—</div>
-          </div>
-          <button onclick="revocarKey()"
-            style="background:#FEF2F2;color:#B91C1C;border:1.5px solid #FCA5A5;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:600;cursor:pointer;">
-            Revocar
-          </button>
-        </div>
-      </div>
-
-      <div id="keyForm">
-        <input type="password" id="apiKeyInput" placeholder="Pega tu key (AIza...)"
-          style="width:100%;padding:12px 14px;border:1.5px solid #E5E7EB;border-radius:12px;font-family:monospace;font-size:13px;color:var(--dark);background:#F8F9FB;outline:none;"
-          maxlength="120" autocomplete="off">
-        <button onclick="guardarApiKey()"
-          style="width:100%;margin-top:10px;padding:12px;background:linear-gradient(135deg,#22C55E,#16A34A);color:#fff;border:none;border-radius:12px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:14px;cursor:pointer;">
-          Validar y guardar
-        </button>
-      </div>
-
-      <details style="margin-top:12px;">
-        <summary style="cursor:pointer;font-size:12px;color:var(--orange);font-weight:600;">¿Cómo obtengo mi API key gratis? (3 pasos)</summary>
-        <ol style="margin-top:8px;padding-left:20px;font-size:12px;color:var(--text2);line-height:1.6;">
-          <li>Abre <a href="https://aistudio.google.com/api-keys" target="_blank" style="color:var(--orange);font-weight:600;">aistudio.google.com/api-keys</a> en una pestaña nueva</li>
-          <li>Inicia sesión con tu Gmail y dale <strong>Create API key</strong></li>
-          <li>Copia la clave (empieza con <code>AIza</code>) y pégala arriba</li>
-        </ol>
-        <div style="margin-top:8px;font-size:11px;color:#22C55E;font-weight:600;">✓ Es gratis · ✓ No pide tarjeta · ✓ 500 consultas gratis al día</div>
-      </details>
     </div>
 
     <!-- ════════════════════════════════════════════════════════════════ -->
@@ -379,18 +341,6 @@
       <div class="card-label">Top preguntas frecuentes (30 días)</div>
       <div id="topPreguntas" style="display:flex;flex-direction:column;gap:6px;margin-top:4px;">
         <div style="color:var(--text2);font-size:13px;text-align:center;padding:12px 0;">Cargando…</div>
-      </div>
-    </div>
-
-    <!-- Botón limpiar cache -->
-    <div class="card">
-      <div class="card-label">Mantenimiento</div>
-      <button onclick="limpiarFaqCache()"
-        style="width:100%;padding:12px;background:#FEF2F2;color:#B91C1C;border:1.5px solid #FCA5A5;border-radius:12px;font-family:'DM Sans',sans-serif;font-weight:600;font-size:14px;cursor:pointer;">
-        Limpiar cache de preguntas
-      </button>
-      <div class="name-hint" style="margin-top:8px;">
-        Borra las respuestas guardadas. Útil cuando cambias información del negocio.
       </div>
     </div>
 
@@ -454,6 +404,49 @@
           <div class="toggle-track"><div class="toggle-dot"></div></div>
         </label>
       </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════════════ -->
+    <!-- API KEY PROPIA (BYOK) — configuración avanzada                   -->
+    <!-- ════════════════════════════════════════════════════════════════ -->
+    <div class="card">
+      <div class="card-label">🔑 Mi API Key de Google AI</div>
+      <div style="font-size:12px;color:var(--text2);margin-bottom:12px;">
+        Opcional: conecta tu propia cuenta de Google AI Studio para 500 consultas gratis al día.
+      </div>
+
+      <div id="keyStatus" style="margin-top:4px;margin-bottom:12px;padding:10px;background:#F8F9FB;border-radius:10px;display:none;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div style="font-size:13px;font-weight:600;color:var(--dark);">Key configurada ✓</div>
+            <div id="keyPreview" style="font-size:12px;color:var(--text2);margin-top:2px;font-family:monospace;">—</div>
+          </div>
+          <button onclick="revocarKey()"
+            style="background:#FEF2F2;color:#B91C1C;border:1.5px solid #FCA5A5;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:600;cursor:pointer;">
+            Revocar
+          </button>
+        </div>
+      </div>
+
+      <div id="keyForm">
+        <input type="password" id="apiKeyInput" placeholder="Pega tu key (AIza...)"
+          style="width:100%;padding:12px 14px;border:1.5px solid #E5E7EB;border-radius:12px;font-family:monospace;font-size:13px;color:var(--dark);background:#F8F9FB;outline:none;"
+          maxlength="120" autocomplete="off">
+        <button onclick="guardarApiKey()"
+          style="width:100%;margin-top:10px;padding:12px;background:linear-gradient(135deg,#22C55E,#16A34A);color:#fff;border:none;border-radius:12px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:14px;cursor:pointer;">
+          Validar y guardar
+        </button>
+      </div>
+
+      <details style="margin-top:12px;">
+        <summary style="cursor:pointer;font-size:12px;color:var(--orange);font-weight:600;">¿Cómo obtengo mi API key gratis? (3 pasos)</summary>
+        <ol style="margin-top:8px;padding-left:20px;font-size:12px;color:var(--text2);line-height:1.6;">
+          <li>Abre <a href="https://aistudio.google.com/api-keys" target="_blank" style="color:var(--orange);font-weight:600;">aistudio.google.com/api-keys</a> en una pestaña nueva</li>
+          <li>Inicia sesión con tu Gmail y dale <strong>Create API key</strong></li>
+          <li>Copia la clave (empieza con <code>AIza</code>) y pégala arriba</li>
+        </ol>
+        <div style="margin-top:8px;font-size:11px;color:#22C55E;font-weight:600;">✓ Es gratis · ✓ No pide tarjeta · ✓ 500 consultas gratis al día</div>
+      </details>
     </div>
 
   </div>

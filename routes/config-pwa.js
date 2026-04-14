@@ -483,8 +483,15 @@ router.post('/dallia/api-key', async (req, res) => {
     const { preview } = await tenantAi.saveTenantGoogleKey(tid, clean, true);
     res.json({ ok: true, preview, validada: true });
   } catch (e) {
-    console.error('[api-key POST]', e);
-    res.status(500).json({ error: 'Error al guardar API key' });
+    console.error('[api-key POST] error:', e.message, e.code);
+    // Mensajes más específicos para facilitar diagnóstico
+    if (e.message?.includes('SESSION_SECRET')) {
+      return res.status(500).json({ error: 'Configuración de servidor incompleta (SESSION_SECRET)' });
+    }
+    if (e.code === '42P01' || e.message?.includes('does not exist')) {
+      return res.status(500).json({ error: 'Tabla de credenciales no encontrada. Contacta soporte.' });
+    }
+    res.status(500).json({ error: 'Error al guardar API key: ' + e.message });
   }
 });
 
