@@ -57,17 +57,16 @@ async function getMesaIdByItem(connection, itemId) {
 // Configuración operativa de Cocina:
 // - auto_listo_comanda: al enviar desde Mesas el item pasa directo a "listo".
 // - imprime_servidor: la comanda se imprime en el servidor (no en el navegador del celular).
-async function getEnvioCocinaConfig(executor) {
+async function getEnvioCocinaConfig(executor, tenantId) {
     // NOTE: executor may be a wrapped pg PoolClient (from db.getConnection()) or the pool itself.
     // When called inside a transaction the same client must be used so queries join that transaction.
     // We use db (pool) as fallback so standalone calls outside a transaction still work.
     const q = executor && typeof executor.query === 'function' ? executor : db;
+    const tid = tenantId || null;
     try {
-        const [rows] = await q.query(
-            `SELECT cocina_auto_listo_comanda, cocina_imprime_servidor, impresora_comandas
-             FROM configuracion_impresion
-             LIMIT 1`
-        );
+        const [rows] = tid
+            ? await q.query(`SELECT cocina_auto_listo_comanda, cocina_imprime_servidor, impresora_comandas FROM configuracion_impresion WHERE tenant_id = ? LIMIT 1`, [tid])
+            : await q.query(`SELECT cocina_auto_listo_comanda, cocina_imprime_servidor, impresora_comandas FROM configuracion_impresion LIMIT 1`);
         return {
             // PostgreSQL returns booleans as JS true/false; coerce either way.
             auto_listo_comanda: rows?.[0]?.cocina_auto_listo_comanda === true || Number(rows?.[0]?.cocina_auto_listo_comanda || 0) === 1,
@@ -80,7 +79,9 @@ async function getEnvioCocinaConfig(executor) {
         const code = String(e?.code || '');
         if (code === 'ER_BAD_FIELD_ERROR' || code === '42703') {
             try {
-                const [rows] = await q.query('SELECT cocina_auto_listo_comanda FROM configuracion_impresion LIMIT 1');
+                const [rows] = tid
+                    ? await q.query('SELECT cocina_auto_listo_comanda FROM configuracion_impresion WHERE tenant_id = ? LIMIT 1', [tid])
+                    : await q.query('SELECT cocina_auto_listo_comanda FROM configuracion_impresion LIMIT 1');
                 return {
                     auto_listo_comanda: rows?.[0]?.cocina_auto_listo_comanda === true || Number(rows?.[0]?.cocina_auto_listo_comanda || 0) === 1,
                     imprime_servidor: false,
@@ -156,8 +157,12 @@ async function imprimirTextoEnServidor(texto, impresoraNombre) {
 // Express no confunda "meseros" con un id dinámico.
 router.get('/meseros', async (req, res) => {
     try {
+        const tenantId = req.tenantId || req.session?.user?.tenant_id;
+        if (!tenantId) return res.status(403).json({ error: 'tenant no resuelto' });
+
         const [meseros] = await db.query(
-            "SELECT id, nombre, usuario FROM usuarios WHERE rol='mesero' AND activo=true ORDER BY nombre"
+            "SELECT id, nombre, usuario FROM usuarios WHERE tenant_id = ? AND rol='mesero' AND activo=true ORDER BY nombre",
+            [tenantId]
         );
         res.json(meseros);
     } catch (error) {
@@ -172,24 +177,27 @@ router.get('/meseros', async (req, res) => {
 // Relacionado con: views/mesas.ejs (botón Asignar, solo admin) y public/js/mesas.js
 router.post('/:id/asignar-mesero', async (req, res) => {
     try {
+        const tenantId = req.tenantId || req.session?.user?.tenant_id;
+        if (!tenantId) return res.status(403).json({ error: 'tenant no resuelto' });
+
         const mesaId = req.params.id;
         const { mesero_id } = req.body || {};
 
         if (mesero_id) {
             const [[mesero]] = await db.query(
-                'SELECT nombre, usuario FROM usuarios WHERE id=? LIMIT 1',
-                [mesero_id]
+                'SELECT nombre, usuario FROM usuarios WHERE id=? AND tenant_id=? LIMIT 1',
+                [mesero_id, tenantId]
             );
             if (!mesero) return res.status(404).json({ error: 'Mesero no encontrado' });
             const nombreMesero = String(mesero.nombre || mesero.usuario || '').trim();
             await db.query(
-                'UPDATE mesas SET mesero_asignado_id=?, mesero_asignado_nombre=? WHERE id=?',
-                [mesero_id, nombreMesero, mesaId]
+                'UPDATE mesas SET mesero_asignado_id=?, mesero_asignado_nombre=? WHERE id=? AND tenant_id=?',
+                [mesero_id, nombreMesero, mesaId, tenantId]
             );
         } else {
             await db.query(
-                'UPDATE mesas SET mesero_asignado_id=NULL, mesero_asignado_nombre=NULL WHERE id=?',
-                [mesaId]
+                'UPDATE mesas SET mesero_asignado_id=NULL, mesero_asignado_nombre=NULL WHERE id=? AND tenant_id=?',
+                [mesaId, tenantId]
             );
         }
         res.json({ ok: true });
@@ -281,7 +289,8 @@ router.get('/listar', async (req, res) => {
 // Relacionado con: public/js/mesas.js (botón "Enviar a cocina")
 router.get('/config/envio-cocina', async (req, res) => {
     try {
-        const conf = await getEnvioCocinaConfig();
+        const tenantId = req.tenantId || req.session?.user?.tenant_id;
+        const conf = await getEnvioCocinaConfig(null, tenantId);
         res.json({
             auto_listo_comanda: !!conf.auto_listo_comanda,
             imprime_servidor: !!conf.imprime_servidor
@@ -295,11 +304,14 @@ router.get('/config/envio-cocina', async (req, res) => {
 // POST /mesas/crear - API: crear mesa (opcional, para administración rápida)
 router.post('/crear', async (req, res) => {
     try {
+        const tenantId = req.tenantId || req.session?.user?.tenant_id;
+        if (!tenantId) return res.status(403).json({ error: 'tenant no resuelto' });
+
         const { numero, descripcion } = req.body || {};
         if (!numero) return res.status(400).json({ error: 'El número de mesa es requerido' });
         const [result] = await db.query(
-            'INSERT INTO mesas (numero, descripcion, estado) VALUES (?, ?, ?) RETURNING id',
-            [String(numero), descripcion || null, 'libre']
+            'INSERT INTO mesas (tenant_id, numero, descripcion, estado) VALUES (?, ?, ?, ?) RETURNING id',
+            [tenantId, String(numero), descripcion || null, 'libre']
         );
         res.status(201).json({ id: result.insertId });
     } catch (error) {
@@ -311,6 +323,9 @@ router.post('/crear', async (req, res) => {
 // PUT /mesas/:mesaId - API: editar mesa (numero/descripcion/estado)
 router.put('/:mesaId', async (req, res) => {
     try {
+        const tenantId = req.tenantId || req.session?.user?.tenant_id;
+        if (!tenantId) return res.status(403).json({ error: 'tenant no resuelto' });
+
         const mesaId = req.params.mesaId;
         const { numero, descripcion, estado } = req.body || {};
 
@@ -322,18 +337,18 @@ router.put('/:mesaId', async (req, res) => {
         }
 
         // Validar existencia
-        const [actual] = await db.query('SELECT id FROM mesas WHERE id = ?', [mesaId]);
+        const [actual] = await db.query('SELECT id FROM mesas WHERE id = ? AND tenant_id = ?', [mesaId, tenantId]);
         if (actual.length === 0) return res.status(404).json({ error: 'Mesa no encontrada' });
 
-        // Validar número único
-        const [duplicada] = await db.query('SELECT id FROM mesas WHERE numero = ? AND id <> ?', [String(numero), mesaId]);
+        // Validar número único dentro del mismo tenant
+        const [duplicada] = await db.query('SELECT id FROM mesas WHERE tenant_id = ? AND numero = ? AND id <> ?', [tenantId, String(numero), mesaId]);
         if (duplicada.length > 0) {
             return res.status(409).json({ error: 'Ya existe una mesa con ese número' });
         }
 
         await db.query(
-            'UPDATE mesas SET numero = ?, descripcion = ?, estado = COALESCE(?, estado) WHERE id = ?',
-            [String(numero), descripcion || null, estado || null, mesaId]
+            'UPDATE mesas SET numero = ?, descripcion = ?, estado = COALESCE(?, estado) WHERE id = ? AND tenant_id = ?',
+            [String(numero), descripcion || null, estado || null, mesaId, tenantId]
         );
 
         res.json({ message: 'Mesa actualizada' });
@@ -346,18 +361,21 @@ router.put('/:mesaId', async (req, res) => {
 // DELETE /mesas/:mesaId - API: eliminar mesa (solo si no tiene pedidos asociados)
 router.delete('/:mesaId', async (req, res) => {
     try {
+        const tenantId = req.tenantId || req.session?.user?.tenant_id;
+        if (!tenantId) return res.status(403).json({ error: 'tenant no resuelto' });
+
         const mesaId = req.params.mesaId;
 
-        const [existe] = await db.query('SELECT id FROM mesas WHERE id = ?', [mesaId]);
+        const [existe] = await db.query('SELECT id FROM mesas WHERE id = ? AND tenant_id = ?', [mesaId, tenantId]);
         if (existe.length === 0) return res.status(404).json({ error: 'Mesa no encontrada' });
 
-        const [pedidos] = await db.query('SELECT COUNT(*) AS cnt FROM pedidos WHERE mesa_id = ?', [mesaId]);
+        const [pedidos] = await db.query('SELECT COUNT(*) AS cnt FROM pedidos WHERE mesa_id = ? AND tenant_id = ?', [mesaId, tenantId]);
         const cnt = Number(pedidos?.[0]?.cnt || 0);
         if (cnt > 0) {
             return res.status(400).json({ error: 'No se puede eliminar: la mesa tiene pedidos asociados' });
         }
 
-        const [result] = await db.query('DELETE FROM mesas WHERE id = ?', [mesaId]);
+        const [result] = await db.query('DELETE FROM mesas WHERE id = ? AND tenant_id = ?', [mesaId, tenantId]);
         if ((result?.affectedRows || 0) === 0) return res.status(404).json({ error: 'Mesa no encontrada' });
 
         res.json({ message: 'Mesa eliminada' });
@@ -369,6 +387,9 @@ router.delete('/:mesaId', async (req, res) => {
 
 // POST /mesas/abrir - API: abre (o recupera) pedido abierto para una mesa
 router.post('/abrir', async (req, res) => {
+    const tenantId = req.tenantId || req.session?.user?.tenant_id;
+    if (!tenantId) return res.status(403).json({ error: 'tenant no resuelto' });
+
     const { mesa_id, cliente_id, notas } = req.body || {};
     if (!mesa_id) return res.status(400).json({ error: 'mesa_id requerido' });
     const meseroNombre = String(req.session?.user?.nombre || req.session?.user?.usuario || '').trim() || null;
@@ -379,8 +400,8 @@ router.post('/abrir', async (req, res) => {
             const [existentes] = await connection.query(
                 // Nota: 'rechazado' NO es pedido activo; no se debe reutilizar al abrir
                 // Relacionado con: estado "rechazado" (database.sql)
-                `SELECT * FROM pedidos WHERE mesa_id = ? AND estado NOT IN ('cerrado','cancelado','rechazado') LIMIT 1`,
-                [mesa_id]
+                `SELECT * FROM pedidos WHERE tenant_id = ? AND mesa_id = ? AND estado NOT IN ('cerrado','cancelado','rechazado') LIMIT 1`,
+                [tenantId, mesa_id]
             );
             if (existentes.length > 0) {
                 // Si el pedido abierto aún no tiene mesero asignado, lo completamos con el usuario en sesión.
@@ -392,7 +413,7 @@ router.post('/abrir', async (req, res) => {
                     existentes[0].mesero_nombre = meseroNombre;
                 }
                 await syncMesaEstadoByItems(connection, mesa_id);
-                const conf = await getEnvioCocinaConfig(connection);
+                const conf = await getEnvioCocinaConfig(connection, tenantId);
                 await connection.commit();
                 connection.release();
                 return res.json({
@@ -403,14 +424,14 @@ router.post('/abrir', async (req, res) => {
             }
 
             const [insert] = await connection.query(
-                `INSERT INTO pedidos (mesa_id, cliente_id, mesero_nombre, estado, total, notas) VALUES (?, ?, ?, 'abierto', 0, ?) RETURNING id`,
-                [mesa_id, cliente_id || null, meseroNombre, notas || null]
+                `INSERT INTO pedidos (tenant_id, mesa_id, cliente_id, mesero_nombre, estado, total, notas) VALUES (?, ?, ?, ?, 'abierto', 0, ?) RETURNING id`,
+                [tenantId, mesa_id, cliente_id || null, meseroNombre, notas || null]
             );
 
             // Importante: abrir pedido no fuerza "ocupada" si aún no hay items.
             // La mesa cambia automáticamente según el conteo real de productos.
             await syncMesaEstadoByItems(connection, mesa_id);
-            const conf = await getEnvioCocinaConfig(connection);
+            const conf = await getEnvioCocinaConfig(connection, tenantId);
 
             await connection.commit();
             connection.release();
