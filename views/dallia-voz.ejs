@@ -462,7 +462,7 @@
     // Truncate long responses for voice
     const speakable = text.length > 300 ? text.substring(0, 297) + '...' : text;
 
-    // Try Gemini TTS via /api/tts first
+    // Try Gemini TTS via /api/tts first (AudioContext bypasses autoplay policy)
     try {
       const r = await fetch('/api/tts', {
         method: 'POST',
@@ -470,23 +470,24 @@
         body: JSON.stringify({ texto: speakable, voz: DALLIA_VOZ, estilo: DALLIA_ESTILO || undefined })
       });
       if (r.ok) {
-        const blob = await r.blob();
-        const url  = URL.createObjectURL(blob);
-        const audio = new Audio(url);
-        audio.onended = function() {
-          URL.revokeObjectURL(url);
-          isSpeaking = false;
-          if (onEnd) onEnd();
-        };
-        audio.onerror = function() {
-          URL.revokeObjectURL(url);
-          isSpeaking = false;
-          if (onEnd) onEnd();
-        };
-        audio.play();
-        return;
+        const buf = await r.arrayBuffer();
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (AudioCtx) {
+          const ctx = new AudioCtx();
+          const decoded = await ctx.decodeAudioData(buf);
+          const source = ctx.createBufferSource();
+          source.buffer = decoded;
+          source.connect(ctx.destination);
+          source.onended = function() {
+            ctx.close();
+            isSpeaking = false;
+            if (onEnd) onEnd();
+          };
+          source.start(0);
+          return;
+        }
       }
-    } catch (_) { /* fallback to browser SpeechSynthesis */ }
+    } catch (e) { console.warn('[TTS voz] error:', e && e.message); }
 
     // Fallback: browser Web Speech API
     if (!('speechSynthesis' in window)) {

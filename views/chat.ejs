@@ -1115,7 +1115,8 @@
         var stopTtsBtn = document.getElementById('stopTtsBtn');
         var isSpeaking = false;
 
-        var _ttsAudio = null;
+        var _ttsSource = null;
+        var _ttsCtx    = null;
 
         function leerEnVozAlta(texto) {
             if (!voiceAutoRead || !voiceAutoRead.checked) return;
@@ -1132,49 +1133,34 @@
                 body: JSON.stringify({ texto: speakable, voz: DALLIA_VOZ, estilo: DALLIA_ESTILO || undefined })
             }).then(function(r) {
                 if (!r.ok) throw new Error('tts-http-' + r.status);
-                return r.blob();
-            }).then(function(blob) {
-                var url = URL.createObjectURL(blob);
-                _ttsAudio = new Audio(url);
-                _ttsAudio.onended = function() {
-                    URL.revokeObjectURL(url);
-                    isSpeaking = false;
-                    if (stopTtsBtn) stopTtsBtn.style.display = 'none';
-                };
-                _ttsAudio.onerror = function() {
-                    URL.revokeObjectURL(url);
-                    isSpeaking = false;
-                    if (stopTtsBtn) stopTtsBtn.style.display = 'none';
-                };
-                _ttsAudio.play();
-            }).catch(function() {
-                // Fallback: browser Web Speech API
-                if (!window.speechSynthesis) {
-                    isSpeaking = false;
-                    if (stopTtsBtn) stopTtsBtn.style.display = 'none';
-                    return;
-                }
-                window.speechSynthesis.cancel();
-                var utt = new SpeechSynthesisUtterance(speakable);
-                utt.lang = 'es-PE';
-                utt.rate = 1.1;
-                utt.onend = function() {
-                    isSpeaking = false;
-                    if (stopTtsBtn) stopTtsBtn.style.display = 'none';
-                };
-                utt.onerror = function() {
-                    isSpeaking = false;
-                    if (stopTtsBtn) stopTtsBtn.style.display = 'none';
-                };
-                window.speechSynthesis.speak(utt);
+                return r.arrayBuffer();
+            }).then(function(buf) {
+                var AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) throw new Error('no-audiocontext');
+                _ttsCtx = new AudioCtx();
+                return _ttsCtx.decodeAudioData(buf).then(function(decoded) {
+                    _ttsSource = _ttsCtx.createBufferSource();
+                    _ttsSource.buffer = decoded;
+                    _ttsSource.connect(_ttsCtx.destination);
+                    _ttsSource.onended = function() {
+                        isSpeaking = false;
+                        if (stopTtsBtn) stopTtsBtn.style.display = 'none';
+                        _ttsCtx && _ttsCtx.close();
+                    };
+                    _ttsSource.start(0);
+                });
+            }).catch(function(e) {
+                console.warn('[TTS] error, usando navegador:', e && e.message);
+                isSpeaking = false;
+                if (stopTtsBtn) stopTtsBtn.style.display = 'none';
             });
         }
 
         if (stopTtsBtn) {
             stopTtsBtn.addEventListener('click', function() {
-                if (_ttsAudio) {
-                    _ttsAudio.pause();
-                    _ttsAudio = null;
+                if (_ttsSource) {
+                    try { _ttsSource.stop(); } catch(_) {}
+                    _ttsSource = null;
                 }
                 if (window.speechSynthesis) window.speechSynthesis.cancel();
                 isSpeaking = false;
