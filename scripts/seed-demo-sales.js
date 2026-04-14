@@ -1,3 +1,4 @@
+// ⚠️ SCRIPT DE DESARROLLO — NO EJECUTAR EN PRODUCCIÓN
 // scripts/seed-demo-sales.js
 // Seed realistic sales data (facturas + detalle + occupied mesas) for the demo dashboard.
 // Idempotent: only runs if today has < 3 facturas. Marks rows with `notas LIKE 'DEMO_SEED%'`
@@ -7,6 +8,11 @@
 
 'use strict';
 const db = require('../db');
+
+if (process.env.NODE_ENV === 'production' && !process.argv.includes('--force-prod')) {
+  console.error('❌ Este script está bloqueado en producción. Pasa --force-prod si realmente sabes lo que haces.');
+  process.exit(1);
+}
 
 const TENANT_ID = 1;
 

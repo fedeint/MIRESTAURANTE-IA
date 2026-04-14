@@ -1,9 +1,15 @@
+// ⚠️ SCRIPT DE DESARROLLO — NO EJECUTAR EN PRODUCCIÓN
 // USAGE:
 //   node -r dotenv/config scripts/load-demo-data.js dotenv_config_path=/tmp/prod.env
 //
 // Requires DATABASE_URL env var. NEVER hardcode connection strings or
 // credentials in source — see CLAUDE.md §2.
 require('dotenv').config();
+
+if (process.env.NODE_ENV === 'production' && !process.argv.includes('--force-prod')) {
+  console.error('❌ Este script está bloqueado en producción. Pasa --force-prod si realmente sabes lo que haces.');
+  process.exit(1);
+}
 const { Pool } = require('pg');
 
 if (!process.env.DATABASE_URL) {

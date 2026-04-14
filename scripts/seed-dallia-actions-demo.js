@@ -1,3 +1,4 @@
+// ⚠️ SCRIPT DE DESARROLLO — NO EJECUTAR EN PRODUCCIÓN
 // scripts/seed-dallia-actions-demo.js
 // Seed one tenant, one proveedor, and 3 insumos bajo minimo
 // for demoing the DallIA Actions 'Almacen por Conversacion' flow.
@@ -6,6 +7,11 @@
 
 'use strict';
 const db = require('../db');
+
+if (process.env.NODE_ENV === 'production' && !process.argv.includes('--force-prod')) {
+  console.error('❌ Este script está bloqueado en producción. Pasa --force-prod si realmente sabes lo que haces.');
+  process.exit(1);
+}
 
 async function seed() {
     const tenantId = 1;  // assume tenant 1 exists

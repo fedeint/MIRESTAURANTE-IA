@@ -1,3 +1,4 @@
+// ⚠️ SCRIPT DE DESARROLLO — NO EJECUTAR EN PRODUCCIÓN
 // scripts/seed-demo-promo.js
 // Seed a demo promo code "DEMO20" (20% off) for the demo tenant.
 // Idempotent: no-op if the code already exists.
@@ -6,6 +7,11 @@
 
 'use strict';
 const db = require('../db');
+
+if (process.env.NODE_ENV === 'production' && !process.argv.includes('--force-prod')) {
+  console.error('❌ Este script está bloqueado en producción. Pasa --force-prod si realmente sabes lo que haces.');
+  process.exit(1);
+}
 
 const TENANT_ID = 1;
 

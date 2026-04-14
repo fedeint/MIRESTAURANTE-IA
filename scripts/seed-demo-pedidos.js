@@ -1,3 +1,4 @@
+// ⚠️ SCRIPT DE DESARROLLO — NO EJECUTAR EN PRODUCCIÓN
 // scripts/seed-demo-pedidos.js
 // Seed active pedidos for the consolidated /pedidos view (3 tabs).
 // Idempotent: skip if there are already >= 3 active pedidos with notas LIKE 'DEMO_PEDIDO%'.
@@ -6,6 +7,11 @@
 
 'use strict';
 const db = require('../db');
+
+if (process.env.NODE_ENV === 'production' && !process.argv.includes('--force-prod')) {
+  console.error('❌ Este script está bloqueado en producción. Pasa --force-prod si realmente sabes lo que haces.');
+  process.exit(1);
+}
 
 const TENANT_ID = 1;
 
