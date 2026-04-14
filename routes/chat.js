@@ -846,7 +846,7 @@ router.post('/', async (req, res) => {
 
     try {
         const [contexto, kbContext] = await Promise.all([
-            obtenerContextoNegocio(),
+            obtenerContextoNegocio(tid),
             buildContext(tid)
         ]);
 
@@ -999,19 +999,20 @@ router.post('/', async (req, res) => {
     }
 });
 
-const _contextCache = { data: null, ts: 0 };
+const _contextCache = new Map(); // keyed by tenantId
 const CONTEXT_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 
-async function obtenerContextoNegocio() {
-    if (_contextCache.data && (Date.now() - _contextCache.ts) < CONTEXT_CACHE_TTL) {
-        return _contextCache.data;
+async function obtenerContextoNegocio(tenantId) {
+    const cached = _contextCache.get(tenantId);
+    if (cached && (Date.now() - cached.ts) < CONTEXT_CACHE_TTL) {
+        return cached.data;
     }
 
     const secciones = [];
 
     // --- NEGOCIO ---
     try {
-        const [config] = await db.query('SELECT nombre_negocio, direccion, telefono FROM configuracion_impresion LIMIT 1');
+        const [config] = await db.query('SELECT nombre_negocio, direccion, telefono FROM configuracion_impresion WHERE tenant_id = ? LIMIT 1', [tenantId]);
         if (config.length > 0 && config[0].nombre_negocio) {
             secciones.push(`## NEGOCIO\n- Nombre: ${config[0].nombre_negocio}\n- Direccion: ${config[0].direccion || 'N/A'}\n- Telefono: ${config[0].telefono || 'N/A'}`);
         }
@@ -1021,8 +1022,8 @@ async function obtenerContextoNegocio() {
     try {
         const [hoy] = await db.query(`
             SELECT COUNT(*) as total, COALESCE(SUM(total), 0) as monto
-            FROM facturas WHERE (fecha AT TIME ZONE 'America/Lima')::date = (NOW() AT TIME ZONE 'America/Lima')::date
-        `);
+            FROM facturas WHERE tenant_id = ? AND (fecha AT TIME ZONE 'America/Lima')::date = (NOW() AT TIME ZONE 'America/Lima')::date
+        `, [tenantId]);
         secciones.push(`## VENTAS HOY\n- Facturas: ${hoy[0].total}\n- Monto total: S/ ${Number(hoy[0].monto).toFixed(2)}`);
     } catch (_) {}
 
@@ -1030,15 +1031,15 @@ async function obtenerContextoNegocio() {
     try {
         const [ventas] = await db.query(`
             SELECT COUNT(*) as total, COALESCE(SUM(total), 0) as monto
-            FROM facturas WHERE fecha >= NOW() - INTERVAL '30 days'
-        `);
+            FROM facturas WHERE tenant_id = ? AND fecha >= NOW() - INTERVAL '30 days'
+        `, [tenantId]);
         let seccion = `## VENTAS ULTIMOS 30 DIAS\n- Facturas: ${ventas[0].total}\n- Total: S/ ${Number(ventas[0].monto).toFixed(2)}`;
 
         const [metodos] = await db.query(`
             SELECT forma_pago, COUNT(*) as cantidad, SUM(total) as monto
-            FROM facturas WHERE fecha >= NOW() - INTERVAL '30 days'
+            FROM facturas WHERE tenant_id = ? AND fecha >= NOW() - INTERVAL '30 days'
             GROUP BY forma_pago
-        `);
+        `, [tenantId]);
         if (metodos.length > 0) {
             seccion += '\n- Por metodo: ' + metodos.map(m => `${m.forma_pago}: ${m.cantidad} ventas (S/${Number(m.monto).toFixed(2)})`).join(', ');
         }
@@ -1047,16 +1048,16 @@ async function obtenerContextoNegocio() {
 
     // --- MESAS ---
     try {
-        const [mesas] = await db.query('SELECT COUNT(*) as total FROM mesas');
-        const [ocupadas] = await db.query("SELECT COUNT(*) as total FROM mesas WHERE estado = 'ocupada'");
+        const [mesas] = await db.query('SELECT COUNT(*) as total FROM mesas WHERE tenant_id = ?', [tenantId]);
+        const [ocupadas] = await db.query("SELECT COUNT(*) as total FROM mesas WHERE tenant_id = ? AND estado = 'ocupada'", [tenantId]);
         const pct = mesas[0].total > 0 ? Math.round((ocupadas[0].total / mesas[0].total) * 100) : 0;
         secciones.push(`## MESAS\n- Total: ${mesas[0].total}\n- Ocupadas: ${ocupadas[0].total} (${pct}%)\n- Libres: ${mesas[0].total - ocupadas[0].total}`);
     } catch (_) {}
 
     // --- PRODUCTOS ---
     try {
-        const [productos] = await db.query('SELECT COUNT(*) as total FROM productos');
-        const [topProductos] = await db.query('SELECT nombre, precio_unidad FROM productos ORDER BY nombre LIMIT 20');
+        const [productos] = await db.query('SELECT COUNT(*) as total FROM productos WHERE tenant_id = ?', [tenantId]);
+        const [topProductos] = await db.query('SELECT nombre, precio_unidad FROM productos WHERE tenant_id = ? ORDER BY nombre LIMIT 20', [tenantId]);
         let seccion = `## PRODUCTOS (${productos[0].total} en carta)`;
         if (topProductos.length > 0) {
             seccion += '\n- Carta: ' + topProductos.map(p => `${p.nombre} (S/${p.precio_unidad})`).join(', ');
@@ -1070,10 +1071,10 @@ async function obtenerContextoNegocio() {
             SELECT p.nombre, SUM(df.cantidad) as vendidos
             FROM detalle_factura df
             JOIN productos p ON p.id = df.producto_id
-            WHERE df.created_at >= NOW() - INTERVAL '30 days'
+            WHERE p.tenant_id = ? AND df.created_at >= NOW() - INTERVAL '30 days'
             GROUP BY df.producto_id, p.nombre
             ORDER BY vendidos DESC LIMIT 10
-        `);
+        `, [tenantId]);
         if (topVentas.length > 0) {
             secciones.push('## TOP 10 MAS VENDIDOS (30 dias)\n' + topVentas.map((p, i) => `${i + 1}. ${p.nombre} — ${p.vendidos} uds`).join('\n'));
         }
@@ -1081,20 +1082,20 @@ async function obtenerContextoNegocio() {
 
     // --- CLIENTES ---
     try {
-        const [clientes] = await db.query('SELECT COUNT(*) as total FROM clientes');
+        const [clientes] = await db.query('SELECT COUNT(*) as total FROM clientes WHERE tenant_id = ?', [tenantId]);
         secciones.push(`## CLIENTES\n- Registrados: ${clientes[0].total}`);
     } catch (_) {}
 
     // --- EQUIPO + MESEROS CON MESAS ---
     try {
-        const [usuarios] = await db.query('SELECT id, usuario, nombre, rol FROM usuarios WHERE activo = true');
+        const [usuarios] = await db.query("SELECT id, usuario, nombre, rol FROM usuarios WHERE tenant_id = ? AND activo = true AND rol != 'superadmin'", [tenantId]);
         if (usuarios.length > 0) {
             let seccion = '## EQUIPO ACTIVO';
             for (const u of usuarios) {
                 let linea = `- ${u.nombre || u.usuario} (${u.rol})`;
                 if (u.rol === 'mesero') {
                     try {
-                        const [mesas] = await db.query('SELECT numero FROM mesas WHERE mesero_asignado_id = ? ORDER BY numero', [u.id]);
+                        const [mesas] = await db.query('SELECT numero FROM mesas WHERE tenant_id = ? AND mesero_asignado_id = ? ORDER BY numero', [tenantId, u.id]);
                         if (mesas.length > 0) {
                             linea += ` — mesas asignadas: ${mesas.map(m => m.numero).join(', ')}`;
                         } else {
@@ -1118,12 +1119,12 @@ async function obtenerContextoNegocio() {
             JOIN mesas m ON m.id = p.mesa_id
             JOIN pedido_items pi ON pi.pedido_id = p.id
             LEFT JOIN usuarios u ON u.id = m.mesero_asignado_id
-            WHERE m.mesero_asignado_id IS NOT NULL
+            WHERE p.tenant_id = ? AND m.mesero_asignado_id IS NOT NULL
               AND pi.estado NOT IN ('cancelado','rechazado')
               AND (p.created_at AT TIME ZONE 'America/Lima')::date = (NOW() AT TIME ZONE 'America/Lima')::date
             GROUP BY m.mesero_asignado_nombre, u.nombre
             ORDER BY productos_servidos DESC
-        `);
+        `, [tenantId]);
         if (ranking.length > 0) {
             secciones.push('## RANKING MESEROS HOY\n' + ranking.map((r, i) => `${i + 1}. ${r.nombre}: ${r.mesas_atendidas} mesas, ${r.productos_servidos} productos`).join('\n'));
         }
@@ -1143,10 +1144,10 @@ async function obtenerContextoNegocio() {
                 ORDER BY CASE pi3.estado WHEN 'listo' THEN 1 WHEN 'preparando' THEN 2 WHEN 'enviado' THEN 3 ELSE 4 END
                 LIMIT 1
             ) pi2 ON true
-            WHERE p.estado = 'abierto' AND pi.estado NOT IN ('cancelado','rechazado')
+            WHERE p.tenant_id = ? AND p.estado = 'abierto' AND pi.estado NOT IN ('cancelado','rechazado')
             GROUP BY m.id, m.numero, pi2.estado
             ORDER BY m.numero
-        `);
+        `, [tenantId]);
         if (activos.length > 0) {
             secciones.push('## PEDIDOS ACTIVOS AHORA\n' + activos.map(a =>
                 `- Mesa ${a.numero}: ${a.productos} (estado: ${a.estado_cocina || 'servido'})`
@@ -1156,10 +1157,10 @@ async function obtenerContextoNegocio() {
 
     // --- ALMACEN ---
     try {
-        const [alm] = await db.query('SELECT COUNT(*) as total, COALESCE(SUM(stock_actual), 0) as stock_total FROM almacen_ingredientes WHERE activo = true');
+        const [alm] = await db.query('SELECT COUNT(*) as total, COALESCE(SUM(stock_actual), 0) as stock_total FROM almacen_ingredientes WHERE tenant_id = ? AND activo = true', [tenantId]);
         let seccion = `## ALMACEN\n- Ingredientes registrados: ${alm[0].total}\n- Stock total: ${Number(alm[0].stock_total).toFixed(1)} unidades`;
 
-        const [bajo] = await db.query('SELECT nombre, stock_actual, stock_minimo, unidad_medida FROM almacen_ingredientes WHERE activo = true AND stock_actual <= stock_minimo ORDER BY stock_actual ASC LIMIT 10');
+        const [bajo] = await db.query('SELECT nombre, stock_actual, stock_minimo, unidad_medida FROM almacen_ingredientes WHERE tenant_id = ? AND activo = true AND stock_actual <= stock_minimo ORDER BY stock_actual ASC LIMIT 10', [tenantId]);
         if (bajo.length > 0) {
             seccion += `\n- ALERTA stock bajo (${bajo.length}):\n` + bajo.map(b => `  - ${b.nombre}: ${b.stock_actual} ${b.unidad_medida} (min: ${b.stock_minimo})`).join('\n');
         } else {
@@ -1173,12 +1174,12 @@ async function obtenerContextoNegocio() {
                        (al.fecha_vencimiento - CURRENT_DATE) as dias
                 FROM almacen_lotes al
                 JOIN almacen_ingredientes ai ON ai.id = al.ingrediente_id
-                WHERE al.cantidad_disponible > 0
+                WHERE ai.tenant_id = ? AND al.cantidad_disponible > 0
                   AND al.fecha_vencimiento IS NOT NULL
                   AND al.fecha_vencimiento >= CURRENT_DATE
                   AND al.fecha_vencimiento <= CURRENT_DATE + 3
                 ORDER BY al.fecha_vencimiento ASC LIMIT 8
-            `);
+            `, [tenantId]);
             if (venciendo.length > 0) {
                 seccion += `\n- VENCIMIENTOS PRÓXIMOS (${venciendo.length}):\n` +
                     venciendo.map(v => {
@@ -1198,9 +1199,10 @@ async function obtenerContextoNegocio() {
             FROM productos p
             JOIN recetas rec ON rec.producto_id = p.id
             JOIN receta_items ri ON ri.receta_id = rec.id
+            WHERE p.tenant_id = ?
             GROUP BY p.id, p.nombre
             ORDER BY ingredientes DESC LIMIT 10
-        `);
+        `, [tenantId]);
         if (recetas.length > 0) {
             secciones.push('## RECETAS (platos con mas ingredientes)\n' + recetas.map((r, i) => `${i + 1}. ${r.nombre} — ${r.ingredientes} ingredientes`).join('\n'));
         }
@@ -1208,7 +1210,7 @@ async function obtenerContextoNegocio() {
 
     // --- CAJA (con movimientos del día) ---
     try {
-        const [caja] = await db.query("SELECT id, monto_apertura, fecha_apertura FROM cajas WHERE estado = 'abierta' LIMIT 1");
+        const [caja] = await db.query("SELECT id, monto_apertura, fecha_apertura FROM cajas WHERE tenant_id = ? AND estado = 'abierta' LIMIT 1", [tenantId]);
         if (caja.length > 0) {
             let seccion = `## CAJA\n- Estado: ABIERTA\n- Monto apertura: S/ ${Number(caja[0].monto_apertura).toFixed(2)}`;
             try {
@@ -1238,7 +1240,7 @@ async function obtenerContextoNegocio() {
 
     // --- METAS DEL DÍA ---
     try {
-        const [metas] = await db.query('SELECT tipo, meta_valor FROM metas_diarias WHERE activa = true LIMIT 5');
+        const [metas] = await db.query('SELECT tipo, meta_valor FROM metas_diarias WHERE tenant_id = ? AND activa = true LIMIT 5', [tenantId]);
         if (metas && metas.length > 0) {
             let seccionMetas = '## METAS DEL DÍA';
             for (const meta of metas) {
@@ -1253,7 +1255,7 @@ async function obtenerContextoNegocio() {
         const [[planHoy]] = await db.query(`
             SELECT COUNT(*) as pagos, COALESCE(SUM(monto_neto), 0) as total_neto
             FROM planilla_pagos
-            WHERE (fecha AT TIME ZONE 'America/Lima')::date = (NOW() AT TIME ZONE 'America/Lima')::date`);
+            WHERE tenant_id = ? AND (fecha AT TIME ZONE 'America/Lima')::date = (NOW() AT TIME ZONE 'America/Lima')::date`, [tenantId]);
         if (Number(planHoy.pagos) > 0) {
             secciones.push(`## PLANILLA HOY\n- Pagos realizados: ${planHoy.pagos}\n- Total neto pagado: S/ ${Number(planHoy.total_neto).toFixed(2)}`);
         }
@@ -1264,8 +1266,9 @@ async function obtenerContextoNegocio() {
         const [[gastMes]] = await db.query(`
             SELECT COALESCE(SUM(g.monto), 0) as total, COUNT(*) as cantidad
             FROM gastos g
-            WHERE EXTRACT(MONTH FROM g.fecha) = EXTRACT(MONTH FROM NOW())
-              AND EXTRACT(YEAR FROM g.fecha) = EXTRACT(YEAR FROM NOW())`);
+            WHERE g.tenant_id = ?
+              AND EXTRACT(MONTH FROM g.fecha) = EXTRACT(MONTH FROM NOW())
+              AND EXTRACT(YEAR FROM g.fecha) = EXTRACT(YEAR FROM NOW())`, [tenantId]);
         if (Number(gastMes.cantidad) > 0) {
             secciones.push(`## GASTOS DEL MES\n- Total: S/ ${Number(gastMes.total).toFixed(2)} (${gastMes.cantidad} registros)`);
         }
@@ -1273,8 +1276,7 @@ async function obtenerContextoNegocio() {
     } catch (_) {}
 
     const result = secciones.join('\n\n') || 'No hay datos del negocio disponibles aun.';
-    _contextCache.data = result;
-    _contextCache.ts = Date.now();
+    _contextCache.set(tenantId, { data: result, ts: Date.now() });
     return result;
 }
 
