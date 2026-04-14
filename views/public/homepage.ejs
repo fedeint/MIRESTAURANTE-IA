@@ -430,6 +430,101 @@
       text-align: center;
     }
 
+    /* ---- VOICES ---- */
+    .section-voices {
+      padding: 96px 24px;
+      background: linear-gradient(180deg, #0a0f24 0%, #141828 100%);
+    }
+    .section-voices .inner {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    .voices-header {
+      text-align: center;
+      margin-bottom: 56px;
+    }
+    .voices-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      max-width: 960px;
+      margin: 0 auto;
+    }
+    @media (max-width: 768px) {
+      .voices-grid { grid-template-columns: 1fr; }
+    }
+    .voice-card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 20px;
+      padding: 32px 24px;
+      text-align: center;
+      transition: all .3s;
+      position: relative;
+      overflow: hidden;
+    }
+    .voice-card:hover {
+      border-color: rgba(255,107,53,0.4);
+      transform: translateY(-4px);
+      box-shadow: 0 20px 60px rgba(255,107,53,0.15);
+    }
+    .voice-avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      margin: 0 auto 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 36px;
+      font-weight: 700;
+      color: #fff;
+    }
+    .voice-avatar.aoede {
+      background: linear-gradient(135deg, #ff6b9d 0%, #c44dd9 100%);
+    }
+    .voice-avatar.kore {
+      background: linear-gradient(135deg, #667eea 0%, #4b3cc4 100%);
+    }
+    .voice-avatar.puck {
+      background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    }
+    .voice-name {
+      font-size: 22px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 6px;
+    }
+    .voice-type {
+      font-size: 13px;
+      color: #FF6B35;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 14px;
+    }
+    .voice-desc {
+      font-size: 14px;
+      color: rgba(255,255,255,0.7);
+      line-height: 1.5;
+    }
+    .voice-hint {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 40px;
+      padding: 12px 20px;
+      background: rgba(255,107,53,0.12);
+      border: 1px solid rgba(255,107,53,0.3);
+      border-radius: 100px;
+      font-size: 13px;
+      color: rgba(255,255,255,0.85);
+      font-weight: 500;
+    }
+    .voices-cta-wrap {
+      text-align: center;
+    }
+
     /* ---- PLANS ---- */
     .section-plans {
       background: #0d1229;
@@ -783,8 +878,8 @@
 
       <div class="feature-card" style="border-color:rgba(255,107,53,0.25); background: linear-gradient(160deg, rgba(255,107,53,0.07) 0%, #141828 70%);">
         <div class="feature-icon" style="background:rgba(255,107,53,0.2);"><i class="bi bi-robot"></i></div>
-        <div class="feature-title" style="color:#FF6B35;">DallIA — Asistente IA</div>
-        <div class="feature-desc">Pregunta en lenguaje natural: "¿Qué vendí ayer?", "¿Cuánto stock de pollo tengo?". Tu IA responde al instante.</div>
+        <div class="feature-title" style="color:#FF6B35;">DallIA — Habla y escucha</div>
+        <div class="feature-desc">Pregúntale por voz o texto. "¿Qué vendí ayer?", "Revisa mi stock". Te responde al instante con voz natural.</div>
       </div>
 
       <div class="feature-card">
@@ -797,6 +892,51 @@
         <div class="feature-icon"><i class="bi bi-cash-coin"></i></div>
         <div class="feature-title">Caja y Facturación</div>
         <div class="feature-desc">Cierre de caja, métodos de pago, propinas y emisión de comprobantes electrónicos SUNAT integrado.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider-glow"></div>
+
+<!-- ═══════════════════════════════════════════
+     VOCES DE DALLIA
+════════════════════════════════════════════ -->
+<section class="section-voices">
+  <div class="inner">
+    <div class="voices-header">
+      <span class="section-label">DalIA habla</span>
+      <h2 class="section-title" style="text-align:center;">Elige cómo<br>suena tu asistente</h2>
+      <p class="section-subtitle" style="text-align:center;margin:0 auto;">3 voces naturales con personalidad distinta. Cambia cuando quieras desde la configuración.</p>
+    </div>
+
+    <div class="voices-grid">
+      <div class="voice-card">
+        <div class="voice-avatar aoede">A</div>
+        <div class="voice-name">Aoede</div>
+        <div class="voice-type">Femenina suave</div>
+        <div class="voice-desc">Cálida y conversacional. Como una colega que te guía sin apuros.</div>
+      </div>
+
+      <div class="voice-card">
+        <div class="voice-avatar kore">K</div>
+        <div class="voice-name">Kore</div>
+        <div class="voice-type">Femenina firme</div>
+        <div class="voice-desc">Profesional y directa. Ideal cuando necesitas respuestas rápidas al grano.</div>
+      </div>
+
+      <div class="voice-card">
+        <div class="voice-avatar puck">P</div>
+        <div class="voice-name">Puck</div>
+        <div class="voice-type">Masculina jovial</div>
+        <div class="voice-desc">Amigable y casual. La energía chamba que hace la jornada más ligera.</div>
+      </div>
+    </div>
+
+    <div class="voices-cta-wrap">
+      <div class="voice-hint">
+        <i class="bi bi-soundwave" style="color:#FF6B35;font-size:18px;"></i>
+        Voz en español peruano · Habla y escucha en tiempo real
       </div>
     </div>
   </div>
@@ -839,29 +979,29 @@
     </div>
 
     <div class="plans-grid">
-      <!-- Free -->
+      <!-- Trial -->
       <div class="plan-card">
-        <div class="plan-name">Gratuito</div>
-        <div class="plan-price">S/ 0<span> /mes</span></div>
-        <div class="plan-desc">Empieza sin costo. Ideal para conocer el sistema.</div>
+        <div class="plan-name">Trial</div>
+        <div class="plan-price">S/ 0<span> · 15 días</span></div>
+        <div class="plan-desc">Pruébalo sin compromiso ni tarjeta de crédito.</div>
         <ul class="plan-features">
-          <li><i class="bi bi-check-circle-fill"></i> 1 usuario</li>
-          <li><i class="bi bi-check-circle-fill"></i> Hasta 50 pedidos/mes</li>
-          <li><i class="bi bi-check-circle-fill"></i> DallIA con límite</li>
-          <li><i class="bi bi-check-circle-fill"></i> Reportes básicos</li>
+          <li><i class="bi bi-check-circle-fill"></i> Sistema completo</li>
+          <li><i class="bi bi-check-circle-fill"></i> DalIA con voz</li>
+          <li><i class="bi bi-check-circle-fill"></i> Hosting incluido</li>
+          <li><i class="bi bi-check-circle-fill"></i> Soporte por email</li>
         </ul>
-        <a href="/auth/google" class="plan-btn plan-btn-ghost">Empezar gratis</a>
+        <a href="/auth/google" class="plan-btn plan-btn-ghost">Probar gratis</a>
       </div>
 
-      <!-- Anual -->
+      <!-- Anual bundle (oferta) -->
       <div class="plan-card featured">
         <div class="plan-name">Anual</div>
-        <div class="plan-price">S/ 3,200<span> /año</span></div>
-        <div class="plan-desc">Todo incluido. Ahorra frente al pago mensual.</div>
+        <div class="plan-price">S/ 1,700<span> /año</span></div>
+        <div class="plan-desc">Licencia + nube incluida. <strong>Ahorras S/ 220</strong> vs mensual.</div>
         <ul class="plan-features">
-          <li><i class="bi bi-check-circle-fill"></i> Usuarios ilimitados</li>
-          <li><i class="bi bi-check-circle-fill"></i> Pedidos ilimitados</li>
-          <li><i class="bi bi-check-circle-fill"></i> DallIA IA completa</li>
+          <li><i class="bi bi-check-circle-fill"></i> Sistema y usuarios ilimitados</li>
+          <li><i class="bi bi-check-circle-fill"></i> DalIA con voz</li>
+          <li><i class="bi bi-check-circle-fill"></i> Hosting anual incluido</li>
           <li><i class="bi bi-check-circle-fill"></i> Facturación SUNAT</li>
           <li><i class="bi bi-check-circle-fill"></i> Soporte prioritario</li>
         </ul>
@@ -871,16 +1011,20 @@
       <!-- Lifetime -->
       <div class="plan-card">
         <div class="plan-name">De por vida</div>
-        <div class="plan-price">S/ 4,500<span> único</span></div>
-        <div class="plan-desc">Paga una vez. Úsalo para siempre. Sin renovaciones.</div>
+        <div class="plan-price">S/ 2,700<span> pago único</span></div>
+        <div class="plan-desc">Licencia para siempre. Nube anual se renueva aparte.</div>
         <ul class="plan-features">
           <li><i class="bi bi-check-circle-fill"></i> Todo del plan Anual</li>
-          <li><i class="bi bi-check-circle-fill"></i> Acceso de por vida</li>
+          <li><i class="bi bi-check-circle-fill"></i> Licencia de por vida</li>
           <li><i class="bi bi-check-circle-fill"></i> Futuras funciones incluidas</li>
           <li><i class="bi bi-check-circle-fill"></i> Onboarding personalizado</li>
         </ul>
         <a href="/paquetes" class="plan-btn plan-btn-ghost">Ver detalles</a>
       </div>
+    </div>
+
+    <div style="text-align:center;margin-top:24px;">
+      <span style="color:rgba(255,255,255,0.6);font-size:13px;">También disponible mensual a S/ 160/mes</span>
     </div>
 
     <div class="plans-see-all">
