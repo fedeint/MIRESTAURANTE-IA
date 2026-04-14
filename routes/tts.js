@@ -67,8 +67,13 @@ router.post('/', async (req, res) => {
     const textoLimpio = String(texto).trim().slice(0, 5000); // hard cap
     const estiloLimpio = estilo ? String(estilo).trim().slice(0, 500) : null;
 
+    // El modelo TTS no soporta system_instruction — el estilo va como contexto en el texto
+    const textoConEstilo = estiloLimpio
+        ? `[${estiloLimpio}]\n\n${textoLimpio}`
+        : textoLimpio;
+
     const reqBody = {
-        contents: [{ parts: [{ text: textoLimpio }] }],
+        contents: [{ parts: [{ text: textoConEstilo }] }],
         generationConfig: {
             responseModalities: ['AUDIO'],
             speechConfig: {
@@ -78,9 +83,6 @@ router.post('/', async (req, res) => {
             }
         }
     };
-    if (estiloLimpio) {
-        reqBody.system_instruction = { parts: [{ text: estiloLimpio }] };
-    }
 
     try {
         const resp = await fetch(`${GEMINI_ENDPOINT}?key=${apiKey}`, {
