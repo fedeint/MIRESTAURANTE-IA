@@ -597,13 +597,24 @@ async function ensureSchema() {
     }
 }
 
+// schemaReady: promesa que se resuelve cuando ensureSchema() termina.
+// Los módulos críticos pueden `await db.schemaReady` antes de hacer
+// operaciones que dependen de tablas creadas en ensureSchema().
+let _schemaReadyResolve;
+const schemaReady = new Promise(resolve => { _schemaReadyResolve = resolve; });
+pgPool.schemaReady = schemaReady;
+
 // Verify connection on startup
 pgPool.connect()
     .then(client => {
         const modeLabel = IS_LOCAL ? 'LOCAL (postgresql://localhost/dignita_local)' : 'Supabase (nube)';
         console.log(`Conexion exitosa a PostgreSQL - modo: ${modeLabel}`);
         client.release();
-        ensureSchema();
+        return ensureSchema();
+    })
+    .then(() => {
+        _schemaReadyResolve();
+        console.log('ensureSchema() completado — tablas listas.');
     })
     .catch(err => {
         console.error('Error al conectar a la base de datos PostgreSQL:', err.message || err);
@@ -611,6 +622,7 @@ pgPool.connect()
             console.error('Asegurate de que PostgreSQL este corriendo localmente.');
             console.error('Inicia con: brew services start postgresql@15');
         }
+        _schemaReadyResolve(); // resolver igual para no bloquear requests indefinidamente
     });
 
 // Expose current mode for other modules (e.g. routes/sync.js)

@@ -423,6 +423,8 @@ router.post('/dallia/automatizaciones', async (req, res) => {
     const cols = Object.keys(data);
     if (cols.length === 0) return res.json({ ok: true });
 
+    await db.schemaReady; // esperar a que la tabla exista
+
     const colList = cols.join(', ');
     const placeholders = cols.map(() => '?').join(', ');
     const updateSet = cols.map(c => `${c} = EXCLUDED.${c}`).join(', ');
