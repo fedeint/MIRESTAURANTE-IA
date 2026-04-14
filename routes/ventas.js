@@ -4,13 +4,14 @@ const db = require('../db');
 
 /**
  * Construye cláusula WHERE y params para filtros de ventas.
+ * tenantId es obligatorio — siempre se incluye como primer filtro.
  * Relacionado con:
  * - views/ventas.ejs (filtros por fecha y búsqueda)
  * - routes/ventas.js (listado y export)
  */
-function buildVentasWhere(queryParams) {
-    const where = [];
-    const params = [];
+function buildVentasWhere(tenantId, queryParams) {
+    const where = ['f.tenant_id = ?'];
+    const params = [tenantId];
 
     if (queryParams.desde && queryParams.hasta) {
         where.push('f.fecha::date BETWEEN ? AND ?');
@@ -23,7 +24,7 @@ function buildVentasWhere(queryParams) {
         params.push(term, term);
     }
 
-    const whereSql = where.length ? `WHERE ${where.join(' AND ')}` : '';
+    const whereSql = `WHERE ${where.join(' AND ')}`;
     return { whereSql, params };
 }
 
@@ -31,8 +32,8 @@ function buildVentasWhere(queryParams) {
  * Calcula totales por método usando factura_pagos (incluye facturas mixtas).
  * Si una factura no tiene registros en factura_pagos (legacy), cae a f.forma_pago + f.total.
  */
-async function getTotalesPorMetodo(queryParams) {
-    const { whereSql, params } = buildVentasWhere(queryParams);
+async function getTotalesPorMetodo(tenantId, queryParams) {
+    const { whereSql, params } = buildVentasWhere(tenantId, queryParams);
 
     // Para el segundo SELECT (fallback) necesitamos agregar condición fp2.id IS NULL
     const whereSqlFallback = whereSql
@@ -83,7 +84,7 @@ async function getTotalesPorMetodo(queryParams) {
             const sqlOld = `
                 SELECT f.forma_pago AS metodo, SUM(f.total) AS total
                 FROM facturas f
-                JOIN clientes c ON f.cliente_id = c.id
+                LEFT JOIN clientes c ON f.cliente_id = c.id
                 ${whereSql}
                 GROUP BY f.forma_pago
             `;
@@ -108,17 +109,20 @@ async function getTotalesPorMetodo(queryParams) {
 // Ruta principal de ventas con filtros opcionales por fecha
 router.get('/', async (req, res) => {
     try {
-        const { whereSql, params } = buildVentasWhere(req.query);
+        const tenantId = req.tenantId || req.session?.user?.tenant_id;
+        if (!tenantId) return res.status(403).send('tenant no resuelto');
+
+        const { whereSql, params } = buildVentasWhere(tenantId, req.query);
         const query = `
             SELECT f.*, c.nombre as cliente_nombre
             FROM facturas f
-            JOIN clientes c ON f.cliente_id = c.id
+            LEFT JOIN clientes c ON f.cliente_id = c.id
             ${whereSql}
             ORDER BY f.fecha DESC
         `;
 
         const [ventas] = await db.query(query, params);
-        const totales = await getTotalesPorMetodo(req.query);
+        const totales = await getTotalesPorMetodo(tenantId, req.query);
         res.render('ventas', { ventas, totales });
     } catch (error) {
         console.error('Error al obtener ventas:', error);
@@ -129,6 +133,9 @@ router.get('/', async (req, res) => {
 // GET /ventas/export - Exportar CSV por rango y búsqueda
 router.get('/export', async (req, res) => {
     try {
+        const tenantId = req.tenantId || req.session?.user?.tenant_id;
+        if (!tenantId) return res.status(403).send('tenant no resuelto');
+
         // Lazy import para no romper el arranque si falta la dependencia
         let ExcelJS;
         try {
@@ -136,17 +143,17 @@ router.get('/export', async (req, res) => {
         } catch (e) {
             return res.status(500).send('Exportación a Excel no disponible. Instale la dependencia con: npm install exceljs');
         }
-        const { whereSql, params } = buildVentasWhere(req.query);
+        const { whereSql, params } = buildVentasWhere(tenantId, req.query);
         const query = `
             SELECT f.id, f.fecha, c.nombre as cliente, f.forma_pago, f.total
             FROM facturas f
-            JOIN clientes c ON f.cliente_id = c.id
+            LEFT JOIN clientes c ON f.cliente_id = c.id
             ${whereSql}
         `;
         const queryFinal = `${query} ORDER BY f.fecha DESC`;
 
         const [rows] = await db.query(queryFinal, params);
-        const totales = await getTotalesPorMetodo(req.query);
+        const totales = await getTotalesPorMetodo(tenantId, req.query);
 
         // Crear Excel con ExcelJS
         const wb = new ExcelJS.Workbook();
@@ -155,7 +162,7 @@ router.get('/export', async (req, res) => {
         // Traer configuración para encabezado (nombre, logo, etc.)
         let config = null;
         try {
-            const [cfg] = await db.query('SELECT * FROM configuracion_impresion LIMIT 1');
+            const [cfg] = await db.query('SELECT * FROM configuracion_impresion WHERE tenant_id = ? LIMIT 1', [tenantId]);
             config = (cfg && cfg[0]) ? cfg[0] : null;
         } catch (_) {}
 
