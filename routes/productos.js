@@ -7,7 +7,10 @@ let ExcelJS; // import perezoso para template/import
 // GET /productos - Mostrar página de productos
 router.get('/', async (req, res) => {
     try {
-        const [productos] = await db.query('SELECT * FROM productos ORDER BY nombre');
+        const tenantId = req.tenantId || req.session?.user?.tenant_id;
+        if (!tenantId) return res.status(403).json({ error: 'tenant no resuelto' });
+
+        const [productos] = await db.query('SELECT * FROM productos WHERE tenant_id = ? ORDER BY nombre', [tenantId]);
 
         // Calcular disponibilidad en batch (1-2 queries en vez de 2*N)
         const [recetas] = await db.query(
@@ -16,7 +19,8 @@ router.get('/', async (req, res) => {
              FROM recetas r
              JOIN receta_items ri ON ri.receta_id = r.id
              JOIN almacen_ingredientes ai ON ai.id = ri.ingrediente_id
-             WHERE r.activa = true`
+             WHERE r.activa = true AND r.tenant_id = ?`,
+            [tenantId]
         );
 
         // Agrupar por producto_id
@@ -65,15 +69,18 @@ router.get('/', async (req, res) => {
 // GET /productos/buscar - Buscar productos
 router.get('/buscar', async (req, res) => {
     try {
+        const tenantId = req.tenantId || req.session?.user?.tenant_id;
+        if (!tenantId) return res.status(403).json({ error: 'tenant no resuelto' });
+
         const query = req.query.q || '';
         const sql = `
-            SELECT * FROM productos 
-            WHERE nombre LIKE ? OR codigo LIKE ?
+            SELECT * FROM productos
+            WHERE tenant_id = ? AND (nombre LIKE ? OR codigo LIKE ?)
             ORDER BY nombre
             LIMIT 10
         `;
         const searchTerm = `%${query}%`;
-        const [productos] = await db.query(sql, [searchTerm, searchTerm]);
+        const [productos] = await db.query(sql, [tenantId, searchTerm, searchTerm]);
         res.json(productos);
     } catch (error) {
         console.error('Error al buscar productos:', error);
@@ -86,13 +93,17 @@ router.get('/buscar', async (req, res) => {
 // Relacionado con: public/js/mesas.js (función cargarCarta)
 router.get('/carta', async (req, res) => {
     try {
+        const tenantId = req.tenantId || req.session?.user?.tenant_id;
+        if (!tenantId) return res.status(403).json({ error: 'tenant no resuelto' });
+
         const [productos] = await db.query(`
             SELECT id, codigo, nombre, precio_unidad, precio_kg, precio_libra,
                    COALESCE(categoria, 'Sin categoría') AS categoria,
                    imagen
             FROM productos
+            WHERE tenant_id = ?
             ORDER BY categoria ASC, nombre ASC
-        `);
+        `, [tenantId]);
 
         // Calcular disponibilidad de cada producto (basado en recetas + stock)
         for (const p of (productos || [])) {
@@ -157,10 +168,13 @@ router.post('/:padreId(\\d+)/hijos', async (req, res) => {
     if (padreId === hijoId) return res.status(400).json({ error: 'Un producto no puede ser hijo de sí mismo' });
 
     try {
+        const tenantId = req.tenantId || req.session?.user?.tenant_id;
+        if (!tenantId) return res.status(403).json({ error: 'tenant no resuelto' });
+
         // Validar existencia de ambos productos (evita FK errors y mejora UX)
-        const [[padre]] = await db.query('SELECT id FROM productos WHERE id = ? LIMIT 1', [padreId]);
+        const [[padre]] = await db.query('SELECT id FROM productos WHERE id = ? AND tenant_id = ? LIMIT 1', [padreId, tenantId]);
         if (!padre) return res.status(404).json({ error: 'Producto padre no encontrado' });
-        const [[hijo]] = await db.query('SELECT id FROM productos WHERE id = ? LIMIT 1', [hijoId]);
+        const [[hijo]] = await db.query('SELECT id FROM productos WHERE id = ? AND tenant_id = ? LIMIT 1', [hijoId, tenantId]);
         if (!hijo) return res.status(404).json({ error: 'Producto hijo no encontrado' });
 
         // Insert idempotente (si ya existe, no rompe)
@@ -241,7 +255,10 @@ router.post('/:padreId(\\d+)/hijos-items', async (req, res) => {
     if (nombre.length > 120) return res.status(400).json({ error: 'nombre demasiado largo (máx 120)' });
 
     try {
-        const [[padre]] = await db.query('SELECT id FROM productos WHERE id = ? LIMIT 1', [padreId]);
+        const tenantId = req.tenantId || req.session?.user?.tenant_id;
+        if (!tenantId) return res.status(403).json({ error: 'tenant no resuelto' });
+
+        const [[padre]] = await db.query('SELECT id FROM productos WHERE id = ? AND tenant_id = ? LIMIT 1', [padreId, tenantId]);
         if (!padre) return res.status(404).json({ error: 'Producto padre no encontrado' });
 
         const [result] = await db.query(
@@ -283,7 +300,10 @@ router.delete('/:padreId(\\d+)/hijos-items/:itemId(\\d+)', async (req, res) => {
 // GET /productos/:id - Obtener un producto específico
 router.get('/:id(\\d+)', async (req, res) => {
     try {
-        const [productos] = await db.query('SELECT * FROM productos WHERE id = ?', [req.params.id]);
+        const tenantId = req.tenantId || req.session?.user?.tenant_id;
+        if (!tenantId) return res.status(403).json({ error: 'tenant no resuelto' });
+
+        const [productos] = await db.query('SELECT * FROM productos WHERE id = ? AND tenant_id = ?', [req.params.id, tenantId]);
         const producto = productos[0];
         if (!producto) {
             return res.status(404).json({ error: 'Producto no encontrado' });
@@ -298,6 +318,9 @@ router.get('/:id(\\d+)', async (req, res) => {
 // POST /productos - Crear nuevo producto
 router.post('/', async (req, res) => {
     try {
+        const tenantId = req.tenantId || req.session?.user?.tenant_id;
+        if (!tenantId) return res.status(403).json({ error: 'tenant no resuelto' });
+
         const { codigo, nombre, precio_kg, precio_unidad, precio_libra, imagen } = req.body;
 
         // Validar datos
@@ -306,8 +329,8 @@ router.post('/', async (req, res) => {
         }
 
         const [result] = await db.query(
-            'INSERT INTO productos (codigo, nombre, precio_kg, precio_unidad, precio_libra, imagen) VALUES (?, ?, ?, ?, ?, ?) RETURNING id',
-            [codigo, nombre, precio_kg || 0, precio_unidad || 0, precio_libra || 0, imagen || null]
+            'INSERT INTO productos (tenant_id, codigo, nombre, precio_kg, precio_unidad, precio_libra, imagen) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id',
+            [tenantId, codigo, nombre, precio_kg || 0, precio_unidad || 0, precio_libra || 0, imagen || null]
         );
 
         res.status(201).json({
@@ -326,7 +349,8 @@ router.post('/', async (req, res) => {
 // PUT /productos/:id - Actualizar producto
 router.put('/:id', async (req, res) => {
     try {
-        const tid = req.tenantId || 1;
+        const tid = req.tenantId || req.session?.user?.tenant_id;
+        if (!tid) return res.status(403).json({ error: 'tenant no resuelto' });
         const { codigo, nombre, precio_kg, precio_unidad, precio_libra, imagen } = req.body;
 
         // Validar datos
@@ -349,8 +373,8 @@ router.put('/:id', async (req, res) => {
         } catch (_) {}
 
         const [result] = await db.query(
-            'UPDATE productos SET codigo = ?, nombre = ?, precio_kg = ?, precio_unidad = ?, precio_libra = ?, imagen = ? WHERE id = ?',
-            [codigo, nombre, precio_kg || 0, precio_unidad || 0, precio_libra || 0, imagen || null, req.params.id]
+            'UPDATE productos SET codigo = ?, nombre = ?, precio_kg = ?, precio_unidad = ?, precio_libra = ?, imagen = ? WHERE id = ? AND tenant_id = ?',
+            [codigo, nombre, precio_kg || 0, precio_unidad || 0, precio_libra || 0, imagen || null, req.params.id, tid]
         );
 
         if ((result?.affectedRows || 0) === 0) {
@@ -382,7 +406,10 @@ router.put('/:id', async (req, res) => {
 // DELETE /productos/:id - Eliminar producto
 router.delete('/:id', async (req, res) => {
     try {
-        const [result] = await db.query('DELETE FROM productos WHERE id = ?', [req.params.id]);
+        const tenantId = req.tenantId || req.session?.user?.tenant_id;
+        if (!tenantId) return res.status(403).json({ error: 'tenant no resuelto' });
+
+        const [result] = await db.query('DELETE FROM productos WHERE id = ? AND tenant_id = ?', [req.params.id, tenantId]);
 
         if ((result?.affectedRows || 0) === 0) {
             return res.status(404).json({ error: 'Producto no encontrado' });
@@ -461,6 +488,9 @@ const upload = multer({
 
 router.post('/importar', upload.single('archivo'), async (req, res) => {
     try {
+        const tenantId = req.tenantId || req.session?.user?.tenant_id;
+        if (!tenantId) return res.status(403).json({ error: 'tenant no resuelto' });
+
         if (!req.file) return res.status(400).json({ error: 'Archivo requerido' });
         try { ExcelJS = ExcelJS || require('exceljs'); } catch (e) { return res.status(500).json({ error: 'Instale exceljs para importar' }); }
 
@@ -492,8 +522,8 @@ router.post('/importar', upload.single('archivo'), async (req, res) => {
             await connection.beginTransaction();
             for (const p of rows) {
                 await connection.query(
-                    'INSERT INTO productos (codigo, nombre, precio_kg, precio_unidad, precio_libra) VALUES (?,?,?,?,?) ON CONFLICT (codigo) DO UPDATE SET nombre=EXCLUDED.nombre, precio_kg=EXCLUDED.precio_kg, precio_unidad=EXCLUDED.precio_unidad, precio_libra=EXCLUDED.precio_libra',
-                    [p.codigo, p.nombre, p.precio_kg, p.precio_unidad, p.precio_libra]
+                    'INSERT INTO productos (tenant_id, codigo, nombre, precio_kg, precio_unidad, precio_libra) VALUES (?,?,?,?,?,?) ON CONFLICT (tenant_id, codigo) DO UPDATE SET nombre=EXCLUDED.nombre, precio_kg=EXCLUDED.precio_kg, precio_unidad=EXCLUDED.precio_unidad, precio_libra=EXCLUDED.precio_libra',
+                    [tenantId, p.codigo, p.nombre, p.precio_kg, p.precio_unidad, p.precio_libra]
                 );
             }
             await connection.commit();
