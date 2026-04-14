@@ -57,9 +57,9 @@ function sanitizePermisos(arr) {
   return JSON.stringify(filtered);
 }
 
-async function countAdminsExcept(userIdToExclude = null) {
-  const params = [];
-  let where = `WHERE rol = 'administrador' AND activo = true`;
+async function countAdminsExcept(tenantId, userIdToExclude = null) {
+  const params = [tenantId];
+  let where = `WHERE tenant_id = ? AND rol = 'administrador' AND activo = true`;
   if (userIdToExclude != null) {
     where += ' AND id <> ?';
     params.push(userIdToExclude);
@@ -93,15 +93,20 @@ async function ensurePermisosColumn() {
 // GET /usuarios - render panel
 router.get('/', async (req, res) => {
   try {
+    const tenantId = req.tenantId || req.session?.user?.tenant_id;
+    if (!tenantId) return res.status(403).render('error', { error: { message: 'tenant no resuelto' } });
+
     await ensurePermisosColumn();
     const [usuarios] = await db.query(
-      "SELECT id, usuario, nombre, rol, activo, last_login, created_at, permisos FROM usuarios WHERE rol != 'superadmin' ORDER BY created_at DESC, id DESC"
+      "SELECT id, usuario, nombre, rol, activo, last_login, created_at, permisos FROM usuarios WHERE tenant_id = ? AND rol != 'superadmin' ORDER BY created_at DESC, id DESC",
+      [tenantId]
     );
     // Traer mesas asignadas a cada mesero
     let mesasAsignadas = [];
     try {
       const [rows] = await db.query(
-        'SELECT id, numero, mesero_asignado_id FROM mesas WHERE mesero_asignado_id IS NOT NULL'
+        'SELECT id, numero, mesero_asignado_id FROM mesas WHERE tenant_id = ? AND mesero_asignado_id IS NOT NULL',
+        [tenantId]
       );
       mesasAsignadas = rows || [];
     } catch (_) { /* tabla puede no existir aún */ }
@@ -132,9 +137,13 @@ router.get('/', async (req, res) => {
 // GET /usuarios/listar - API listar
 router.get('/listar', async (req, res) => {
   try {
+    const tenantId = req.tenantId || req.session?.user?.tenant_id;
+    if (!tenantId) return res.status(403).json({ error: 'tenant no resuelto' });
+
     await ensurePermisosColumn();
     const [usuarios] = await db.query(
-      "SELECT id, usuario, nombre, rol, activo, last_login, created_at, permisos FROM usuarios WHERE rol != 'superadmin' ORDER BY created_at DESC, id DESC"
+      "SELECT id, usuario, nombre, rol, activo, last_login, created_at, permisos FROM usuarios WHERE tenant_id = ? AND rol != 'superadmin' ORDER BY created_at DESC, id DESC",
+      [tenantId]
     );
     const result = (usuarios || []).map(u => ({
       ...u,
@@ -151,7 +160,10 @@ router.get('/listar', async (req, res) => {
 router.get('/:id(\\d+)/permisos', async (req, res) => {
   const id = Number(req.params.id);
   try {
-    const [rows] = await db.query('SELECT id, rol, permisos FROM usuarios WHERE id = ? LIMIT 1', [id]);
+    const tenantId = req.tenantId || req.session?.user?.tenant_id;
+    if (!tenantId) return res.status(403).json({ error: 'tenant no resuelto' });
+
+    const [rows] = await db.query('SELECT id, rol, permisos FROM usuarios WHERE id = ? AND tenant_id = ? LIMIT 1', [id, tenantId]);
     const u = rows?.[0];
     if (!u) return res.status(404).json({ error: 'Usuario no encontrado' });
     res.json({ id: u.id, permisos: resolvePermisos(u) });
@@ -166,10 +178,13 @@ router.put('/:id(\\d+)/permisos', async (req, res) => {
   const id = Number(req.params.id);
   const permisos = req.body?.permisos;
   try {
-    const [rows] = await db.query('SELECT id FROM usuarios WHERE id = ? LIMIT 1', [id]);
+    const tenantId = req.tenantId || req.session?.user?.tenant_id;
+    if (!tenantId) return res.status(403).json({ error: 'tenant no resuelto' });
+
+    const [rows] = await db.query('SELECT id FROM usuarios WHERE id = ? AND tenant_id = ? LIMIT 1', [id, tenantId]);
     if (!rows?.[0]) return res.status(404).json({ error: 'Usuario no encontrado' });
     const permisosJson = sanitizePermisos(permisos);
-    await db.query('UPDATE usuarios SET permisos = ? WHERE id = ?', [permisosJson, id]);
+    await db.query('UPDATE usuarios SET permisos = ? WHERE id = ? AND tenant_id = ?', [permisosJson, id, tenantId]);
     res.json({ message: 'Permisos actualizados' });
   } catch (e) {
     console.error('Error actualizar permisos:', e);
@@ -194,11 +209,14 @@ router.post('/', async (req, res) => {
   if (!bc) return res.status(500).json({ error: 'Falta dependencia bcryptjs (npm i bcryptjs)' });
 
   try {
+    const tenantId = req.tenantId || req.session?.user?.tenant_id;
+    if (!tenantId) return res.status(403).json({ error: 'tenant no resuelto' });
+
     const hash = await bc.hash(password, 10);
     const permisosJson = permisosRaw ? sanitizePermisos(permisosRaw) : null;
     const [result] = await db.query(
-      'INSERT INTO usuarios (usuario, nombre, password_hash, rol, activo, permisos) VALUES (?, ?, ?, ?, ?, ?) RETURNING id',
-      [usuario, nombre || null, hash, rol, activo, permisosJson]
+      'INSERT INTO usuarios (tenant_id, usuario, nombre, password_hash, rol, activo, permisos) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id',
+      [tenantId, usuario, nombre || null, hash, rol, activo, permisosJson]
     );
     // Audit log: user created
     try {
@@ -226,8 +244,11 @@ router.put('/:id(\\d+)', async (req, res) => {
   if (!ROLES.includes(rol)) return res.status(400).json({ error: 'rol invalido' });
 
   try {
+    const tenantId = req.tenantId || req.session?.user?.tenant_id;
+    if (!tenantId) return res.status(403).json({ error: 'tenant no resuelto' });
+
     // No permitir dejar el sistema sin admin activo
-    const [rows] = await db.query('SELECT id, rol, activo FROM usuarios WHERE id = ? LIMIT 1', [id]);
+    const [rows] = await db.query('SELECT id, rol, activo FROM usuarios WHERE id = ? AND tenant_id = ? LIMIT 1', [id, tenantId]);
     const current = rows?.[0];
     if (!current) return res.status(404).json({ error: 'Usuario no encontrado' });
 
@@ -236,7 +257,7 @@ router.put('/:id(\\d+)', async (req, res) => {
     const wasAdminActive = String(current.rol) === 'administrador' && Number(current.activo) === 1;
     const willBeAdminActive = rol === 'administrador' && activo === 1;
     if (wasAdminActive && !willBeAdminActive) {
-      const others = await countAdminsExcept(id);
+      const others = await countAdminsExcept(tenantId, id);
       if (others === 0) return res.status(400).json({ error: 'Debe existir al menos un administrador activo' });
     }
 
@@ -244,13 +265,13 @@ router.put('/:id(\\d+)', async (req, res) => {
 
     if (permisosJson !== undefined) {
       await db.query(
-        'UPDATE usuarios SET usuario = ?, nombre = ?, rol = ?, activo = ?, permisos = ? WHERE id = ?',
-        [usuario, nombre || null, rol, activo, permisosJson, id]
+        'UPDATE usuarios SET usuario = ?, nombre = ?, rol = ?, activo = ?, permisos = ? WHERE id = ? AND tenant_id = ?',
+        [usuario, nombre || null, rol, activo, permisosJson, id, tenantId]
       );
     } else {
       await db.query(
-        'UPDATE usuarios SET usuario = ?, nombre = ?, rol = ?, activo = ? WHERE id = ?',
-        [usuario, nombre || null, rol, activo, id]
+        'UPDATE usuarios SET usuario = ?, nombre = ?, rol = ?, activo = ? WHERE id = ? AND tenant_id = ?',
+        [usuario, nombre || null, rol, activo, id, tenantId]
       );
     }
     // Audit log: user updated (includes status changes)
@@ -276,8 +297,11 @@ router.put('/:id(\\d+)/password', async (req, res) => {
   if (!bc) return res.status(500).json({ error: 'Falta dependencia bcryptjs (npm i bcryptjs)' });
 
   try {
+    const tenantId = req.tenantId || req.session?.user?.tenant_id;
+    if (!tenantId) return res.status(403).json({ error: 'tenant no resuelto' });
+
     const hash = await bc.hash(password, 10);
-    const [result] = await db.query('UPDATE usuarios SET password_hash = ? WHERE id = ?', [hash, id]);
+    const [result] = await db.query('UPDATE usuarios SET password_hash = ? WHERE id = ? AND tenant_id = ?', [hash, id, tenantId]);
     if ((result?.affectedRows || 0) === 0) return res.status(404).json({ error: 'Usuario no encontrado' });
     // Audit log: password changed
     try {
@@ -298,7 +322,10 @@ router.delete('/:id(\\d+)', async (req, res) => {
   if (id === currentUserId) return res.status(400).json({ error: 'No puedes eliminar tu propio usuario' });
 
   try {
-    const [rows] = await db.query('SELECT id, rol, activo FROM usuarios WHERE id = ? LIMIT 1', [id]);
+    const tenantId = req.tenantId || req.session?.user?.tenant_id;
+    if (!tenantId) return res.status(403).json({ error: 'tenant no resuelto' });
+
+    const [rows] = await db.query('SELECT id, rol, activo FROM usuarios WHERE id = ? AND tenant_id = ? LIMIT 1', [id, tenantId]);
     const u = rows?.[0];
     if (!u) return res.status(404).json({ error: 'Usuario no encontrado' });
 
@@ -306,11 +333,11 @@ router.delete('/:id(\\d+)', async (req, res) => {
 
     const isAdminActive = String(u.rol) === 'administrador' && Number(u.activo) === 1;
     if (isAdminActive) {
-      const others = await countAdminsExcept(id);
+      const others = await countAdminsExcept(tenantId, id);
       if (others === 0) return res.status(400).json({ error: 'No puedes eliminar el ultimo administrador activo' });
     }
 
-    const [result] = await db.query('DELETE FROM usuarios WHERE id = ?', [id]);
+    const [result] = await db.query('DELETE FROM usuarios WHERE id = ? AND tenant_id = ?', [id, tenantId]);
     if ((result?.affectedRows || 0) === 0) return res.status(404).json({ error: 'Usuario no encontrado' });
     res.json({ message: 'Usuario eliminado' });
   } catch (e) {
