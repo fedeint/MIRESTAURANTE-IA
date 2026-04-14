@@ -143,7 +143,7 @@
 
   <div class="header">
     <div class="header-left">
-      <a href="/mas" class="btn-back">&#8592;</a>
+      <a href="<%= typeof backHref !== 'undefined' ? backHref : '/mas' %>" class="btn-back">&#8592;</a>
       <div class="header-title">Alertas y Notificaciones</div>
     </div>
     <button class="btn-save" onclick="guardar()">Guardar</button>
@@ -311,5 +311,6 @@
     } catch(e) { alert('Error al guardar'); }
   }
 </script>
+<%- include('../partials/setup-next-bar', { setupKey: 'alertas' }) %>
 </body>
 </html>

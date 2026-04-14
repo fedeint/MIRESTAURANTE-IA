@@ -10,6 +10,25 @@ function parseJson(val, fallback) {
   try { return JSON.parse(val); } catch (_) { return fallback; }
 }
 
+// Setup-flow chain: when user arrives with ?setup=1, each view shows a
+// "Siguiente" button linking to the next step instead of going back to /mas.
+const SETUP_CHAIN = {
+  dallia:   { next: '/config/alertas?setup=1',  label: 'Siguiente: Alertas' },
+  alertas:  { next: '/config/modulos?setup=1',  label: 'Siguiente: Módulos' },
+  modulos:  { next: '/config/horarios?setup=1', label: 'Siguiente: Horarios' },
+  horarios: { next: '/config/tour?setup=1',     label: 'Siguiente: Tour' },
+  tour:     { next: '/setup-sistema',           label: 'Volver al setup', finish: true }
+};
+
+// Expose setup-flow context to every /config view
+router.use((req, res, next) => {
+  const isSetup = req.query.setup === '1';
+  res.locals.isSetup  = isSetup;
+  res.locals.backHref = isSetup ? '/setup-sistema' : '/mas';
+  res.locals.setupChain = SETUP_CHAIN;
+  next();
+});
+
 // ─── GET /config/dallia ─────────────────────────────────────────────────────
 router.get('/dallia', async (req, res) => {
   try {

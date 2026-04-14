@@ -54,7 +54,7 @@ router.get('/', async (req, res) => {
         title: 'Personalizar DalIA',
         sub: 'Nombre, tono, personalidad y capacidades',
         icon: '🤖', ic: 'ic-orange',
-        href: '/config/dallia',
+        href: '/config/dallia?setup=1',
         done: !!dalliaRow
       },
       {
@@ -62,7 +62,7 @@ router.get('/', async (req, res) => {
         title: 'Alertas y notificaciones',
         sub: 'Qué te avisa DalIA y por qué canal',
         icon: '🔔', ic: 'ic-yellow',
-        href: '/config/alertas',
+        href: '/config/alertas?setup=1',
         done: !!alertasRow
       },
       {
@@ -70,7 +70,7 @@ router.get('/', async (req, res) => {
         title: 'Módulos del sistema',
         sub: 'Activa solo los que usarás',
         icon: '🧩', ic: 'ic-blue',
-        href: '/config/modulos',
+        href: '/config/modulos?setup=1',
         done: !!modulosRow
       },
       {
@@ -78,7 +78,7 @@ router.get('/', async (req, res) => {
         title: 'Horarios de operación',
         sub: 'Apertura, cierre y días laborales',
         icon: '🕐', ic: 'ic-green',
-        href: '/config/horarios',
+        href: '/config/horarios?setup=1',
         done: !!horariosRow
       },
       {
@@ -86,7 +86,7 @@ router.get('/', async (req, res) => {
         title: 'Onboarding tour',
         sub: 'Conoce el sistema en 2 minutos',
         icon: '🎓', ic: 'ic-purple',
-        href: '/config/tour',
+        href: '/config/tour?setup=1',
         done: false
       }
     ];

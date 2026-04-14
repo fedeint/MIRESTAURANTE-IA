@@ -162,7 +162,7 @@
 
   <div class="header">
     <div class="header-left">
-      <a href="/mas" class="btn-back">&#8592;</a>
+      <a href="<%= typeof backHref !== 'undefined' ? backHref : '/mas' %>" class="btn-back">&#8592;</a>
       <div class="header-title">Personalizar DallIA</div>
     </div>
     <button class="btn-save" onclick="guardar()">Guardar</button>
@@ -733,5 +733,6 @@
   cargarPlan();
   cargarApiKeyInfo();
 </script>
+<%- include('../partials/setup-next-bar', { setupKey: 'dallia' }) %>
 </body>
 </html>

@@ -162,7 +162,7 @@
 <body>
 
   <div class="header">
-    <a href="/mas" class="btn-back">&#8592;</a>
+    <a href="<%= typeof backHref !== 'undefined' ? backHref : '/mas' %>" class="btn-back">&#8592;</a>
     <div class="header-title">Tour del Sistema</div>
   </div>
 
@@ -265,6 +265,6 @@
       <span>MÁS</span>
     </a>
   </nav>
-
+<%- include('../partials/setup-next-bar', { setupKey: 'tour' }) %>
 </body>
 </html>

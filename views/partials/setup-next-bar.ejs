@@ -1,0 +1,39 @@
+<%# Fixed bottom bar with "Siguiente" button, shown only during setup flow %>
+<% if (typeof isSetup !== 'undefined' && isSetup && typeof setupChain !== 'undefined') {
+     const step = setupChain[locals.setupKey];
+     if (step) { %>
+  <style>
+    .setup-next-bar {
+      position: fixed;
+      left: 50%; transform: translateX(-50%);
+      bottom: calc(env(safe-area-inset-bottom, 0px) + 8px);
+      width: 100%; max-width: 460px;
+      padding: 0 12px;
+      z-index: 100;
+    }
+    .setup-next-btn {
+      width: 100%;
+      padding: 14px 18px;
+      border: none; border-radius: 14px;
+      background: linear-gradient(135deg, #ef520f, #df2c05);
+      color: #fff;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px; font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 6px 20px rgba(239,82,15,0.40);
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      text-decoration: none;
+    }
+    .setup-next-btn:active { transform: scale(.98); }
+    .setup-next-btn .arrow { font-size: 18px; font-weight: 400; }
+    /* Avoid content being hidden behind the fixed bar */
+    body { padding-bottom: calc(150px + env(safe-area-inset-bottom, 0px)) !important; }
+    .bottom-nav { display: none !important; }
+  </style>
+  <div class="setup-next-bar">
+    <a href="<%= step.next %>" class="setup-next-btn" id="setupNextBtn">
+      <%= step.label %> <span class="arrow">→</span>
+    </a>
+  </div>
+<%   }
+   } %>
