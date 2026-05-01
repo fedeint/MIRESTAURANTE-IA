@@ -35,7 +35,7 @@
   },
   "dependencies": {
     "@andresaya/edge-tts": "^1.8.0",
-    "@anthropic-ai/sdk": "^0.79.0",
+    "@anthropic-ai/sdk": "^0.92.0",
     "@simplewebauthn/server": "^13.3.0",
     "@supabase/supabase-js": "^2.99.3",
     "bcryptjs": "^3.0.2",
