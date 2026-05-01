@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-title" content="Mesas">
   <link rel="manifest" href="/manifest.json">
   <link rel="apple-touch-icon" href="/icon-192.png">
-  <title>Mesas</title>
+  <title>Mesas · MiRestconIA</title>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -167,7 +167,7 @@
 
   <%- include('partials/pwa-header', {
     title: 'Mesas',
-    subtitle: ocupadas + ' mesa' + (ocupadas !== 1 ? 's' : '') + ' ocupada' + (ocupadas !== 1 ? 's' : '')
+    subtitle: ocupadas + ' mesa' + (ocupadas !== 1 ? 's' : '') + ' ocupada' + (ocupadas !== 1 ? 's' : '') + ' · Toca una mesa para abrir o continuar un pedido'
   }) %>
 
   <!-- FILTER TABS -->
@@ -199,14 +199,14 @@
         <% } else { %>Bloqueada<% } %>
       </div>
       <% if (mesa.estado === 'ocupada' && mesa.items_activos > 0) { %>
-      <div class="m-meta"><%= mesa.items_activos %> ítem<%= mesa.items_activos !== 1 ? 's' : '' %> activo<%= mesa.items_activos !== 1 ? 's' : '' %></div>
+      <div class="m-meta"><%= mesa.items_activos %> ítem<%= mesa.items_activos !== 1 ? 's' : '' %> activo<%= mesa.items_activos !== 1 ? 's' : '' %> · Toca para continuar</div>
       <% } else if (mesa.mesero_asignado_nombre) { %>
-      <div class="m-meta">👤 <%= mesa.mesero_asignado_nombre.split(' ')[0] %></div>
+      <div class="m-meta">👤 <%= mesa.mesero_asignado_nombre.split(' ')[0] %> · Toca para gestionar</div>
       <% } %>
     </div>
     <% }); %>
     <% if (mesas.length === 0) { %>
-    <div class="m-empty">No hay mesas configuradas</div>
+    <div class="m-empty">No hay mesas configuradas. Crea mesas desde configuración para empezar a operar.</div>
     <% } %>
   </div>
 
