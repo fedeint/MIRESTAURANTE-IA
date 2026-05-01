@@ -11,7 +11,7 @@
     <meta name="apple-mobile-web-app-title" content="MiRestconIA">
     <link rel="manifest" href="/manifest.json">
     <link rel="apple-touch-icon" href="/icon-192.png">
-    <title>Inicio - mirestconia.com</title>
+    <title>Inicio · MiRestconIA</title>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -320,7 +320,7 @@
                     </span>
                 </div>
                 <div class="kpi-value"><%= dashboard.facturasHoy || 0 %></div>
-                <div class="kpi-sub" style="color:#F97316;">En camino</div>
+                <div class="kpi-sub" style="color:#F97316;">Pedidos de hoy</div>
             </div>
             <div class="kpi-card">
                 <div class="kpi-header">
@@ -330,7 +330,7 @@
                     </span>
                 </div>
                 <div class="kpi-value"><%= dashboard.mesasOcupadas || 0 %></div>
-                <div class="kpi-sub" style="color:#f1703a;">Ocupadas de <%= dashboard.mesasTotal || 0 %></div>
+                <div class="kpi-sub" style="color:#f1703a;">de <%= dashboard.mesasTotal || 0 %> ocupadas</div>
             </div>
             <div class="kpi-card">
                 <div class="kpi-header">
@@ -344,7 +344,7 @@
                     <% if (ventasAyer > 0) { %>
                     <svg style="stroke:<%= diffColor %>;fill:none;" viewBox="0 0 24 24"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
                     <% } %>
-                    <%= ventasAyer > 0 ? diffSign + diffPct + '% vs ayer' : 'Sin datos ayer' %>
+                    <%= ventasAyer > 0 ? diffSign + diffPct + '% vs ayer' : 'Sin comparación con ayer' %>
                 </div>
             </div>
             <div class="kpi-card">
@@ -355,7 +355,7 @@
                     </span>
                 </div>
                 <div class="kpi-value"><%= dashboard.productosVendidosHoy || 0 %></div>
-                <div class="kpi-sub" style="color:#8B8FAD;">Activos</div>
+                <div class="kpi-sub" style="color:#8B8FAD;">Vendidos hoy</div>
             </div>
         </div>
 
@@ -363,7 +363,7 @@
         <div class="dallia-section">
             <div class="section-title">
                 <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/><circle cx="12" cy="16" r="1" fill="#ef520f" stroke="none"/></svg>
-                DallIA dice:
+                DallIA te sugiere
             </div>
 
             <% if (dashboard.iaInsights && dashboard.iaInsights.length > 0) { %>
@@ -377,7 +377,7 @@
                 <% if (dashboard.alertas > 0) { %>
                 <div class="insight-card">
                     <div class="insight-dot" style="background:#FBBF24;"></div>
-                    <div class="insight-text"><%= dashboard.alertas %> insumo<%= dashboard.alertas > 1 ? 's' : '' %> cerca del limite de stock</div>
+                    <div class="insight-text"><%= dashboard.alertas %> insumo<%= dashboard.alertas > 1 ? 's' : '' %> cerca del límite de stock</div>
                 </div>
                 <% } %>
                 <div class="insight-card">
@@ -387,14 +387,14 @@
                 <% if (dashboard.cajaAbierta === false) { %>
                 <div class="insight-card">
                     <div class="insight-dot" style="background:#ef520f;"></div>
-                    <div class="insight-text">La caja aun no ha sido abierta hoy</div>
+                    <div class="insight-text">La caja aún no fue abierta hoy</div>
                 </div>
                 <% } %>
             <% } %>
         </div>
 
         <!-- ===== ACCESOS RAPIDOS ===== -->
-        <div class="section-title">Accesos rapidos</div>
+        <div class="section-title">Accesos rápidos</div>
         <div class="quick-grid">
             <a href="/pedidos" class="quick-btn">
                 <span class="q-icon-wrap" style="background:#FFF7ED;">
@@ -423,7 +423,7 @@
         </div>
 
         <div class="credits">
-            Creado por <strong>Leonidas Yauri</strong> &middot; mirestconia.com
+            Potenciado por <strong>MiRestconIA</strong>
         </div>
 
     </div><!-- /dash-content -->
