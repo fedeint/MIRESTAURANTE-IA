@@ -1,10 +1,20 @@
 /* ============================================
-   DIGNITA RESTAURANT SYSTEM - Modern Theme
+   MiRestconIA - Modern Theme
    restaurante.mirestconia.com
    ============================================ */
 
 /* ---------- CSS Variables ---------- */
 :root {
+  /* Brand foundation - Fase 0.1 */
+  --mr-brand-name: 'MiRestconIA';
+  --mr-brand-orange: #FF6B35;
+  --mr-brand-orange-dark: #DF2C05;
+  --mr-brand-orange-soft: #FFF2EA;
+  --mr-brand-navy: #0A0F24;
+  --mr-brand-navy-2: #10152F;
+  --mr-brand-bg: #F0F2F8;
+  --mr-brand-card: #FFFFFF;
+
   /* Primary palette - Orange brand */
   --dg-primary: #FF6B35;
   --dg-primary-dark: #E55A2B;
@@ -33,6 +43,8 @@
   --dg-surface-hover: rgba(255, 255, 255, 0.95);
   --dg-surface-border: rgba(0, 0, 0, 0.04);
   --dg-glass-blur: 16px;
+  --dg-border-subtle: rgba(15, 23, 42, 0.08);
+  --dg-border-strong: rgba(15, 23, 42, 0.16);
 
   /* Sidebar */
   --dg-nav-bg: #131627;
@@ -45,6 +57,7 @@
   --dg-text-muted: #9CA3AF;
   --dg-text-on-dark: #f1f5f9;
   --dg-text-on-primary: #ffffff;
+  --dg-text-inverse: #FFFFFF;
 
   /* Shadows */
   --dg-shadow-sm: 0 1px 3px rgba(0,0,0,0.04);
@@ -52,12 +65,33 @@
   --dg-shadow-lg: 0 8px 30px rgba(0,0,0,0.08);
   --dg-shadow-primary: 0 4px 16px rgba(255, 107, 53, 0.3);
   --dg-shadow-accent: 0 4px 16px rgba(255, 107, 53, 0.25);
+  --dg-shadow-card: 0 14px 26px rgba(15, 23, 42, 0.08);
+  --dg-shadow-button: 0 10px 18px rgba(223, 44, 5, 0.22);
 
   /* Radius */
   --dg-radius: 1rem;
   --dg-radius-lg: 1.25rem;
   --dg-radius-xl: 1.5rem;
   --dg-radius-sm: 0.625rem;
+  --dg-radius-pill: 999px;
+
+  /* Spacing scale */
+  --dg-space-1: 0.25rem;
+  --dg-space-2: 0.5rem;
+  --dg-space-3: 0.75rem;
+  --dg-space-4: 1rem;
+  --dg-space-5: 1.25rem;
+  --dg-space-6: 1.5rem;
+  --dg-space-8: 2rem;
+  --dg-space-10: 2.5rem;
+
+  /* Component tokens for Fase 1 */
+  --dg-btn-primary-bg: linear-gradient(135deg, var(--mr-brand-orange), var(--mr-brand-orange-dark));
+  --dg-btn-primary-color: #FFFFFF;
+  --dg-card-bg: var(--dg-surface-solid);
+  --dg-card-border: var(--dg-border-subtle);
+  --dg-badge-bg: var(--mr-brand-orange-soft);
+  --dg-badge-color: var(--mr-brand-orange-dark);
 
   /* Transitions */
   --dg-transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);

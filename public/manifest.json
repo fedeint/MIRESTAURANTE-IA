@@ -1,7 +1,7 @@
 {
-  "name": "dignita.tech Restaurant",
-  "short_name": "dignita",
-  "description": "Sistema de Gestion de Restaurantes",
+  "name": "MiRestconIA",
+  "short_name": "MiRestconIA",
+  "description": "Sistema de gestión de restaurantes con IA",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#f0f2f8",
