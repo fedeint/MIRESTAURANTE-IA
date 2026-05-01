@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; frame-src *; style-src 'unsafe-inline' {{CSP_SOURCE}} https://fonts.googleapis.com; script-src 'unsafe-inline' {{CSP_SOURCE}}; img-src * data:; font-src https://fonts.gstatic.com;">
+  <link rel="stylesheet" href="{{CSS_URI}}">
+  <title>Device Preview</title>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-brand"><div class="topbar-logo">D</div><span class="topbar-title">Device Preview</span></div>
+  <div class="mode-toggle">
+    <button class="mode-toggle-btn active-test" data-mode="test">Test</button>
+    <button class="mode-toggle-btn" data-mode="build">Build</button>
+    <button class="mode-toggle-btn" data-mode="map">Mapa</button>
+  </div>
+  <span class="sep"></span>
+  <input class="url-input" id="urlInput" value="{{APP_URL}}" onkeydown="if(event.key==='Enter'){baseUrl=this.value.replace(/\/+$/,'');reloadAll()}" />
+  <button class="btn" onclick="reloadAll()">&#x21bb;</button>
+  <span class="sep"></span>
+  <div class="zoom">
+    <button class="btn" onclick="zoom(-10)">-</button>
+    <span class="zoom-label" id="zoomLbl">50%</span>
+    <button class="btn" onclick="zoom(10)">+</button>
+  </div>
+  <span class="sep"></span>
+  <button class="btn active" id="syncBtn" onclick="toggleSync()">Sync</button>
+  <button class="btn" id="dualBtn" onclick="toggleDual()">Dual</button>
+  <span class="sep"></span>
+  <button class="btn primary" onclick="startTour()" id="tourBtn">&#9654; Tour</button>
+  <button class="btn" onclick="screenshotAll()">&#128247;</button>
+  <button class="btn" onclick="openScreenshots()">&#128193;</button>
+  <span class="sep"></span>
+  <span class="status-dot" id="statusDot"></span>
+</div>
+
+<div class="mode-container active" id="mode-test">
+
+<!-- DEVICE SELECTOR -->
+<div class="device-bar" id="deviceBar">
+  <span class="device-bar-label">Desktop:</span>
+  <div class="device-chip active" data-dev="macbook" onclick="toggleDevice(this)"><span class="dev-icon">&#63743;</span> Mac</div>
+  <div class="device-chip active" data-dev="windows" onclick="toggleDevice(this)"><span class="dev-icon">&#128187;</span> Windows</div>
+  <span class="sep"></span>
+  <span class="device-bar-label">Mobile:</span>
+  <div class="device-chip active" data-dev="iphone" onclick="toggleDevice(this)"><span class="dev-icon">&#128241;</span> iOS</div>
+  <div class="device-chip active" data-dev="android" onclick="toggleDevice(this)"><span class="dev-icon">&#128241;</span> Android</div>
+  <span class="sep"></span>
+  <span class="device-bar-label">Tablet:</span>
+  <div class="device-chip" data-dev="ipad" onclick="toggleDevice(this)"><span class="dev-icon">&#128195;</span> iPad</div>
+  <div class="device-chip" data-dev="android-tab" onclick="toggleDevice(this)"><span class="dev-icon">&#128195;</span> Galaxy Tab</div>
+</div>
+
+<!-- ROUTES -->
+<div class="routes" id="routesBar">
+  <div class="chip active" onclick="nav('/',this)">/</div>
+  <div class="chip" onclick="nav('/home',this)">/home</div>
+  <div class="chip" onclick="nav('/login',this)">/login</div>
+  <div class="chip" onclick="nav('/register',this)">/register</div>
+  <div class="chip" onclick="nav('/dashboard',this)">/dashboard</div>
+  <div class="chip" onclick="nav('/menu',this)">/menu</div>
+  <div class="chip" onclick="nav('/pedidos',this)">/pedidos</div>
+  <div class="chip" onclick="nav('/caja',this)">/caja</div>
+  <div class="chip" onclick="nav('/reportes',this)">/reportes</div>
+  <div class="chip" onclick="nav('/config',this)">/config</div>
+</div>
+
+<!-- TOUR PROGRESS -->
+<div class="tour-bar" id="tourBar">
+  <button class="btn danger" onclick="stopTour()" style="font-size:8px">&#9724; Stop</button>
+  <span class="tour-device-tag" id="tourDevice">--</span>
+  <span class="tour-info" id="tourInfo">Iniciando...</span>
+  <div class="tour-progress"><div class="tour-progress-fill" id="tourProgress"></div></div>
+</div>
+
+<button class="focus-back" onclick="exitFocus()">&#8592; Volver</button>
+
+<div class="devices-area" id="devicesArea"></div>
+
+<!-- DUAL COMMENTS -->
+<div class="dual-panel" id="dualPanel">
+  <div class="dc-head"><span class="dc-title">Correcciones para todos</span><span class="dc-badge" id="badge-ambos">0</span><button class="dc-clear" onclick="clearComments('ambos')">Limpiar</button></div>
+  <div class="dc-list" id="list-ambos"></div>
+  <div class="dc-input">
+    <select id="type-ambos"><option value="bug">Bug</option><option value="fix">Fix</option><option value="note">Nota</option><option value="ok">OK</option></select>
+    <input id="inp-ambos" placeholder="Correccion para todos..." onkeydown="if(event.key==='Enter')addC('ambos')" />
+    <button class="send" onclick="addC('ambos')">&#x2191;</button>
+  </div>
+</div>
+
+<!-- MINI MAP -->
+<div class="mini-map" id="mini-map-context" style="display:none;flex-direction:column;"></div>
+
+<!-- TERMINAL -->
+<div class="terminal-panel collapsed" id="terminalPanel">
+  <div class="term-header" onclick="toggleTerminal()">
+    <span class="term-title">&#62;_ Terminal</span>
+    <div style="display:flex;gap:3px;align-items:center;margin-left:auto">
+      <button class="btn" onclick="event.stopPropagation();clearTerminal()" style="font-size:8px;padding:1px 5px">Clear</button>
+    </div>
+  </div>
+  <div class="term-body" id="termBody">
+    <div class="term-output" id="termOutput"></div>
+    <div class="term-input-row">
+      <span class="term-prompt">$</span>
+      <input class="term-input" id="termInput" placeholder="Escribe un comando..." spellcheck="false" onkeydown="handleTermKey(event)" />
+    </div>
+  </div>
+</div>
+
+<!-- TOUR RESULTS -->
+<div class="tour-results" id="tourResults">
+  <div class="tour-results-header">
+    <h3>Tour Results</h3>
+    <span id="tourResultsCount" style="font-size:10px;color:var(--subtext)"></span>
+    <button class="btn" onclick="closeTourResults()">Cerrar</button>
+  </div>
+  <div class="tour-results-grid" id="tourResultsGrid"></div>
+</div>
+
+</div><!-- /#mode-test -->
+
+<!-- MODE: BUILD -->
+<div class="mode-container" id="mode-build">
+  <!-- populated by mode-build.js -->
+</div>
+
+<!-- MODE: MAP -->
+<div class="mode-container" id="mode-map">
+  <!-- populated by mode-map.js -->
+</div>
+
+<script src="{{MINI_MAP_JS_URI}}"></script>
+<script src="{{MODE_MAP_JS_URI}}"></script>
+<script src="{{MODE_BUILD_JS_URI}}"></script>
+<script src="{{TERMINAL_JS_URI}}"></script>
+<script src="{{COMMENTS_JS_URI}}"></script>
+<script src="{{APP_JS_URI}}"></script>
+</body>
+</html>

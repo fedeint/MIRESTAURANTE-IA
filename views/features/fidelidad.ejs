@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="/favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fidelidad - mirestconia.com</title>
+    <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/theme.css">
+    <style>
+        .badge-bronce { background-color: #a0917b; color: #fff; }
+        .badge-plata  { background-color: #b0b0b0; color: #fff; }
+        .badge-oro    { background-color: #d4a017; color: #fff; }
+        .badge-platino { background-color: #7b2d8e; color: #fff; }
+        .stat-card { border-left: 4px solid; }
+        .stat-card.total { border-left-color: var(--bs-primary); }
+        .stat-card.bronce { border-left-color: #a0917b; }
+        .stat-card.plata { border-left-color: #b0b0b0; }
+        .stat-card.oro { border-left-color: #d4a017; }
+        .stat-card.platino { border-left-color: #7b2d8e; }
+    </style>
+</head>
+<body>
+    <%- include('../partials/sidebar') %>
+    <div class="dg-main">
+    <main class="flex-grow-1">
+    <div class="container">
+
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h4 class="mb-0"><i class="bi bi-star me-2"></i>Programa de Fidelidad</h4>
+        </div>
+
+        <!-- Stats -->
+        <%
+            const totalClientes = clientes ? clientes.length : 0;
+            let countBronce = 0, countPlata = 0, countOro = 0, countPlatino = 0;
+            if (clientes) {
+                clientes.forEach(c => {
+                    const pts = c.puntos_acumulados || 0;
+                    if (pts >= 5000) countPlatino++;
+                    else if (pts >= 2000) countOro++;
+                    else if (pts >= 500) countPlata++;
+                    else countBronce++;
+                });
+            }
+        %>
+        <div class="row g-3 mb-4">
+            <div class="col-6 col-lg">
+                <div class="card stat-card total">
+                    <div class="card-body text-center py-3">
+                        <div class="fs-3 fw-bold"><%= totalClientes %></div>
+                        <small class="text-muted">Total clientes</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-lg">
+                <div class="card stat-card bronce">
+                    <div class="card-body text-center py-3">
+                        <div class="fs-3 fw-bold"><%= countBronce %></div>
+                        <small class="text-muted">Bronce</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-lg">
+                <div class="card stat-card plata">
+                    <div class="card-body text-center py-3">
+                        <div class="fs-3 fw-bold"><%= countPlata %></div>
+                        <small class="text-muted">Plata</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-lg">
+                <div class="card stat-card oro">
+                    <div class="card-body text-center py-3">
+                        <div class="fs-3 fw-bold"><%= countOro %></div>
+                        <small class="text-muted">Oro</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-6 col-lg">
+                <div class="card stat-card platino">
+                    <div class="card-body text-center py-3">
+                        <div class="fs-3 fw-bold"><%= countPlatino %></div>
+                        <small class="text-muted">Platino</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reglas -->
+        <div class="alert alert-info d-flex align-items-center mb-4">
+            <i class="bi bi-info-circle-fill me-2 fs-5"></i>
+            <div>
+                <strong>Reglas:</strong> 1 sol gastado = 1 punto acumulado. Cada 100 puntos = S/ 5.00 de descuento.
+                <br>
+                <small>Niveles: <span class="badge badge-bronce">Bronce</span> 0-499 pts |
+                <span class="badge badge-plata">Plata</span> 500-1999 pts |
+                <span class="badge badge-oro">Oro</span> 2000-4999 pts |
+                <span class="badge badge-platino">Platino</span> 5000+ pts</small>
+            </div>
+        </div>
+
+        <!-- Tabla de clientes -->
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle" id="tablaFidelidad">
+                        <thead>
+                            <tr>
+                                <th>Cliente</th>
+                                <th>Puntos acumulados</th>
+                                <th>Puntos disponibles</th>
+                                <th>Nivel</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% if (clientes && clientes.length) { %>
+                                <% clientes.forEach(c => {
+                                    const ptsAcum = c.puntos_acumulados || 0;
+                                    const ptsDisp = c.puntos_disponibles != null ? c.puntos_disponibles : ptsAcum;
+                                    let nivel, nivelClass;
+                                    if (ptsAcum >= 5000) { nivel = 'Platino'; nivelClass = 'badge-platino'; }
+                                    else if (ptsAcum >= 2000) { nivel = 'Oro'; nivelClass = 'badge-oro'; }
+                                    else if (ptsAcum >= 500) { nivel = 'Plata'; nivelClass = 'badge-plata'; }
+                                    else { nivel = 'Bronce'; nivelClass = 'badge-bronce'; }
+                                %>
+                                <tr>
+                                    <td class="fw-semibold"><%= c.nombre || c.nombre_cliente || '-' %></td>
+                                    <td><%= ptsAcum.toLocaleString() %></td>
+                                    <td><%= ptsDisp.toLocaleString() %></td>
+                                    <td><span class="badge <%= nivelClass %>"><i class="bi bi-star-fill me-1"></i><%= nivel %></span></td>
+                                </tr>
+                                <% }) %>
+                            <% } else { %>
+                                <tr>
+                                    <td colspan="4" class="text-center text-muted py-4">No hay clientes en el programa de fidelidad</td>
+                                </tr>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    </main>
+    <%- include('../partials/footer') %>
+    </div><!-- dg-main -->
+
+    <script src="/vendor/jquery/jquery.min.js"></script>
+    <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="/vendor/sweetalert2/sweetalert2.all.min.js"></script>
+</body>
+</html>

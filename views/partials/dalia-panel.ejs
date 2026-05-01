@@ -1,0 +1,39 @@
+<!-- views/partials/dalia-panel.ejs — Panel lateral de DalIA para onboarding -->
+<div id="dalia-panel" class="card border-0 shadow-sm h-100">
+  <div class="card-body d-flex flex-column">
+    <!-- Avatar y nombre -->
+    <div class="text-center mb-3">
+      <div class="rounded-circle bg-primary bg-opacity-10 d-inline-flex align-items-center justify-content-center" style="width:60px;height:60px;">
+        <i class="bi bi-robot fs-3 text-primary"></i>
+      </div>
+      <h6 class="mt-2 mb-0">DalIA</h6>
+      <small class="text-muted">Tu asistente</small>
+    </div>
+
+    <!-- Mensaje contextual (cambia por paso) -->
+    <div id="dalia-message" class="alert alert-light border mb-3" style="font-size:0.9rem;"></div>
+
+    <!-- Ejemplo/tip visual -->
+    <div id="dalia-tip" class="mb-3" style="font-size:0.85rem;"></div>
+
+    <!-- Chat con DalIA -->
+    <div class="mt-auto">
+      <div id="dalia-chat-messages" class="border rounded p-2 mb-2" style="height:150px;overflow-y:auto;font-size:0.85rem;background:#f8f9fa;">
+      </div>
+      <div class="input-group input-group-sm">
+        <input type="text" id="dalia-chat-input" class="form-control" placeholder="¿Tienes una duda?" maxlength="500">
+        <button id="dalia-chat-send" class="btn btn-primary" type="button">
+          <i class="bi bi-send"></i>
+        </button>
+      </div>
+      <small id="dalia-chat-count" class="text-muted mt-1 d-block">20 consultas disponibles</small>
+    </div>
+  </div>
+</div>
+
+<!-- Mobile: floating chat bubble -->
+<button id="dalia-mobile-toggle" class="btn btn-primary rounded-circle shadow d-md-none" style="position:fixed;bottom:20px;right:20px;width:56px;height:56px;z-index:1035;display:none;">
+  <i class="bi bi-robot fs-4"></i>
+</button>
+<div id="dalia-mobile-overlay" class="d-none" style="position:fixed;bottom:80px;right:10px;left:10px;z-index:1034;max-width:400px;margin-left:auto;">
+</div>

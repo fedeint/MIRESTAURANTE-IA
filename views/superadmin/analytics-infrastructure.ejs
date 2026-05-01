@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= pageTitle %></title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-dark: #10152f;
+            --primary-darker: #0a0f24;
+            --orange: #ef520f;
+            --secondary: #8B8FAD;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary-darker) 100%);
+            color: #fff;
+            font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            min-height: 100vh;
+        }
+
+        .navbar {
+            background-color: var(--primary-darker);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            padding: 1.5rem;
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+            background: linear-gradient(135deg, var(--orange), #df2c05);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .container-fluid {
+            padding: 2rem;
+        }
+
+        .page-header {
+            margin-bottom: 2rem;
+        }
+
+        .page-header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .page-header p {
+            color: var(--secondary);
+            font-size: 1.1rem;
+        }
+
+        .alert-badges {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .alert-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.25rem;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            border: 1px solid;
+        }
+
+        .alert-badge.error {
+            background-color: rgba(239, 68, 68, 0.15);
+            color: #FCA5A5;
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+
+        .alert-badge.warning {
+            background-color: rgba(249, 115, 22, 0.15);
+            color: #FDBA74;
+            border-color: rgba(249, 115, 22, 0.3);
+        }
+
+        .alert-badge.info {
+            background-color: rgba(59, 130, 246, 0.15);
+            color: #93C5FD;
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(700px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .dashboard-panel {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        .dashboard-panel-header {
+            padding: 1.5rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            font-weight: 600;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .dashboard-panel-header i {
+            color: var(--orange);
+            font-size: 1.3rem;
+        }
+
+        .dashboard-panel-body {
+            padding: 1.5rem;
+            min-height: 500px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--secondary);
+        }
+
+        .iframe-container {
+            width: 100%;
+            height: 100%;
+            min-height: 600px;
+        }
+
+        .iframe-container iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.02);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: var(--secondary);
+        }
+
+        .loading-spinner {
+            border: 2px solid rgba(255,255,255,0.1);
+            border-top: 2px solid var(--orange);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .back-link {
+            color: var(--orange);
+            text-decoration: none;
+            font-size: 0.95rem;
+            margin-bottom: 1.5rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .back-link:hover {
+            color: #df2c05;
+        }
+
+        .status-badge {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 0.5rem;
+            animation: pulse 2s infinite;
+        }
+
+        .status-badge.healthy {
+            background-color: #22C55E;
+        }
+
+        .status-badge.warning {
+            background-color: #F97316;
+        }
+
+        .status-badge.critical {
+            background-color: #EF4444;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .page-header h1 {
+                font-size: 1.8rem;
+            }
+
+            .alert-badges {
+                flex-direction: column;
+            }
+
+            .alert-badge {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-dark sticky-top">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/superadmin">
+                <i class="bi bi-robot"></i> MiRestcon IA
+            </a>
+            <div class="navbar-text" style="color: var(--secondary); font-size: 0.9rem;">
+                <i class="bi bi-shield-check"></i> Superman Panel
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container-fluid">
+        <!-- Back Button -->
+        <a href="/superadmin" class="back-link">
+            <i class="bi bi-arrow-left"></i> Volver a Dashboard
+        </a>
+
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1><%= pageTitle %></h1>
+            <p>Métricas de infraestructura, API, base de datos y servicios</p>
+        </div>
+
+        <!-- Alert Badges -->
+        <div class="alert-badges" id="alertsContainer">
+            <div class="alert-badge info">
+                <span class="status-badge healthy"></span>
+                Sistema operacional
+            </div>
+            <div class="alert-badge warning">
+                <span class="status-badge warning"></span>
+                DB pool utilización: 65%
+            </div>
+            <div class="alert-badge info">
+                <span class="status-badge healthy"></span>
+                Backups: Últimos 7 días OK
+            </div>
+        </div>
+
+        <!-- Dashboards Grid -->
+        <div class="dashboard-grid">
+            <!-- HTTP Latency -->
+            <div class="dashboard-panel">
+                <div class="dashboard-panel-header">
+                    <i class="bi bi-lightning-charge"></i>
+                    HTTP API Latency
+                </div>
+                <div class="dashboard-panel-body">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <p>Cargando dashboard de Grafana...</p>
+                        <small style="color: var(--secondary); margin-top: 1rem; display: block;">
+                            Latencia p95, request rate, tasa de errores
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Database Health -->
+            <div class="dashboard-panel">
+                <div class="dashboard-panel-header">
+                    <i class="bi bi-database"></i>
+                    Database Health
+                </div>
+                <div class="dashboard-panel-body">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <p>Cargando dashboard de Grafana...</p>
+                        <small style="color: var(--secondary); margin-top: 1rem; display: block;">
+                            Conexiones activas, pool status, query performance
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- OpenAI API Usage -->
+            <div class="dashboard-panel">
+                <div class="dashboard-panel-header">
+                    <i class="bi bi-brain"></i>
+                    OpenAI API Usage
+                </div>
+                <div class="dashboard-panel-body">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <p>Cargando dashboard de Grafana...</p>
+                        <small style="color: var(--secondary); margin-top: 1rem; display: block;">
+                            Tokens/día, costo USD, latencia, errores
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vercel Functions -->
+            <div class="dashboard-panel">
+                <div class="dashboard-panel-header">
+                    <i class="bi bi-cloud-lightning-fill"></i>
+                    Vercel Functions
+                </div>
+                <div class="dashboard-panel-body">
+                    <div class="loading">
+                        <div class="loading-spinner"></div>
+                        <p>Cargando dashboard de Grafana...</p>
+                        <small style="color: var(--secondary); margin-top: 1rem; display: block;">
+                            Duración, invocaciones, cold starts, memoria
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Status Card -->
+        <div class="dashboard-panel" style="margin-bottom: 2rem;">
+            <div class="dashboard-panel-header">
+                <i class="bi bi-activity"></i>
+                System Status & Alerts
+            </div>
+            <div class="dashboard-panel-body">
+                <div style="width: 100%;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 1rem 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                        <span>HTTP Error Rate</span>
+                        <span style="color: #22C55E; font-weight: 600;">0.8% <i class="bi bi-check-circle-fill"></i></span>
+                    </div>
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 1rem 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                        <span>DB Pool Utilization</span>
+                        <span style="color: #F97316; font-weight: 600;">65% <i class="bi bi-exclamation-triangle-fill"></i></span>
+                    </div>
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 1rem 0; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                        <span>Last Backup</span>
+                        <span style="color: #22C55E; font-weight: 600;">Hace 2 horas <i class="bi bi-check-circle-fill"></i></span>
+                    </div>
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 1rem 0;">
+                        <span>Disk Free</span>
+                        <span style="color: #22C55E; font-weight: 600;">42% <i class="bi bi-check-circle-fill"></i></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div style="text-align: center; padding: 2rem; color: var(--secondary); border-top: 1px solid rgba(255,255,255,0.1);">
+            <p style="margin: 0;">
+                <small>
+                    Métricas en vivo desde Grafana Cloud • Auto-refresh cada 30 segundos
+                    <br>
+                    Para configurar alertas por Slack/Email, ve a
+                    <a href="<%= grafanaUrl %>" target="_blank" style="color: var(--orange); text-decoration: none;">Grafana</a>
+                    <br>
+                    <a href="/superadmin" style="color: var(--orange); text-decoration: none;">← Volver a Superman</a>
+                </small>
+            </p>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script>
+        // Simular datos en tiempo real (en producción, iframes embebidos cargarían datos de Grafana)
+        const dashboardUrls = {
+            http: '<%= grafanaUrl %>/d/<%= dashboards.http %>',
+            database: '<%= grafanaUrl %>/d/<%= dashboards.database %>',
+            openai: '<%= grafanaUrl %>/d/<%= dashboards.openai %>',
+            vercel: '<%= grafanaUrl %>/d/<%= dashboards.vercel %>'
+        };
+
+        // Auto-refresh every 30 seconds
+        setTimeout(() => {
+            location.reload();
+        }, 30 * 1000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,481 @@
+const express = require('express');
+const router = express.Router();
+const db = require('../db');
+const fs = require('fs');
+const path = require('path');
+const os = require('os');
+const { exec } = require('child_process');
+
+// Validar rutas de retorno (evitar open-redirect / URLs externas)
+// Se usa para que el botón "Volver" de la impresión regrese a Mesas cuando aplique.
+function safeReturnTo(value) {
+    const v = String(value || '').trim();
+    if (!v) return '/';
+    // Solo permitimos paths relativos al sitio (inician con "/")
+    if (!v.startsWith('/')) return '/';
+    // Bloquear intentos tipo "//dominio.com" o backslashes
+    if (v.startsWith('//') || v.includes('\\')) return '/';
+    return v;
+}
+
+// Helpers de pagos (pago mixto)
+// Relacionado con:
+// - public/js/factura.js (envía pagos desde index)
+// - public/js/mesas.js (envía pagos desde mesas)
+function normalizarPagos(pagos) {
+    if (!Array.isArray(pagos)) return [];
+    return pagos
+        .filter(p => p && typeof p === 'object')
+        .map(p => ({
+            metodo: String(p.metodo || '').toLowerCase().trim(),
+            monto: Number(p.monto || 0),
+            referencia: (p.referencia != null && String(p.referencia).trim() !== '') ? String(p.referencia).trim() : null
+        }))
+        .filter(p => ['efectivo', 'transferencia', 'tarjeta'].includes(p.metodo) && Number.isFinite(p.monto) && p.monto > 0);
+}
+
+function sumatoriaPagos(pagos) {
+    return pagos.reduce((acc, p) => acc + Number(p.monto || 0), 0);
+}
+
+function almostEqualMoney(a, b) {
+    // Tolerancia de 1 centavo para evitar problemas de flotantes
+    return Math.abs(Number(a) - Number(b)) < 0.01;
+}
+
+function execCommand(command) {
+    return new Promise((resolve, reject) => {
+        exec(command, { timeout: 20000 }, (error, stdout, stderr) => {
+            if (error) return reject(new Error(String(stderr || error.message || 'Error al ejecutar impresion')));
+            resolve({ stdout, stderr });
+        });
+    });
+}
+
+async function imprimirTextoServidor(texto, impresoraNombre, copias = 1) {
+    const tmpFile = path.join(os.tmpdir(), `factura-${Date.now()}-${Math.random().toString(16).slice(2)}.txt`);
+    fs.writeFileSync(tmpFile, String(texto || ''), { encoding: 'utf8' });
+    try {
+        const n = Math.max(1, Number(copias || 1) || 1);
+        for (let i = 0; i < n; i += 1) {
+            if (process.platform === 'win32') {
+                const psPath = tmpFile.replace(/'/g, "''");
+                const psPrinter = String(impresoraNombre || '').replace(/'/g, "''");
+                const cmd = psPrinter
+                    ? `powershell -NoProfile -Command "Get-Content -Raw -Encoding UTF8 '${psPath}' | Out-Printer -Name '${psPrinter}'"`
+                    : `powershell -NoProfile -Command "Get-Content -Raw -Encoding UTF8 '${psPath}' | Out-Printer"`;
+                await execCommand(cmd);
+            } else {
+                const quoted = `"${tmpFile.replace(/"/g, '\\"')}"`;
+                const p = String(impresoraNombre || '').trim();
+                const cmd = p
+                    ? `lp -d "${p.replace(/"/g, '\\"')}" ${quoted}`
+                    : `lp ${quoted}`;
+                await execCommand(cmd);
+            }
+        }
+    } finally {
+        try { fs.unlinkSync(tmpFile); } catch (_) {}
+    }
+}
+
+function buildFacturaTexto({ factura, cliente, detalles, pagos, negocio }) {
+    const line = '-'.repeat(42);
+    const out = [];
+    out.push(String(negocio?.nombre_negocio || 'FACTURA'));
+    if (negocio?.direccion) out.push(String(negocio.direccion));
+    if (negocio?.telefono) out.push(`Tel: ${negocio.telefono}`);
+    if (negocio?.nit) out.push(`NIT: ${negocio.nit}`);
+    out.push(line);
+    out.push(`Factura #: ${factura?.id ?? '-'}`);
+    out.push(`Fecha: ${new Date(factura?.fecha || Date.now()).toLocaleString('es-CO')}`);
+    out.push(`Cliente: ${cliente?.nombre || '-'}`);
+    out.push(line);
+    (detalles || []).forEach((d) => {
+        out.push(String(d?.producto_nombre || ''));
+        out.push(`${Number(d?.cantidad || 0)}${String(d?.unidad_medida || '')}  $${Number(d?.precio_unitario || 0).toLocaleString('es-CO')}  $${Number(d?.subtotal || 0).toLocaleString('es-CO')}`);
+    });
+    out.push(line);
+    out.push(`Total: $${Number(factura?.total || 0).toLocaleString('es-CO')}`);
+    if (Array.isArray(pagos) && pagos.length > 0) {
+        out.push('Pagos:');
+        pagos.forEach((p) => {
+            const metodo = String(p?.metodo || '').trim();
+            const ref = String(p?.referencia || '').trim();
+            out.push(`${metodo}: $${Number(p?.monto || 0).toLocaleString('es-CO')}${ref ? ` (${ref})` : ''}`);
+        });
+    } else {
+        out.push(`Forma de pago: ${String(factura?.forma_pago || '')}`);
+    }
+    out.push(String(negocio?.pie_pagina || 'Gracias por su compra'));
+    return out.join('\r\n');
+}
+
+// Helper: costo de receta para un producto (suma ingredientes x costo_promedio)
+async function getRecipeCost(connection, productoId) {
+    try {
+        const [[cost]] = await connection.query(`
+            SELECT COALESCE(SUM(ri.cantidad * ai.costo_promedio), 0) as costo
+            FROM receta_items ri
+            JOIN recetas r ON r.id = ri.receta_id
+            JOIN almacen_ingredientes ai ON ai.id = ri.ingrediente_id
+            WHERE r.producto_id = ?
+        `, [productoId]);
+        return cost ? Number(cost.costo) : 0;
+    } catch (_) {
+        return 0;
+    }
+}
+
+// Crear nueva factura
+router.post('/', async (req, res) => {
+    const { cliente_id, total, forma_pago, productos, pagos } = req.body;
+    
+    console.log('Datos recibidos:', req.body);
+    
+    if (!cliente_id || !productos || productos.length === 0) {
+        return res.status(400).json({ error: 'Datos incompletos' });
+    }
+
+    // Validaciones ANTES de abrir transacción (evita dejar conexiones abiertas si hay error)
+    const totalNum = Number(total || 0);
+    if (!Number.isFinite(totalNum) || totalNum <= 0) {
+        return res.status(400).json({ error: 'Total inválido' });
+    }
+
+    // Si vienen pagos (pago mixto), validamos y definimos forma_pago compatible
+    const pagosNorm = normalizarPagos(pagos);
+    let formaPagoDB = (forma_pago || 'efectivo');
+    if (pagosNorm.length > 0) {
+        const suma = sumatoriaPagos(pagosNorm);
+        if (!almostEqualMoney(suma, totalNum)) {
+            return res.status(400).json({ error: 'La suma de pagos no coincide con el total' });
+        }
+        formaPagoDB = pagosNorm.length === 1 ? pagosNorm[0].metodo : 'mixto';
+    } else {
+        // Compatibilidad con flujo anterior (un solo medio)
+        const fp = String(forma_pago || 'efectivo').toLowerCase();
+        formaPagoDB = ['efectivo', 'transferencia', 'tarjeta', 'mixto'].includes(fp) ? fp : 'efectivo';
+    }
+
+    try {
+        // Obtener conexión del pool
+        const connection = await db.getConnection();
+        
+        try {
+            // Iniciar transacción
+            await connection.beginTransaction();
+
+            // Insertar factura
+            const [result] = await connection.query(
+                'INSERT INTO facturas (cliente_id, total, forma_pago) VALUES (?, ?, ?) RETURNING id',
+                [cliente_id, totalNum, formaPagoDB]
+            );
+
+            const factura_id = result.insertId;
+
+            // Insertar detalles de factura (PostgreSQL does not support VALUES ? bulk syntax; insert individually)
+            for (const p of productos) {
+                const costoReceta = await getRecipeCost(connection, p.producto_id);
+                await connection.query(
+                    'INSERT INTO detalle_factura (factura_id, producto_id, cantidad, precio_unitario, unidad_medida, subtotal, costo_receta) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                    [factura_id, p.producto_id, p.cantidad, p.precio, p.unidad, p.subtotal, costoReceta]
+                );
+            }
+
+            // Guardar pagos (pago mixto) si existe la tabla factura_pagos
+            // Relacionado con database.sql -> tabla factura_pagos
+            try {
+                if (pagosNorm.length > 0) {
+                    for (const p of pagosNorm) {
+                        await connection.query(
+                            'INSERT INTO factura_pagos (factura_id, metodo, monto, referencia) VALUES (?, ?, ?, ?)',
+                            [factura_id, p.metodo, p.monto, p.referencia]
+                        );
+                    }
+                } else {
+                    // Compatibilidad: crear 1 pago con el método seleccionado y el total
+                    await connection.query(
+                        'INSERT INTO factura_pagos (factura_id, metodo, monto, referencia) VALUES (?, ?, ?, ?)',
+                        [factura_id, (formaPagoDB === 'mixto' ? 'efectivo' : formaPagoDB), totalNum, null]
+                    );
+                }
+            } catch (_) {
+                // Si la tabla no existe (instalación vieja), no rompemos la creación de factura
+            }
+
+            // NOTA: El descuento de almacen se hace al ENVIAR A COCINA (routes/mesas.js)
+            // No al facturar, porque los ingredientes se usan cuando se prepara, no cuando se cobra.
+
+            // === REGISTRO EN CAJA (dentro de la transacción) ===
+            const facTid = req.tenantId || 1;
+            const facUid = req.session?.user?.id || 0;
+            const [[cajaAbierta]] = await connection.query(
+                "SELECT id FROM cajas WHERE tenant_id=? AND estado='abierta' LIMIT 1",
+                [facTid]
+            );
+            if (cajaAbierta) {
+                await connection.query(
+                    `INSERT INTO caja_movimientos (tenant_id, caja_id, tipo, concepto, monto, usuario_id)
+                     VALUES (?, ?, 'ingreso', 'venta_factura', ?, ?)`,
+                    [facTid, cajaAbierta.id, totalNum, facUid]
+                );
+            }
+
+            // Confirmar transacción
+            await connection.commit();
+
+            // Devolver la conexión al pool
+            connection.release();
+            
+            res.status(201).json({ id: factura_id });
+
+        } catch (error) {
+            // Si hay error, hacer rollback
+            await connection.rollback();
+            // Devolver la conexión al pool
+            connection.release();
+            throw error; // Re-lanzar el error para que lo maneje el catch exterior
+        }
+
+    } catch (error) {
+        console.error('Error al crear factura:', error);
+        res.status(500).json({ error: 'Error al crear factura' });
+    }
+});
+
+// Vista previa e impresión de factura
+router.get('/:id/imprimir', async (req, res) => {
+    const factura_id = req.params.id;
+    const return_to = safeReturnTo(req.query.return_to);
+    // Si se muestra dentro de un iframe/modal (index/ventas), ocultamos el botón "Volver"
+    const embed = String(req.query.embed || '') === '1';
+
+    try {
+        // Obtener configuración
+        const [configRows] = await db.query(
+            'SELECT * FROM configuracion_impresion LIMIT 1'
+        );
+
+        if (!configRows || configRows.length === 0) {
+            return res.status(400).json({ error: 'No se ha configurado la información de impresión' });
+        }
+
+        const config = configRows[0];
+
+        // Convertir imágenes a formato data URL si existen
+        if (config.logo_data) {
+            const logoBuffer = Buffer.from(config.logo_data);
+            config.logo_src = `data:image/${config.logo_tipo};base64,${logoBuffer.toString('base64')}`;
+        }
+        if (config.qr_data) {
+            const qrBuffer = Buffer.from(config.qr_data);
+            config.qr_src = `data:image/${config.qr_tipo};base64,${qrBuffer.toString('base64')}`;
+        }
+
+        // Obtener datos de la factura
+        const [facturas] = await db.query(
+            `SELECT f.*, c.nombre as cliente_nombre, c.direccion, c.telefono
+             FROM facturas f
+             JOIN clientes c ON f.cliente_id = c.id
+             WHERE f.id = ?`,
+            [factura_id]
+        );
+
+        if (!facturas || facturas.length === 0) {
+            return res.status(404).json({ error: 'Factura no encontrada' });
+        }
+
+        // Obtener detalles de la factura
+        const [detalles] = await db.query(
+            `SELECT d.*, p.nombre as producto_nombre
+             FROM detalle_factura d
+             JOIN productos p ON d.producto_id = p.id
+             WHERE d.factura_id = ?`,
+            [factura_id]
+        );
+
+        // Obtener pagos de la factura (si existe la tabla)
+        let pagos = [];
+        try {
+            const [pagosRows] = await db.query(
+                `SELECT metodo, monto, referencia FROM factura_pagos WHERE factura_id = ? ORDER BY id ASC`,
+                [factura_id]
+            );
+            pagos = pagosRows || [];
+        } catch (_) {
+            // Si no existe la tabla (instalaciones viejas), no rompemos la impresión
+            pagos = [];
+        }
+
+        if (!detalles) {
+            return res.status(404).json({ error: 'No se encontraron detalles de la factura' });
+        }
+
+        // Renderizar la vista de la factura
+        res.render('factura', {
+            factura: facturas[0],
+            detalles: detalles,
+            config: config,
+            pagos: pagos,
+            // Relacionado con: views/factura.ejs (botón Volver)
+            return_to: return_to,
+            // Relacionado con: index (modal) y ventas (reimprimir)
+            embed: embed
+        });
+
+    } catch (error) {
+        console.error('Error al obtener datos de factura:', error);
+        res.status(500).json({ error: 'Error al obtener datos de factura' });
+    }
+});
+
+// Ruta para obtener detalles de una factura
+router.get('/:id/detalles', async (req, res) => {
+    try {
+        // Obtener información de la factura
+        const [facturas] = await db.query(
+            'SELECT f.*, c.nombre as cliente_nombre, c.direccion, c.telefono FROM facturas f ' +
+            'JOIN clientes c ON f.cliente_id = c.id ' +
+            'WHERE f.id = ?',
+            [req.params.id]
+        );
+
+        if (facturas.length === 0) {
+            return res.status(404).json({ error: 'Factura no encontrada' });
+        }
+
+        const factura = facturas[0];
+
+        // Obtener productos de la factura
+        const [productos] = await db.query(
+            'SELECT d.cantidad, d.precio_unitario, d.unidad_medida, d.subtotal, p.nombre ' +
+            'FROM detalle_factura d ' +
+            'JOIN productos p ON d.producto_id = p.id ' +
+            'WHERE d.factura_id = ?',
+            [req.params.id]
+        );
+
+        // Obtener pagos (si existe tabla)
+        let pagos = [];
+        try {
+            const [pagosRows] = await db.query(
+                'SELECT metodo, monto, referencia FROM factura_pagos WHERE factura_id = ? ORDER BY id ASC',
+                [req.params.id]
+            );
+            pagos = pagosRows || [];
+        } catch (_) {
+            pagos = [];
+        }
+
+        // Estructurar la respuesta asegurando que los valores numéricos sean válidos
+        res.json({
+            factura: {
+                id: factura.id,
+                fecha: factura.fecha,
+                total: parseFloat(factura.total || 0),
+                forma_pago: factura.forma_pago
+            },
+            cliente: {
+                nombre: factura.cliente_nombre || '',
+                direccion: factura.direccion || '',
+                telefono: factura.telefono || ''
+            },
+            pagos: pagos.map(p => ({
+                metodo: p.metodo,
+                monto: parseFloat(p.monto || 0),
+                referencia: p.referencia || ''
+            })),
+            productos: productos.map(p => ({
+                nombre: p.nombre || '',
+                cantidad: parseFloat(p.cantidad || 0),
+                unidad: p.unidad_medida || '',
+                precio: parseFloat(p.precio_unitario || 0),
+                subtotal: parseFloat(p.subtotal || 0)
+            }))
+        });
+    } catch (error) {
+        console.error('Error al obtener detalles de la factura:', error);
+        res.status(500).json({ error: 'Error al obtener detalles de la factura' });
+    }
+});
+
+// GET /facturas/config/impresion - flags de impresión para frontend
+router.get('/config/impresion', async (req, res) => {
+    try {
+        const [rows] = await db.query(
+            `SELECT impresora_facturas, factura_imprime_servidor, factura_copias, factura_auto_print
+             FROM configuracion_impresion
+             LIMIT 1`
+        );
+        const cfg = rows?.[0] || {};
+        res.json({
+            impresora_facturas: String(cfg?.impresora_facturas || '').trim() || null,
+            factura_imprime_servidor: Number(cfg?.factura_imprime_servidor || 0) === 1,
+            factura_copias: Math.max(1, Number(cfg?.factura_copias || 1) || 1),
+            factura_auto_print: Number(cfg?.factura_auto_print || 0) === 1
+        });
+    } catch (error) {
+        console.error('Error al leer configuración de impresión de factura:', error);
+        res.status(500).json({ error: 'Error al leer configuración de impresión de factura' });
+    }
+});
+
+// POST /facturas/:id/imprimir-servidor - impresión de factura desde PC/servidor
+router.post('/:id/imprimir-servidor', async (req, res) => {
+    try {
+        const facturaId = Number(req.params.id);
+        if (!Number.isInteger(facturaId) || facturaId <= 0) {
+            return res.status(400).json({ error: 'Factura inválida' });
+        }
+
+        const [configRows] = await db.query('SELECT * FROM configuracion_impresion LIMIT 1');
+        const config = configRows?.[0] || {};
+        const printerName = String(config?.impresora_facturas || '').trim() || null;
+        const copias = Math.max(1, Number(config?.factura_copias || 1) || 1);
+
+        const [facturas] = await db.query(
+            `SELECT f.*, c.nombre as cliente_nombre, c.direccion, c.telefono
+             FROM facturas f
+             JOIN clientes c ON f.cliente_id = c.id
+             WHERE f.id = ?`,
+            [facturaId]
+        );
+        if (!facturas.length) return res.status(404).json({ error: 'Factura no encontrada' });
+        const factura = facturas[0];
+
+        const [detalles] = await db.query(
+            `SELECT d.*, p.nombre as producto_nombre
+             FROM detalle_factura d
+             JOIN productos p ON d.producto_id = p.id
+             WHERE d.factura_id = ?`,
+            [facturaId]
+        );
+
+        let pagos = [];
+        try {
+            const [pagosRows] = await db.query(
+                'SELECT metodo, monto, referencia FROM factura_pagos WHERE factura_id = ? ORDER BY id ASC',
+                [facturaId]
+            );
+            pagos = pagosRows || [];
+        } catch (_) {
+            pagos = [];
+        }
+
+        const texto = buildFacturaTexto({
+            factura,
+            cliente: { nombre: factura.cliente_nombre, direccion: factura.direccion, telefono: factura.telefono },
+            detalles: detalles || [],
+            pagos,
+            negocio: config || {}
+        });
+        await imprimirTextoServidor(texto, printerName, copias);
+        res.json({ printed: true, impresora: printerName || 'predeterminada', copias });
+    } catch (error) {
+        console.error('Error al imprimir factura en servidor:', error);
+        res.status(500).json({ error: 'No se pudo imprimir la factura en servidor' });
+    }
+});
+
+module.exports = router; 

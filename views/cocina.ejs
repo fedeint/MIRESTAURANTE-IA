@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="/favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1e1b4b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="dignita">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+    <title>Cocina - mirestconia.com</title>
+    <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/theme.css">
+    <style>
+      @keyframes cocina-pulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50%       { opacity: 0.75; transform: scale(1.06); }
+      }
+      .cocina-timer-wrap {
+        display: flex;
+        justify-content: center;
+      }
+      .cocina-timer-badge {
+        font-size: 1rem !important;
+        padding: .4em .75em;
+        border-radius: .5rem;
+        letter-spacing: .01em;
+      }
+      .cocina-summary-bar {
+        background: var(--bs-body-bg, #fff);
+        border: 1px solid var(--bs-border-color, #dee2e6);
+        border-radius: .5rem;
+        padding: .5rem 1rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: .75rem;
+        align-items: center;
+        font-size: .9rem;
+        margin-bottom: 1rem;
+      }
+      .cocina-summary-bar .summary-item {
+        display: flex;
+        align-items: center;
+        gap: .35rem;
+      }
+    </style>
+</head>
+<body>
+    <%- include('partials/sidebar') %>
+    <div class="dg-main">
+    <main class="flex-grow-1">
+    <div class="container">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+          <div>
+            <h4 class="mb-0"><i class="bi bi-fire me-2"></i>Cocina</h4>
+            <div class="text-muted small">Gestiona el estado de preparación de forma rápida y clara.</div>
+          </div>
+          <div class="d-flex align-items-center gap-2">
+            <button id="btnRefreshCocina" class="btn btn-outline-secondary btn-sm" type="button">
+              <i class="bi bi-arrow-clockwise me-1"></i>Actualizar
+            </button>
+            <div class="form-check form-switch m-0">
+              <input class="form-check-input" type="checkbox" role="switch" id="toggleAutoRefresh" checked>
+              <label class="form-check-label small" for="toggleAutoRefresh">Auto</label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Barra de resumen en tiempo real -->
+        <div class="cocina-summary-bar mb-3" id="cocinaSummaryBar">
+          <div class="summary-item">
+            <i class="bi bi-grid-3x3-gap text-secondary"></i>
+            <span class="fw-semibold"><span id="summaryActivos">0</span></span>
+            <span class="text-muted">mesas activas</span>
+          </div>
+          <div class="vr d-none d-md-block"></div>
+          <div class="summary-item">
+            <i class="bi bi-clock text-secondary"></i>
+            <span class="text-muted">Tiempo promedio:</span>
+            <span class="fw-semibold"><span id="summaryPromedio">0</span> min</span>
+          </div>
+          <div class="vr d-none d-md-block"></div>
+          <div class="summary-item">
+            <i class="bi bi-exclamation-triangle text-danger"></i>
+            <span class="text-muted">Urgentes:</span>
+            <span id="summaryUrgentesBadge" class="badge text-bg-secondary"><span id="summaryUrgentes">0</span></span>
+          </div>
+        </div>
+
+        <div class="cocina-toolbar mb-3">
+          <div class="row g-2 align-items-center">
+            <div class="col-12 col-md-6">
+              <div class="input-group">
+                <span class="input-group-text"><i class="bi bi-search"></i></span>
+                <input id="buscarCocina" class="form-control" placeholder="Buscar por mesa, producto o nota...">
+              </div>
+            </div>
+            <div class="col-12 col-md-6 d-flex justify-content-md-end gap-2 flex-wrap">
+              <span class="badge text-bg-primary kpi-badge">Enviados: <span id="countEnviados">0</span></span>
+              <span class="badge text-bg-warning kpi-badge">Preparando: <span id="countPreparando">0</span></span>
+              <span class="badge text-bg-success kpi-badge">Listos: <span id="countListos">0</span></span>
+            </div>
+          </div>
+          <!-- Filtros de Entregados (por defecto hoy) -->
+          <!-- Relacionado con: public/js/cocina.js (GET /api/cocina/entregados?desde&hasta) -->
+          <div class="row g-2 align-items-end mt-2">
+            <div class="col-12 col-md-3">
+              <label class="form-label small mb-1">Desde</label>
+              <input type="date" id="entDesde" class="form-control form-control-sm">
+            </div>
+            <div class="col-12 col-md-3">
+              <label class="form-label small mb-1">Hasta</label>
+              <input type="date" id="entHasta" class="form-control form-control-sm">
+            </div>
+            <div class="col-12 col-md-3">
+              <button id="btnFiltrarEntregados" class="btn btn-outline-secondary btn-sm w-100" type="button">
+                <i class="bi bi-funnel me-1"></i>Filtrar entregados
+              </button>
+            </div>
+            <div class="col-12 col-md-3 small text-muted">
+              Predeterminado: <strong>hoy</strong>
+            </div>
+          </div>
+        </div>
+
+        <ul class="nav nav-pills gap-2" id="tabsCocina" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="tabEnviados-tab" data-bs-toggle="tab" data-bs-target="#tabEnviados" type="button" role="tab" aria-controls="tabEnviados" aria-selected="true">
+              <i class="bi bi-send me-1"></i>Enviados <span class="badge text-bg-light ms-1" id="pillEnviados">0</span>
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tabPreparando-tab" data-bs-toggle="tab" data-bs-target="#tabPreparando" type="button" role="tab" aria-controls="tabPreparando" aria-selected="false">
+              <i class="bi bi-fire me-1"></i>Preparando <span class="badge text-bg-light ms-1" id="pillPreparando">0</span>
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tabListos-tab" data-bs-toggle="tab" data-bs-target="#tabListos" type="button" role="tab" aria-controls="tabListos" aria-selected="false">
+              <i class="bi bi-check2-circle me-1"></i>Listos <span class="badge text-bg-light ms-1" id="pillListos">0</span>
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tabEntregados-tab" data-bs-toggle="tab" data-bs-target="#tabEntregados" type="button" role="tab" aria-controls="tabEntregados" aria-selected="false">
+              <i class="bi bi-box-seam me-1"></i>Entregados <span class="badge text-bg-light ms-1" id="pillEntregados">0</span>
+            </button>
+          </li>
+          <!-- Pestaña Rechazados: visualizar pedidos/items cancelados (estado='rechazado') -->
+          <!-- Relacionado con: routes/cocina.js (GET /api/cocina/rechazados) y public/js/cocina.js -->
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tabRechazados-tab" data-bs-toggle="tab" data-bs-target="#tabRechazados" type="button" role="tab" aria-controls="tabRechazados" aria-selected="false">
+              <i class="bi bi-x-octagon me-1"></i>Rechazados <span class="badge text-bg-light ms-1" id="pillRechazados">0</span>
+            </button>
+          </li>
+        </ul>
+
+        <div class="tab-content pt-3">
+          <div class="tab-pane fade show active" id="tabEnviados" role="tabpanel" aria-labelledby="tabEnviados-tab" tabindex="0">
+            <div id="listaEnviados" class="vstack gap-2"></div>
+            <div id="emptyEnviados" class="empty-state mt-2 d-none">
+              <i class="bi bi-inbox me-1"></i>No hay pedidos enviados.
+            </div>
+          </div>
+          <div class="tab-pane fade" id="tabPreparando" role="tabpanel" aria-labelledby="tabPreparando-tab" tabindex="0">
+            <div id="listaPreparando" class="vstack gap-2"></div>
+            <div id="emptyPreparando" class="empty-state mt-2 d-none">
+              <i class="bi bi-inbox me-1"></i>No hay pedidos en preparación.
+            </div>
+          </div>
+          <div class="tab-pane fade" id="tabListos" role="tabpanel" aria-labelledby="tabListos-tab" tabindex="0">
+            <div id="listaListos" class="vstack gap-2"></div>
+            <div id="emptyListos" class="empty-state mt-2 d-none">
+              <i class="bi bi-inbox me-1"></i>No hay pedidos listos para entregar.
+            </div>
+          </div>
+          <div class="tab-pane fade" id="tabEntregados" role="tabpanel" aria-labelledby="tabEntregados-tab" tabindex="0">
+            <div id="listaEntregados" class="vstack gap-2"></div>
+            <div id="emptyEntregados" class="empty-state mt-2 d-none">
+              <i class="bi bi-inbox me-1"></i>No hay pedidos entregados en el rango seleccionado.
+            </div>
+          </div>
+          <div class="tab-pane fade" id="tabRechazados" role="tabpanel" aria-labelledby="tabRechazados-tab" tabindex="0">
+            <div id="listaRechazados" class="vstack gap-2"></div>
+            <div id="emptyRechazados" class="empty-state mt-2 d-none">
+              <i class="bi bi-inbox me-1"></i>No hay pedidos rechazados en el rango seleccionado.
+            </div>
+          </div>
+        </div>
+    </div>
+    </main>
+
+    <%- include('partials/footer') %>
+    </div><!-- dg-main -->
+
+    <script src="/vendor/jquery/jquery.min.js"></script>
+    <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <!-- SweetAlert2 (confirmaciones). Relacionado con: public/js/cocina.js (cancelar item) -->
+    <script src="/vendor/sweetalert2/sweetalert2.all.min.js"></script>
+    <script>
+      // Render inicial (evita “pantalla vacía” mientras carga el fetch)
+      window.__COCINA_ITEMS__ = <%- JSON.stringify(items || []) %>;
+      // Rol del usuario (para esconder acciones en UI cuando es mesero)
+      // Relacionado con: public/js/cocina.js y middleware/auth.js (res.locals.user)
+      window.__USER_ROLE__ = <%- JSON.stringify((typeof user !== 'undefined' && user && user.rol) ? user.rol : '') %>;
+    </script>
+    <script src="/js/cocina.js"></script>
+</body>
+</html>
+
+

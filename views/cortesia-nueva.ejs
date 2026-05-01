@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Registrar Cortesía — MiRestcon</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      font-family: 'DM Sans', sans-serif;
+      background: #F0F2F8;
+      height: 100dvh;
+      overflow: hidden;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+    .app-shell { display: flex; flex-direction: column; height: 100dvh; }
+
+    /* HEADER */
+    .app-header {
+      background: linear-gradient(180deg, #10152f 0%, #0a0f24 60%, #090d1d 100%);
+      border-radius: 0 0 20px 20px;
+      padding: 48px 20px 20px;
+      color: white; flex-shrink: 0;
+    }
+    .header-row { display: flex; align-items: center; gap: 10px; }
+    .back-btn {
+      background: rgba(255,255,255,0.12); border: none; color: white;
+      width: 36px; height: 36px; border-radius: 10px;
+      cursor: pointer; font-size: 18px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; text-decoration: none;
+    }
+    .header-title { font-size: 18px; font-weight: 700; }
+
+    /* CONTENT */
+    .content-area {
+      flex: 1; overflow-y: auto;
+      padding: 16px 16px 160px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* SECTION LABEL */
+    .field-label { font-size: 12px; font-weight: 700; color: #8B8FAD; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+
+    /* SEGMENTED CONTROL */
+    .segment-wrap { background: white; border-radius: 14px; padding: 4px; display: flex; gap: 4px; margin-bottom: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+    .seg-btn {
+      flex: 1; padding: 9px 6px; border-radius: 10px; border: none;
+      background: transparent; color: #8B8FAD;
+      font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600;
+      cursor: pointer; text-align: center; transition: all 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .seg-btn.active { background: #0a0f24; color: white; }
+
+    /* FIELD CARD */
+    .field-card { background: white; border-radius: 14px; padding: 14px 16px; margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+    .field-input {
+      width: 100%; border: none; outline: none;
+      font-family: 'DM Sans', sans-serif; font-size: 14px; color: #0a0f24;
+      background: transparent; resize: none;
+    }
+    .field-input::placeholder { color: #8B8FAD; }
+
+    /* PRODUCTO SELECTOR */
+    .prod-selector {
+      background: white; border-radius: 14px; padding: 14px 16px; margin-bottom: 12px;
+      display: flex; align-items: center; justify-content: space-between;
+      cursor: pointer; box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .prod-selector-left { display: flex; flex-direction: column; gap: 4px; }
+    .prod-selector-name { font-size: 14px; font-weight: 600; color: #0a0f24; }
+    .prod-selector-cost { font-size: 12px; color: #8B8FAD; }
+    .prod-selector-chevron { font-size: 20px; color: #8B8FAD; }
+
+    /* AUTORIZADO SELECT */
+    .field-select {
+      width: 100%; border: none; outline: none;
+      font-family: 'DM Sans', sans-serif; font-size: 14px; color: #0a0f24;
+      background: transparent; appearance: none; cursor: pointer;
+    }
+
+    /* WARNING CHIP */
+    .warning-chip {
+      background: #fff7ed; border: 1px solid #fed7aa;
+      color: #c2410c; font-size: 12px; font-weight: 600;
+      padding: 10px 14px; border-radius: 12px;
+      margin-bottom: 12px; display: flex; align-items: flex-start; gap: 8px;
+      line-height: 1.4;
+    }
+    .warning-chip.danger { background: #fef2f2; border-color: #fecaca; color: #991b1b; }
+
+    /* STICKY CTA */
+    .sticky-cta {
+      position: fixed; bottom: 64px; left: 50%; transform: translateX(-50%);
+      width: calc(100% - 32px); max-width: 448px; z-index: 50;
+    }
+    .cta-btn {
+      width: 100%; padding: 16px 24px;
+      background: linear-gradient(135deg, #ef520f, #df2c05);
+      color: white; border: none; border-radius: 16px;
+      font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 700;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      box-shadow: 0 4px 16px rgba(239,82,15,0.4);
+      transition: opacity 0.15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .cta-btn:active { opacity: 0.85; }
+    .cta-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    /* PRODUCT MODAL */
+    .modal-backdrop {
+      position: fixed; inset: 0; background: rgba(10,15,36,0.6);
+      z-index: 400; display: flex; align-items: flex-end;
+    }
+    .modal-sheet {
+      background: #F0F2F8; border-radius: 20px 20px 0 0;
+      width: 100%; max-width: 480px; margin: 0 auto;
+      max-height: 75vh; display: flex; flex-direction: column;
+      padding-bottom: max(16px, env(safe-area-inset-bottom));
+    }
+    .modal-header {
+      padding: 16px 20px 12px;
+      display: flex; align-items: center; justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .modal-title { font-size: 16px; font-weight: 700; color: #0a0f24; }
+    .modal-close {
+      background: rgba(0,0,0,0.08); border: none; color: #0a0f24;
+      width: 30px; height: 30px; border-radius: 50%;
+      cursor: pointer; font-size: 18px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .modal-search-wrap { padding: 0 16px 12px; flex-shrink: 0; }
+    .modal-search {
+      width: 100%; padding: 10px 14px; border-radius: 12px;
+      border: 1.5px solid #e2e5f0; background: white;
+      font-family: 'DM Sans', sans-serif; font-size: 14px; color: #0a0f24;
+      outline: none;
+    }
+    .modal-search:focus { border-color: #ef520f; }
+    .modal-list { flex: 1; overflow-y: auto; padding: 0 16px 8px; -webkit-overflow-scrolling: touch; }
+    .modal-item {
+      background: white; border-radius: 12px; padding: 12px 14px;
+      margin-bottom: 8px; display: flex; align-items: center; gap: 12px;
+      cursor: pointer; -webkit-tap-highlight-color: transparent;
+      transition: opacity 0.1s;
+    }
+    .modal-item:active { opacity: 0.8; }
+    .modal-item.hidden { display: none; }
+    .modal-item-emoji {
+      width: 40px; height: 40px;
+      background: linear-gradient(135deg, #ef520f, #df2c05);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px; flex-shrink: 0;
+    }
+    .modal-item-name { font-size: 14px; font-weight: 600; color: #0a0f24; flex: 1; }
+    .modal-item-price { font-size: 13px; color: #8B8FAD; font-weight: 500; }
+
+    /* BOTTOM NAV */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+      width: 100%; max-width: 480px; background: white;
+      display: flex; justify-content: space-around;
+      padding: 8px 0; padding-bottom: max(8px, env(safe-area-inset-bottom));
+      box-shadow: 0 -2px 16px rgba(0,0,0,0.08); z-index: 100;
+    }
+    .nav-item {
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+      color: #8B8FAD; text-decoration: none; font-size: 10px; font-weight: 500;
+    }
+    .nav-item.active { color: #ef520f; }
+    .nav-icon { font-size: 22px; }
+
+    /* TOAST */
+    .toast {
+      position: fixed; top: 80px; left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      background: #0a0f24; color: white;
+      padding: 12px 20px; border-radius: 12px;
+      font-size: 14px; font-weight: 500;
+      opacity: 0; transition: opacity 0.3s, transform 0.3s;
+      z-index: 500; white-space: nowrap;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .toast.success { background: #16a34a; }
+    .toast.error { background: #dc2626; }
+
+    .loading-overlay {
+      position: fixed; inset: 0; background: rgba(10,15,36,0.7);
+      display: flex; align-items: center; justify-content: center; z-index: 600;
+    }
+    .spinner {
+      width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.2);
+      border-top-color: white; border-radius: 50%; animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- HEADER -->
+  <header class="app-header">
+    <div class="header-row">
+      <a href="/pedidos" class="back-btn">&#8592;</a>
+      <span class="header-title">Registrar cortesía</span>
+    </div>
+  </header>
+
+  <!-- CONTENT -->
+  <div class="content-area">
+
+    <!-- TIPO SEGMENTED -->
+    <div class="field-label">Tipo</div>
+    <div class="segment-wrap" id="tipoSegment">
+      <button class="seg-btn active" data-tipo="cliente" onclick="selectTipo(this,'cliente')">Cliente</button>
+      <button class="seg-btn"        data-tipo="staff"   onclick="selectTipo(this,'staff')">Staff</button>
+      <button class="seg-btn"        data-tipo="prueba"  onclick="selectTipo(this,'prueba')">Prueba</button>
+    </div>
+
+    <!-- MOTIVO -->
+    <div class="field-label">Motivo</div>
+    <div class="field-card" style="margin-bottom:16px;">
+      <textarea class="field-input" id="motivoInput" rows="2"
+                placeholder="Cliente frecuente, cumpleaños, etc." maxlength="300"></textarea>
+    </div>
+
+    <!-- PLATO DE CORTESÍA -->
+    <div class="field-label">Plato de cortesía</div>
+    <div class="prod-selector" onclick="openProductModal()">
+      <div class="prod-selector-left">
+        <span class="prod-selector-name" id="prodNombreEl">Seleccionar plato...</span>
+        <span class="prod-selector-cost" id="prodCostoEl" style="display:none"></span>
+      </div>
+      <span class="prod-selector-chevron">›</span>
+    </div>
+    <input type="hidden" id="selectedProdId" value="">
+
+    <!-- AUTORIZADO POR -->
+    <div class="field-label">Autorizado por</div>
+    <div class="field-card" style="margin-bottom:16px;">
+      <select class="field-select" id="autorizadoPorSelect">
+        <option value="Administrador">Administrador</option>
+        <option value="Gerente">Gerente</option>
+        <option value="Supervisor">Supervisor</option>
+        <option value="<%= user.nombre %>"><%= user.nombre %></option>
+      </select>
+    </div>
+
+    <!-- WARNING CHIP -->
+    <%
+      const count   = cortesias_hoy.count;
+      const monto   = cortesias_hoy.monto_total;
+      const lim     = limite.diario;
+      const limMonto = limite.monto;
+    %>
+    <% if (count >= lim) { %>
+      <div class="warning-chip danger">
+        &#9888; Límite diario alcanzado: llevas <%= count %> cortesías (límite: <%= lim %>).
+        Costo acumulado: S/ <%= Number(monto).toFixed(2) %>.
+      </div>
+    <% } else if (count > 0) { %>
+      <div class="warning-chip" id="warningChip">
+        &#9888; Hoy llevas <%= count %> cortesía<%= count !== 1 ? 's' : '' %> (límite: <%= lim %>).
+        Costo acumulado: S/ <%= Number(monto).toFixed(2) %>.
+      </div>
+    <% } %>
+  </div>
+
+  <!-- STICKY CTA -->
+  <div class="sticky-cta">
+    <button class="cta-btn" id="ctaBtn"
+            <% if (count >= lim) { %>disabled<% } %>
+            onclick="registrarCortesia()">
+      &#127873; Registrar cortesía
+    </button>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <a href="/" class="nav-item"><span class="nav-icon">🏠</span>INICIO</a>
+    <a href="/pedidos" class="nav-item active"><span class="nav-icon">📋</span>PEDIDOS</a>
+    <a href="/cocina-display" class="nav-item"><span class="nav-icon">🍳</span>COCINA</a>
+    <a href="/caja" class="nav-item"><span class="nav-icon">💰</span>CAJA</a>
+    <a href="/configuracion" class="nav-item"><span class="nav-icon">⋯</span>MÁS</a>
+  </nav>
+</div>
+
+<!-- PRODUCT MODAL -->
+<div class="modal-backdrop hidden" id="prodModal" onclick="handleModalBackdropClick(event)">
+  <div class="modal-sheet">
+    <div class="modal-header">
+      <span class="modal-title">Seleccionar plato</span>
+      <button class="modal-close" onclick="closeProductModal()">&#215;</button>
+    </div>
+    <div class="modal-search-wrap">
+      <input type="text" class="modal-search" placeholder="Buscar plato..." oninput="searchModalProducts(this.value)">
+    </div>
+    <div class="modal-list" id="modalList">
+      <% productos.forEach(function(p) { %>
+        <div class="modal-item"
+             data-id="<%= p.id %>"
+             data-nombre="<%= p.nombre %>"
+             data-precio="<%= p.precio %>"
+             data-nombre-lower="<%= p.nombre.toLowerCase() %>"
+             onclick="selectProduct(<%= p.id %>, '<%= p.nombre.replace(/'/g, "\\'") %>', <%= p.precio %>)">
+          <div class="modal-item-emoji"><%= p.emoji || '🍽️' %></div>
+          <span class="modal-item-name"><%= p.nombre %></span>
+          <span class="modal-item-price">S/ <%= Number(p.precio).toFixed(2) %></span>
+        </div>
+      <% }); %>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="loading-overlay hidden" id="loadingOverlay"><div class="spinner"></div></div>
+
+<script>
+  let selectedTipo     = 'cliente';
+  let selectedProdId   = null;
+  let selectedProdNom  = null;
+  let selectedProdCost = 0;
+
+  function selectTipo(el, tipo) {
+    document.querySelectorAll('.seg-btn').forEach(function(b) { b.classList.remove('active'); });
+    el.classList.add('active');
+    selectedTipo = tipo;
+  }
+
+  function openProductModal() {
+    document.getElementById('prodModal').classList.remove('hidden');
+  }
+  function closeProductModal() {
+    document.getElementById('prodModal').classList.add('hidden');
+  }
+  function handleModalBackdropClick(e) {
+    if (e.target === document.getElementById('prodModal')) closeProductModal();
+  }
+
+  function searchModalProducts(val) {
+    const q = val.toLowerCase();
+    document.querySelectorAll('.modal-item').forEach(function(item) {
+      if (!q || item.dataset.nombreLower.includes(q)) {
+        item.classList.remove('hidden');
+      } else {
+        item.classList.add('hidden');
+      }
+    });
+  }
+
+  function selectProduct(id, nombre, precio) {
+    selectedProdId   = id;
+    selectedProdNom  = nombre;
+    // Use precio as proxy cost — real cost comes from backend
+    selectedProdCost = Number(precio);
+
+    document.getElementById('selectedProdId').value = id;
+    document.getElementById('prodNombreEl').textContent = nombre;
+    const costoEl = document.getElementById('prodCostoEl');
+    costoEl.style.display = '';
+    costoEl.textContent   = 'Costo insumos: S/ ' + Number(precio).toFixed(2) + ' (aprox.)';
+
+    closeProductModal();
+  }
+
+  function showToast(msg, type) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.className   = 'toast ' + (type || '');
+    t.classList.add('show');
+    setTimeout(function() { t.classList.remove('show'); }, 3500);
+  }
+
+  async function registrarCortesia() {
+    const motivo = document.getElementById('motivoInput').value.trim();
+    if (!motivo) {
+      showToast('Escribe el motivo de la cortesía', 'error');
+      return;
+    }
+
+    const autorizadoPor = document.getElementById('autorizadoPorSelect').value;
+
+    document.getElementById('loadingOverlay').classList.remove('hidden');
+    try {
+      const res  = await fetch('/cortesias/registrar', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({
+          tipo:           selectedTipo,
+          motivo:         motivo,
+          producto_id:    selectedProdId,
+          autorizado_por: autorizadoPor
+        })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        showToast('Cortesía registrada', 'success');
+        setTimeout(function() { window.location.href = '/pedidos'; }, 1500);
+      } else {
+        showToast(data.error || 'Error al registrar', 'error');
+      }
+    } catch (e) {
+      showToast('Error de conexión', 'error');
+    } finally {
+      document.getElementById('loadingOverlay').classList.add('hidden');
+    }
+  }
+</script>
+<script src="/js/dallia-fab.js"></script>
+</body>
+</html>

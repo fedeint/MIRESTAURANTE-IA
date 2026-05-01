@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cotizador - mirestconia.com</title>
+  <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+  <link rel="stylesheet" href="/css/theme.css">
+  <style>
+    body { background: #0f172a; }
+    .dg-main { background: #0f172a; }
+    .sa-card { background: #1e2235; border: 1px solid rgba(255,255,255,0.07); border-radius: 16px; color: #e2e8f0; }
+    .form-control, .form-select { background: #0f172a; border: 1px solid rgba(255,255,255,0.1); color: #e2e8f0; border-radius: 8px; font-size: 0.85rem; }
+    .form-control:focus, .form-select:focus { background: #0f172a; color: #e2e8f0; border-color: #f97316; box-shadow: 0 0 0 3px rgba(249,115,22,0.15); }
+    .form-label { font-size: 0.78rem; font-weight: 600; color: #94a3b8; }
+    .section-title { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: #f97316; margin-bottom: 12px; }
+    .mod-row { display: flex; align-items: center; gap: 10px; padding: 7px 10px; background: rgba(255,255,255,0.02); border-radius: 8px; margin-bottom: 4px; }
+    .mod-row label { flex: 1; font-size: 0.82rem; color: #94a3b8; cursor: pointer; margin: 0; display: flex; align-items: center; gap: 8px; }
+    .mod-row .form-control { width: 90px; text-align: right; }
+    .form-check-input:checked { background-color: #f97316; border-color: #f97316; }
+    .preview-card { background: #161b2e; border: 1px solid rgba(249,115,22,0.2); border-radius: 16px; position: sticky; top: 20px; }
+    .preview-line { display: flex; justify-content: space-between; padding: 4px 0; font-size: 0.83rem; color: #cbd5e1; }
+    .preview-line.total { font-size: 1.1rem; font-weight: 800; color: #f97316; border-top: 2px solid rgba(249,115,22,0.3); padding-top: 10px; margin-top: 6px; }
+    .preview-line.descuento { color: #22c55e; }
+    .btn-orange { background: #f97316; color: #fff; border: none; border-radius: 8px; font-weight: 600; }
+    .btn-orange:hover { background: #ea580c; color: #fff; }
+    .btn-wa { background: #25d366; color: #fff; border: none; border-radius: 8px; font-weight: 600; }
+    .btn-wa:hover { background: #1fb855; color: #fff; }
+    .sa-table th { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #64748b; border-bottom: 1px solid rgba(255,255,255,0.06); padding: 10px 12px; }
+    .sa-table td { font-size: 0.83rem; color: #cbd5e1; padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: middle; }
+    .sa-table tr:hover td { background: rgba(255,255,255,0.03); }
+    .badge-estado { border-radius: 20px; padding: 3px 12px; font-size: 0.72rem; font-weight: 700; }
+    .badge-pendiente { background: rgba(251,191,36,0.15); color: #fbbf24; }
+    .badge-enviada { background: rgba(59,130,246,0.15); color: #3b82f6; }
+    .badge-aceptada { background: rgba(34,197,94,0.15); color: #22c55e; }
+    .badge-rechazada { background: rgba(239,68,68,0.15); color: #ef4444; }
+    .badge-expirada { background: rgba(100,116,139,0.15); color: #94a3b8; }
+    .action-btn { width: 30px; height: 30px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; font-size: 0.8rem; cursor: pointer; border: none; }
+  </style>
+</head>
+<body>
+  <%- include('../partials/sidebar') %>
+  <div class="dg-main">
+    <main class="flex-grow-1">
+      <div class="container-fluid" style="max-width:1400px;padding:1.5rem 1.5rem 3rem;">
+
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <h4 style="font-weight:800;color:#e2e8f0;margin:0;">Cotizador</h4>
+            <div style="font-size:0.78rem;color:#64748b;">Genera cotizaciones personalizadas y envíalas por WhatsApp</div>
+          </div>
+        </div>
+
+        <!-- Two column layout -->
+        <div class="row g-4">
+          <!-- LEFT: Form -->
+          <div class="col-lg-7">
+            <div class="sa-card p-4">
+
+              <!-- Client data -->
+              <div class="section-title"><i class="bi bi-person me-1"></i> Datos del Cliente</div>
+              <div class="row g-2 mb-3">
+                <div class="col-md-6">
+                  <label class="form-label">Nombre / Razón social *</label>
+                  <input type="text" class="form-control" id="q_nombre" placeholder="Restaurante El Buen Sabor S.A.C.">
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Nombre del restaurante</label>
+                  <input type="text" class="form-control" id="q_restaurante" placeholder="El Buen Sabor">
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">RUC / DNI</label>
+                  <input type="text" class="form-control" id="q_ruc" placeholder="20123456789">
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">WhatsApp *</label>
+                  <input type="text" class="form-control" id="q_telefono" placeholder="987654321">
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Email</label>
+                  <input type="email" class="form-control" id="q_email" placeholder="contacto@ejemplo.com">
+                </div>
+              </div>
+
+              <!-- Plan base -->
+              <div class="section-title mt-4"><i class="bi bi-box me-1"></i> Plan Base</div>
+              <div class="row g-2 mb-3">
+                <div class="col-md-7">
+                  <select class="form-select" id="q_plan" onchange="onPlanChange()">
+                    <% Object.entries(planes).forEach(([k, v]) => { %>
+                      <option value="<%= k %>" data-precio="<%= v.precio %>"><%= v.label %> — S/ <%= Number(v.precio).toLocaleString() %></option>
+                    <% }); %>
+                  </select>
+                </div>
+                <div class="col-md-5">
+                  <div class="input-group">
+                    <span class="input-group-text" style="background:#0f172a;border-color:rgba(255,255,255,0.1);color:#64748b;font-size:0.8rem;">S/</span>
+                    <input type="number" class="form-control" id="q_plan_precio" value="0" min="0" step="0.01" oninput="updatePreview()">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Módulos incluidos -->
+              <div class="section-title mt-4"><i class="bi bi-check-circle me-1"></i> Incluido en el plan</div>
+              <div class="mb-3">
+                <% modulosIncluidos.forEach((m) => { %>
+                  <div class="mod-row" style="opacity:0.7;">
+                    <div class="form-check form-switch mb-0">
+                      <input class="form-check-input mod-check" type="checkbox" id="mod_<%= m.key %>" data-key="<%= m.key %>" data-label="<%= m.label %>" data-category="incluido" style="width:36px;height:20px;" checked disabled>
+                    </div>
+                    <label for="mod_<%= m.key %>"><i class="bi <%= m.icon %>" style="color:#22c55e;width:16px;text-align:center;"></i> <%= m.label %></label>
+                    <span style="font-size:0.75rem;color:#22c55e;font-weight:600;padding:4px 10px;">Incluido</span>
+                    <input type="hidden" class="mod-price" data-key="<%= m.key %>" value="0">
+                  </div>
+                <% }); %>
+              </div>
+
+              <!-- IA y tokens -->
+              <div class="section-title mt-4"><i class="bi bi-stars me-1"></i> Inteligencia Artificial</div>
+              <div class="mb-3">
+                <% extras.forEach((m) => { %>
+                  <div class="mod-row">
+                    <div class="form-check form-switch mb-0">
+                      <input class="form-check-input mod-check" type="checkbox" id="mod_<%= m.key %>" data-key="<%= m.key %>" data-label="<%= m.label %>" data-category="extra" style="width:36px;height:20px;" onchange="updatePreview()">
+                    </div>
+                    <label for="mod_<%= m.key %>"><i class="bi <%= m.icon %>" style="color:#f97316;width:16px;text-align:center;"></i> <%= m.label %></label>
+                    <div class="input-group" style="width:110px;">
+                      <span class="input-group-text" style="background:#0f172a;border-color:rgba(255,255,255,0.1);color:#64748b;font-size:0.75rem;padding:2px 6px;">S/</span>
+                      <input type="number" class="form-control mod-price" data-key="<%= m.key %>" value="<%= m.precio %>" min="0" step="0.01" style="padding:4px 6px;" oninput="updatePreview()">
+                    </div>
+                  </div>
+                <% }); %>
+              </div>
+
+              <!-- Módulos V2 -->
+              <div class="section-title mt-4"><i class="bi bi-rocket-takeoff me-1"></i> Módulos V2 — Premium</div>
+              <div style="font-size:0.72rem;color:#64748b;margin-bottom:8px;">CRM, Estrategia, Agentes IA y más — próximamente</div>
+              <div class="mb-3">
+                <% modulosV2.forEach((m) => { %>
+                  <div class="mod-row">
+                    <div class="form-check form-switch mb-0">
+                      <input class="form-check-input mod-check" type="checkbox" id="mod_<%= m.key %>" data-key="<%= m.key %>" data-label="<%= m.label %>" data-category="v2" style="width:36px;height:20px;" onchange="updatePreview()">
+                    </div>
+                    <label for="mod_<%= m.key %>"><i class="bi <%= m.icon %>" style="color:#a78bfa;width:16px;text-align:center;"></i> <%= m.label %></label>
+                    <div class="input-group" style="width:110px;">
+                      <span class="input-group-text" style="background:#0f172a;border-color:rgba(255,255,255,0.1);color:#64748b;font-size:0.75rem;padding:2px 6px;">S/</span>
+                      <input type="number" class="form-control mod-price" data-key="<%= m.key %>" value="<%= m.precio %>" min="0" step="0.01" style="padding:4px 6px;" oninput="updatePreview()">
+                    </div>
+                  </div>
+                <% }); %>
+              </div>
+
+              <!-- Extras -->
+              <div class="section-title mt-4"><i class="bi bi-plus-circle me-1"></i> Extras</div>
+              <div class="row g-2 mb-3">
+                <div class="col-md-6">
+                  <label class="form-label">Usuarios (1 incluido)</label>
+                  <div class="d-flex gap-2">
+                    <input type="number" class="form-control" id="q_users" value="1" min="1" oninput="updatePreview()" style="width:70px;">
+                    <div class="input-group">
+                      <span class="input-group-text" style="background:#0f172a;border-color:rgba(255,255,255,0.1);color:#64748b;font-size:0.75rem;">S/ c/u</span>
+                      <input type="number" class="form-control" id="q_user_price" value="10" min="0" step="0.01" oninput="updatePreview()">
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label">Almacenamiento (10 GB incluidos)</label>
+                  <div class="d-flex gap-2">
+                    <input type="number" class="form-control" id="q_storage" value="10" min="10" oninput="updatePreview()" style="width:70px;">
+                    <div class="input-group">
+                      <span class="input-group-text" style="background:#0f172a;border-color:rgba(255,255,255,0.1);color:#64748b;font-size:0.75rem;">S/ /GB</span>
+                      <input type="number" class="form-control" id="q_storage_price" value="5" min="0" step="0.01" oninput="updatePreview()">
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Discount, Note, Vigencia -->
+              <div class="row g-2 mb-3">
+                <div class="col-md-4">
+                  <label class="form-label">Descuento (S/)</label>
+                  <input type="number" class="form-control" id="q_descuento" value="0" min="0" step="0.01" oninput="updatePreview()">
+                </div>
+                <div class="col-md-4">
+                  <label class="form-label">Vigencia (días)</label>
+                  <input type="number" class="form-control" id="q_vigencia" value="15" min="1">
+                </div>
+                <div class="col-md-4"></div>
+                <div class="col-12">
+                  <label class="form-label">Nota para el cliente</label>
+                  <textarea class="form-control" id="q_nota" rows="2" placeholder="Observaciones, condiciones especiales..."></textarea>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- RIGHT: Live Preview -->
+          <div class="col-lg-5">
+            <div class="preview-card p-4">
+              <div class="section-title"><i class="bi bi-receipt me-1"></i> Resumen de Cotización</div>
+              <div id="previewBody">
+                <!-- Filled by JS -->
+              </div>
+
+              <div class="d-flex flex-column gap-2 mt-4">
+                <button class="btn btn-orange btn-sm" onclick="guardarCotizacion()">
+                  <i class="bi bi-floppy me-1"></i> Guardar Cotización
+                </button>
+                <button class="btn btn-sm" style="background:rgba(255,255,255,0.06);color:#e2e8f0;border-radius:8px;" onclick="descargarPDF()" id="btnPDF" disabled>
+                  <i class="bi bi-file-earmark-pdf me-1"></i> Descargar PDF
+                </button>
+                <button class="btn btn-wa btn-sm" onclick="enviarWhatsApp()" id="btnWA" disabled>
+                  <i class="bi bi-whatsapp me-1"></i> Enviar por WhatsApp
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quotes table -->
+        <div class="sa-card p-4 mt-4">
+          <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="section-title mb-0"><i class="bi bi-list-ul me-1"></i> Cotizaciones Generadas</div>
+          </div>
+          <div class="table-responsive">
+            <table class="sa-table w-100">
+              <thead>
+                <tr>
+                  <th>Nro</th>
+                  <th>Cliente</th>
+                  <th>Restaurante</th>
+                  <th>Plan</th>
+                  <th>Total</th>
+                  <th>Estado</th>
+                  <th>Vigencia</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="quotesBody">
+                <tr><td colspan="8" class="text-center" style="color:#64748b;padding:2rem;">Cargando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script src="/js/modal-fix.js" defer></script>
+  <script>
+    let lastSavedId = null;
+
+    const PLANES = <%- JSON.stringify(planes) %>;
+
+    function onPlanChange() {
+      const sel = document.getElementById('q_plan');
+      const opt = sel.options[sel.selectedIndex];
+      document.getElementById('q_plan_precio').value = opt.dataset.precio;
+      updatePreview();
+    }
+
+    function getFormData() {
+      const mods = [];
+      document.querySelectorAll('.mod-check').forEach(cb => {
+        const key = cb.dataset.key;
+        const label = cb.dataset.label;
+        const category = cb.dataset.category || '';
+        const priceInput = document.querySelector('.mod-price[data-key="' + key + '"]');
+        // Módulos incluidos siempre van como activos
+        const isIncluido = category === 'incluido';
+        mods.push({ key: key, label: label, incluido: isIncluido || cb.checked, precio: Number(priceInput.value) || 0, category: category });
+      });
+
+      const usersQty = Math.max(1, Number(document.getElementById('q_users').value) || 1);
+      const userPrice = Number(document.getElementById('q_user_price').value) || 0;
+      const storageGb = Math.max(10, Number(document.getElementById('q_storage').value) || 10);
+      const storagePrice = Number(document.getElementById('q_storage_price').value) || 0;
+      const planPrecio = Number(document.getElementById('q_plan_precio').value) || 0;
+      const descuento = Number(document.getElementById('q_descuento').value) || 0;
+
+      const modulosTotal = mods.filter(function(m) { return m.incluido; }).reduce(function(s, m) { return s + m.precio; }, 0);
+      const usersTotal = usersQty > 1 ? (usersQty - 1) * userPrice : 0;
+      const storageTotal = storageGb > 10 ? (storageGb - 10) * storagePrice : 0;
+      const subtotal = planPrecio + modulosTotal + usersTotal + storageTotal;
+      const total = Math.max(0, subtotal - descuento);
+
+      return {
+        nombre_cliente: document.getElementById('q_nombre').value.trim(),
+        nombre_restaurante: document.getElementById('q_restaurante').value.trim(),
+        ruc_dni: document.getElementById('q_ruc').value.trim(),
+        telefono: document.getElementById('q_telefono').value.trim(),
+        email: document.getElementById('q_email').value.trim(),
+        plan_base: document.getElementById('q_plan').value,
+        plan_precio: planPrecio,
+        modulos: mods,
+        usuarios_qty: usersQty,
+        usuario_precio_unit: userPrice,
+        almacenamiento_gb: storageGb,
+        almacenamiento_precio_gb: storagePrice,
+        descuento: descuento,
+        nota: document.getElementById('q_nota').value.trim(),
+        vigencia_dias: Number(document.getElementById('q_vigencia').value) || 15,
+        _modulosTotal: modulosTotal,
+        _usersTotal: usersTotal,
+        _storageTotal: storageTotal,
+        _subtotal: subtotal,
+        _total: total,
+      };
+    }
+
+    function updatePreview() {
+      var d = getFormData();
+      var planLabel = PLANES[d.plan_base] ? PLANES[d.plan_base].label : d.plan_base;
+      var html = '';
+
+      html += '<div class="preview-line"><span>Plan: ' + planLabel + '</span><span>S/ ' + d.plan_precio.toFixed(2) + '</span></div>';
+
+      // Módulos incluidos
+      var included = d.modulos.filter(function(m) { return m.category === 'incluido'; });
+      if (included.length > 0) {
+        html += '<div style="font-size:0.68rem;color:#22c55e;text-transform:uppercase;letter-spacing:1px;margin-top:8px;font-weight:700;">Incluido</div>';
+        included.forEach(function(m) {
+          html += '<div class="preview-line" style="font-size:0.78rem;color:#64748b;"><span>&nbsp;&nbsp;<i class="bi bi-check" style="color:#22c55e;"></i> ' + m.label + '</span><span style="color:#22c55e;">✓</span></div>';
+        });
+      }
+
+      // Extras e IA
+      var paidMods = d.modulos.filter(function(m) { return m.category !== 'incluido' && m.incluido && m.precio > 0; });
+      if (paidMods.length > 0) {
+        html += '<div style="font-size:0.68rem;color:#f97316;text-transform:uppercase;letter-spacing:1px;margin-top:8px;font-weight:700;">Extras</div>';
+        paidMods.forEach(function(m) {
+          html += '<div class="preview-line" style="font-size:0.78rem;color:#cbd5e1;"><span>&nbsp;&nbsp;' + m.label + '</span><span>S/ ' + m.precio.toFixed(2) + '</span></div>';
+        });
+      }
+
+      if (d.usuarios_qty > 1 && d.usuario_precio_unit > 0) {
+        html += '<div class="preview-line"><span>Usuarios extra: ' + (d.usuarios_qty - 1) + ' × S/ ' + d.usuario_precio_unit.toFixed(2) + '</span><span>S/ ' + d._usersTotal.toFixed(2) + '</span></div>';
+      }
+
+      if (d.almacenamiento_gb > 10 && d.almacenamiento_precio_gb > 0) {
+        html += '<div class="preview-line"><span>Almac. extra: ' + (d.almacenamiento_gb - 10) + ' GB × S/ ' + d.almacenamiento_precio_gb.toFixed(2) + '</span><span>S/ ' + d._storageTotal.toFixed(2) + '</span></div>';
+      }
+
+      html += '<div class="preview-line" style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.06);"><span>Subtotal</span><span>S/ ' + d._subtotal.toFixed(2) + '</span></div>';
+
+      if (d.descuento > 0) {
+        html += '<div class="preview-line descuento"><span>Descuento</span><span>- S/ ' + d.descuento.toFixed(2) + '</span></div>';
+      }
+
+      html += '<div class="preview-line total"><span>TOTAL</span><span>S/ ' + d._total.toFixed(2) + '</span></div>';
+
+      document.getElementById('previewBody').innerHTML = html;
+    }
+
+    async function guardarCotizacion() {
+      var d = getFormData();
+      if (!d.nombre_cliente) return alert('El nombre del cliente es requerido');
+      if (!d.telefono) return alert('El teléfono WhatsApp es requerido');
+
+      try {
+        var res = await fetch('/api/superadmin/cotizador/cotizaciones', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(d),
+        });
+        var json = await res.json();
+        if (!res.ok) return alert('Error: ' + (json.error || 'desconocido'));
+
+        lastSavedId = json.id;
+        document.getElementById('btnPDF').disabled = false;
+        document.getElementById('btnWA').disabled = false;
+        alert('Cotización ' + json.nro_cotizacion + ' guardada. Total: S/ ' + Number(json.total).toFixed(2));
+        loadQuotes();
+      } catch (e) {
+        alert('Error de red: ' + e.message);
+      }
+    }
+
+    function descargarPDF() {
+      if (!lastSavedId) return;
+      window.open('/api/superadmin/cotizador/cotizaciones/' + lastSavedId + '/pdf', '_blank');
+    }
+
+    function enviarWhatsApp() {
+      if (!lastSavedId) return;
+      var d = getFormData();
+      var planLabel = PLANES[d.plan_base] ? PLANES[d.plan_base].label : d.plan_base;
+      var activeMods = d.modulos.filter(function(m) { return m.incluido; }).map(function(m) { return m.label; }).join(', ');
+
+      // Download PDF first
+      window.open('/api/superadmin/cotizador/cotizaciones/' + lastSavedId + '/pdf', '_blank');
+
+      // Build WhatsApp message
+      var tel = d.telefono.replace(/\D/g, '');
+      var telFull = tel.startsWith('51') ? tel : '51' + tel;
+      var msg = 'Hola ' + d.nombre_cliente + ', le envío la cotización para ' + (d.nombre_restaurante || 'su restaurante') + '.\n\n' +
+        'Plan: ' + planLabel + '\n' +
+        (activeMods ? 'Módulos: ' + activeMods + '\n' : '') +
+        'Total: S/ ' + d._total.toFixed(2) + '\n\n' +
+        'Le adjunto el PDF con el detalle completo.\n\n' +
+        'mirestconia.com';
+
+      setTimeout(function() {
+        window.open('https://wa.me/' + telFull + '?text=' + encodeURIComponent(msg), '_blank');
+      }, 500);
+    }
+
+    async function loadQuotes() {
+      try {
+        var res = await fetch('/api/superadmin/cotizador/cotizaciones');
+        var rows = await res.json();
+        var body = document.getElementById('quotesBody');
+
+        if (!rows.length) {
+          body.innerHTML = '<tr><td colspan="8" class="text-center" style="color:#64748b;padding:2rem;">Sin cotizaciones aún</td></tr>';
+          return;
+        }
+
+        body.innerHTML = rows.map(function(r) {
+          var fecha = r.created_at ? new Date(r.created_at).toLocaleDateString('es-PE') : '-';
+          var vigencia = r.valida_hasta ? new Date(r.valida_hasta).toLocaleDateString('es-PE') : '-';
+          return '<tr>' +
+            '<td style="font-weight:600;color:#e2e8f0;font-size:0.78rem;">' + r.nro_cotizacion + '</td>' +
+            '<td>' + (r.nombre_cliente || '-') + '</td>' +
+            '<td style="color:#64748b;">' + (r.nombre_restaurante || '-') + '</td>' +
+            '<td>' + (r.plan_base || '').toUpperCase() + '</td>' +
+            '<td style="color:#22c55e;font-weight:600;">S/ ' + Number(r.total).toFixed(2) + '</td>' +
+            '<td><span class="badge-estado badge-' + r.estado + '">' + r.estado + '</span></td>' +
+            '<td style="font-size:0.75rem;color:#64748b;">' + vigencia + '</td>' +
+            '<td>' +
+              '<div class="d-flex gap-1">' +
+                '<button class="action-btn" style="background:rgba(99,102,241,0.12);color:#818cf8;" onclick="window.open(\'/api/superadmin/cotizador/cotizaciones/' + r.id + '/pdf\',\'_blank\')" title="Descargar PDF">' +
+                  '<i class="bi bi-file-pdf"></i>' +
+                '</button>' +
+                '<select class="form-select form-select-sm" style="width:auto;font-size:0.72rem;background:#0f172a;color:#94a3b8;border:1px solid rgba(255,255,255,0.08);padding:2px 6px;" onchange="cambiarEstado(' + r.id + ', this.value)" title="Cambiar estado">' +
+                  ['pendiente','enviada','aceptada','rechazada','expirada'].map(function(e) { return '<option value="' + e + '"' + (r.estado===e?' selected':'') + '>' + e + '</option>'; }).join('') +
+                '</select>' +
+              '</div>' +
+            '</td>' +
+          '</tr>';
+        }).join('');
+      } catch (e) {
+        console.error('Error loading quotes:', e);
+      }
+    }
+
+    async function cambiarEstado(id, estado) {
+      try {
+        await fetch('/api/superadmin/cotizador/cotizaciones/' + id + '/estado', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ estado: estado }),
+        });
+        loadQuotes();
+      } catch (e) {
+        alert('Error: ' + e.message);
+      }
+    }
+
+    // Init
+    onPlanChange();
+    updatePreview();
+    loadQuotes();
+  </script>
+</body>
+</html>

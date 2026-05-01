@@ -1,0 +1,611 @@
+<%- include('../partials/public-header') %>
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Marketplace | MiRestcon IA</title>
+  <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background-color: #0a0f24;
+      color: #e2e8f0;
+      min-height: 100vh;
+    }
+
+    /* ── Hero Header ── */
+    .marketplace-hero {
+      background: linear-gradient(135deg, #0a0f24 0%, #111827 60%, #0d1a2e 100%);
+      border-bottom: 1px solid rgba(255,107,53,0.18);
+      padding: 72px 0 56px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .marketplace-hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 60% 50% at 50% 0%, rgba(255,107,53,0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero-robot-icon {
+      font-size: 3.5rem;
+      display: block;
+      margin-bottom: 12px;
+      filter: drop-shadow(0 0 24px rgba(255,107,53,0.5));
+    }
+    .hero-badge {
+      display: inline-block;
+      background: rgba(255,107,53,0.12);
+      border: 1px solid rgba(255,107,53,0.35);
+      color: #FF6B35;
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      padding: 4px 14px;
+      border-radius: 999px;
+      margin-bottom: 18px;
+      text-transform: uppercase;
+    }
+    .marketplace-hero h1 {
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: #f8fafc;
+      margin-bottom: 14px;
+    }
+    .marketplace-hero h1 span {
+      color: #FF6B35;
+    }
+    .marketplace-hero p {
+      font-size: 1.1rem;
+      color: #94a3b8;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    /* ── Section titles ── */
+    .section-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #FF6B35;
+      margin-bottom: 8px;
+    }
+    .section-title {
+      font-size: 1.65rem;
+      font-weight: 800;
+      color: #f1f5f9;
+      margin-bottom: 6px;
+    }
+    .section-sub {
+      font-size: 0.95rem;
+      color: #64748b;
+    }
+
+    /* ── Base card ── */
+    .mp-card {
+      background: #141828;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.06);
+      overflow: hidden;
+      transition: transform 0.22s ease, box-shadow 0.22s ease;
+      height: 100%;
+    }
+    .mp-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 20px 48px rgba(0,0,0,0.45);
+    }
+
+    /* ── Featured cards ── */
+    .featured-card {
+      border-radius: 16px;
+      overflow: hidden;
+      height: 100%;
+      transition: transform 0.22s ease, box-shadow 0.22s ease;
+      position: relative;
+    }
+    .featured-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 24px 56px rgba(0,0,0,0.55);
+    }
+    .featured-card-inner {
+      background: #141828;
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 16px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    /* Colored left border via box-shadow inside */
+    .featured-card.green .featured-card-inner {
+      border-left: 4px solid #22c55e;
+      box-shadow: inset 4px 0 32px rgba(34,197,94,0.06);
+    }
+    .featured-card.purple .featured-card-inner {
+      border-left: 4px solid #a78bfa;
+      box-shadow: inset 4px 0 32px rgba(167,139,250,0.06);
+    }
+
+    .featured-card-header {
+      padding: 28px 28px 0 28px;
+    }
+    .featured-card-body {
+      padding: 20px 28px 28px 28px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .product-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 999px;
+      margin-bottom: 16px;
+    }
+    .badge-green { background: rgba(34,197,94,0.14); color: #22c55e; border: 1px solid rgba(34,197,94,0.3); }
+    .badge-purple { background: rgba(167,139,250,0.14); color: #a78bfa; border: 1px solid rgba(167,139,250,0.3); }
+
+    .product-icon {
+      font-size: 2.6rem;
+      display: block;
+      margin-bottom: 10px;
+    }
+    .product-title {
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: #f8fafc;
+      margin-bottom: 2px;
+      letter-spacing: -0.02em;
+    }
+    .product-subtitle {
+      font-size: 0.88rem;
+      font-weight: 600;
+      margin-bottom: 14px;
+    }
+    .product-subtitle.green { color: #22c55e; }
+    .product-subtitle.purple { color: #a78bfa; }
+
+    .product-description {
+      font-size: 0.96rem;
+      color: #94a3b8;
+      line-height: 1.65;
+      margin-bottom: 22px;
+    }
+
+    /* Features list */
+    .feature-list {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 24px 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .feature-list li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.9rem;
+      color: #cbd5e1;
+    }
+    .feature-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .feature-dot.green { background: #22c55e; }
+    .feature-dot.purple { background: #a78bfa; }
+
+    /* Pricing tiers */
+    .pricing-row {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+    .pricing-tier {
+      flex: 1;
+      min-width: 90px;
+      background: rgba(255,255,255,0.04);
+      border-radius: 10px;
+      padding: 12px 10px;
+      text-align: center;
+      border: 1px solid rgba(255,255,255,0.07);
+    }
+    .pricing-tier .tier-name {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: #64748b;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 4px;
+    }
+    .pricing-tier .tier-price {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: #f1f5f9;
+    }
+    .pricing-tier .tier-price span {
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: #64748b;
+    }
+
+    /* Activities grid */
+    .activities-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+    .activity-chip {
+      background: rgba(167,139,250,0.08);
+      border: 1px solid rgba(167,139,250,0.18);
+      border-radius: 10px;
+      padding: 10px 8px;
+      text-align: center;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: #c4b5fd;
+      line-height: 1.3;
+    }
+
+    /* CTA button */
+    .btn-featured-green {
+      display: inline-block;
+      background: linear-gradient(135deg, #16a34a, #22c55e);
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.95rem;
+      padding: 13px 24px;
+      border-radius: 10px;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      transition: opacity 0.18s, transform 0.18s;
+      width: 100%;
+      text-align: center;
+    }
+    .btn-featured-green:hover { opacity: 0.88; transform: translateY(-1px); color: #fff; }
+
+    .btn-featured-purple {
+      display: inline-block;
+      background: linear-gradient(135deg, #7c3aed, #a78bfa);
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.95rem;
+      padding: 13px 24px;
+      border-radius: 10px;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      transition: opacity 0.18s, transform 0.18s;
+      width: 100%;
+      text-align: center;
+    }
+    .btn-featured-purple:hover { opacity: 0.88; transform: translateY(-1px); color: #fff; }
+
+    /* ── Coming soon cards ── */
+    .soon-card {
+      background: #141828;
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 16px;
+      padding: 28px 22px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      height: 100%;
+      transition: transform 0.2s ease;
+    }
+    .soon-card:hover { transform: translateY(-3px); }
+    .soon-card::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        -45deg,
+        transparent,
+        transparent 8px,
+        rgba(255,255,255,0.015) 8px,
+        rgba(255,255,255,0.015) 16px
+      );
+      pointer-events: none;
+    }
+    .soon-lock {
+      font-size: 2rem;
+      margin-bottom: 12px;
+      opacity: 0.4;
+    }
+    .soon-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #64748b;
+      margin-bottom: 8px;
+    }
+    .soon-label {
+      display: inline-block;
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #475569;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 999px;
+      padding: 3px 10px;
+    }
+
+    /* ── Developer CTA ── */
+    .dev-cta {
+      background: linear-gradient(135deg, #141828 0%, #1a1f3a 100%);
+      border: 1px solid rgba(255,107,53,0.2);
+      border-radius: 20px;
+      padding: 56px 40px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .dev-cta::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 50% 80% at 50% 100%, rgba(255,107,53,0.07) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .dev-cta-icon {
+      font-size: 2.8rem;
+      margin-bottom: 16px;
+      display: block;
+    }
+    .dev-cta h2 {
+      font-size: 1.7rem;
+      font-weight: 800;
+      color: #f1f5f9;
+      margin-bottom: 10px;
+      letter-spacing: -0.02em;
+    }
+    .dev-cta p {
+      font-size: 1rem;
+      color: #64748b;
+      margin-bottom: 28px;
+      max-width: 420px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .btn-dev-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #FF6B35;
+      color: #fff;
+      font-weight: 700;
+      font-size: 1rem;
+      padding: 14px 32px;
+      border-radius: 10px;
+      text-decoration: none;
+      transition: background 0.18s, transform 0.18s;
+      border: none;
+    }
+    .btn-dev-cta:hover {
+      background: #e85a25;
+      transform: translateY(-2px);
+      color: #fff;
+    }
+
+    /* ── Divider ── */
+    .mp-divider {
+      border: none;
+      height: 1px;
+      background: rgba(255,255,255,0.06);
+      margin: 0;
+    }
+
+    /* ── Spacing utilities ── */
+    .section-wrap {
+      padding: 64px 0;
+    }
+
+    @media (max-width: 767px) {
+      .marketplace-hero { padding: 48px 0 40px; }
+      .marketplace-hero h1 { font-size: 1.8rem; }
+      .featured-card-header,
+      .featured-card-body { padding-left: 20px; padding-right: 20px; }
+      .activities-grid { grid-template-columns: repeat(2, 1fr); }
+      .dev-cta { padding: 40px 20px; }
+      .dev-cta h2 { font-size: 1.3rem; }
+      .pricing-row { gap: 8px; }
+      .section-wrap { padding: 48px 0; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ════════════════════ HERO HEADER ════════════════════ -->
+  <section class="marketplace-hero">
+    <div class="container">
+      <span class="hero-robot-icon">🤖</span>
+      <div class="hero-badge">Marketplace</div>
+      <h1>Apps y herramientas para tu <span>restaurante</span></h1>
+      <p>Apps y herramientas para tu restaurante — potencia tu negocio con inteligencia artificial.</p>
+    </div>
+  </section>
+
+  <hr class="mp-divider">
+
+  <!-- ════════════════════ FEATURED PRODUCTS ════════════════════ -->
+  <section class="section-wrap">
+    <div class="container">
+      <div class="mb-5">
+        <p class="section-label">Productos Destacados</p>
+        <h2 class="section-title">Herramientas IA de élite</h2>
+        <p class="section-sub">Diseñadas especialmente para restaurantes que quieren crecer.</p>
+      </div>
+
+      <div class="row g-4">
+
+        <!-- ── Card 1: MiroFish ── -->
+        <div class="col-12 col-lg-6">
+          <div class="featured-card green" style="height:100%;">
+            <div class="featured-card-inner">
+              <div class="featured-card-header">
+                <div class="product-badge badge-green">⭐ Destacado</div>
+                <span class="product-icon">🐟</span>
+                <h3 class="product-title">MiroFish</h3>
+                <p class="product-subtitle green">Motor de Predicción IA</p>
+              </div>
+              <div class="featured-card-body">
+                <p class="product-description">
+                  ¿Qué pasaría si...? Simula mundos paralelos digitales para predecir el futuro de tu restaurante antes de que suceda.
+                </p>
+
+                <ul class="feature-list">
+                  <li><span class="feature-dot green"></span> Escenarios de predicción</li>
+                  <li><span class="feature-dot green"></span> Datos reales a simulación</li>
+                  <li><span class="feature-dot green"></span> Reportes automáticos</li>
+                </ul>
+
+                <div class="pricing-row">
+                  <div class="pricing-tier">
+                    <div class="tier-name">Básico</div>
+                    <div class="tier-price">S/.99<span>/mes</span></div>
+                  </div>
+                  <div class="pricing-tier">
+                    <div class="tier-name">Pro</div>
+                    <div class="tier-price">S/.199<span>/mes</span></div>
+                  </div>
+                  <div class="pricing-tier">
+                    <div class="tier-name">Enterprise</div>
+                    <div class="tier-price">S/.499<span>/mes</span></div>
+                  </div>
+                </div>
+
+                <a href="#" class="btn-featured-green mt-auto">
+                  Empezar con MiroFish
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ── Card 2: Squads de Agentes ── -->
+        <div class="col-12 col-lg-6">
+          <div class="featured-card purple" style="height:100%;">
+            <div class="featured-card-inner">
+              <div class="featured-card-header">
+                <div class="product-badge badge-purple">🔥 Nuevo</div>
+                <span class="product-icon">🤖</span>
+                <h3 class="product-title">Squads de Agentes</h3>
+                <p class="product-subtitle purple">Equipos de IA Especializados</p>
+              </div>
+              <div class="featured-card-body">
+                <p class="product-description">
+                  Alquila equipos completos de agentes IA para actividades específicas de tu restaurante.
+                </p>
+
+                <div class="activities-grid">
+                  <div class="activity-chip">Evento Gastronómico</div>
+                  <div class="activity-chip">Concurso / Sorteo</div>
+                  <div class="activity-chip">Campaña Influencers</div>
+                  <div class="activity-chip">Lanzamiento Producto</div>
+                  <div class="activity-chip">Semana de Descuentos</div>
+                  <div class="activity-chip">Reactivar Clientes</div>
+                </div>
+
+                <a href="#" class="btn-featured-purple mt-auto">
+                  Activar mi Squad
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <hr class="mp-divider">
+
+  <!-- ════════════════════ PRÓXIMAMENTE ════════════════════ -->
+  <section class="section-wrap">
+    <div class="container">
+      <div class="mb-5">
+        <p class="section-label">Próximamente</p>
+        <h2 class="section-title">Más herramientas en camino</h2>
+        <p class="section-sub">Estamos construyendo el ecosistema completo para tu restaurante.</p>
+      </div>
+
+      <div class="row g-3">
+
+        <div class="col-6 col-md-3">
+          <div class="soon-card">
+            <div class="soon-lock">🔒</div>
+            <div class="soon-title">Sistema de Reservas Avanzado</div>
+            <span class="soon-label">Próximamente</span>
+          </div>
+        </div>
+
+        <div class="col-6 col-md-3">
+          <div class="soon-card">
+            <div class="soon-lock">🔒</div>
+            <div class="soon-title">Delivery Optimizer</div>
+            <span class="soon-label">Próximamente</span>
+          </div>
+        </div>
+
+        <div class="col-6 col-md-3">
+          <div class="soon-card">
+            <div class="soon-lock">🔒</div>
+            <div class="soon-title">Social Media Manager</div>
+            <span class="soon-label">Próximamente</span>
+          </div>
+        </div>
+
+        <div class="col-6 col-md-3">
+          <div class="soon-card">
+            <div class="soon-lock">🔒</div>
+            <div class="soon-title">Analytics Pro</div>
+            <span class="soon-label">Próximamente</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <hr class="mp-divider">
+
+  <!-- ════════════════════ DEVELOPER CTA ════════════════════ -->
+  <section class="section-wrap">
+    <div class="container">
+      <div class="dev-cta">
+        <span class="dev-cta-icon">💻</span>
+        <h2>¿Eres developer?</h2>
+        <h2 style="color:#FF6B35; margin-top:-6px;">Publica tu app en el marketplace</h2>
+        <p>Llega a cientos de restaurantes inteligentes y monetiza tus herramientas en el ecosistema MiRestcon IA.</p>
+        <a href="mailto:ventas@mirestconia.com" class="btn-dev-cta">
+          <i class="bi bi-rocket-takeoff-fill"></i>
+          Publicar mi app
+        </a>
+      </div>
+    </div>
+  </section>
+
+</body>
+</html>
+
+<%- include('../partials/public-footer') %>

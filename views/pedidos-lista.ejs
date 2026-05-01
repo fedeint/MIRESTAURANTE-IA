@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Pedidos — MiRestcon</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      font-family: 'DM Sans', sans-serif;
+      background: #F0F2F8;
+      min-height: 100dvh;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+    /* HEADER */
+    .app-header {
+      background: linear-gradient(180deg, #10152f 0%, #0a0f24 60%, #090d1d 100%);
+      border-radius: 0 0 20px 20px;
+      padding: 48px 20px 0;
+      color: white;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .header-title { font-size: 20px; font-weight: 700; }
+    .header-icons { display: flex; gap: 10px; }
+    .icon-btn {
+      background: rgba(255,255,255,0.12);
+      border: none;
+      color: white;
+      width: 36px; height: 36px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 16px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    /* TABS */
+    .tabs-bar {
+      display: flex;
+      gap: 0;
+    }
+    .tab-btn {
+      flex: 1;
+      background: none;
+      border: none;
+      color: rgba(255,255,255,0.5);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 12px 0;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: color 0.2s, border-color 0.2s;
+    }
+    .tab-btn.active {
+      color: white;
+      border-bottom-color: #ef520f;
+    }
+    /* CONTENT */
+    .content-area {
+      padding: 16px 16px 80px;
+    }
+    /* PEDIDO CARD */
+    .pedido-card {
+      background: white;
+      border-radius: 16px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      text-decoration: none;
+      color: inherit;
+    }
+    .pedido-icon {
+      font-size: 28px;
+      flex-shrink: 0;
+      width: 44px; height: 44px;
+      background: #f0f2f8;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .pedido-info { flex: 1; min-width: 0; }
+    .pedido-name { font-size: 15px; font-weight: 700; color: #0a0f24; }
+    .pedido-meta { font-size: 12px; color: #8B8FAD; margin-top: 3px; }
+    .status-pill {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 5px 10px;
+      border-radius: 20px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .pill-cocina { background: #fff7ed; color: #ea580c; }
+    .pill-listo { background: #dcfce7; color: #16a34a; }
+    .pill-pendiente { background: #f0f2f8; color: #8B8FAD; }
+    .pill-facturar { background: #f3e8ff; color: #7c3aed; }
+    /* EMPTY STATE */
+    .empty-state {
+      text-align: center;
+      padding: 64px 24px;
+      color: #8B8FAD;
+    }
+    .empty-icon { font-size: 48px; margin-bottom: 12px; }
+    .empty-text { font-size: 15px; font-weight: 500; margin-bottom: 8px; }
+    .empty-sub { font-size: 13px; }
+    /* FAB */
+    .fab {
+      position: fixed;
+      bottom: 72px;
+      right: max(16px, calc((100vw - 480px) / 2 + 16px));
+      width: 56px; height: 56px;
+      background: linear-gradient(135deg, #ef520f, #df2c05);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 28px;
+      color: white;
+      text-decoration: none;
+      box-shadow: 0 4px 16px rgba(239,82,15,0.45);
+      z-index: 99;
+      transition: transform 0.15s;
+    }
+    .fab:active { transform: scale(0.92); }
+    /* BOTTOM NAV */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 480px;
+      background: white;
+      display: flex;
+      justify-content: space-around;
+      padding: 8px 0;
+      padding-bottom: max(8px, env(safe-area-inset-bottom));
+      box-shadow: 0 -2px 16px rgba(0,0,0,0.08);
+      z-index: 100;
+    }
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      color: #8B8FAD;
+      text-decoration: none;
+      font-size: 10px;
+      font-weight: 500;
+    }
+    .nav-item.active { color: #ef520f; }
+    .nav-icon { font-size: 22px; }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="app-header">
+    <div class="header-row">
+      <div class="header-title">&#128203; Pedidos</div>
+      <div class="header-icons">
+        <button class="icon-btn" title="Buscar">&#128269;</button>
+        <button class="icon-btn" title="Filtrar">&#9881;</button>
+      </div>
+    </div>
+    <div class="tabs-bar">
+      <button class="tab-btn active" id="tabMesas" onclick="showTab('mesas')">
+        Mesas (<%= pedidosMesa.length %>)
+      </button>
+      <button class="tab-btn" id="tabDelivery" onclick="showTab('delivery')">
+        Delivery (<%= pedidosDelivery.length %>)
+      </button>
+    </div>
+  </header>
+
+  <!-- CONTENT -->
+  <div class="content-area">
+
+    <!-- MESAS TAB -->
+    <div id="panelMesas">
+      <% if (pedidosMesa.length === 0) { %>
+        <div class="empty-state">
+          <div class="empty-icon">&#127869;</div>
+          <div class="empty-text">No hay pedidos activos</div>
+          <div class="empty-sub">Toca + para crear uno</div>
+        </div>
+      <% } else { %>
+        <% pedidosMesa.forEach(function(p) {
+          const itemsCocina = Number(p.items_cocina || 0);
+          const itemsPendientes = Number(p.items_pendientes || 0);
+          let pillClass = 'pill-pendiente';
+          let pillLabel = 'Pendiente';
+          if (itemsCocina > 0) { pillClass = 'pill-cocina'; pillLabel = 'En cocina'; }
+          else if (itemsPendientes === 0 && itemsCocina === 0) { pillClass = 'pill-facturar'; pillLabel = 'Facturar'; }
+          const total = p.total_real ? Number(p.total_real).toFixed(2) : Number(p.total || 0).toFixed(2);
+        %>
+          <a href="/mesas/<%= p.mesa_id %>" class="pedido-card">
+            <div class="pedido-icon">&#127869;</div>
+            <div class="pedido-info">
+              <div class="pedido-name">Mesa <%= p.mesa_numero %></div>
+              <div class="pedido-meta">#<%= String(p.id).padStart(3,'0') %> &middot; S/ <%= total %></div>
+            </div>
+            <span class="status-pill <%= pillClass %>"><%= pillLabel %></span>
+          </a>
+        <% }); %>
+      <% } %>
+    </div>
+
+    <!-- DELIVERY TAB -->
+    <div id="panelDelivery" class="hidden">
+      <% if (pedidosDelivery.length === 0) { %>
+        <div class="empty-state">
+          <div class="empty-icon">&#128757;</div>
+          <div class="empty-text">No hay pedidos delivery</div>
+          <div class="empty-sub">Toca + para crear uno</div>
+        </div>
+      <% } else { %>
+        <% pedidosDelivery.forEach(function(p) {
+          const itemsCocina = Number(p.items_cocina || 0);
+          let pillClass = itemsCocina > 0 ? 'pill-cocina' : 'pill-pendiente';
+          let pillLabel = itemsCocina > 0 ? 'En cocina' : 'Pendiente';
+          const total = p.total_real ? Number(p.total_real).toFixed(2) : Number(p.total || 0).toFixed(2);
+          const icon = p.delivery_tipo === 'delivery' ? '&#128757;' : '&#128084;';
+          const clienteLabel = p.nombre_cliente ? escHtml(p.nombre_cliente) : 'Cliente';
+        %>
+          <div class="pedido-card">
+            <div class="pedido-icon"><%- icon %></div>
+            <div class="pedido-info">
+              <div class="pedido-name"><%= clienteLabel %></div>
+              <div class="pedido-meta">#<%= String(p.id).padStart(3,'0') %> &middot; S/ <%= total %></div>
+            </div>
+            <span class="status-pill <%= pillClass %>"><%= pillLabel %></span>
+          </div>
+        <% }); %>
+      <% } %>
+    </div>
+
+  </div>
+
+  <!-- FAB -->
+  <a href="/pedido-nuevo" class="fab" title="Nuevo pedido">+</a>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <a href="/" class="nav-item"><span class="nav-icon">&#127968;</span><span>Inicio</span></a>
+    <a href="/pedidos" class="nav-item active"><span class="nav-icon">&#128203;</span><span>Pedidos</span></a>
+    <a href="/cocina-display" class="nav-item"><span class="nav-icon">&#128293;</span><span>Cocina</span></a>
+    <a href="/caja" class="nav-item"><span class="nav-icon">&#128181;</span><span>Caja</span></a>
+    <a href="/mas" class="nav-item"><span class="nav-icon">&#9776;</span><span>Mas</span></a>
+  </nav>
+
+<script>
+function showTab(tab) {
+  document.getElementById('panelMesas').classList.toggle('hidden', tab !== 'mesas');
+  document.getElementById('panelDelivery').classList.toggle('hidden', tab !== 'delivery');
+  document.getElementById('tabMesas').classList.toggle('active', tab === 'mesas');
+  document.getElementById('tabDelivery').classList.toggle('active', tab === 'delivery');
+}
+
+function escHtml(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+</script>
+<script src="/js/dallia-fab.js"></script>
+</body>
+</html>

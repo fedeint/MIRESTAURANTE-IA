@@ -1,0 +1,16 @@
+<!-- Footer removido - diseño flotante sin footer -->
+
+<!-- PWA: Service Worker -->
+<script>
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(function(){});
+}
+</script>
+<!-- Offline indicator -->
+<div id="offlineBar" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#ef4444;color:#fff;text-align:center;padding:0.4rem;font-size:0.8rem;font-weight:600;z-index:9999;">
+  Sin conexion a internet
+</div>
+<script>
+window.addEventListener('offline', function(){ document.getElementById('offlineBar').style.display='block'; });
+window.addEventListener('online', function(){ document.getElementById('offlineBar').style.display='none'; });
+</script>

@@ -1,0 +1,630 @@
+<%- include('../partials/public-header') %>
+
+<link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+  * {
+    font-family: 'DM Sans', sans-serif;
+    box-sizing: border-box;
+  }
+
+  body {
+    background-color: #0a0f24;
+    color: #e0e0e0;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* ── PAGE HEADER ── */
+  .page-header {
+    text-align: center;
+    padding: 72px 24px 48px;
+  }
+
+  .page-header .robot-icon {
+    font-size: 56px;
+    display: block;
+    margin-bottom: 16px;
+    line-height: 1;
+  }
+
+  .page-header h1 {
+    font-size: clamp(1.5rem, 4vw, 2.4rem);
+    font-weight: 800;
+    color: #ffffff;
+    letter-spacing: -0.5px;
+    margin: 0 0 8px;
+    text-transform: uppercase;
+  }
+
+  .page-header p {
+    color: #8a8fa8;
+    font-size: 1rem;
+    margin: 0;
+  }
+
+  /* ── TAB BUTTONS ── */
+  .tab-row {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 0 16px 40px;
+  }
+
+  .tab-btn {
+    padding: 10px 24px;
+    border-radius: 50px;
+    border: 1.5px solid rgba(255, 255, 255, 0.12);
+    background: transparent;
+    color: #8a8fa8;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.92rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
+    white-space: nowrap;
+  }
+
+  .tab-btn.active {
+    background: #FF6B35;
+    color: #ffffff;
+    border-color: #FF6B35;
+  }
+
+  .tab-btn:not(.active):hover {
+    border-color: rgba(255, 107, 53, 0.5);
+    color: #cccccc;
+  }
+
+  /* ── TAB PANELS ── */
+  .tab-panel {
+    display: none;
+  }
+
+  .tab-panel.active {
+    display: block;
+  }
+
+  /* ── FEATURE CARDS (2x2 grid) ── */
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 0 20px 60px;
+  }
+
+  @media (max-width: 576px) {
+    .features-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .feature-card {
+    background: #141828;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 28px 24px;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+
+  .feature-card:hover {
+    border-color: rgba(255, 107, 53, 0.3);
+    transform: translateY(-2px);
+  }
+
+  .feature-card .card-emoji {
+    font-size: 32px;
+    margin-bottom: 14px;
+    display: block;
+  }
+
+  .feature-card h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0 0 8px;
+  }
+
+  .feature-card p {
+    font-size: 0.875rem;
+    color: #8a8fa8;
+    margin: 0;
+    line-height: 1.55;
+  }
+
+  /* ── PROFILE CARDS (LinkedIn-style) ── */
+  .profiles-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+    gap: 20px;
+    max-width: 940px;
+    margin: 0 auto;
+    padding: 0 20px 40px;
+  }
+
+  .profile-card {
+    background: #141828;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 28px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+
+  .profile-card:hover {
+    border-color: rgba(255, 107, 53, 0.3);
+    transform: translateY(-2px);
+  }
+
+  .profile-top {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .avatar-circle {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: rgba(255, 107, 53, 0.15);
+    border: 2px solid rgba(255, 107, 53, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    flex-shrink: 0;
+  }
+
+  .profile-name {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0 0 2px;
+  }
+
+  .profile-role {
+    font-size: 0.78rem;
+    color: #8a8fa8;
+    margin: 0;
+  }
+
+  .profile-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .stars-label {
+    font-size: 0.82rem;
+    color: #f5c542;
+    font-weight: 600;
+  }
+
+  .badge-tag {
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 3px 10px;
+    border-radius: 50px;
+    background: rgba(255, 107, 53, 0.15);
+    color: #FF6B35;
+    border: 1px solid rgba(255, 107, 53, 0.3);
+  }
+
+  .works-at {
+    font-size: 0.82rem;
+    color: #8a8fa8;
+  }
+
+  .works-at span {
+    color: #c0c6df;
+    font-weight: 600;
+  }
+
+  /* Stats row */
+  .stats-row {
+    display: flex;
+    gap: 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 12px 0;
+  }
+
+  .stat-item {
+    flex: 1;
+    text-align: center;
+    padding: 0 6px;
+    border-right: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .stat-item:last-child {
+    border-right: none;
+  }
+
+  .stat-value {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #ffffff;
+    display: block;
+    line-height: 1.2;
+  }
+
+  .stat-label {
+    font-size: 0.65rem;
+    color: #6b7094;
+    display: block;
+    margin-top: 2px;
+  }
+
+  /* Achievement badges */
+  .achievement-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .ach-badge {
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 4px 11px;
+    border-radius: 50px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #c0c6df;
+    white-space: nowrap;
+  }
+
+  /* Career benefits section */
+  .career-section {
+    max-width: 860px;
+    margin: 16px auto 60px;
+    padding: 0 20px;
+  }
+
+  .section-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: #FF6B35;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    text-align: center;
+  }
+
+  .career-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .career-list li {
+    background: #141828;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 16px 18px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    font-size: 0.875rem;
+    color: #c0c6df;
+    line-height: 1.45;
+  }
+
+  .career-list li .li-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  /* ── DEVELOPER CARDS ── */
+  .dev-grid {
+    max-width: 860px;
+    margin: 0 auto;
+    padding: 0 20px 40px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+
+  @media (max-width: 576px) {
+    .dev-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .dev-cta-wrap {
+    text-align: center;
+    padding: 8px 20px 60px;
+  }
+
+  .btn-orange {
+    display: inline-block;
+    background: #FF6B35;
+    color: #ffffff;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    padding: 13px 34px;
+    border-radius: 50px;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.15s;
+  }
+
+  .btn-orange:hover {
+    background: #e05a28;
+    color: #ffffff;
+    transform: translateY(-1px);
+  }
+
+  /* ── CONTAINER ── */
+  .page-wrap {
+    min-height: 100vh;
+    background-color: #0a0f24;
+    padding-bottom: 40px;
+  }
+</style>
+
+<div class="page-wrap">
+
+  <!-- PAGE HEADER -->
+  <div class="page-header">
+    <span class="robot-icon">🤖🍳</span>
+    <h1>¿Por qué ir a un restaurante inteligente?</h1>
+    <p>Descubre los beneficios según tu rol</p>
+  </div>
+
+  <!-- TAB BUTTONS -->
+  <div class="tab-row">
+    <button class="tab-btn active" data-tab="comensales">Comensales 🍽️</button>
+    <button class="tab-btn" data-tab="profesionales">Profesionales 👨‍🍳</button>
+    <button class="tab-btn" data-tab="developers">Developers 💻</button>
+  </div>
+
+  <!-- ════════════════════════════════════════
+       TAB 1 — COMENSALES
+  ════════════════════════════════════════ -->
+  <div class="tab-panel active" id="tab-comensales">
+    <div class="features-grid">
+
+      <div class="feature-card">
+        <span class="card-emoji">🎮</span>
+        <h3>Juegos y promociones</h3>
+        <p>Gana descuentos, postres gratis, 2x1 jugando mientras esperas tu pedido</p>
+      </div>
+
+      <div class="feature-card">
+        <span class="card-emoji">⚡</span>
+        <h3>Pedido rápido</h3>
+        <p>Escanea el QR de tu mesa, pide sin esperar al mozo</p>
+      </div>
+
+      <div class="feature-card">
+        <span class="card-emoji">🎁</span>
+        <h3>Programa de lealtad</h3>
+        <p>Puntos por cada visita, canjéalos por premios</p>
+      </div>
+
+      <div class="feature-card">
+        <span class="card-emoji">📱</span>
+        <h3>Tu cuenta en tiempo real</h3>
+        <p>Ve lo que pediste, cuánto vas gastando, divide la cuenta</p>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════
+       TAB 2 — PROFESIONALES
+  ════════════════════════════════════════ -->
+  <div class="tab-panel" id="tab-profesionales">
+
+    <div class="profiles-grid">
+
+      <!-- CARD 1 — Chef -->
+      <div class="profile-card">
+        <div class="profile-top">
+          <div class="avatar-circle">👨‍🍳</div>
+          <div>
+            <p class="profile-name">Carlos López</p>
+            <p class="profile-role">Chef Ejecutivo · 8 años exp.</p>
+          </div>
+        </div>
+        <div class="profile-meta">
+          <span class="stars-label">⭐ 4.9</span>
+          <span class="badge-tag">🤖 Certificado IA</span>
+        </div>
+        <p class="works-at">Trabaja en: <span>Pollos Broster</span></p>
+        <div class="stats-row">
+          <div class="stat-item">
+            <span class="stat-value">1,247</span>
+            <span class="stat-label">platos</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value">4.2 min</span>
+            <span class="stat-label">por plato</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value">0</span>
+            <span class="stat-label">devoluciones</span>
+          </div>
+        </div>
+        <div class="achievement-badges">
+          <span class="ach-badge">🥇 Chef 1000 platos</span>
+          <span class="ach-badge">💎 Cero devoluciones 30d</span>
+        </div>
+      </div>
+
+      <!-- CARD 2 — Mozo -->
+      <div class="profile-card">
+        <div class="profile-top">
+          <div class="avatar-circle">🍽️</div>
+          <div>
+            <p class="profile-name">María Quispe</p>
+            <p class="profile-role">Mozo Senior · 3 años exp.</p>
+          </div>
+        </div>
+        <div class="profile-meta">
+          <span class="stars-label">⭐ 4.7</span>
+          <span class="badge-tag">🏆 Top 10 meseros</span>
+        </div>
+        <p class="works-at">Trabaja en: <span>El Marinerito</span></p>
+        <div class="stats-row">
+          <div class="stat-item">
+            <span class="stat-value">342</span>
+            <span class="stat-label">mesas/mes</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value">8</span>
+            <span class="stat-label">simultáneas</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value">S/ 85</span>
+            <span class="stat-label">ticket prom.</span>
+          </div>
+        </div>
+        <div class="achievement-badges">
+          <span class="ach-badge">🥈 Mozo 100 mesas</span>
+          <span class="ach-badge">🔥 Racha 45 días</span>
+        </div>
+      </div>
+
+      <!-- CARD 3 — Admin -->
+      <div class="profile-card">
+        <div class="profile-top">
+          <div class="avatar-circle">📊</div>
+          <div>
+            <p class="profile-name">José Ramírez</p>
+            <p class="profile-role">Administrador · 5 años exp.</p>
+          </div>
+        </div>
+        <div class="profile-meta">
+          <span class="stars-label">⭐ 4.8</span>
+        </div>
+        <p class="works-at">Gestiona: <span>2 restaurantes</span></p>
+        <div class="stats-row">
+          <div class="stat-item">
+            <span class="stat-value">S/ 45K</span>
+            <span class="stat-label">revenue/mes</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value">12</span>
+            <span class="stat-label">empleados</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-value">+23%</span>
+            <span class="stat-label">crecimiento</span>
+          </div>
+        </div>
+        <div class="achievement-badges">
+          <span class="ach-badge">🥇 Restaurante top 10</span>
+          <span class="ach-badge">💎 100% inventario al día</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- CAREER BENEFITS -->
+    <div class="career-section">
+      <p class="section-label">Beneficios para tu carrera</p>
+      <ul class="career-list">
+        <li>
+          <span class="li-icon">✅</span>
+          <span><strong>Perfil verificado</strong> — Tu experiencia y logros validados por el sistema</span>
+        </li>
+        <li>
+          <span class="li-icon">🏆</span>
+          <span><strong>Rankings públicos</strong> — Destácate entre los mejores profesionales del país</span>
+        </li>
+        <li>
+          <span class="li-icon">🤖</span>
+          <span><strong>Certificación IA</strong> — Demuestra que trabajas con tecnología de punta</span>
+        </li>
+        <li>
+          <span class="li-icon">👁️</span>
+          <span><strong>Visible para reclutadores</strong> — Restaurantes buscan talento en nuestra plataforma</span>
+        </li>
+      </ul>
+    </div>
+
+  </div>
+
+  <!-- ════════════════════════════════════════
+       TAB 3 — DEVELOPERS
+  ════════════════════════════════════════ -->
+  <div class="tab-panel" id="tab-developers">
+
+    <div class="dev-grid">
+
+      <div class="feature-card">
+        <span class="card-emoji">🛒</span>
+        <h3>Marketplace de apps</h3>
+        <p>Desarrolla y vende herramientas para restaurantes inteligentes</p>
+      </div>
+
+      <div class="feature-card">
+        <span class="card-emoji">🐟</span>
+        <h3>Inspírate: MiroFish, Squads</h3>
+        <p>Ya hay productos en el marketplace listos para explorar y aprender</p>
+      </div>
+
+      <div class="feature-card">
+        <span class="card-emoji">🔌</span>
+        <h3>API + Webhooks</h3>
+        <p>Integra con cualquier sistema existente de forma simple y robusta</p>
+      </div>
+
+      <div class="feature-card">
+        <span class="card-emoji">📦</span>
+        <h3>SDK próximamente</h3>
+        <p>Node.js, Python, React — para que construyas más rápido</p>
+      </div>
+
+    </div>
+
+    <div class="dev-cta-wrap">
+      <a href="/marketplace" class="btn-orange">Ir al Marketplace</a>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+  (function () {
+    var buttons = document.querySelectorAll('.tab-btn');
+    var panels  = document.querySelectorAll('.tab-panel');
+
+    buttons.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var target = btn.getAttribute('data-tab');
+
+        // Update button states
+        buttons.forEach(function (b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+
+        // Update panel visibility
+        panels.forEach(function (panel) {
+          if (panel.id === 'tab-' + target) {
+            panel.classList.add('active');
+          } else {
+            panel.classList.remove('active');
+          }
+        });
+      });
+    });
+  })();
+</script>
+
+<%- include('../partials/public-footer') %>

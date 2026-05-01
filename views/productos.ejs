@@ -1,0 +1,1237 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="/favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1e1b4b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="dignita">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+    <title>Carta de Productos - mirestconia.com</title>
+    <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/theme.css">
+    <style>
+        /* ===== CARTA DE PRODUCTOS - Card Grid View ===== */
+
+        .carta-page {
+            padding: 2rem 2rem 3rem;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* --- Page Header --- */
+        .carta-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1.5rem;
+            margin-bottom: 1.75rem;
+            flex-wrap: wrap;
+        }
+
+        .carta-header-left h1 {
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: var(--dg-text);
+            margin: 0 0 0.25rem;
+            letter-spacing: -0.03em;
+        }
+
+        .carta-header-subtitle {
+            font-size: 0.85rem;
+            color: var(--dg-text-muted);
+            font-weight: 400;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .carta-header-subtitle span {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .carta-header-subtitle .dot {
+            width: 3px;
+            height: 3px;
+            border-radius: 50%;
+            background: var(--dg-text-muted);
+        }
+
+        .carta-header-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .carta-search-wrap {
+            position: relative;
+        }
+
+        .carta-search-wrap i {
+            position: absolute;
+            left: 0.9rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--dg-text-muted);
+            font-size: 0.9rem;
+            pointer-events: none;
+        }
+
+        .carta-search-input {
+            padding-left: 2.4rem;
+            padding-right: 1rem;
+            height: 40px;
+            border-radius: 10px;
+            border: 1px solid var(--dg-surface-border);
+            background: var(--dg-surface);
+            color: var(--dg-text);
+            font-size: 0.875rem;
+            width: 220px;
+            transition: var(--dg-transition);
+            box-shadow: var(--dg-shadow-sm);
+        }
+
+        .carta-search-input:focus {
+            outline: none;
+            border-color: #F97316;
+            box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15);
+            width: 260px;
+        }
+
+        .carta-search-input::placeholder {
+            color: var(--dg-text-muted);
+        }
+
+        .btn-nuevo-producto {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.5rem 1.1rem;
+            height: 40px;
+            background: linear-gradient(135deg, #F97316, #EA580C);
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: var(--dg-transition);
+            box-shadow: 0 4px 14px rgba(249, 115, 22, 0.35);
+            white-space: nowrap;
+        }
+
+        .btn-nuevo-producto:hover {
+            background: linear-gradient(135deg, #EA580C, #C2410C);
+            box-shadow: 0 6px 20px rgba(249, 115, 22, 0.45);
+            transform: translateY(-1px);
+            color: #fff;
+        }
+
+        .btn-excel-outline {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.5rem 0.9rem;
+            height: 40px;
+            background: var(--dg-surface);
+            color: var(--dg-text-secondary);
+            border: 1px solid var(--dg-surface-border);
+            border-radius: 10px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--dg-transition);
+            white-space: nowrap;
+        }
+
+        .btn-excel-outline:hover {
+            background: var(--dg-surface-hover);
+            color: var(--dg-text);
+            border-color: rgba(0,0,0,0.1);
+        }
+
+        /* --- Filter Tabs --- */
+        .carta-filters {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1.75rem;
+            flex-wrap: wrap;
+        }
+
+        .carta-filter-tab {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.45rem 1rem;
+            border-radius: 100px;
+            font-size: 0.82rem;
+            font-weight: 500;
+            cursor: pointer;
+            border: 1px solid transparent;
+            transition: var(--dg-transition-fast);
+            background: var(--dg-surface);
+            color: var(--dg-text-secondary);
+            box-shadow: var(--dg-shadow-sm);
+            border-color: var(--dg-surface-border);
+            user-select: none;
+        }
+
+        .carta-filter-tab .tab-count {
+            font-size: 0.72rem;
+            background: rgba(0,0,0,0.06);
+            border-radius: 100px;
+            padding: 0.05rem 0.4rem;
+            font-weight: 600;
+        }
+
+        .carta-filter-tab:hover {
+            background: var(--dg-surface-hover);
+            color: var(--dg-text);
+        }
+
+        .carta-filter-tab.active {
+            background: linear-gradient(135deg, #F97316, #EA580C);
+            color: #fff;
+            border-color: transparent;
+            box-shadow: 0 4px 14px rgba(249, 115, 22, 0.3);
+        }
+
+        .carta-filter-tab.active .tab-count {
+            background: rgba(255,255,255,0.25);
+        }
+
+        /* --- Product Grid --- */
+        .carta-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+        }
+
+        @media (max-width: 1200px) {
+            .carta-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+
+        @media (max-width: 900px) {
+            .carta-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 680px) {
+            .carta-grid { grid-template-columns: 1fr; }
+            .carta-page { padding: 1rem 1rem 2rem; }
+            .carta-header { gap: 1rem; }
+            .carta-search-input { width: 160px; }
+            .carta-search-input:focus { width: 200px; }
+        }
+
+        /* --- Product Card — Full image + glass overlay --- */
+        .producto-card {
+            background: #e5e5e5;
+            border: 2px solid rgba(200,200,210,0.5);
+            border-radius: 18px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            overflow: visible;
+            transition: transform 0.3s cubic-bezier(0.34, 1.4, 0.64, 1), box-shadow 0.3s ease, border-color 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            min-height: 280px;
+        }
+
+        .producto-card-inner {
+            overflow: hidden;
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            position: relative;
+        }
+
+        .producto-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 16px 48px rgba(249,115,22,0.2), 0 4px 16px rgba(0,0,0,0.12);
+            border-color: #f97316;
+        }
+
+        .producto-card.hidden {
+            display: none;
+        }
+
+        /* === Conic glow border on hover === */
+        .producto-card::after {
+            content: '';
+            position: absolute;
+            inset: -5px;
+            border-radius: 22px;
+            padding: 5px;
+            background: conic-gradient(
+                from 0deg,
+                transparent 0deg,
+                #dd7bbb 60deg,
+                #d79f1e 120deg,
+                #5a922c 180deg,
+                #4c7894 240deg,
+                #dd7bbb 300deg,
+                transparent 360deg
+            );
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            pointer-events: none;
+            z-index: 1;
+            filter: blur(1px);
+        }
+
+        .producto-card:hover::after {
+            opacity: 1;
+            animation: glowRotate 3s linear infinite;
+        }
+
+        @keyframes glowRotate {
+            to { filter: hue-rotate(360deg); }
+        }
+
+        /* === Image fills entire card === */
+        .producto-card-image-wrap {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            border-radius: 16px;
+        }
+
+        .producto-card-photo {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            transition: transform 0.4s ease;
+        }
+
+        .producto-card:hover .producto-card-photo {
+            transform: scale(1.05);
+        }
+
+        .producto-card-photo-placeholder {
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(145deg, rgba(200,200,210,0.3) 0%, rgba(180,180,190,0.2) 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            color: rgba(150,150,160,0.6);
+        }
+
+        .producto-card-photo-placeholder i {
+            font-size: 2.2rem;
+        }
+
+        .producto-card-photo-placeholder span {
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: var(--dg-text-muted);
+        }
+
+        /* Glass overlay at bottom of card (over the image) */
+        .producto-card-image-overlay {
+            position: relative;
+            z-index: 2;
+            margin-top: auto;
+            padding: 0.7rem 0.85rem 0.3rem;
+            background: linear-gradient(135deg, rgba(50,50,60,0.82) 0%, rgba(40,40,50,0.75) 100%);
+            backdrop-filter: blur(16px) saturate(1.2);
+            -webkit-backdrop-filter: blur(16px) saturate(1.2);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.4rem;
+        }
+
+        .producto-card-image-overlay .producto-card-name {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #fff;
+            line-height: 1.3;
+            flex: 1;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+
+        .producto-card-image-overlay .producto-card-price {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: #fff;
+            white-space: nowrap;
+            letter-spacing: -0.02em;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+
+        /* Badge row - glass style */
+        .producto-card-overlay-badges {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            gap: 0.35rem;
+            flex-wrap: wrap;
+            padding: 0.2rem 0.85rem 0.5rem;
+            background: linear-gradient(135deg, rgba(180,180,190,0.65) 0%, rgba(160,160,175,0.55) 100%);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+
+        .overlay-badge {
+            font-size: 0.68rem;
+            font-weight: 600;
+            padding: 0.22rem 0.6rem;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.2);
+            color: #fff;
+            letter-spacing: 0.02em;
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+
+        .overlay-badge.cat-badge {
+            background: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.3);
+        }
+
+        .overlay-badge.code-badge {
+            font-family: monospace;
+            background: rgba(0,0,0,0.35);
+            border-color: rgba(255,255,255,0.1);
+        }
+
+        /* Availability badge inside image area */
+        .overlay-availability {
+            position: absolute;
+            bottom: 2.6rem;
+            left: 0.7rem;
+            pointer-events: none;
+        }
+
+        /* Card body — now slimmer, just actions */
+        .producto-card-body {
+            position: relative;
+            z-index: 2;
+            padding: 0.45rem 0.85rem 0.2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+            background: linear-gradient(135deg, rgba(190,190,200,0.6) 0%, rgba(170,170,185,0.5) 100%);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+
+        /* Availability badge - glass style */
+        .disponibilidad-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 0.3rem 0.8rem;
+            border-radius: 100px;
+            border: 1px solid rgba(255,255,255,0.3);
+            color: #fff;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+
+        .disponibilidad-badge.disponible-ok {
+            background: rgba(34,197,94,0.3);
+        }
+
+        .disponibilidad-badge.disponible-bajo {
+            background: rgba(245,158,11,0.3);
+        }
+
+        .disponibilidad-badge.disponible-agotado {
+            background: rgba(239,68,68,0.3);
+        }
+
+        .disponibilidad-badge.disponible-sin-receta {
+            background: rgba(255,255,255,0.15);
+        }
+
+        .disponibilidad-badge i {
+            font-size: 0.78rem;
+        }
+
+        /* Card footer actions - glass */
+        .producto-card-footer {
+            position: relative;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.35rem;
+            padding: 0.4rem 0.8rem 0.6rem;
+            background: linear-gradient(135deg, rgba(190,190,200,0.55) 0%, rgba(170,170,185,0.45) 100%);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-radius: 0 0 16px 16px;
+        }
+
+        .card-action-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.35);
+            background: rgba(255,255,255,0.15);
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.9rem;
+        }
+
+        .card-action-btn:hover {
+            background: rgba(255,255,255,0.3);
+            color: #fff;
+        }
+
+        .card-action-btn.edit:hover {
+            background: rgba(99, 102, 241, 0.1);
+            border-color: rgba(99, 102, 241, 0.3);
+            color: #6366F1;
+        }
+
+        .card-action-btn.delete:hover {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.3);
+            color: #DC2626;
+        }
+
+        .card-action-btn.hijos:hover {
+            background: rgba(249, 115, 22, 0.1);
+            border-color: rgba(249, 115, 22, 0.3);
+            color: #F97316;
+        }
+
+        /* Remove the old top/name row since it moved into overlay */
+        .producto-card-top { display: none; }
+        .producto-card-meta { display: none; }
+        /* Ensure name+price INSIDE overlay are always visible */
+        .producto-card-image-overlay .producto-card-name { display: block !important; }
+        .producto-card-image-overlay .producto-card-price { display: block !important; }
+
+        /* --- Empty state --- */
+        .carta-empty {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--dg-text-muted);
+        }
+
+        .carta-empty i {
+            font-size: 3rem;
+            display: block;
+            margin-bottom: 1rem;
+            opacity: 0.35;
+        }
+
+        .carta-empty p {
+            font-size: 0.95rem;
+            margin: 0;
+        }
+
+        /* --- Stats strip --- */
+        .carta-stats-strip {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            margin-bottom: 1.25rem;
+            flex-wrap: wrap;
+        }
+
+        .carta-stat-item {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            font-size: 0.8rem;
+            color: var(--dg-text-secondary);
+        }
+
+        .carta-stat-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        /* Override Bootstrap modal for dark form controls readability */
+        .modal .form-control,
+        .modal .form-select {
+            background: var(--dg-surface-solid);
+            border-color: rgba(0,0,0,0.1);
+            color: var(--dg-text);
+        }
+
+        .modal .form-control:focus,
+        .modal .form-select:focus {
+            border-color: #F97316;
+            box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15);
+        }
+
+        .modal-content {
+            border: 1px solid var(--dg-surface-border);
+            box-shadow: 0 25px 60px rgba(0,0,0,0.15);
+        }
+    </style>
+</head>
+<body>
+    <%- include('partials/sidebar') %>
+    <div class="dg-main">
+    <main class="flex-grow-1">
+    <div class="carta-page">
+
+        <%
+        /* ---- Derive categories from codigo field prefix ---- */
+        /* Pattern: CATEGORIA-NNN or just use a category column if present */
+        var categorias = {};
+        var sinCategoria = 0;
+        productos.forEach(function(p) {
+            var cat = null;
+            if (p.categoria) {
+                cat = String(p.categoria).trim();
+            } else if (p.codigo) {
+                /* Try to extract prefix before dash or first 2+ uppercase words */
+                var match = String(p.codigo).match(/^([A-Za-z\u00C0-\u017E ]+?)(?:[-_\d]|$)/);
+                if (match && match[1] && match[1].trim().length >= 2) {
+                    cat = match[1].trim().toUpperCase();
+                }
+            }
+            if (cat) {
+                categorias[cat] = (categorias[cat] || 0) + 1;
+            } else {
+                sinCategoria++;
+            }
+        });
+        var totalCategorias = Object.keys(categorias).length;
+        %>
+
+        <!-- Page Header -->
+        <div class="carta-header">
+            <div class="carta-header-left">
+                <h1><i class="bi bi-grid-3x3-gap-fill me-2" style="color:#F97316;font-size:1.4rem;vertical-align:middle;"></i>Carta de Productos</h1>
+                <div class="carta-header-subtitle">
+                    <span><i class="bi bi-box-seam"></i> <%= productos.length %> platos</span>
+                    <span class="dot"></span>
+                    <span><i class="bi bi-tag"></i> <%= totalCategorias %> categorias</span>
+                    <% if (sinCategoria > 0) { %>
+                    <span class="dot"></span>
+                    <span><i class="bi bi-question-circle"></i> <%= sinCategoria %> sin categorizar</span>
+                    <% } %>
+                </div>
+            </div>
+
+            <div class="carta-header-actions">
+                <!-- Search -->
+                <div class="carta-search-wrap">
+                    <i class="bi bi-search"></i>
+                    <input type="text"
+                           class="carta-search-input"
+                           id="buscarProducto"
+                           placeholder="Buscar plato..."
+                           autocomplete="off"
+                           title="Teclas rapidas: Ctrl+B o /">
+                </div>
+
+                <% const userRol = (typeof user !== 'undefined' && user) ? String(user.rol || '').toLowerCase() : ''; %>
+                <% if (userRol === 'administrador') { %>
+                <!-- Excel tools (solo admin) -->
+                <button id="btnDescargarPlantilla" class="btn-excel-outline" title="Descargar plantilla Excel">
+                    <i class="bi bi-file-earmark-excel"></i>
+                    <span class="d-none d-sm-inline">Plantilla</span>
+                </button>
+                <button id="btnImportarProductos" class="btn-excel-outline" title="Importar desde Excel">
+                    <i class="bi bi-upload"></i>
+                    <span class="d-none d-sm-inline">Importar</span>
+                </button>
+                <input type="file" id="archivoImport" accept=".xlsx" class="d-none">
+
+                <!-- New product (solo admin) -->
+                <button class="btn-nuevo-producto"
+                        data-bs-toggle="modal"
+                        data-bs-target="#nuevoProductoModal"
+                        title="Tecla rapida: Ctrl+N">
+                    <i class="bi bi-plus-lg"></i>
+                    Nuevo Producto
+                </button>
+                <% } %>
+            </div>
+        </div>
+
+        <!-- Filter Tabs -->
+        <div class="carta-filters" id="filtrosTabs">
+            <button class="carta-filter-tab active" data-filter="todos">
+                Todo
+                <span class="tab-count"><%= productos.length %></span>
+            </button>
+            <% Object.keys(categorias).sort().forEach(function(cat) { %>
+            <button class="carta-filter-tab" data-filter="<%= cat %>">
+                <%= cat.charAt(0).toUpperCase() + cat.slice(1).toLowerCase() %>
+                <span class="tab-count"><%= categorias[cat] %></span>
+            </button>
+            <% }); %>
+            <% if (sinCategoria > 0) { %>
+            <button class="carta-filter-tab" data-filter="sin-categoria">
+                Sin categorizar
+                <span class="tab-count"><%= sinCategoria %></span>
+            </button>
+            <% } %>
+        </div>
+
+        <!-- Availability stats strip -->
+        <div class="carta-stats-strip">
+            <%
+            var countOk = productos.filter(function(p){ return !p.sinReceta && p.disponible > 5; }).length;
+            var countBajo = productos.filter(function(p){ return !p.sinReceta && p.disponible > 0 && p.disponible <= 5; }).length;
+            var countAgotado = productos.filter(function(p){ return !p.sinReceta && p.disponible === 0; }).length;
+            var countSinReceta = productos.filter(function(p){ return p.sinReceta; }).length;
+            %>
+            <div class="carta-stat-item">
+                <span class="carta-stat-dot" style="background:#22C55E;"></span>
+                <span><%= countOk %> disponibles</span>
+            </div>
+            <% if (countBajo > 0) { %>
+            <div class="carta-stat-item">
+                <span class="carta-stat-dot" style="background:#F59E0B;"></span>
+                <span><%= countBajo %> bajo stock</span>
+            </div>
+            <% } %>
+            <% if (countAgotado > 0) { %>
+            <div class="carta-stat-item">
+                <span class="carta-stat-dot" style="background:#EF4444;"></span>
+                <span><%= countAgotado %> agotados</span>
+            </div>
+            <% } %>
+            <% if (countSinReceta > 0) { %>
+            <div class="carta-stat-item">
+                <span class="carta-stat-dot" style="background:#9CA3AF;"></span>
+                <span><%= countSinReceta %> sin receta</span>
+            </div>
+            <% } %>
+        </div>
+
+        <!-- Product Cards Grid -->
+        <div class="carta-grid" id="productosGrid">
+            <% productos.forEach(function(producto) {
+                /* Derive category for data attribute */
+                var cat = null;
+                if (producto.categoria) {
+                    cat = String(producto.categoria).trim().toUpperCase();
+                } else if (producto.codigo) {
+                    var catMatch = String(producto.codigo).match(/^([A-Za-z\u00C0-\u017E ]+?)(?:[-_\d]|$)/);
+                    if (catMatch && catMatch[1] && catMatch[1].trim().length >= 2) {
+                        cat = catMatch[1].trim().toUpperCase();
+                    }
+                }
+                var catAttr = cat || 'SIN-CATEGORIA';
+            %>
+            <div class="producto-card"
+                 data-id="<%= producto.id %>"
+                 data-nombre="<%= producto.nombre.toLowerCase() %>"
+                 data-codigo="<%= (producto.codigo || '').toLowerCase() %>"
+                 data-categoria="<%= catAttr %>">
+                <div class="producto-card-inner">
+
+                <!-- Image area -->
+                <div class="producto-card-image-wrap">
+                    <% if (producto.imagen) { %>
+                    <img src="<%= producto.imagen %>"
+                         alt="<%= producto.nombre %>"
+                         class="producto-card-photo">
+                    <% } else { %>
+                    <div class="producto-card-photo-placeholder">
+                        <i class="bi bi-egg-fried"></i>
+                        <span>Sin foto</span>
+                    </div>
+                    <% } %>
+                </div>
+
+                <!-- Name + Price below image -->
+                <div class="producto-card-image-overlay">
+                    <div class="producto-card-name"><%= producto.nombre %></div>
+                    <div class="producto-card-price">S/ <%= (Number(producto.precio_unidad) || 0).toFixed(2) %></div>
+                </div>
+
+                <!-- Badges (code + category) below name -->
+                <div class="producto-card-overlay-badges">
+                    <% if (producto.codigo) { %>
+                    <span class="overlay-badge code-badge"><%= producto.codigo %></span>
+                    <% } %>
+                    <% if (cat) { %>
+                    <span class="overlay-badge cat-badge"><%= cat.charAt(0).toUpperCase() + cat.slice(1).toLowerCase() %></span>
+                    <% } %>
+                </div>
+
+                <!-- Card body: availability + actions -->
+                <div class="producto-card-body">
+                    <!-- Availability badge -->
+                    <div>
+                        <% if (producto.sinReceta) { %>
+                        <span class="disponibilidad-badge disponible-sin-receta">
+                            <i class="bi bi-dash-circle"></i> Sin receta
+                        </span>
+                        <% } else if (producto.disponible === 0) { %>
+                        <span class="disponibilidad-badge disponible-agotado" title="Limitante: <%= producto.ingrediente_limitante %>">
+                            <i class="bi bi-x-circle-fill"></i> Agotado
+                        </span>
+                        <% } else if (producto.disponible <= 5) { %>
+                        <span class="disponibilidad-badge disponible-bajo" title="Bajo stock - Limitante: <%= producto.ingrediente_limitante %>">
+                            <i class="bi bi-exclamation-triangle-fill"></i> <%= producto.disponible %> uds.
+                        </span>
+                        <% } else { %>
+                        <span class="disponibilidad-badge disponible-ok">
+                            <i class="bi bi-check-circle-fill"></i> <%= producto.disponible %> disponibles
+                        </span>
+                        <% } %>
+                    </div>
+                </div>
+
+                <!-- Footer action buttons -->
+                <div class="producto-card-footer">
+                    <% if (userRol === 'administrador') { %>
+                    <button class="card-action-btn hijos"
+                            data-id="<%= producto.id %>"
+                            data-nombre="<%= producto.nombre %>"
+                            data-action="hijos"
+                            title="Gestionar hijos / variantes">
+                        <i class="bi bi-diagram-3"></i>
+                    </button>
+                    <button class="card-action-btn edit"
+                            data-id="<%= producto.id %>"
+                            data-action="editar"
+                            title="Editar producto">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="card-action-btn delete"
+                            data-id="<%= producto.id %>"
+                            data-action="eliminar"
+                            title="Eliminar producto">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                    <% } %>
+                </div>
+                </div><!-- /producto-card-inner -->
+            </div>
+            <% }); %>
+
+            <!-- Empty state (shown by JS when no cards match) -->
+            <div class="carta-empty" id="cartaEmptyState" style="display:none;">
+                <i class="bi bi-search"></i>
+                <p>No se encontraron productos para esta busqueda.</p>
+            </div>
+        </div>
+
+    </div><!-- carta-page -->
+    </main>
+    <%- include('partials/footer') %>
+    </div><!-- dg-main -->
+
+    <!-- ==========================================
+         Modal Nuevo/Editar Producto
+         ========================================== -->
+    <div class="modal fade" id="nuevoProductoModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-box-fill me-2" style="color:#F97316;"></i>
+                        <span id="modalTitle">Nuevo Producto</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formProducto">
+                        <input type="hidden" id="productoId">
+
+                        <!-- Image upload -->
+                        <div class="mb-3 text-center">
+                            <label class="form-label d-block">Imagen del producto</label>
+                            <div id="imagenPreviewWrap"
+                                 style="width:100px;height:100px;margin:0 auto .5rem;border-radius:.75rem;overflow:hidden;background:rgba(249,115,22,0.05);display:flex;align-items:center;justify-content:center;border:2px dashed rgba(249,115,22,0.25);cursor:pointer;transition:all .2s;"
+                                 onclick="document.getElementById('imagenInput').click()">
+                                <img id="imagenPreview" src="" alt="" style="width:100%;height:100%;object-fit:cover;display:none;">
+                                <i id="imagenPlaceholder" class="bi bi-camera-fill" style="font-size:1.5rem;color:#F97316;opacity:.5;"></i>
+                            </div>
+                            <input type="file" id="imagenInput" accept="image/*" class="d-none">
+                            <input type="hidden" id="imagenBase64">
+                            <div class="form-text">Click para subir foto (max 500KB)</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Codigo</label>
+                            <input type="text" class="form-control" id="codigo" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Nombre</label>
+                            <input type="text" class="form-control" id="nombre" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Precio de venta (S/)</label>
+                            <input type="number" class="form-control" id="precioUnidad" step="0.01" min="0" required placeholder="Ej: 35.00">
+                            <input type="hidden" id="precioKg" value="0">
+                            <input type="hidden" id="precioLibra" value="0">
+                        </div>
+                    </form>
+
+                    <!-- RECETA / INGREDIENTES (solo lectura - editar desde /recetas) -->
+                    <div id="recetaSection" style="display:none;">
+                        <hr>
+                        <h6 class="fw-bold">
+                            <i class="bi bi-egg-fried me-1" style="color:#F97316;"></i>
+                            Receta / Ingredientes
+                        </h6>
+                        <p class="small text-muted">Los ingredientes se gestionan desde el modulo <a href="/recetas" class="fw-bold">Recetas</a>.</p>
+
+                        <div class="table-responsive">
+                            <table class="table table-sm" id="recetaTabla">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Ingrediente</th>
+                                        <th class="text-end">Cantidad</th>
+                                        <th>Unidad</th>
+                                        <th class="text-end">Costo</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recetaBody"></tbody>
+                                <tfoot>
+                                    <tr class="fw-bold">
+                                        <td colspan="3">Costo total receta</td>
+                                        <td class="text-end" id="recetaCostoTotal">S/ 0.00</td>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="guardarProducto" style="background:#F97316;border-color:#F97316;">
+                        <i class="bi bi-save me-1"></i>
+                        Guardar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==========================================
+         Modal Gestion de Hijos (Padre -> Hijos)
+         Permite configurar que productos se pueden elegir como "hijos"
+         al montar el pedido del producto padre.
+         Relacionado con: routes/productos.js (GET/POST/DELETE /api/productos/:padreId/hijos)
+         y public/js/mesas.js (guarda seleccion en pedido_items.nota)
+         ========================================== -->
+    <div class="modal fade" id="hijosProductoModal" tabindex="-1" aria-labelledby="hijosProductoModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="hijosProductoModalLabel">
+                        <i class="bi bi-diagram-3 me-2" style="color:#F97316;"></i>
+                        Hijos de: <span id="hijosPadreNombre" class="fw-semibold"></span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="hijosPadreId" value="">
+
+                    <div class="alert alert-info py-2 small mb-3">
+                        Los hijos son <strong>opciones/descripcion</strong> del producto padre. <strong>No cambian el precio</strong> del padre.
+                        Al montar el pedido, la seleccion se guarda en <code>pedido_items.nota</code> para que llegue a cocina.
+                    </div>
+
+                    <div class="row g-3">
+                        <div class="col-12 col-lg-6">
+                            <div class="mb-2">
+                                <label class="form-label fw-semibold mb-1">Agregar item</label>
+                                <!-- Hijos como "items" de texto (NO son productos) -->
+                                <!-- Relacionado con: routes/productos.js (/:padreId/hijos-items) y public/js/productos.js (agregar/quitar items) -->
+                                <div class="input-group mb-2">
+                                    <span class="input-group-text"><i class="bi bi-plus-lg"></i></span>
+                                    <input id="nuevoItemHijoNombre" type="text" class="form-control" placeholder="Ej: Goulash de cerdo, Crema, Ensalada...">
+                                    <button id="btnAgregarItemHijo" class="btn btn-primary" type="button">
+                                        Agregar item
+                                    </button>
+                                </div>
+                                <div class="form-text mb-2">
+                                    Puedes agregar varios separados por <strong>,</strong> (coma). Ej: <strong>Goulash, Crema</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-lg-6">
+                            <label class="form-label fw-semibold mb-1">Items configurados</label>
+                            <!-- Lista de items hijos (texto) -->
+                            <!-- Relacionado con: database.sql -> producto_hijos_items -->
+                            <div id="listaItemsHijosConfigurados" class="list-group mb-2"></div>
+                            <div id="emptyItemsHijosConfigurados" class="text-muted small mt-2 d-none">
+                                Aun no hay items hijos configurados para este producto.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/vendor/jquery/jquery.min.js"></script>
+    <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/productos.js"></script>
+
+    <!-- ==========================================
+         CARD GRID: Filter tabs + Search
+         Client-side filtering by category and name
+         ========================================== -->
+    <script>
+    (function() {
+        var activeFilter = 'todos';
+        var searchTerm = '';
+
+        function applyFilters() {
+            var cards = document.querySelectorAll('#productosGrid .producto-card');
+            var visibleCount = 0;
+
+            cards.forEach(function(card) {
+                var cat = (card.dataset.categoria || '').toUpperCase();
+                var nombre = (card.dataset.nombre || '');
+                var codigo = (card.dataset.codigo || '');
+
+                var matchFilter = activeFilter === 'todos'
+                    || (activeFilter === 'sin-categoria' && cat === 'SIN-CATEGORIA')
+                    || (activeFilter !== 'sin-categoria' && cat === activeFilter.toUpperCase());
+
+                var matchSearch = !searchTerm
+                    || nombre.includes(searchTerm)
+                    || codigo.includes(searchTerm);
+
+                if (matchFilter && matchSearch) {
+                    card.classList.remove('hidden');
+                    visibleCount++;
+                } else {
+                    card.classList.add('hidden');
+                }
+            });
+
+            var emptyState = document.getElementById('cartaEmptyState');
+            if (emptyState) {
+                emptyState.style.display = visibleCount === 0 ? 'block' : 'none';
+            }
+        }
+
+        // Filter tabs
+        document.getElementById('filtrosTabs').addEventListener('click', function(e) {
+            var tab = e.target.closest('.carta-filter-tab');
+            if (!tab) return;
+
+            document.querySelectorAll('.carta-filter-tab').forEach(function(t) {
+                t.classList.remove('active');
+            });
+            tab.classList.add('active');
+            activeFilter = tab.dataset.filter || 'todos';
+            applyFilters();
+        });
+
+        // Search input - overrides the productos.js handler for cards
+        var searchInput = document.getElementById('buscarProducto');
+        if (searchInput) {
+            var debounceTimer;
+            searchInput.addEventListener('input', function() {
+                clearTimeout(debounceTimer);
+                var val = this.value.toLowerCase().trim();
+                debounceTimer = setTimeout(function() {
+                    searchTerm = val;
+                    applyFilters();
+                }, 200);
+            });
+        }
+    })();
+    </script>
+
+    <!-- ==========================================
+         Card action delegation (edit / delete / hijos)
+         Replaces the old table-based delegation
+         ========================================== -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Event delegation on the grid
+        document.getElementById('productosGrid').addEventListener('click', function(e) {
+            var button = e.target.closest('button[data-action]');
+            if (!button) return;
+
+            var id = button.dataset.id;
+            var action = button.dataset.action;
+
+            if (action === 'editar') {
+                editarProducto(id);
+            } else if (action === 'hijos') {
+                var nombre = button.dataset.nombre || '';
+                if (typeof gestionarHijosProducto === 'function') {
+                    gestionarHijosProducto(id, nombre);
+                } else {
+                    alert('No se pudo abrir la gestion de hijos (funcion no encontrada).');
+                }
+            } else if (action === 'eliminar') {
+                if (confirm('Estas seguro de que deseas eliminar este producto?')) {
+                    eliminarProducto(id);
+                }
+            }
+        });
+
+        // Descargar plantilla Excel
+        document.getElementById('btnDescargarPlantilla').addEventListener('click', function() {
+            window.open('/api/productos/plantilla', '_blank');
+        });
+
+        // Importar productos desde Excel
+        var inputImport = document.getElementById('archivoImport');
+        document.getElementById('btnImportarProductos').addEventListener('click', function() {
+            inputImport.click();
+        });
+
+        inputImport.addEventListener('change', async function() {
+            if (!this.files.length) return;
+            var fd = new FormData();
+            fd.append('archivo', this.files[0]);
+            var btn = document.getElementById('btnImportarProductos');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Importando...';
+            try {
+                var resp = await fetch('/api/productos/importar', { method: 'POST', body: fd });
+                var data = await resp.json();
+                if (!resp.ok) throw new Error(data.error || 'Error al importar');
+                alert('Importacion completa: ' + data.inserted + ' filas.');
+                location.reload();
+            } catch (err) {
+                alert(err.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-upload"></i> <span class="d-none d-sm-inline">Importar</span>';
+                this.value = '';
+            }
+        });
+    });
+    </script>
+
+    <!-- ==========================================
+         RECETA MANAGEMENT
+         Handles ingredient recipe for each product
+         ========================================== -->
+    <script>
+    (function() {
+        var recetaItems = [];
+        var ingredientesDisponibles = [];
+
+        // Cargar ingredientes del almacen
+        async function cargarIngredientes() {
+            try {
+                var r = await fetch('/almacen/api/ingredientes');
+                if (!r.ok) { return; }
+                var data = await r.json();
+                ingredientesDisponibles = Array.isArray(data) ? data : (data.ingredientes || []);
+                var sel = document.getElementById('recetaIngredienteSelect');
+                if (!sel) return;
+                sel.innerHTML = '<option value="">-- Seleccionar ingrediente --</option>';
+                ingredientesDisponibles.forEach(function(i) {
+                    var opt = document.createElement('option');
+                    opt.value = i.id;
+                    opt.textContent = i.nombre + ' (' + i.unidad_medida + ' - S/' + Number(i.costo_unitario || 0).toFixed(2) + ')';
+                    opt.dataset.costo = i.costo_unitario || 0;
+                    opt.dataset.unidad = i.unidad_medida || 'g';
+                    opt.dataset.nombre = i.nombre;
+                    sel.appendChild(opt);
+                });
+            } catch (e) {
+                console.error('Error cargando ingredientes:', e);
+            }
+        }
+
+        fetch('/almacen/api/ingredientes')
+            .then(function(r) { return r.ok ? r.json() : Promise.resolve([]); })
+            .then(function(data) { ingredientesDisponibles = Array.isArray(data) ? data : []; })
+            .catch(function() {});
+        cargarIngredientes();
+
+        // Render receta (solo lectura - sin botones de edicion)
+        function renderReceta() {
+            var body = document.getElementById('recetaBody');
+            if (!body) return;
+            body.innerHTML = '';
+            var total = 0;
+            recetaItems.forEach(function(item) {
+                var costoUnit = item.costo || 0;
+                var cant = item.cantidad || 0;
+                var costo;
+                if ((item.unidad_medida === 'g' || item.unidad_medida === 'ml') && costoUnit > 1) {
+                    costo = (costoUnit / 1000) * cant;
+                } else {
+                    costo = costoUnit * cant;
+                }
+                total += costo;
+                var tr = document.createElement('tr');
+                tr.innerHTML = '<td>' + item.nombre + '</td>'
+                    + '<td class="text-end">' + item.cantidad + '</td>'
+                    + '<td>' + item.unidad_medida + '</td>'
+                    + '<td class="text-end">S/ ' + costo.toFixed(2) + '</td>';
+                body.appendChild(tr);
+            });
+            document.getElementById('recetaCostoTotal').textContent = 'S/ ' + total.toFixed(2);
+        }
+
+        // Mostrar receta section cuando se abre modal para editar
+        var origEditarProducto = window.editarProducto;
+        window.editarProducto = async function(id) {
+            origEditarProducto(id);
+            document.getElementById('recetaSection').style.display = 'block';
+            try {
+                var r = await fetch('/api/recetas/' + id);
+                var data = await r.json();
+                recetaItems = [];
+                if (data.items && data.items.length > 0) {
+                    data.items.forEach(function(it) {
+                        recetaItems.push({
+                            ingrediente_id: it.ingrediente_id,
+                            nombre: it.ingrediente_nombre || 'Ingrediente ' + it.ingrediente_id,
+                            cantidad: Number(it.cantidad),
+                            unidad_medida: it.unidad_medida || 'g',
+                            costo: Number(it.ingrediente_costo) || 0
+                        });
+                    });
+                }
+                renderReceta();
+            } catch (e) {
+                recetaItems = [];
+                renderReceta();
+            }
+        };
+
+        // Al abrir modal para nuevo producto, ocultar receta
+        document.getElementById('nuevoProductoModal')?.addEventListener('show.bs.modal', function(ev) {
+            if (ev.relatedTarget) {
+                document.getElementById('recetaSection').style.display = 'none';
+                recetaItems = [];
+                renderReceta();
+            }
+        });
+
+        // Guardar receta despues de guardar producto
+        // Receta se gestiona desde /recetas (solo lectura aqui)
+    })();
+    </script>
+
+</body>
+</html>

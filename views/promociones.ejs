@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Promociones · MiRestcon</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    :root{--orange:#ef520f;--orange2:#df2c05;--dark:#0a0f24;--bg:#F0F2F8;--card:#fff;--text2:#8B8FAD;--verde:#22C55E;--safe-bot:env(safe-area-inset-bottom,0px);}
+    body{font-family:'DM Sans',sans-serif;background:var(--bg);min-height:100dvh;max-width:480px;margin:0 auto;padding-bottom:calc(80px + var(--safe-bot));}
+    .header{background:linear-gradient(170deg,#10152f 0%,#0a0f24 50%,#090d1d 100%);padding:52px 20px 20px;border-radius:0 0 20px 20px;color:#fff;display:flex;align-items:center;justify-content:space-between;}
+    .header-left{display:flex;align-items:center;gap:12px;}
+    .btn-back{background:rgba(255,255,255,.12);border:none;color:#fff;width:36px;height:36px;border-radius:10px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+    .header-title{font-size:18px;font-weight:700;}
+    .btn-add{background:rgba(255,255,255,.15);border:none;color:#fff;width:36px;height:36px;border-radius:10px;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+    .stats-row{display:flex;gap:10px;padding:16px 16px 0;}
+    .stat-chip{flex:1;background:var(--card);border-radius:12px;padding:10px 12px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.05);}
+    .stat-num{font-size:22px;font-weight:800;color:var(--dark);}
+    .stat-lbl{font-size:11px;color:var(--text2);margin-top:1px;}
+    .list{padding:14px 16px 0;}
+    .promo-card{background:var(--card);border-radius:16px;margin-bottom:12px;padding:16px;box-shadow:0 2px 8px rgba(0,0,0,.06);}
+    .promo-card.expirada{opacity:.5;}
+    .promo-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:10px;}
+    .promo-left{display:flex;align-items:center;gap:10px;}
+    .codigo-badge{padding:4px 10px;border-radius:8px;font-size:13px;font-weight:800;color:#fff;letter-spacing:.5px;}
+    .badge-orange{background:var(--orange);}
+    .badge-maps{background:#1a1a2e;}
+    .badge-tiktok{background:#010101;}
+    .badge-gray{background:#8B8FAD;}
+    .promo-desc{font-size:15px;font-weight:600;color:var(--dark);}
+    .promo-origen{font-size:12px;color:var(--text2);margin-top:2px;}
+    .toggle-btn{width:44px;height:24px;border-radius:12px;border:none;cursor:pointer;position:relative;transition:background .2s;flex-shrink:0;}
+    .toggle-btn.on{background:var(--verde);}
+    .toggle-btn.off{background:#C7CAD8;}
+    .toggle-btn::after{content:'';position:absolute;width:18px;height:18px;border-radius:50%;background:#fff;top:3px;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.2);}
+    .toggle-btn.on::after{left:23px;}
+    .toggle-btn.off::after{left:3px;}
+    .promo-stats{display:flex;gap:16px;flex-wrap:wrap;}
+    .pst{font-size:12px;color:var(--text2);}
+    .pst span{font-weight:700;color:var(--dark);}
+    .roi-good{color:var(--verde)!important;}
+    .expirado-label{font-size:11px;color:var(--text2);margin-top:4px;}
+    /* FAB */
+    .fab{position:fixed;bottom:calc(84px + var(--safe-bot));right:16px;width:52px;height:52px;border-radius:16px;background:linear-gradient(135deg,var(--orange),var(--orange2));border:none;color:#fff;font-size:24px;cursor:pointer;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 16px rgba(239,82,15,.4);}
+    /* sheet */
+    .sheet-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:flex-end;justify-content:center;}
+    .sheet-overlay.show{display:flex;}
+    .sheet{background:var(--card);border-radius:20px 20px 0 0;width:100%;max-width:480px;max-height:90dvh;overflow-y:auto;padding:8px 20px calc(20px + var(--safe-bot));animation:slideUp .25s ease;}
+    @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+    .sheet-handle{width:40px;height:4px;background:#E0E2EE;border-radius:2px;margin:12px auto 20px;}
+    .sheet-title{font-size:17px;font-weight:700;color:var(--dark);margin-bottom:20px;}
+    .field-label{font-size:13px;font-weight:600;color:var(--text2);margin-bottom:6px;}
+    .field-input{width:100%;border:1.5px solid #E0E2EE;border-radius:12px;padding:11px 14px;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;color:var(--dark);margin-bottom:14px;transition:border-color .2s;}
+    .field-input:focus{border-color:var(--orange);}
+    select.field-input{appearance:none;background:#fff;}
+    .row-fields{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+    .chips-wrap{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
+    .chip-sel{padding:7px 14px;border-radius:20px;border:2px solid #E0E2EE;font-size:13px;font-weight:600;cursor:pointer;color:var(--text2);background:#fff;font-family:'DM Sans',sans-serif;transition:all .2s;}
+    .chip-sel.active{border-color:var(--dark);background:var(--dark);color:#fff;}
+    .codigo-preview{font-size:18px;font-weight:800;color:var(--orange);text-align:center;margin-bottom:4px;letter-spacing:1px;}
+    .sheet-cta{width:100%;background:linear-gradient(135deg,var(--orange),var(--orange2));color:#fff;border:none;border-radius:14px;padding:15px;font-size:15px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;}
+    .bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:#fff;border-top:1px solid #E8EAF2;display:flex;padding-bottom:var(--safe-bot);z-index:100;}
+    .nav-item{flex:1;display:flex;flex-direction:column;align-items:center;padding:10px 4px 8px;text-decoration:none;color:var(--text2);font-size:10px;font-weight:500;}
+    .nav-item .icon{font-size:22px;margin-bottom:2px;}
+    .nav-item.active{color:var(--orange);}
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-left">
+      <button class="btn-back" onclick="history.back()">‹</button>
+      <span class="header-title">Promociones</span>
+    </div>
+    <button class="btn-add" onclick="abrirSheet()">+</button>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-chip"><div class="stat-num"><%= activas %></div><div class="stat-lbl">Activas</div></div>
+    <div class="stat-chip"><div class="stat-num"><%= usosTotales %></div><div class="stat-lbl">Usos totales</div></div>
+    <div class="stat-chip"><div class="stat-num">S/ <%= descuentoDado.toFixed(0) %></div><div class="stat-lbl">Descuento dado</div></div>
+  </div>
+
+  <div class="list">
+    <% promos.forEach(function(p) {
+      const badgeClass = p.origen && p.origen.toLowerCase().includes('instagram') ? 'badge-orange'
+        : p.origen && p.origen.toLowerCase().includes('maps') ? 'badge-maps'
+        : p.origen && p.origen.toLowerCase().includes('tiktok') ? 'badge-tiktok'
+        : 'badge-gray';
+    %>
+    <div class="promo-card <%= p.expirada ? 'expirada' : '' %>">
+      <div class="promo-top">
+        <div class="promo-left">
+          <span class="codigo-badge <%= badgeClass %>"><%= p.codigo %></span>
+          <div>
+            <div class="promo-desc"><%= p.descuento %>% descuento</div>
+            <div class="promo-origen"><%= p.origen || 'Sin origen' %></div>
+          </div>
+        </div>
+        <% if (!p.expirada) { %>
+        <button class="toggle-btn <%= p.activo ? 'on' : 'off' %>" onclick="togglePromo(<%= p.id %>,this)" title="<%= p.activo?'Activa':'Inactiva' %>"></button>
+        <% } %>
+      </div>
+      <div class="promo-stats">
+        <div class="pst"><span><%= p.usos_actuales %></span> usos</div>
+        <% if(p.monto_vendido>0){%><div class="pst">S/ <span><%= Number(p.monto_vendido).toFixed(0) %></span> vendido</div><% } %>
+        <% if(p.monto_descuento>0){%><div class="pst">S/ <span><%= Number(p.monto_descuento).toFixed(0) %></span> descuento</div><% } %>
+        <% if(p.roi){%><div class="pst roi-good"><span><%= p.roi %>%</span> ROI</div><% } %>
+        <% if(p.expirada){%><div class="expirado-label">Expirado</div><% } %>
+      </div>
+    </div>
+    <% }); %>
+  </div>
+
+  <button class="fab" onclick="abrirSheet()">+</button>
+
+  <!-- Sheet nuevo código -->
+  <div class="sheet-overlay" id="nuevaSheet" onclick="cerrar(event)">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title">Nuevo código</div>
+      <div class="field-label">Código</div>
+      <input class="field-input" id="nCodigo" placeholder="NUEVO25" autocomplete="off" oninput="previsualizarCodigo()" style="text-transform:uppercase;font-weight:700;font-size:18px;letter-spacing:1px;">
+      <div class="codigo-preview" id="codigoPreview"></div>
+      <div class="row-fields" style="margin-bottom:0;">
+        <div>
+          <div class="field-label">Descuento</div>
+          <input class="field-input" type="number" id="nDescuento" placeholder="25" min="1" max="100">
+        </div>
+        <div>
+          <div class="field-label">Tipo</div>
+          <select class="field-input" id="nTipo">
+            <option value="porcentaje">Porcentaje</option>
+            <option value="monto_fijo">Monto fijo S/</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-label">Origen (para tracking)</div>
+      <div class="chips-wrap" id="origenChips">
+        <% ['Instagram','Google Maps','TikTok','Flyer','Influencer','Alianza'].forEach(function(o){ %>
+        <button class="chip-sel" data-val="<%= o %>" onclick="toggleChipOrigen(this)"><%= o %></button>
+        <% }); %>
+      </div>
+      <div class="field-label">Aplica en</div>
+      <div class="chips-wrap" id="aplicaChips">
+        <% ['Salón','Delivery','Para llevar','WhatsApp'].forEach(function(a){ %>
+        <button class="chip-sel active" data-val="<%= a.toLowerCase().replace(' ','_') %>" onclick="toggleChipAplica(this)"><%= a %></button>
+        <% }); %>
+      </div>
+      <div class="row-fields">
+        <div>
+          <div class="field-label">Desde</div>
+          <input class="field-input" type="date" id="nDesde">
+        </div>
+        <div>
+          <div class="field-label">Hasta</div>
+          <input class="field-input" type="date" id="nHasta">
+        </div>
+      </div>
+      <div class="row-fields">
+        <div>
+          <div class="field-label">Usos máx.</div>
+          <input class="field-input" type="number" id="nUsosMax" placeholder="Sin límite">
+        </div>
+        <div>
+          <div class="field-label">Por cliente</div>
+          <input class="field-input" type="number" id="nUsosCli" placeholder="1 vez" value="1">
+        </div>
+      </div>
+      <button class="sheet-cta" id="ctaCrear" onclick="crearPromo()">✓ Crear código</button>
+    </div>
+  </div>
+
+  <nav class="bottom-nav">
+    <a href="/" class="nav-item"><span class="icon">🏠</span>Inicio</a>
+    <a href="/pedidos" class="nav-item"><span class="icon">🧾</span>Pedidos</a>
+    <a href="/cocina-display" class="nav-item"><span class="icon">👨‍🍳</span>Cocina</a>
+    <a href="/caja" class="nav-item"><span class="icon">💰</span>Caja</a>
+    <a href="/mas" class="nav-item active"><span class="icon">☰</span>Más</a>
+  </nav>
+
+  <script>
+    function abrirSheet(){ document.getElementById('nuevaSheet').classList.add('show'); }
+    function cerrar(e){ if(e.target.classList.contains('sheet-overlay')) document.getElementById('nuevaSheet').classList.remove('show'); }
+    function previsualizarCodigo(){
+      const v = document.getElementById('nCodigo').value.toUpperCase();
+      document.getElementById('codigoPreview').textContent = v;
+      document.getElementById('ctaCrear').textContent = v ? '✓ Crear código '+v : '✓ Crear código';
+    }
+    function toggleChipOrigen(btn){
+      document.querySelectorAll('#origenChips .chip-sel').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+    function toggleChipAplica(btn){ btn.classList.toggle('active'); }
+
+    async function togglePromo(id, btn){
+      const r = await fetch('/sprint4/promociones/'+id+'/toggle',{method:'PATCH'});
+      const d = await r.json();
+      if(d.ok){ btn.classList.toggle('on',d.activo); btn.classList.toggle('off',!d.activo); }
+    }
+
+    async function crearPromo(){
+      const codigo = document.getElementById('nCodigo').value.trim().toUpperCase();
+      const desc   = document.getElementById('nDescuento').value;
+      if(!codigo||!desc){ alert('Código y descuento requeridos'); return; }
+      const origen = document.querySelector('#origenChips .chip-sel.active')?.dataset.val || null;
+      const aplica = Array.from(document.querySelectorAll('#aplicaChips .chip-sel.active')).map(b=>b.dataset.val);
+      const body = {
+        codigo, descuento:desc,
+        tipo_descuento: document.getElementById('nTipo').value,
+        origen,
+        aplica_en: aplica,
+        fecha_inicio: document.getElementById('nDesde').value || null,
+        fecha_fin:    document.getElementById('nHasta').value || null,
+        usos_max:     document.getElementById('nUsosMax').value || null,
+        usos_por_cliente: document.getElementById('nUsosCli').value || 1
+      };
+      const r = await fetch('/sprint4/promociones',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+      const d = await r.json();
+      if(d.ok) location.reload(); else alert(d.error||'Error');
+    }
+  </script>
+  <script src="/js/dallia-fab.js"></script>
+</body>
+</html>

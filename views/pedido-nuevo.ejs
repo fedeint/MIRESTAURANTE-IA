@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Nuevo Pedido — MiRestcon</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      font-family: 'DM Sans', sans-serif;
+      background: #F0F2F8;
+      height: 100dvh;
+      overflow: hidden;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+    .app-shell {
+      display: flex;
+      flex-direction: column;
+      height: 100dvh;
+    }
+    /* HEADER */
+    .app-header {
+      background: linear-gradient(180deg, #10152f 0%, #0a0f24 60%, #090d1d 100%);
+      border-radius: 0 0 20px 20px;
+      padding: 48px 20px 20px;
+      color: white;
+      flex-shrink: 0;
+      position: relative;
+    }
+    .header-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .back-btn {
+      background: rgba(255,255,255,0.12);
+      border: none;
+      color: white;
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+    .header-titles { flex: 1; }
+    .header-step { font-size: 11px; color: rgba(255,255,255,0.5); font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; }
+    .header-title { font-size: 18px; font-weight: 700; margin-top: 2px; }
+    .header-subtitle { font-size: 13px; color: rgba(255,255,255,0.6); margin-top: 4px; }
+    /* CONTENT */
+    .content-area {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px 16px 80px;
+      -webkit-overflow-scrolling: touch;
+    }
+    /* STEP 1 — MESAS */
+    .mesas-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .mesa-card {
+      background: white;
+      border-radius: 16px;
+      padding: 16px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: border-color 0.15s, transform 0.1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .mesa-card:active { transform: scale(0.97); }
+    .mesa-card.selected { border-color: #ef520f; }
+    .mesa-card.ocupada { opacity: 0.75; }
+    .mesa-icon { font-size: 28px; margin-bottom: 8px; }
+    .mesa-name { font-size: 15px; font-weight: 700; color: #0a0f24; }
+    .mesa-sillas { font-size: 12px; color: #8B8FAD; margin-top: 2px; }
+    .mesa-footer { display: flex; align-items: center; gap: 6px; margin-top: 10px; }
+    .status-chip {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 20px;
+    }
+    .chip-libre { background: #dcfce7; color: #16a34a; }
+    .chip-ocupada { background: #fff7ed; color: #ea580c; }
+    .vip-badge { background: #fef3c7; color: #92400e; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 10px; }
+    /* STEP 2 — PRODUCTOS */
+    .cats-bar {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      margin-bottom: 16px;
+      scrollbar-width: none;
+    }
+    .cats-bar::-webkit-scrollbar { display: none; }
+    .cat-btn {
+      padding: 7px 16px;
+      border-radius: 20px;
+      border: none;
+      background: white;
+      color: #8B8FAD;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+      transition: background 0.15s, color 0.15s;
+    }
+    .cat-btn.active { background: #ef520f; color: white; }
+    .product-card {
+      background: white;
+      border-radius: 14px;
+      padding: 14px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.06);
+    }
+    .prod-emoji {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, #ef520f, #df2c05);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      flex-shrink: 0;
+    }
+    .prod-info { flex: 1; min-width: 0; }
+    .prod-name { font-size: 14px; font-weight: 700; color: #0a0f24; }
+    .prod-desc { font-size: 12px; color: #8B8FAD; margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .prod-price { font-size: 14px; font-weight: 700; color: #ef520f; margin-top: 4px; }
+    .qty-ctrl { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+    .qty-btn {
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      border: none;
+      background: linear-gradient(135deg, #ef520f, #df2c05);
+      color: white;
+      font-size: 18px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      line-height: 1;
+    }
+    .qty-btn.minus { background: #f0f2f8; color: #8B8FAD; }
+    .qty-num { font-size: 15px; font-weight: 700; color: #0a0f24; min-width: 20px; text-align: center; }
+    /* STEP 3 — RESUMEN */
+    .resumen-header {
+      background: white;
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .resumen-mesa { font-size: 16px; font-weight: 700; color: #0a0f24; }
+    .resumen-meta { font-size: 13px; color: #8B8FAD; margin-top: 4px; }
+    .resumen-items { background: white; border-radius: 16px; padding: 16px; margin-bottom: 12px; }
+    .resumen-item-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid #f0f2f8;
+    }
+    .resumen-item-row:last-child { border-bottom: none; }
+    .resumen-item-name { font-size: 14px; color: #0a0f24; }
+    .resumen-item-qty { color: #8B8FAD; font-size: 13px; }
+    .resumen-item-price { font-size: 14px; font-weight: 600; color: #0a0f24; }
+    .totales { background: white; border-radius: 16px; padding: 16px; }
+    .totales-row { display: flex; justify-content: space-between; padding: 6px 0; }
+    .totales-label { font-size: 14px; color: #8B8FAD; }
+    .totales-value { font-size: 14px; color: #0a0f24; font-weight: 500; }
+    .totales-total-label { font-size: 16px; font-weight: 700; color: #0a0f24; }
+    .totales-total-value { font-size: 18px; font-weight: 700; color: #ef520f; }
+    .divider { height: 1px; background: #f0f2f8; margin: 6px 0; }
+    /* STICKY CTA */
+    .sticky-cta {
+      position: fixed;
+      bottom: 64px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: calc(100% - 32px);
+      max-width: 448px;
+      z-index: 50;
+    }
+    .cta-btn {
+      width: 100%;
+      padding: 16px 24px;
+      background: linear-gradient(135deg, #ef520f, #df2c05);
+      color: white;
+      border: none;
+      border-radius: 16px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(239,82,15,0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      transition: opacity 0.15s;
+    }
+    .cta-btn:active { opacity: 0.85; }
+    .cta-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    /* BOTTOM NAV */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 480px;
+      background: white;
+      display: flex;
+      justify-content: space-around;
+      padding: 8px 0;
+      padding-bottom: max(8px, env(safe-area-inset-bottom));
+      box-shadow: 0 -2px 16px rgba(0,0,0,0.08);
+      z-index: 100;
+    }
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      color: #8B8FAD;
+      text-decoration: none;
+      font-size: 10px;
+      font-weight: 500;
+    }
+    .nav-item.active { color: #ef520f; }
+    .nav-icon { font-size: 22px; }
+    /* TOAST */
+    .toast {
+      position: fixed;
+      top: 80px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      background: #0a0f24;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 500;
+      opacity: 0;
+      transition: opacity 0.3s, transform 0.3s;
+      z-index: 200;
+      white-space: nowrap;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .toast.success { background: #16a34a; }
+    .toast.error { background: #dc2626; }
+    /* LOADING */
+    .loading-overlay {
+      position: fixed; inset: 0;
+      background: rgba(10,15,36,0.7);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 300;
+    }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 3px solid rgba(255,255,255,0.2);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- HEADER -->
+  <header class="app-header" id="appHeader">
+    <div class="header-row">
+      <button class="back-btn" id="backBtn" onclick="goBack()">&#8592;</button>
+      <div class="header-titles">
+        <div class="header-step" id="headerStep">PASO 1/3</div>
+        <div class="header-title" id="headerTitle">Nuevo Pedido</div>
+        <div class="header-subtitle" id="headerSubtitle">Selecciona una mesa</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- CONTENT -->
+  <div class="content-area" id="contentArea">
+    <!-- Step 1: Mesas -->
+    <div id="step1">
+      <div class="mesas-grid" id="mesasGrid"></div>
+    </div>
+
+    <!-- Step 2: Productos -->
+    <div id="step2" class="hidden">
+      <div class="cats-bar" id="catsBar"></div>
+      <div id="productsList"></div>
+    </div>
+
+    <!-- Step 3: Resumen -->
+    <div id="step3" class="hidden">
+      <div class="resumen-header" id="resumenHeader"></div>
+      <div class="resumen-items" id="resumenItems"></div>
+      <div class="totales" id="totales"></div>
+    </div>
+  </div>
+
+  <!-- STICKY CTA -->
+  <div class="sticky-cta hidden" id="stickyCta">
+    <button class="cta-btn" id="ctaBtn" onclick="ctaAction()">
+      <span id="ctaBtnText">Continuar</span>
+    </button>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <a href="/" class="nav-item"><span class="nav-icon">&#127968;</span><span>Inicio</span></a>
+    <a href="/pedidos" class="nav-item active"><span class="nav-icon">&#128203;</span><span>Pedidos</span></a>
+    <a href="/cocina-display" class="nav-item"><span class="nav-icon">&#128293;</span><span>Cocina</span></a>
+    <a href="/caja" class="nav-item"><span class="nav-icon">&#128181;</span><span>Caja</span></a>
+    <a href="/mas" class="nav-item"><span class="nav-icon">&#9776;</span><span>Mas</span></a>
+  </nav>
+
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Data ──────────────────────────────────────────────────────────────
+const MESAS_DATA = <%- JSON.stringify(mesas) %>;
+
+let currentStep = 1;
+let selectedMesa = null;
+let productos = [];
+let cart = {}; // { producto_id: { cantidad, nombre, precio, emoji } }
+let activeCat = null;
+
+// ── Toast ─────────────────────────────────────────────────────────────
+function showToast(msg, type = '') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast' + (type ? ' ' + type : '');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ── Loading ───────────────────────────────────────────────────────────
+function showLoading() {
+  let el = document.getElementById('loadingOverlay');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'loadingOverlay';
+    el.className = 'loading-overlay';
+    el.innerHTML = '<div class="spinner"></div>';
+    document.body.appendChild(el);
+  }
+  el.classList.remove('hidden');
+}
+function hideLoading() {
+  const el = document.getElementById('loadingOverlay');
+  if (el) el.classList.add('hidden');
+}
+
+// ── Navigation ────────────────────────────────────────────────────────
+function goBack() {
+  if (currentStep === 1) {
+    window.location.href = '/pedidos';
+  } else if (currentStep === 2) {
+    gotoStep(1);
+  } else if (currentStep === 3) {
+    gotoStep(2);
+  }
+}
+
+function gotoStep(n) {
+  currentStep = n;
+  document.getElementById('step1').classList.toggle('hidden', n !== 1);
+  document.getElementById('step2').classList.toggle('hidden', n !== 2);
+  document.getElementById('step3').classList.toggle('hidden', n !== 3);
+
+  const stepEl = document.getElementById('headerStep');
+  const titleEl = document.getElementById('headerTitle');
+  const subtitleEl = document.getElementById('headerSubtitle');
+  const cta = document.getElementById('stickyCta');
+
+  if (n === 1) {
+    stepEl.textContent = 'PASO 1/3';
+    titleEl.textContent = 'Nuevo Pedido';
+    subtitleEl.textContent = 'Selecciona una mesa';
+    cta.classList.add('hidden');
+  } else if (n === 2) {
+    stepEl.textContent = 'PASO 2/3';
+    titleEl.textContent = 'Mesa ' + selectedMesa.numero + ' · Productos';
+    subtitleEl.textContent = 'Elige los productos';
+    updateCartCTA();
+  } else if (n === 3) {
+    stepEl.textContent = 'PASO 3/3';
+    titleEl.textContent = 'Resumen';
+    subtitleEl.textContent = 'Mesa ' + selectedMesa.numero;
+    cta.classList.remove('hidden');
+    document.getElementById('ctaBtnText').textContent = '✈ Enviar a Cocina';
+    renderResumen();
+  }
+}
+
+// ── CTA action ────────────────────────────────────────────────────────
+function ctaAction() {
+  if (currentStep === 2) {
+    const total = cartTotal();
+    if (total === 0) { showToast('Agrega al menos un producto', 'error'); return; }
+    gotoStep(3);
+  } else if (currentStep === 3) {
+    enviarACocina();
+  }
+}
+
+// ── Step 1: Mesas ─────────────────────────────────────────────────────
+function renderMesas() {
+  const grid = document.getElementById('mesasGrid');
+  const libres = MESAS_DATA.filter(m => m.estado === 'libre').length;
+  document.getElementById('headerSubtitle').textContent =
+    libres + ' mesa' + (libres !== 1 ? 's' : '') + ' disponible' + (libres !== 1 ? 's' : '');
+
+  grid.innerHTML = MESAS_DATA.map(m => {
+    const isOcupada = m.estado === 'ocupada';
+    const chipClass = isOcupada ? 'chip-ocupada' : 'chip-libre';
+    const chipLabel = isOcupada ? 'Ocupada' : 'Libre';
+    const emoji = m.emoji || '🍴';
+    const vip = m.vip ? '<span class="vip-badge">VIP</span>' : '';
+    return `<div class="mesa-card ${isOcupada ? 'ocupada' : ''}" onclick="selectMesa(${m.id})" id="mesa_${m.id}">
+      <div class="mesa-icon">${emoji}</div>
+      <div class="mesa-name">Mesa ${m.numero}</div>
+      <div class="mesa-sillas">${m.sillas || m.capacidad || 0} sillas</div>
+      <div class="mesa-footer">
+        <span class="status-chip ${chipClass}">${chipLabel}</span>
+        ${vip}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function selectMesa(mesaId) {
+  // Highlight
+  document.querySelectorAll('.mesa-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('mesa_' + mesaId).classList.add('selected');
+
+  showLoading();
+  try {
+    const resp = await fetch('/pedido-nuevo/mesa/' + mesaId + '/productos');
+    if (!resp.ok) throw new Error('Error ' + resp.status);
+    const data = await resp.json();
+    selectedMesa = data.mesa;
+    productos = data.productos || [];
+    cart = {};
+    activeCat = null;
+    hideLoading();
+    renderProductos();
+    gotoStep(2);
+  } catch (e) {
+    hideLoading();
+    showToast('Error al cargar productos', 'error');
+  }
+}
+
+// ── Step 2: Productos ─────────────────────────────────────────────────
+function renderProductos() {
+  const cats = [...new Set(productos.map(p => p.categoria || 'Otros'))];
+  if (!activeCat) activeCat = cats[0] || null;
+
+  const catsBar = document.getElementById('catsBar');
+  catsBar.innerHTML = cats.map(cat =>
+    `<button class="cat-btn ${cat === activeCat ? 'active' : ''}" onclick="setCat('${cat}')">${cat}</button>`
+  ).join('');
+
+  renderProductList();
+}
+
+function setCat(cat) {
+  activeCat = cat;
+  renderProductos();
+}
+
+function renderProductList() {
+  const list = document.getElementById('productsList');
+  const filtered = productos.filter(p => (p.categoria || 'Otros') === activeCat);
+  list.innerHTML = filtered.map(p => {
+    const qty = (cart[p.id] || {}).cantidad || 0;
+    const emoji = p.emoji || '🍽';
+    return `<div class="product-card">
+      <div class="prod-emoji">${emoji}</div>
+      <div class="prod-info">
+        <div class="prod-name">${escHtml(p.nombre)}</div>
+        ${p.descripcion ? `<div class="prod-desc">${escHtml(p.descripcion)}</div>` : ''}
+        <div class="prod-price">S/ ${Number(p.precio).toFixed(2)}</div>
+      </div>
+      <div class="qty-ctrl">
+        <button class="qty-btn minus" onclick="changeQty(${p.id}, -1)">-</button>
+        <span class="qty-num" id="qty_${p.id}">${qty}</span>
+        <button class="qty-btn" onclick="changeQty(${p.id}, 1)">+</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function changeQty(prodId, delta) {
+  const prod = productos.find(p => p.id === prodId);
+  if (!prod) return;
+  const prev = (cart[prodId] || {}).cantidad || 0;
+  const next = Math.max(0, prev + delta);
+  if (next === 0) {
+    delete cart[prodId];
+  } else {
+    cart[prodId] = { cantidad: next, nombre: prod.nombre, precio: Number(prod.precio), emoji: prod.emoji };
+  }
+  const qtyEl = document.getElementById('qty_' + prodId);
+  if (qtyEl) qtyEl.textContent = next;
+  updateCartCTA();
+}
+
+function cartTotal() {
+  return Object.values(cart).reduce((s, i) => s + i.cantidad * i.precio, 0);
+}
+
+function cartCount() {
+  return Object.values(cart).reduce((s, i) => s + i.cantidad, 0);
+}
+
+function updateCartCTA() {
+  const cta = document.getElementById('stickyCta');
+  const count = cartCount();
+  const total = cartTotal();
+  if (count === 0) {
+    cta.classList.add('hidden');
+  } else {
+    cta.classList.remove('hidden');
+    document.getElementById('ctaBtnText').textContent =
+      '🛒 Ver pedido (' + count + ') · S/ ' + total.toFixed(2);
+  }
+}
+
+// ── Step 3: Resumen ───────────────────────────────────────────────────
+function renderResumen() {
+  const mesa = selectedMesa;
+  document.getElementById('resumenHeader').innerHTML = `
+    <div class="resumen-mesa">Mesa ${mesa.numero}</div>
+    <div class="resumen-meta">Mozo: <%- user && user.nombre ? user.nombre : 'Sin asignar' %></div>
+  `;
+
+  const entries = Object.entries(cart);
+  const itemsHtml = entries.map(([id, item]) => `
+    <div class="resumen-item-row">
+      <div>
+        <span class="resumen-item-qty">${item.cantidad}× </span>
+        <span class="resumen-item-name">${escHtml(item.nombre)}</span>
+      </div>
+      <div class="resumen-item-price">S/ ${(item.cantidad * item.precio).toFixed(2)}</div>
+    </div>
+  `).join('');
+  document.getElementById('resumenItems').innerHTML = itemsHtml || '<p style="color:#8B8FAD;text-align:center;padding:8px">Sin items</p>';
+
+  const subtotal = cartTotal();
+  const igv = subtotal * 0.18;
+  const total = subtotal + igv;
+  document.getElementById('totales').innerHTML = `
+    <div class="totales-row">
+      <span class="totales-label">Subtotal</span>
+      <span class="totales-value">S/ ${subtotal.toFixed(2)}</span>
+    </div>
+    <div class="totales-row">
+      <span class="totales-label">IGV (18%)</span>
+      <span class="totales-value">S/ ${igv.toFixed(2)}</span>
+    </div>
+    <div class="divider"></div>
+    <div class="totales-row">
+      <span class="totales-total-label">Total</span>
+      <span class="totales-total-value">S/ ${total.toFixed(2)}</span>
+    </div>
+  `;
+}
+
+// ── Enviar a cocina ───────────────────────────────────────────────────
+async function enviarACocina() {
+  const btn = document.getElementById('ctaBtn');
+  btn.disabled = true;
+  showLoading();
+
+  const items = Object.entries(cart).map(([prod_id, item]) => ({
+    producto_id: Number(prod_id),
+    cantidad: item.cantidad,
+    nota: null
+  }));
+
+  try {
+    const resp = await fetch('/pedido-nuevo/confirmar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ mesa_id: selectedMesa.id, items })
+    });
+    const data = await resp.json();
+    hideLoading();
+    if (data.ok) {
+      showToast('Pedido enviado a cocina', 'success');
+      setTimeout(() => { window.location.href = '/pedidos'; }, 1200);
+    } else {
+      btn.disabled = false;
+      showToast(data.error || 'Error al enviar', 'error');
+    }
+  } catch (e) {
+    hideLoading();
+    btn.disabled = false;
+    showToast('Error de conexion', 'error');
+  }
+}
+
+// ── Utils ─────────────────────────────────────────────────────────────
+function escHtml(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// ── Init ──────────────────────────────────────────────────────────────
+renderMesas();
+</script>
+<script src="/js/dallia-fab.js"></script>
+</body>
+</html>

@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Setup del Sistema — MiRestcon IA</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --orange:       #ef520f;
+      --orange-dark:  #df2c05;
+      --bg:           #F0F2F8;
+      --dark-from:    #10152f;
+      --dark-mid:     #0a0f24;
+      --dark-to:      #090d1d;
+      --text-primary: #0a0f24;
+      --text-sec:     #8B8FAD;
+      --success:      #22C55E;
+      --error:        #EF4444;
+      --white:        #ffffff;
+    }
+
+    html, body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text-primary);
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── header ── */
+    .header {
+      background: linear-gradient(180deg, var(--dark-from) 0%, var(--dark-mid) 55%, var(--dark-to) 100%);
+      border-radius: 0 0 20px 20px;
+      padding: 48px 20px 28px;
+      text-align: center;
+      position: relative;
+    }
+
+    .header-avatar {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--orange) 0%, var(--orange-dark) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 30px;
+      margin: 0 auto 12px;
+      box-shadow: 0 4px 20px rgba(239,82,15,0.40);
+    }
+
+    .header h1 {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--white);
+      line-height: 1.2;
+      margin-bottom: 4px;
+    }
+
+    .header-sub {
+      font-size: 13px;
+      color: rgba(255,255,255,0.55);
+      font-weight: 500;
+    }
+
+    /* ── page body ── */
+    .page-body {
+      max-width: 480px;
+      margin: 0 auto;
+      padding: 16px 16px 100px;
+    }
+
+    /* ── dallia card ── */
+    .dallia-card {
+      background: var(--white);
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 12px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      box-shadow: 0 2px 12px rgba(10,15,36,0.07);
+    }
+
+    .dallia-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--orange) 0%, var(--orange-dark) 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      flex-shrink: 0;
+    }
+
+    .dallia-bubble {
+      background: #F0F2F8;
+      border-radius: 0 12px 12px 12px;
+      padding: 10px 14px;
+      font-size: 14px;
+      line-height: 1.5;
+      color: var(--text-primary);
+      flex: 1;
+    }
+
+    /* ── day card ── */
+    .day-card {
+      background: var(--white);
+      border-radius: 16px;
+      box-shadow: 0 2px 12px rgba(10,15,36,0.07);
+      margin-bottom: 12px;
+      overflow: hidden;
+    }
+
+    .day-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px;
+      cursor: pointer;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .day-card-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .day-number {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--white);
+      flex-shrink: 0;
+    }
+    .day-number.orange { background: linear-gradient(135deg, var(--orange) 0%, var(--orange-dark) 100%); }
+    .day-number.gray   { background: #CBD5E1; }
+
+    .day-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    .day-subtitle {
+      font-size: 12px;
+      color: var(--text-sec);
+      margin-top: 2px;
+    }
+
+    .day-badge {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 20px;
+    }
+    .day-badge.done    { background: #DCFCE7; color: #16A34A; }
+    .day-badge.pending { background: #F1F5F9; color: var(--text-sec); }
+
+    .day-card-body {
+      padding: 0 16px 16px;
+      display: none;
+    }
+    .day-card-body.expanded { display: block; }
+
+    .section-label {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-sec);
+      margin: 16px 0 10px;
+    }
+
+    /* ── chips ── */
+    .chips-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 7px 13px;
+      border-radius: 24px;
+      border: 1.5px solid #E2E8F0;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      background: var(--white);
+      color: var(--text-primary);
+      transition: border-color .15s, background .15s, color .15s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .chip:active { opacity: .75; }
+    .chip.active {
+      border-color: var(--orange);
+      background: #FFF4EF;
+      color: var(--orange-dark);
+    }
+    .chip.active::before { content: '✓ '; }
+
+    /* ── mini form ── */
+    .form-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .form-row.col { flex-direction: column; }
+
+    input[type="text"],
+    input[type="number"],
+    input[type="password"],
+    select,
+    textarea {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      border: 1.5px solid #E2E8F0;
+      border-radius: 10px;
+      padding: 10px 12px;
+      color: var(--text-primary);
+      background: var(--white);
+      outline: none;
+      width: 100%;
+      -webkit-appearance: none;
+    }
+    input:focus, select:focus { border-color: var(--orange); }
+
+    input[type="text"].emoji-input {
+      max-width: 72px;
+      text-align: center;
+      font-size: 20px;
+    }
+
+    /* ── checkboxes / radios ── */
+    .check-row {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    .check-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .check-item input[type="checkbox"],
+    .check-item input[type="radio"] {
+      width: 18px;
+      height: 18px;
+      accent-color: var(--orange);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    /* ── product counter ── */
+    .product-counter {
+      font-size: 13px;
+      color: var(--text-sec);
+      margin: 8px 0 4px;
+    }
+
+    .product-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+      min-height: 4px;
+    }
+
+    .product-chip {
+      background: #F0F2F8;
+      border-radius: 8px;
+      padding: 5px 10px;
+      font-size: 12px;
+      color: var(--text-primary);
+      font-weight: 500;
+    }
+
+    /* ── buttons ── */
+    .btn {
+      width: 100%;
+      padding: 14px;
+      border-radius: 12px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      border: none;
+      outline: none;
+      transition: opacity .15s, transform .1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .btn:active { opacity: .8; transform: scale(.98); }
+
+    .btn-orange {
+      background: linear-gradient(135deg, var(--orange) 0%, var(--orange-dark) 100%);
+      color: var(--white);
+      box-shadow: 0 4px 16px rgba(239,82,15,0.35);
+      margin-top: 16px;
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text-sec);
+      border: 1.5px solid #E2E8F0;
+      margin-top: 8px;
+    }
+
+    .btn-secondary {
+      background: #F0F2F8;
+      color: var(--text-primary);
+      margin-top: 8px;
+    }
+
+    .btn-small {
+      width: auto;
+      padding: 10px 18px;
+      font-size: 13px;
+    }
+
+    /* ── info card ── */
+    .info-card {
+      background: #F8FAFF;
+      border: 1.5px solid #E2E8F0;
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 13px;
+      color: var(--text-sec);
+      line-height: 1.5;
+      margin-bottom: 10px;
+    }
+    .info-card strong { color: var(--text-primary); }
+
+    /* ── insumo row ── */
+    .insumo-row {
+      display: grid;
+      grid-template-columns: 1fr 70px 60px;
+      gap: 6px;
+      margin-bottom: 6px;
+      align-items: center;
+    }
+
+    /* ── divider ── */
+    .divider {
+      height: 1px;
+      background: #F0F2F8;
+      margin: 14px 0;
+    }
+
+    /* ── toast ── */
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--dark-mid);
+      color: var(--white);
+      padding: 12px 22px;
+      border-radius: 24px;
+      font-size: 14px;
+      font-weight: 500;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+      opacity: 0;
+      transition: opacity .25s, transform .25s;
+      z-index: 9999;
+      max-width: 340px;
+      text-align: center;
+      pointer-events: none;
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    #toast.orange { background: linear-gradient(135deg, var(--orange) 0%, var(--orange-dark) 100%); }
+    #toast.red    { background: var(--error); }
+
+    /* ── spinner ── */
+    .spin {
+      display: inline-block;
+      width: 16px; height: 16px;
+      border: 2px solid rgba(255,255,255,0.4);
+      border-top-color: var(--white);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+<!-- ──────────── HEADER ──────────── -->
+<header class="header">
+  <div class="header-avatar">🤖</div>
+  <h1>Setup del sistema</h1>
+  <p class="header-sub">Día 1 de 3 — Configura tu restaurante en 10 minutos</p>
+</header>
+
+<div class="page-body">
+
+  <!-- DallIA welcome -->
+  <div class="dallia-card">
+    <div class="dallia-avatar">🤖</div>
+    <div class="dallia-bubble">
+      ¡Bienvenido a MiRestcon IA! Vamos a configurar tu restaurante paso a paso. Empieza cargando tu carta y configurando la caja. ¡Solo te tomará 10 minutos!
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       DÍA 1 — Tu Carta y Caja (REQUERIDO)
+  ══════════════════════════════════════ -->
+  <div class="day-card" id="card-dia1">
+    <div class="day-card-header" onclick="toggleCard(1)">
+      <div class="day-card-left">
+        <div class="day-number orange">1</div>
+        <div>
+          <div class="day-title">Tu Carta y Caja</div>
+          <div class="day-subtitle">Requerido — ~10 min</div>
+        </div>
+      </div>
+      <% if (tenant.setup_dia1_ok) { %>
+        <span class="day-badge done">✓ Listo</span>
+      <% } else { %>
+        <span class="day-badge pending">Pendiente</span>
+      <% } %>
+    </div>
+
+    <div class="day-card-body <%= tenant.setup_dia1_ok ? '' : 'expanded' %>" id="body-dia1">
+
+      <!-- A: Categorías -->
+      <div class="section-label">A — Categorías de tu carta</div>
+      <div class="chips-row" id="chips-categorias">
+        <% const catsDef = ['Entradas','Fondos','Bebidas','Postres','Bebidas calientes','Ensaladas','Otros']; %>
+        <% catsDef.forEach(function(cat){ %>
+          <button
+            class="chip <%= categorias.includes(cat) ? 'active' : '' %>"
+            id="chip-<%= cat.replace(/\s+/g,'_') %>"
+            onclick="agregarCategoria('<%= cat %>', this)">
+            <%= cat %>
+          </button>
+        <% }); %>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- B: Agregar productos -->
+      <div class="section-label">B — Agregar productos</div>
+
+      <p class="product-counter" id="productos-counter">
+        <strong id="productos-num"><%= productos_count %></strong> producto<span id="productos-s"><%= productos_count !== 1 ? 's' : '' %></span> en tu carta
+      </p>
+
+      <div class="form-row">
+        <input type="text" id="prod-nombre" placeholder="Nombre del plato" style="flex:1">
+        <input type="text" id="prod-emoji" class="emoji-input" placeholder="🍽️" maxlength="2">
+      </div>
+      <div class="form-row">
+        <input type="number" id="prod-precio" placeholder="Precio S/" min="0" step="0.5" style="flex:1">
+        <select id="prod-categoria" style="flex:1">
+          <option value="">Categoría</option>
+          <% catsDef.forEach(function(cat){ %>
+            <option value="<%= cat %>"><%= cat %></option>
+          <% }); %>
+        </select>
+      </div>
+      <input type="text" id="prod-descripcion" placeholder="Descripción (opcional)" style="margin-bottom:8px">
+
+      <button class="btn btn-secondary btn-small" onclick="agregarProducto()">+ Agregar producto</button>
+
+      <div class="product-chips" id="product-chips-list"></div>
+
+      <div class="divider"></div>
+
+      <!-- C: Configurar caja -->
+      <div class="section-label">C — Configurar caja</div>
+
+      <label style="font-size:13px;font-weight:600;display:block;margin-bottom:6px">Monto de apertura (S/)</label>
+      <input type="number" id="caja-apertura" value="100" min="0" step="10" style="margin-bottom:12px">
+
+      <label style="font-size:13px;font-weight:600;display:block;margin-bottom:8px">Métodos de pago</label>
+      <div class="check-row" style="margin-bottom:12px">
+        <label class="check-item"><input type="checkbox" name="metodo" value="efectivo" checked> Efectivo</label>
+        <label class="check-item"><input type="checkbox" name="metodo" value="yape_plin"> Yape / Plin</label>
+        <label class="check-item"><input type="checkbox" name="metodo" value="tarjeta"> Tarjeta</label>
+        <label class="check-item"><input type="checkbox" name="metodo" value="otros"> Otros</label>
+      </div>
+
+      <label style="font-size:13px;font-weight:600;display:block;margin-bottom:8px">Comprobante por defecto</label>
+      <div class="check-row" style="margin-bottom:12px">
+        <label class="check-item"><input type="radio" name="comprobante" value="boleta" checked> Boleta</label>
+        <label class="check-item"><input type="radio" name="comprobante" value="factura"> Factura</label>
+        <label class="check-item"><input type="radio" name="comprobante" value="ninguno"> Ninguno</label>
+      </div>
+
+      <button class="btn btn-secondary" onclick="guardarCaja()" id="btn-guardar-caja">Guardar configuración de caja</button>
+
+      <div class="divider"></div>
+
+      <!-- CTA Día 1 -->
+      <button class="btn btn-orange" id="btn-dia1" onclick="marcarDia(1)">
+        Listo — Mi carta está configurada
+      </button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       DÍA 2 — Integraciones (OPCIONAL)
+  ══════════════════════════════════════ -->
+  <div class="day-card" id="card-dia2">
+    <div class="day-card-header" onclick="toggleCard(2)">
+      <div class="day-card-left">
+        <div class="day-number <%= tenant.setup_dia1_ok ? 'orange' : 'gray' %>">2</div>
+        <div>
+          <div class="day-title">Integraciones</div>
+          <div class="day-subtitle">Opcional — SUNAT, WhatsApp, Delivery</div>
+        </div>
+      </div>
+      <% if (tenant.setup_dia2_ok) { %>
+        <span class="day-badge done">✓ Listo</span>
+      <% } else { %>
+        <span class="day-badge pending">Pendiente</span>
+      <% } %>
+    </div>
+
+    <div class="day-card-body <%= tenant.setup_dia2_ok ? '' : '' %>" id="body-dia2">
+
+      <%
+        const esInformal = ['informal','nrus'].includes(tenant.regimen_tributario);
+      %>
+
+      <!-- SUNAT (solo si no es informal) -->
+      <% if (!esInformal) { %>
+        <div class="section-label">Conectar SUNAT</div>
+        <div class="info-card">
+          <strong>Régimen: <%= tenant.regimen_tributario ? tenant.regimen_tributario.toUpperCase() : 'No definido' %></strong><br>
+          Ingresa tus credenciales para emitir comprobantes electrónicos.
+        </div>
+        <input type="text" id="sunat-ruc" placeholder="RUC (11 dígitos)" maxlength="11" style="margin-bottom:8px" inputmode="numeric">
+        <input type="text" id="sunat-usuario" placeholder="Usuario SOL" style="margin-bottom:8px">
+        <input type="password" id="sunat-clave" placeholder="Clave SOL" style="margin-bottom:8px">
+        <div class="form-row">
+          <input type="text" id="sunat-serie-boleta" placeholder="Serie boleta (ej. B001)" style="flex:1">
+          <input type="text" id="sunat-serie-factura" placeholder="Serie factura (ej. F001)" style="flex:1">
+        </div>
+        <button class="btn btn-secondary" style="margin-top:10px" onclick="guardarSunat()">Conectar SUNAT</button>
+        <div class="divider"></div>
+      <% } else { %>
+        <div class="info-card" style="margin-top:0">
+          Como negocio informal, no necesitas configurar SUNAT. Puedes hacerlo más adelante si cambias de régimen.
+        </div>
+        <div class="divider"></div>
+      <% } %>
+
+      <!-- WhatsApp -->
+      <div class="section-label">WhatsApp Business</div>
+      <div class="info-card">
+        Para recibir pedidos por WhatsApp, guarda este número en tus contactos y envía un mensaje de prueba.<br><br>
+        <strong>+51 999 000 000</strong> (número de demostración)<br><br>
+        Puedes configurar tu número real en <strong>Configuración &rarr; Canales</strong>.
+      </div>
+      <div class="divider"></div>
+
+      <!-- Delivery -->
+      <div class="section-label">Delivery</div>
+      <div class="info-card">
+        Puedes integrar Rappi, PedidosYa y Glovo más adelante desde <strong>Configuración &rarr; Delivery</strong>. No es necesario para comenzar.
+      </div>
+
+      <button class="btn btn-ghost" onclick="marcarDia(2)">Saltar por ahora</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════
+       DÍA 3 — Inventario (OPCIONAL)
+  ══════════════════════════════════════ -->
+  <div class="day-card" id="card-dia3">
+    <div class="day-card-header" onclick="toggleCard(3)">
+      <div class="day-card-left">
+        <div class="day-number <%= (tenant.setup_dia1_ok && tenant.setup_dia2_ok) ? 'orange' : 'gray' %>">3</div>
+        <div>
+          <div class="day-title">Inventario inicial</div>
+          <div class="day-subtitle">Opcional — carga tus insumos</div>
+        </div>
+      </div>
+      <% if (tenant.setup_dia3_ok) { %>
+        <span class="day-badge done">✓ Listo</span>
+      <% } else { %>
+        <span class="day-badge pending">Pendiente</span>
+      <% } %>
+    </div>
+
+    <div class="day-card-body" id="body-dia3">
+
+      <div class="info-card">
+        <strong>¿Tienes tus insumos listos?</strong> Puedes cargarlos ahora o más tarde desde <strong>Almacén &rarr; Ingredientes</strong>. Tienes actualmente <strong><%= insumos_count %></strong> insumo<%= insumos_count !== 1 ? 's' : '' %> registrado<%= insumos_count !== 1 ? 's' : '' %>.
+      </div>
+
+      <div class="section-label">Agregar insumos rápido</div>
+
+      <div id="insumos-container">
+        <div class="insumo-row">
+          <input type="text"   class="ins-nombre" placeholder="Insumo">
+          <select class="ins-unidad">
+            <option value="kg">kg</option>
+            <option value="L">L</option>
+            <option value="und">und</option>
+            <option value="g">g</option>
+            <option value="ml">ml</option>
+          </select>
+          <input type="number" class="ins-stock" placeholder="Stock" min="0" step="0.1">
+        </div>
+        <div class="insumo-row">
+          <input type="text"   class="ins-nombre" placeholder="Insumo">
+          <select class="ins-unidad">
+            <option value="kg">kg</option>
+            <option value="L">L</option>
+            <option value="und">und</option>
+            <option value="g">g</option>
+            <option value="ml">ml</option>
+          </select>
+          <input type="number" class="ins-stock" placeholder="Stock" min="0" step="0.1">
+        </div>
+        <div class="insumo-row">
+          <input type="text"   class="ins-nombre" placeholder="Insumo">
+          <select class="ins-unidad">
+            <option value="kg">kg</option>
+            <option value="L">L</option>
+            <option value="und">und</option>
+            <option value="g">g</option>
+            <option value="ml">ml</option>
+          </select>
+          <input type="number" class="ins-stock" placeholder="Stock" min="0" step="0.1">
+        </div>
+      </div>
+
+      <button class="btn btn-secondary" style="margin-top:10px" onclick="agregarAlmacen()">Agregar al almacén</button>
+
+      <button class="btn btn-ghost" onclick="marcarDia(3)">Lo hago después</button>
+    </div>
+  </div>
+
+</div><!-- /page-body -->
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+  // ── state ──────────────────────────────────────────────────────────────────
+  let productosCount   = <%= productos_count %>;
+  const categoriasActivas = new Set(<%= JSON.stringify(categorias) %>);
+
+  // ── toggle cards ──────────────────────────────────────────────────────────
+  function toggleCard(dia) {
+    const body = document.getElementById('body-dia' + dia);
+    if (!body) return;
+    body.classList.toggle('expanded');
+  }
+
+  // ── toast ─────────────────────────────────────────────────────────────────
+  let toastTimer;
+  function toast(msg, tipo) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.className   = 'show ' + (tipo || 'orange');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { el.className = ''; }, 3000);
+  }
+
+  // ── agregarCategoria ──────────────────────────────────────────────────────
+  async function agregarCategoria(cat, btn) {
+    if (categoriasActivas.has(cat)) return; // already active, nothing to do
+
+    try {
+      const res  = await fetch('/setup-sistema/api/agregar-categoria', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ categoria: cat })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        categoriasActivas.add(cat);
+        if (btn) btn.classList.add('active');
+        toast('Categoría "' + cat + '" agregada', 'orange');
+      } else {
+        toast(data.error || 'Error al agregar categoría', 'red');
+      }
+    } catch (e) {
+      toast('Error de red', 'red');
+    }
+  }
+
+  // ── agregarProducto ───────────────────────────────────────────────────────
+  async function agregarProducto() {
+    const nombre     = document.getElementById('prod-nombre').value.trim();
+    const precio     = document.getElementById('prod-precio').value;
+    const categoria  = document.getElementById('prod-categoria').value;
+    const descripcion= document.getElementById('prod-descripcion').value.trim();
+    const emoji      = document.getElementById('prod-emoji').value.trim();
+
+    if (!nombre)    { toast('Escribe el nombre del plato', 'red'); return; }
+    if (!precio)    { toast('Ingresa un precio', 'red'); return; }
+    if (!categoria) { toast('Selecciona una categoría', 'red'); return; }
+
+    try {
+      const res  = await fetch('/setup-sistema/api/agregar-producto', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ nombre, precio: parseFloat(precio), categoria, descripcion, emoji })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        productosCount++;
+        document.getElementById('productos-num').textContent = productosCount;
+        document.getElementById('productos-s').textContent   = productosCount !== 1 ? 's' : '';
+
+        // show chip
+        const chips  = document.getElementById('product-chips-list');
+        const chip   = document.createElement('span');
+        chip.className   = 'product-chip';
+        chip.textContent = (emoji || '🍽️') + ' ' + nombre;
+        chips.appendChild(chip);
+
+        // clear form
+        document.getElementById('prod-nombre').value      = '';
+        document.getElementById('prod-precio').value      = '';
+        document.getElementById('prod-descripcion').value = '';
+        document.getElementById('prod-emoji').value       = '';
+
+        toast('Producto agregado', 'orange');
+      } else {
+        toast(data.error || 'Error al agregar producto', 'red');
+      }
+    } catch (e) {
+      toast('Error de red', 'red');
+    }
+  }
+
+  // ── guardarCaja ───────────────────────────────────────────────────────────
+  async function guardarCaja() {
+    const monto = document.getElementById('caja-apertura').value;
+    const metodos = Array.from(document.querySelectorAll('input[name="metodo"]:checked')).map(el => el.value);
+    const comprobante = (document.querySelector('input[name="comprobante"]:checked') || {}).value || 'boleta';
+
+    if (metodos.length === 0) { toast('Selecciona al menos un método de pago', 'red'); return; }
+
+    const btn = document.getElementById('btn-guardar-caja');
+    btn.disabled    = true;
+    btn.innerHTML   = '<span class="spin"></span>Guardando...';
+
+    try {
+      const res  = await fetch('/setup-sistema/api/config-caja', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ monto_apertura: parseFloat(monto) || 0, metodos_pago: metodos, comprobante_default: comprobante })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        toast('Caja configurada correctamente', 'orange');
+      } else {
+        toast(data.error || 'Error al guardar caja', 'red');
+      }
+    } catch (e) {
+      toast('Error de red', 'red');
+    } finally {
+      btn.disabled  = false;
+      btn.innerHTML = 'Guardar configuración de caja';
+    }
+  }
+
+  // ── guardarSunat ──────────────────────────────────────────────────────────
+  async function guardarSunat() {
+    const ruc          = (document.getElementById('sunat-ruc')           || {}).value || '';
+    const usuario_sol  = (document.getElementById('sunat-usuario')       || {}).value || '';
+    const clave_sol    = (document.getElementById('sunat-clave')         || {}).value || '';
+    const serie_boleta = (document.getElementById('sunat-serie-boleta')  || {}).value || 'B001';
+    const serie_factura= (document.getElementById('sunat-serie-factura') || {}).value || 'F001';
+
+    if (!ruc || !usuario_sol || !clave_sol) {
+      toast('Completa RUC, usuario y clave SOL', 'red'); return;
+    }
+
+    try {
+      const res  = await fetch('/setup-sistema/api/config-sunat', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ ruc, usuario_sol, clave_sol, serie_boleta, serie_factura })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        toast('SUNAT configurado correctamente', 'orange');
+      } else {
+        toast(data.error || 'Error al guardar SUNAT', 'red');
+      }
+    } catch (e) {
+      toast('Error de red', 'red');
+    }
+  }
+
+  // ── marcarDia ─────────────────────────────────────────────────────────────
+  async function marcarDia(dia) {
+    const btnId = dia === 1 ? 'btn-dia1' : null;
+    const btn   = btnId ? document.getElementById(btnId) : null;
+    if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spin"></span>Guardando...'; }
+
+    try {
+      const res  = await fetch('/setup-sistema/api/marcar-dia', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ dia })
+      });
+      const data = await res.json();
+      if (data.ok) {
+        toast(dia === 1 ? '¡Día 1 completado! Redirigiendo...' : 'Guardado', 'orange');
+        if (data.redirect) {
+          setTimeout(() => { window.location.href = data.redirect; }, 1000);
+        }
+      } else {
+        toast(data.error || 'Error', 'red');
+        if (btn) { btn.disabled = false; btn.innerHTML = 'Listo — Mi carta está configurada'; }
+      }
+    } catch (e) {
+      toast('Error de red', 'red');
+      if (btn) { btn.disabled = false; btn.innerHTML = 'Listo — Mi carta está configurada'; }
+    }
+  }
+
+  // ── agregarAlmacen ────────────────────────────────────────────────────────
+  async function agregarAlmacen() {
+    const nombres  = Array.from(document.querySelectorAll('.ins-nombre')).map(el => el.value.trim());
+    const unidades = Array.from(document.querySelectorAll('.ins-unidad')).map(el => el.value);
+    const stocks   = Array.from(document.querySelectorAll('.ins-stock')).map(el => parseFloat(el.value) || 0);
+
+    const insumos = [];
+    for (let i = 0; i < nombres.length; i++) {
+      if (nombres[i]) {
+        insumos.push({ nombre: nombres[i], unidad: unidades[i], stock_actual: stocks[i] });
+      }
+    }
+
+    if (insumos.length === 0) { toast('Ingresa al menos un insumo', 'red'); return; }
+
+    let ok = 0;
+    for (const ins of insumos) {
+      try {
+        const res = await fetch('/almacen/ingredientes', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify(ins)
+        });
+        const data = await res.json();
+        if (data.ok || data.id) ok++;
+      } catch (_) {}
+    }
+
+    if (ok > 0) {
+      toast(ok + ' insumo' + (ok !== 1 ? 's' : '') + ' agregado' + (ok !== 1 ? 's' : ''), 'orange');
+    } else {
+      toast('No se pudieron agregar los insumos. Intenta desde Almacén.', 'red');
+    }
+  }
+</script>
+
+</body>
+</html>

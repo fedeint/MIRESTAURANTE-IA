@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0a0f24">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Cambiar Contraseña - MiRestcon IA</title>
+  <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family:'DM Sans',sans-serif; min-height:100vh; display:flex; align-items:center; justify-content:center; background:#F0F2F8; padding:20px; }
+    .card-pwd { max-width:420px; width:100%; background:#fff; border-radius:20px; box-shadow:0 8px 32px rgba(0,0,0,0.08); overflow:hidden; }
+    .card-header-dark { background:#0a0f24; padding:28px 24px; text-align:center; }
+    .field-input { width:100%; padding:14px 16px; border-radius:12px; border:1px solid #e5e7eb; background:#fff; font-size:15px; outline:none; transition:border-color .15s; }
+    .field-input:focus { border-color:#FF6B35; box-shadow:0 0 0 3px rgba(255,107,53,0.12); }
+    .btn-save { width:100%; padding:14px; border-radius:12px; border:none; background:linear-gradient(135deg,#FF6B35,#F59E0B); color:#fff; font-size:16px; font-weight:700; cursor:pointer; }
+    .btn-save:hover { opacity:0.9; }
+    .toggle-pwd { position:absolute; right:14px; top:50%; transform:translateY(-50%); background:none; border:none; color:#94a3b8; cursor:pointer; font-size:18px; }
+  </style>
+</head>
+<body>
+  <div class="card-pwd">
+    <div class="card-header-dark">
+      <img src="/isotipo.png" alt="MiRestcon IA" style="width:56px;height:56px;border-radius:14px;margin-bottom:12px;">
+      <h4 style="color:#fff;font-weight:700;font-size:20px;margin:0 0 4px;">Cambia tu contraseña</h4>
+      <p style="color:rgba(255,255,255,0.6);font-size:13px;margin:0;">Tu PIN temporal ha expirado o es tu primer ingreso</p>
+    </div>
+    <div style="padding:28px 24px;">
+      <% if (typeof error !== 'undefined' && error) { %>
+        <div style="background:#FEF2F2;border:1px solid #FECACA;border-radius:10px;padding:12px;margin-bottom:16px;">
+          <p style="color:#991B1B;font-size:13px;margin:0;"><i class="bi bi-exclamation-triangle me-1"></i><%= error %></p>
+        </div>
+      <% } %>
+      <form method="POST" action="/cambiar-contrasena" autocomplete="off">
+        <input type="hidden" name="_csrf" value="<%= locals.csrfToken || '' %>">
+        <div style="margin-bottom:16px;">
+          <label style="font-size:13px;font-weight:600;color:#64748b;display:block;margin-bottom:6px;">Nueva contraseña</label>
+          <div style="position:relative;">
+            <input type="password" name="nueva_contrasena" id="pwd" class="field-input" placeholder="Mínimo 8 caracteres" required minlength="8" autofocus>
+            <button type="button" class="toggle-pwd" onclick="togglePwd()"><i class="bi bi-eye" id="eyeIcon"></i></button>
+          </div>
+        </div>
+        <button type="submit" class="btn-save"><i class="bi bi-shield-check me-2"></i>Guardar nueva contraseña</button>
+      </form>
+      <div style="text-align:center;margin-top:16px;">
+        <a href="/logout" style="color:#94a3b8;font-size:13px;text-decoration:none;" onclick="event.preventDefault();fetch('/logout',{method:'POST'}).then(()=>location.href='/login')">Cerrar sesión</a>
+      </div>
+    </div>
+  </div>
+  <script>
+    function togglePwd() {
+      const f = document.getElementById('pwd');
+      const icon = document.getElementById('eyeIcon');
+      if (f.type === 'password') { f.type = 'text'; icon.className = 'bi bi-eye-slash'; }
+      else { f.type = 'password'; icon.className = 'bi bi-eye'; }
+    }
+  </script>
+</body>
+</html>

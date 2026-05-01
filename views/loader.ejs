@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0a0f24">
+  <title>Cargando... - MiRestcon IA</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #0a0f24;
+      gap: 24px;
+    }
+    .loader {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: url('/isotipo.png') center/contain no-repeat;
+      animation: wave 1.2s ease-in infinite;
+    }
+    @keyframes wave {
+      0% { box-shadow:
+        0 0 0 0px rgba(232,98,44,1),
+        0 0 0 20px rgba(232,98,44,0.2),
+        0 0 0 40px rgba(232,98,44,0.6),
+        0 0 0 60px rgba(232,98,44,0.4),
+        0 0 0 80px rgba(232,98,44,0.2);
+      }
+      100% { box-shadow:
+        0 0 0 80px rgba(232,98,44,0),
+        0 0 0 60px rgba(232,98,44,0.2),
+        0 0 0 40px rgba(232,98,44,0.4),
+        0 0 0 20px rgba(232,98,44,0.6),
+        0 0 0 0px rgba(232,98,44,1);
+      }
+    }
+    .loader-text { color: #8B8FAD; font-size: 15px; font-weight: 500; }
+    .loader-brand { color: #FF6B35; font-size: 13px; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <div class="loader"></div>
+  <p class="loader-text">Cargando...</p>
+  <p class="loader-brand">MiRestcon IA</p>
+</body>
+</html>

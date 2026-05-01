@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="/favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1e1b4b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="dignita">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+    <title>Pago seguro - MiRest con IA</title>
+    <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+    <% if (formToken && publicKey) { %>
+    <!-- Izipay Krypton SDK -->
+    <script type="text/javascript"
+            src="https://static.micuentaweb.pe/static/js/krypton-client/V4.0/stable/kr-payment-form.min.js"
+            kr-public-key="<%= publicKey %>"
+            kr-post-url-success="/api/pagos/izipay-success"
+            kr-language="es-ES">
+    </script>
+    <link rel="stylesheet"
+          href="https://static.micuentaweb.pe/static/js/krypton-client/V4.0/ext/classic.css">
+    <script type="text/javascript"
+            src="https://static.micuentaweb.pe/static/js/krypton-client/V4.0/ext/classic.js">
+    </script>
+    <% } %>
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #FFF8F0 0%, #FAFAF7 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1rem;
+        }
+        .checkout-card {
+            background: #fff;
+            border-radius: 1.5rem;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.08);
+            max-width: 480px;
+            width: 100%;
+            overflow: hidden;
+        }
+        .checkout-header {
+            background: linear-gradient(135deg, #1e1b4b, #312e81);
+            color: #fff;
+            padding: 2rem;
+            text-align: center;
+        }
+        .checkout-header h1 {
+            font-size: 1.3rem;
+            font-weight: 800;
+            margin: 0 0 0.5rem;
+        }
+        .checkout-header .plan-price {
+            font-size: 2.2rem;
+            font-weight: 900;
+            color: #F97316;
+        }
+        .checkout-header .plan-period {
+            font-size: 0.9rem;
+            color: rgba(255,255,255,0.6);
+        }
+        .checkout-header .plan-name {
+            font-size: 1rem;
+            color: rgba(255,255,255,0.8);
+            margin-top: 0.25rem;
+        }
+        .checkout-body {
+            padding: 2rem;
+        }
+        .checkout-footer {
+            padding: 1rem 2rem 1.5rem;
+            text-align: center;
+            border-top: 1px solid rgba(0,0,0,0.06);
+        }
+        .checkout-footer a {
+            color: #6366f1;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+        .kr-embedded {
+            min-height: 200px;
+        }
+        .security-badge {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            font-size: 0.78rem;
+            color: #94a3b8;
+            margin-top: 1.25rem;
+        }
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            color: #64748b;
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-bottom: 1.5rem;
+        }
+        .back-link:hover { color: #1e293b; }
+    </style>
+</head>
+<body>
+    <div>
+        <a href="/landing#precios" class="back-link">
+            <i class="bi bi-arrow-left"></i> Volver a planes
+        </a>
+
+        <div class="checkout-card">
+            <div class="checkout-header">
+                <h1><i class="bi bi-shield-lock me-2"></i>Pago seguro</h1>
+                <div class="plan-name"><%= plan.nombre %> — MiRest con IA</div>
+                <div class="plan-price">S/ <%= (plan.precio / 100).toLocaleString('es-PE') %></div>
+                <div class="plan-period"><%= plan.descripcion %></div>
+            </div>
+
+            <div class="checkout-body">
+                <% if (error) { %>
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle me-2"></i><%= error %>
+                    </div>
+                    <a href="/landing#precios" class="btn btn-outline-secondary w-100">Volver a intentar</a>
+                <% } else if (formToken) { %>
+                    <!-- Krypton embedded form - rendered server-side -->
+                    <div class="kr-embedded" kr-form-token="<%= formToken %>"></div>
+
+                    <div class="security-badge">
+                        <i class="bi bi-lock"></i>
+                        Procesado por Izipay — Visa, Mastercard, Amex
+                    </div>
+                <% } else { %>
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        No se pudo generar el formulario de pago. Intenta de nuevo.
+                    </div>
+                <% } %>
+            </div>
+
+            <div class="checkout-footer">
+                <a href="/landing#precios"><i class="bi bi-arrow-left me-1"></i>Cambiar de plan</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

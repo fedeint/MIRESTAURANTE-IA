@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Más · MiRestcon</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --orange: #ef520f; --orange2: #df2c05;
+      --dark: #0a0f24; --bg: #F0F2F8;
+      --card: #ffffff; --text2: #8B8FAD;
+      --safe-bot: env(safe-area-inset-bottom, 0px);
+    }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      min-height: 100dvh;
+      max-width: 480px;
+      margin: 0 auto;
+      padding-bottom: calc(72px + var(--safe-bot));
+    }
+
+    /* ── Header ── */
+    .header {
+      background: linear-gradient(170deg, #10152f 0%, #0a0f24 50%, #090d1d 100%);
+      padding: 52px 20px 24px;
+      border-radius: 0 0 20px 20px;
+      color: #fff;
+    }
+    .header-top {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 16px;
+    }
+    .header-title { font-size: 22px; font-weight: 800; }
+    .user-chip {
+      display: flex; align-items: center; gap: 8px;
+    }
+    .user-avatar {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: rgba(255,255,255,.15);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 14px; font-weight: 700; overflow: hidden;
+    }
+    .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .user-name { font-size: 13px; color: rgba(255,255,255,.8); font-weight: 500; }
+
+    /* ── DallIA banner ── */
+    .dallia-banner {
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.15);
+      border-radius: 14px;
+      padding: 12px 14px;
+      display: flex; align-items: center; gap: 12px;
+      text-decoration: none; color: #fff;
+      transition: background .2s;
+    }
+    .dallia-banner:active { background: rgba(255,255,255,.12); }
+    .dallia-orb {
+      width: 44px; height: 44px; border-radius: 12px;
+      background: linear-gradient(135deg, var(--orange), var(--orange2));
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; flex-shrink: 0;
+    }
+    .dallia-text { flex: 1; }
+    .dallia-title { font-size: 14px; font-weight: 700; }
+    .dallia-sub   { font-size: 12px; color: rgba(255,255,255,.65); margin-top: 1px; }
+    .dallia-arrow { color: rgba(255,255,255,.5); font-size: 20px; }
+
+    /* ── Sections ── */
+    .section { padding: 20px 16px 0; }
+    .section-label {
+      font-size: 11px; font-weight: 700;
+      color: var(--text2); text-transform: uppercase; letter-spacing: .8px;
+      margin-bottom: 10px;
+    }
+
+    /* ── Grid 2-col ── */
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    .module-card {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 16px;
+      display: flex; flex-direction: column; gap: 10px;
+      text-decoration: none; color: inherit;
+      box-shadow: 0 2px 8px rgba(0,0,0,.06);
+      transition: transform .15s;
+      position: relative; overflow: hidden;
+    }
+    .module-card:active { transform: scale(.97); }
+
+    .mod-icon {
+      width: 44px; height: 44px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+    }
+    .mod-title { font-size: 14px; font-weight: 700; color: var(--dark); line-height: 1.2; }
+    .mod-sub   { font-size: 11px; color: var(--text2); margin-top: 2px; }
+
+    /* Icon backgrounds */
+    .ic-orange  { background: #FFF3E0; }
+    .ic-blue    { background: #EDE9FE; }
+    .ic-green   { background: #DCFCE7; }
+    .ic-red     { background: #FEE2E2; }
+    .ic-purple  { background: #F5F3FF; }
+    .ic-teal    { background: #ECFDF5; }
+    .ic-yellow  { background: #FEFCE8; }
+    .ic-dark    { background: #F1F5F9; }
+    .ic-pink    { background: #FDF2F8; }
+
+    /* Badge en corner */
+    .mod-badge {
+      position: absolute; top: 10px; right: 10px;
+      background: var(--orange); color: #fff;
+      font-size: 10px; font-weight: 700;
+      padding: 2px 7px; border-radius: 20px;
+    }
+
+    /* ── Single wide card ── */
+    .wide-card {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 14px 16px;
+      display: flex; align-items: center; gap: 14px;
+      text-decoration: none; color: inherit;
+      box-shadow: 0 2px 8px rgba(0,0,0,.06);
+      transition: transform .15s;
+      margin-bottom: 10px;
+    }
+    .wide-card:active { transform: scale(.98); }
+    .wide-info { flex: 1; min-width: 0; }
+    .wide-title { font-size: 15px; font-weight: 600; color: var(--dark); }
+    .wide-sub   { font-size: 12px; color: var(--text2); margin-top: 2px; }
+    .wide-arrow { color: var(--text2); font-size: 20px; flex-shrink: 0; }
+
+    /* ── Bottom nav ── */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 50%;
+      transform: translateX(-50%);
+      width: 100%; max-width: 480px;
+      background: #fff; border-top: 1px solid #E8EAF2;
+      display: flex; padding-bottom: var(--safe-bot); z-index: 100;
+    }
+    .nav-item {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; padding: 10px 4px 8px;
+      text-decoration: none; color: var(--text2);
+      font-size: 10px; font-weight: 500;
+    }
+    .nav-item .icon { font-size: 22px; margin-bottom: 2px; }
+    .nav-item.active { color: var(--orange); }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="header-top">
+      <div class="header-title">Más</div>
+      <div class="user-chip">
+        <div class="user-avatar">
+          <% if (user.google_avatar) { %>
+          <img src="<%= user.google_avatar %>" alt="">
+          <% } else { %>
+          <%= (user.nombre || 'U')[0].toUpperCase() %>
+          <% } %>
+        </div>
+        <span class="user-name"><%= user.nombre || user.usuario || '' %></span>
+      </div>
+    </div>
+
+    <!-- DallIA banner -->
+    <a href="/dallia" class="dallia-banner">
+      <div class="dallia-orb">🤖</div>
+      <div class="dallia-text">
+        <div class="dallia-title">DallIA — Tu asistente IA</div>
+        <div class="dallia-sub">Pregúntame lo que quieras del restaurante</div>
+      </div>
+      <span class="dallia-arrow">›</span>
+    </a>
+  </div>
+
+  <!-- ── Finanzas ── -->
+  <div class="section">
+    <div class="section-label">Finanzas</div>
+    <div class="grid">
+      <a href="/sunat-pwa" class="module-card">
+        <div class="mod-icon ic-orange">📊</div>
+        <div>
+          <div class="mod-title">SUNAT</div>
+          <div class="mod-sub">IGV · Planilla · Vencimientos</div>
+        </div>
+      </a>
+      <a href="/sprint4/gastos-fijos" class="module-card">
+        <div class="mod-icon ic-blue">💳</div>
+        <div>
+          <div class="mod-title">Gastos Fijos</div>
+          <div class="mod-sub">Alquiler · Luz · Equilibrio</div>
+        </div>
+      </a>
+      <a href="/sprint4/propinas" class="module-card">
+        <div class="mod-icon ic-green">💵</div>
+        <div>
+          <div class="mod-title">Propinas</div>
+          <div class="mod-sub">Reparto por mesero</div>
+        </div>
+      </a>
+      <a href="/sunat-pwa/nota-credito" class="module-card">
+        <div class="mod-icon ic-red">🧾</div>
+        <div>
+          <div class="mod-title">Notas de crédito</div>
+          <div class="mod-sub">Emitir · Anular</div>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <!-- ── Marketing ── -->
+  <div class="section">
+    <div class="section-label">Marketing</div>
+    <div class="grid">
+      <a href="/sprint4/fidelidad" class="module-card">
+        <div class="mod-icon ic-purple">⭐</div>
+        <div>
+          <div class="mod-title">Fidelidad</div>
+          <div class="mod-sub">Puntos · Canjes · QR</div>
+        </div>
+      </a>
+      <a href="/sprint4/promociones" class="module-card">
+        <div class="mod-icon ic-yellow">🏷️</div>
+        <div>
+          <div class="mod-title">Promociones</div>
+          <div class="mod-sub">Códigos · ROI · Origen</div>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <!-- ── Operación ── -->
+  <div class="section">
+    <div class="section-label">Operación</div>
+    <div class="grid">
+      <a href="/sprint4/eventos" class="module-card">
+        <div class="mod-icon ic-teal">🎉</div>
+        <div>
+          <div class="mod-title">Eventos</div>
+          <div class="mod-sub">Catering · Reservas</div>
+        </div>
+      </a>
+      <a href="/sprint4/mantenimiento" class="module-card">
+        <div class="mod-icon ic-dark">🔧</div>
+        <div>
+          <div class="mod-title">Mantenimiento</div>
+          <div class="mod-sub">Equipos · Calendario</div>
+        </div>
+      </a>
+      <a href="/cortesias/nueva" class="module-card">
+        <div class="mod-icon ic-pink">🎁</div>
+        <div>
+          <div class="mod-title">Cortesías</div>
+          <div class="mod-sub">Registrar · Límites</div>
+        </div>
+      </a>
+      <a href="/sprint4/personal-eventual" class="module-card">
+        <div class="mod-icon ic-dark">👷</div>
+        <div>
+          <div class="mod-title">Personal Eventual</div>
+          <div class="mod-sub">Por día · Prueba · Semanal</div>
+        </div>
+      </a>
+      <a href="/para-llevar" class="module-card">
+        <div class="mod-icon ic-orange">🛍️</div>
+        <div>
+          <div class="mod-title">Para llevar</div>
+          <div class="mod-sub">Pedidos · Despacho</div>
+        </div>
+      </a>
+    </div>
+  </div>
+
+  <!-- ── Legal ── -->
+  <div class="section">
+    <div class="section-label">Legal</div>
+    <a href="/legal-pwa/permisos" class="wide-card">
+      <div class="mod-icon ic-red">📋</div>
+      <div class="wide-info">
+        <div class="wide-title">Permisos y Legal</div>
+        <div class="wide-sub">Licencias · Defensa Civil · Carnets · Semáforo</div>
+      </div>
+      <span class="wide-arrow">›</span>
+    </a>
+    <a href="/legal-pwa/reclamaciones" class="wide-card">
+      <div class="mod-icon ic-blue">📝</div>
+      <div class="wide-info">
+        <div class="wide-title">Libro de Reclamaciones</div>
+        <div class="wide-sub">Admin · Responder · INDECOPI</div>
+      </div>
+      <span class="wide-arrow">›</span>
+    </a>
+  </div>
+
+  <!-- ── IA y configuración ── -->
+  <div class="section">
+    <div class="section-label">IA y Configuración</div>
+    <a href="/dallia" class="wide-card">
+      <div class="mod-icon" style="background:linear-gradient(135deg,#ef520f,#df2c05);font-size:20px;width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;">🤖</div>
+      <div class="wide-info">
+        <div class="wide-title">DallIA Chat</div>
+        <div class="wide-sub">Asistente IA · Alertas · Análisis</div>
+      </div>
+      <span class="wide-arrow">›</span>
+    </a>
+    <a href="/dallia/voz" class="wide-card">
+      <div class="mod-icon ic-purple">🎙️</div>
+      <div class="wide-info">
+        <div class="wide-title">DallIA Voz</div>
+        <div class="wide-sub">Modo orb · Manos libres</div>
+      </div>
+      <span class="wide-arrow">›</span>
+    </a>
+    <a href="/sunat" class="wide-card">
+      <div class="mod-icon ic-dark">⚙️</div>
+      <div class="wide-info">
+        <div class="wide-title">Configuración SUNAT</div>
+        <div class="wide-sub">RUC · OSE · WhatsApp</div>
+      </div>
+      <span class="wide-arrow">›</span>
+    </a>
+    <a href="/config/dallia" class="wide-card">
+      <div class="mod-icon ic-orange">🤖</div>
+      <div class="wide-info">
+        <div class="wide-title">Personalizar DallIA</div>
+        <div class="wide-sub">Nombre · Personalidad · Capacidades</div>
+      </div>
+      <span class="wide-arrow">›</span>
+    </a>
+    <a href="/config/alertas" class="wide-card">
+      <div class="mod-icon ic-blue">🔔</div>
+      <div class="wide-info">
+        <div class="wide-title">Alertas y Notificaciones</div>
+        <div class="wide-sub">Push · WhatsApp · No molestar</div>
+      </div>
+      <span class="wide-arrow">›</span>
+    </a>
+    <a href="/config/modulos" class="wide-card">
+      <div class="mod-icon ic-purple">🧩</div>
+      <div class="wide-info">
+        <div class="wide-title">Módulos del Sistema</div>
+        <div class="wide-sub">Activar · Desactivar · Integraciones</div>
+      </div>
+      <span class="wide-arrow">›</span>
+    </a>
+    <a href="/config/horarios" class="wide-card">
+      <div class="mod-icon ic-teal">🕐</div>
+      <div class="wide-info">
+        <div class="wide-title">Horarios de Operación</div>
+        <div class="wide-sub">Apertura · Cierre · Días de trabajo</div>
+      </div>
+      <span class="wide-arrow">›</span>
+    </a>
+    <a href="/config/tour" class="wide-card">
+      <div class="mod-icon ic-yellow">🎓</div>
+      <div class="wide-info">
+        <div class="wide-title">Tour del Sistema</div>
+        <div class="wide-sub">Aprende · Guía paso a paso</div>
+      </div>
+      <span class="wide-arrow">›</span>
+    </a>
+  </div>
+
+  <!-- Espacio extra -->
+  <div style="height: 16px;"></div>
+
+  <!-- Bottom Nav -->
+  <nav class="bottom-nav">
+    <a href="/"        class="nav-item"><span class="icon">🏠</span>Inicio</a>
+    <a href="/pedidos" class="nav-item"><span class="icon">🧾</span>Pedidos</a>
+    <a href="/cocina-display"  class="nav-item"><span class="icon">👨‍🍳</span>Cocina</a>
+    <a href="/caja"    class="nav-item"><span class="icon">💰</span>Caja</a>
+    <a href="/mas"     class="nav-item active"><span class="icon">☰</span>Más</a>
+  </nav>
+
+  <script src="/js/dallia-fab.js"></script>
+</body>
+</html>

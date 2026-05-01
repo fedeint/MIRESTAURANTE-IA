@@ -1,0 +1,655 @@
+<%# @variant: desktop — sidebar shell. Role-based nav + new MiRest design system.
+     Reference: React component "MiRestSidebarIcons" (2026-04-08).
+     Used by all desktop variants via include('./partials/sidebar', { user, reqPath, csrfToken }). %>
+<%
+  const u = (typeof user !== 'undefined' && user) ? user : null;
+  const rol = u ? String(u.rol || '').toLowerCase() : '';
+  const cp = (typeof reqPath !== 'undefined') ? reqPath : '';
+  const isSuperadmin = rol === 'superadmin';
+  const isAdmin = rol === 'administrador';
+  const isCajero = rol === 'cajero';
+  const isMesero = rol === 'mesero';
+  const isCocinero = rol === 'cocinero';
+  const isAlmacenero = rol === 'almacenero';
+  // Helper to mark active links
+  function active(path, exact) {
+    if (exact) return cp === path ? 'active' : '';
+    return cp.startsWith(path) ? 'active' : '';
+  }
+%>
+
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&display=swap" rel="stylesheet">
+
+<style>
+  /* === MiRest Sidebar (new design 2026-04-08) === */
+  .mr-sidebar {
+    width: 280px;
+    min-height: 100vh;
+    border-radius: 0 28px 28px 0;
+    background:
+      radial-gradient(circle at top left, rgba(39,58,160,.38), transparent 30%),
+      radial-gradient(circle at 20% 15%, rgba(255,120,61,.08), transparent 22%),
+      linear-gradient(180deg, #10152f 0%, #0a0f24 55%, #090d1d 100%);
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,.06),
+      0 24px 60px rgba(3,7,18,.35);
+    color: #eef2ff;
+    padding: 12px 16px 14px;
+    position: fixed;
+    top: 0;
+    left: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    font-family: 'Inter', -apple-system, sans-serif;
+    z-index: 1030;
+    box-sizing: border-box;
+  }
+  .mr-sidebar *, .mr-sidebar *::before, .mr-sidebar *::after { box-sizing: border-box; }
+  .mr-sidebar::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(255,255,255,.02), transparent 16%, transparent 84%, rgba(255,255,255,.015));
+    pointer-events: none;
+  }
+
+  .mr-brand-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    position: relative;
+    z-index: 1;
+  }
+  .mr-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    text-decoration: none;
+  }
+  .mr-brand-mark {
+    width: 44px;
+    height: 44px;
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+  }
+  .mr-brand-text {
+    font-size: 19px;
+    font-weight: 800;
+    letter-spacing: -.03em;
+    white-space: nowrap;
+  }
+  .mr-text-white { color: rgba(237,241,255,.96); }
+  .mr-text-orange { color: #ff7a33; }
+
+  .mr-collapse-btn {
+    width: 40px;
+    height: 44px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,.08);
+    background: rgba(255,255,255,.02);
+    display: grid;
+    place-items: center;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.03);
+    color: rgba(240,244,255,.9);
+    cursor: pointer;
+  }
+
+  .mr-nav-item {
+    height: 50px;
+    width: 100%;
+    border: 0;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 14px;
+    color: rgba(186,194,225,.78);
+    transition: transform .24s ease, color .24s ease, background .35s ease, box-shadow .35s ease, filter .24s ease;
+    position: relative;
+    overflow: hidden;
+    text-align: left;
+    cursor: pointer;
+    background: transparent;
+    z-index: 1;
+    text-decoration: none;
+  }
+  .mr-assistant {
+    margin-bottom: 4px;
+    color: rgba(210,217,241,.82);
+  }
+  .mr-nav-item::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, rgba(255,255,255,.06), transparent 55%);
+    opacity: 0;
+    transition: opacity .22s ease;
+    pointer-events: none;
+  }
+  .mr-nav-item::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    opacity: 0;
+    transition: opacity .35s ease;
+    pointer-events: none;
+  }
+  .mr-nav-item:hover {
+    color: #f6f8ff;
+    background: rgba(255,255,255,.03);
+    transform: translateX(2px);
+  }
+  .mr-nav-item:hover::before { opacity: 1; }
+  .mr-nav-item.active {
+    color: white;
+    background: linear-gradient(
+      270deg,
+      #FEFBF5 0%,
+      #FDB75E 4%,
+      #FD9931 9%,
+      #EF520F 38%,
+      #DF2C05 79%,
+      #E13809 89%,
+      #FBA251 97%,
+      #EE6D2D 100%
+    );
+    box-shadow:
+      0 0 34px rgba(239,82,15,.24),
+      0 14px 30px rgba(223,44,5,.18),
+      inset 0 1px 0 rgba(255,255,255,.12),
+      inset 0 -4px 0 rgba(175,41,0,.28);
+    filter: saturate(1.04);
+  }
+  .mr-nav-item.active:hover {
+    transform: translateX(2px);
+  }
+  .mr-nav-item.active::after {
+    opacity: 1;
+    background:
+      radial-gradient(circle at 7% 10%, rgba(255,255,255,.58) 0%, rgba(255,255,255,.18) 7%, rgba(255,255,255,0) 16%),
+      radial-gradient(circle at 96% 82%, rgba(255,239,210,.55) 0%, rgba(255,239,210,0) 12%),
+      linear-gradient(180deg, rgba(255,255,255,.12) 0%, rgba(255,255,255,0) 24%, rgba(255,255,255,0) 76%, rgba(86,15,0,.10) 100%);
+  }
+
+  .mr-icon-wrap {
+    width: 22px;
+    height: 22px;
+    display: grid;
+    place-items: center;
+    flex: 0 0 auto;
+    position: relative;
+  }
+  .mr-nav-item svg {
+    width: 21px;
+    height: 21px;
+    stroke: currentColor;
+    fill: none;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    overflow: visible;
+  }
+  .mr-nav-item.active svg {
+    filter: drop-shadow(0 0 6px rgba(255,255,255,.18));
+  }
+  .mr-glow-dot {
+    position: absolute;
+    width: 5px;
+    height: 5px;
+    border-radius: 999px;
+    background: #ffd0a7;
+    right: -2px;
+    top: 2px;
+    opacity: 0;
+    transform: scale(.5);
+    box-shadow: 0 0 10px rgba(255,208,167,.8);
+    transition: .22s ease;
+  }
+  .mr-nav-item:hover .mr-glow-dot,
+  .mr-nav-item.active .mr-glow-dot {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  .mr-nav-label {
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: -.01em;
+  }
+  .mr-nav-item.active .mr-nav-label { font-weight: 700; }
+
+  .mr-section-title {
+    font-size: 11px;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: rgba(207,152,95,.62);
+    font-weight: 700;
+    padding: 18px 10px 10px;
+    position: relative;
+    z-index: 1;
+  }
+  .mr-nav-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .mr-footer {
+    margin-top: 18px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255,255,255,.06);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    position: relative;
+    z-index: 1;
+  }
+  .mr-user-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+  .mr-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.06);
+    display: grid;
+    place-items: center;
+    color: rgba(240,244,255,.78);
+    flex: 0 0 auto;
+  }
+  .mr-user-name {
+    font-size: 14px;
+    font-weight: 700;
+    color: rgba(248,250,255,.92);
+    line-height: 1.1;
+  }
+  .mr-user-role {
+    font-size: 13px;
+    color: rgba(181,189,218,.68);
+    margin-top: 2px;
+    text-transform: capitalize;
+  }
+  .mr-logout-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,.08);
+    background: rgba(255,255,255,.025);
+    display: grid;
+    place-items: center;
+    color: rgba(234,239,255,.8);
+    flex: 0 0 auto;
+    cursor: pointer;
+  }
+  .mr-logout-btn:hover { background: rgba(255,255,255,.08); }
+
+  /* === Animations === */
+  @keyframes mr-orbit { 0%, 100% { transform: translateY(0); opacity: .9; } 50% { transform: translateY(-1.5px); opacity: 1; } }
+  .mr-icon-inicio .d1 { animation: mr-orbit 1.8s ease-in-out infinite; }
+  .mr-icon-inicio .d2 { animation: mr-orbit 1.8s ease-in-out infinite .15s; }
+  .mr-icon-inicio .d3 { animation: mr-orbit 1.8s ease-in-out infinite .3s; }
+  .mr-icon-inicio .d4 { animation: mr-orbit 1.8s ease-in-out infinite .45s; }
+
+  .mr-flow-path { stroke-dasharray: 12; stroke-dashoffset: 12; }
+  .mr-nav-item:hover .mr-flow-path, .mr-nav-item.active .mr-flow-path { animation: mr-draw-flow .65s ease forwards; }
+  @keyframes mr-draw-flow { to { stroke-dashoffset: 0; } }
+
+  .mr-check-mark { opacity: 0; transform: scale(.65); transform-origin: center; }
+  .mr-nav-item:hover .mr-check-mark, .mr-nav-item.active .mr-check-mark { animation: mr-pop-check .28s ease forwards; }
+  @keyframes mr-pop-check { to { opacity: 1; transform: scale(1); } }
+
+  .mr-table-dot { transition: fill .22s ease, transform .22s ease, opacity .22s ease; opacity: .75; }
+  .mr-nav-item:hover .mr-table-dot, .mr-nav-item.active .mr-table-dot { fill: currentColor; opacity: 1; transform: scale(1.15); }
+
+  .mr-flame { transform-origin: center bottom; }
+  .mr-nav-item:hover .mr-flame, .mr-nav-item.active .mr-flame { animation: mr-flicker .55s ease-in-out infinite alternate; }
+  @keyframes mr-flicker { from { transform: scaleY(1) scaleX(1); } to { transform: scaleY(1.12) scaleX(.97); } }
+
+  .mr-sales-line { stroke-dasharray: 18; stroke-dashoffset: 18; }
+  .mr-nav-item:hover .mr-sales-line, .mr-nav-item.active .mr-sales-line { animation: mr-rise .7s ease forwards; }
+  @keyframes mr-rise { to { stroke-dashoffset: 0; } }
+
+  .mr-warehouse-roof { transform-origin: center; }
+  .mr-nav-item:hover .mr-warehouse-roof, .mr-nav-item.active .mr-warehouse-roof { animation: mr-tiny-lift .45s ease-in-out infinite alternate; }
+  @keyframes mr-tiny-lift { from { transform: translateY(0); } to { transform: translateY(-1px); } }
+
+  .mr-product-cell { transform-origin: center; }
+  .mr-nav-item:hover .mr-product-cell.c2, .mr-nav-item.active .mr-product-cell.c2 { animation: mr-blink-cell 1s ease infinite .1s; }
+  .mr-nav-item:hover .mr-product-cell.c3, .mr-nav-item.active .mr-product-cell.c3 { animation: mr-blink-cell 1s ease infinite .22s; }
+  @keyframes mr-blink-cell { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
+
+  .mr-client-arc { stroke-dasharray: 16; stroke-dashoffset: 16; }
+  .mr-nav-item:hover .mr-client-arc, .mr-nav-item.active .mr-client-arc { animation: mr-draw-arc .6s ease forwards; }
+  @keyframes mr-draw-arc { to { stroke-dashoffset: 0; } }
+
+  .mr-admin-column { transform-origin: center bottom; }
+  .mr-nav-item:hover .mr-admin-column, .mr-nav-item.active .mr-admin-column { animation: mr-formal-rise .5s ease-in-out infinite alternate; }
+  @keyframes mr-formal-rise { from { transform: translateY(0); } to { transform: translateY(-1px); } }
+
+  .mr-sunat-lines { stroke-dasharray: 18; stroke-dashoffset: 18; }
+  .mr-nav-item:hover .mr-sunat-lines, .mr-nav-item.active .mr-sunat-lines { animation: mr-doc-read .7s ease forwards; }
+  @keyframes mr-doc-read { to { stroke-dashoffset: 0; } }
+
+  .mr-users-arc { stroke-dasharray: 20; stroke-dashoffset: 20; }
+  .mr-nav-item:hover .mr-users-arc, .mr-nav-item.active .mr-users-arc { animation: mr-draw-users .65s ease forwards; }
+  @keyframes mr-draw-users { to { stroke-dashoffset: 0; } }
+
+  .mr-gear { transform-origin: center; }
+  .mr-nav-item:hover .mr-gear, .mr-nav-item.active .mr-gear { animation: mr-rotate-gear 1.6s linear infinite; }
+  @keyframes mr-rotate-gear { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+  .mr-report-bar { transform-origin: center bottom; }
+  .mr-nav-item:hover .mr-report-bar.b1, .mr-nav-item.active .mr-report-bar.b1 { animation: mr-bars 1s ease infinite .05s; }
+  .mr-nav-item:hover .mr-report-bar.b2, .mr-nav-item.active .mr-report-bar.b2 { animation: mr-bars 1s ease infinite .18s; }
+  .mr-nav-item:hover .mr-report-bar.b3, .mr-nav-item.active .mr-report-bar.b3 { animation: mr-bars 1s ease infinite .3s; }
+  .mr-nav-item:hover .mr-report-bar.b4, .mr-nav-item.active .mr-report-bar.b4 { animation: mr-bars 1s ease infinite .42s; }
+  @keyframes mr-bars { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(1.15); } }
+
+  .mr-support-wave { stroke-dasharray: 16; stroke-dashoffset: 16; }
+  .mr-nav-item:hover .mr-support-wave, .mr-nav-item.active .mr-support-wave { animation: mr-help-wave .7s ease forwards; }
+  @keyframes mr-help-wave { to { stroke-dashoffset: 0; } }
+
+  .mr-assistant-orbit { transform-origin: center; opacity: .35; }
+  .mr-nav-item:hover .mr-assistant-orbit, .mr-nav-item.active .mr-assistant-orbit { animation: mr-assistant-pulse 1s ease infinite; }
+  @keyframes mr-assistant-pulse { 0% { transform: scale(.9); opacity: .45; } 100% { transform: scale(1.12); opacity: .1; } }
+
+  .mr-assistant-wave { stroke-dasharray: 16; stroke-dashoffset: 16; }
+  .mr-nav-item:hover .mr-assistant-wave, .mr-nav-item.active .mr-assistant-wave { animation: mr-assistant-draw .7s ease forwards; }
+  @keyframes mr-assistant-draw { to { stroke-dashoffset: 0; } }
+
+  /* Hide on mobile (PWA replaces it) */
+  @media (max-width: 991.98px) {
+    .mr-sidebar { display: none; }
+  }
+</style>
+
+<aside class="mr-sidebar">
+  <!-- Brand row: logo links to home -->
+  <div class="mr-brand-row">
+    <a href="/" class="mr-brand">
+      <div class="mr-brand-mark">
+        <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="MiRest Logo">
+          <defs>
+            <linearGradient id="mr-logo-bg" x1="6" y1="5" x2="38" y2="39" gradientUnits="userSpaceOnUse">
+              <stop offset="0" stop-color="#FDB75E"/>
+              <stop offset="0.18" stop-color="#FD9931"/>
+              <stop offset="0.52" stop-color="#EF520F"/>
+              <stop offset="0.8" stop-color="#DF2C05"/>
+              <stop offset="1" stop-color="#EE6D2D"/>
+            </linearGradient>
+            <linearGradient id="mr-visor-glow" x1="22" y1="13" x2="22" y2="31" gradientUnits="userSpaceOnUse">
+              <stop offset="0" stop-color="#121938"/>
+              <stop offset="1" stop-color="#050814"/>
+            </linearGradient>
+            <linearGradient id="mr-shell-white" x1="11" y1="10" x2="31" y2="31" gradientUnits="userSpaceOnUse">
+              <stop offset="0" stop-color="#FFFFFF"/>
+              <stop offset="1" stop-color="#DCE4F7"/>
+            </linearGradient>
+          </defs>
+          <rect x="1.5" y="1.5" width="41" height="41" rx="12.5" fill="url(#mr-logo-bg)"/>
+          <rect x="1.5" y="1.5" width="41" height="41" rx="12.5" stroke="rgba(255,255,255,.22)"/>
+          <path d="M7 39.5C10.8 41.4 16.4 42.5 22 42.5C27.6 42.5 33.2 41.4 37 39.5" fill="rgba(0,0,0,.14)"/>
+          <path d="M17.2 9.9C16.8 8.3 18 6.9 19.6 6.9C20.5 6.9 21.3 7.3 21.8 8C22.3 7.3 23 6.9 24 6.9C25.6 6.9 26.8 8.3 26.4 9.9" fill="none" stroke="#F5F8FF" stroke-width="1.6" stroke-linecap="round"/>
+          <path d="M14 10.8H29.6C31.8 10.8 33.6 12.6 33.6 14.8V16.7H10V14.8C10 12.6 11.8 10.8 14 10.8Z" fill="url(#mr-shell-white)" opacity="0.98"/>
+          <rect x="10.2" y="13.6" width="23.6" height="18.2" rx="8.4" fill="url(#mr-shell-white)"/>
+          <rect x="13.1" y="15.9" width="17.8" height="13.8" rx="5.8" fill="url(#mr-visor-glow)"/>
+          <rect x="8.7" y="18.1" width="2.3" height="7.8" rx="1.15" fill="url(#mr-shell-white)"/>
+          <rect x="33" y="18.1" width="2.3" height="7.8" rx="1.15" fill="url(#mr-shell-white)"/>
+          <ellipse cx="22" cy="32.2" rx="4.9" ry="2.3" fill="#DCE4F7"/>
+          <path d="M18.1 20.7C18.7 19.9 19.7 19.9 20.3 20.7" stroke="#F7FAFF" stroke-width="1.7" stroke-linecap="round"/>
+          <path d="M23.7 20.7C24.3 19.9 25.3 19.9 25.9 20.7" stroke="#F7FAFF" stroke-width="1.7" stroke-linecap="round"/>
+          <path d="M18.9 25.1C20.6 26.6 23.4 26.6 25.1 25.1" stroke="#0F172A" stroke-width="2" stroke-linecap="round"/>
+          <path d="M19.3 25C20.7 26.2 23.3 26.2 24.7 25" stroke="#FFB1A4" stroke-width="1.8" stroke-linecap="round"/>
+          <path d="M10.6 29.8L12.8 28.5" stroke="#F5F8FF" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M33.4 29.8L31.2 28.5" stroke="#F5F8FF" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="mr-brand-text">
+        <span class="mr-text-white">Mi</span><span class="mr-text-orange">Rest</span> <span class="mr-text-white">con</span> <span class="mr-text-orange">IA</span>
+      </div>
+    </a>
+    <button type="button" class="mr-collapse-btn" aria-label="Colapsar">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m14 6-6 6 6 6"/></svg>
+    </button>
+  </div>
+
+  <% if (isSuperadmin) { %>
+    <%# === SUPERADMIN nav (separate menu) === %>
+    <div class="mr-section-title">Superadmin</div>
+    <div class="mr-nav-list">
+      <a href="/superadmin" class="mr-nav-item <%= active('/superadmin', true) %>">
+        <div class="mr-icon-wrap"><svg viewBox="0 0 24 24"><path d="M12 2L4 6v6c0 5 3.5 9.5 8 10 4.5-.5 8-5 8-10V6l-8-4z"/></svg><span class="mr-glow-dot"></span></div>
+        <span class="mr-nav-label">Dashboard SaaS</span>
+      </a>
+      <a href="/superadmin/tenants" class="mr-nav-item <%= active('/superadmin/tenants') %>">
+        <div class="mr-icon-wrap"><svg viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="14" rx="2"/><path d="M3 10h18M8 14h2M14 14h2"/></svg><span class="mr-glow-dot"></span></div>
+        <span class="mr-nav-label">Tenants</span>
+      </a>
+      <a href="/superadmin/billing" class="mr-nav-item <%= active('/superadmin/billing') %>">
+        <div class="mr-icon-wrap"><svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="10" rx="2"/><circle cx="12" cy="12" r="2"/></svg><span class="mr-glow-dot"></span></div>
+        <span class="mr-nav-label">Billing & P&L</span>
+      </a>
+      <a href="/superadmin/solicitudes" class="mr-nav-item <%= active('/superadmin/solicitudes') %>">
+        <div class="mr-icon-wrap"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"/><path d="M5 20c1.5-4 5-5 7-5s5.5 1 7 5"/></svg><span class="mr-glow-dot"></span></div>
+        <span class="mr-nav-label">Solicitudes</span>
+      </a>
+      <a href="/superadmin/observabilidad" class="mr-nav-item <%= active('/superadmin/observabilidad') %>">
+        <div class="mr-icon-wrap"><svg viewBox="0 0 24 24"><path d="M3 18l6-6 4 4 8-8"/><path d="M14 8h6v6"/></svg><span class="mr-glow-dot"></span></div>
+        <span class="mr-nav-label">Observabilidad</span>
+      </a>
+      <a href="/contratos" class="mr-nav-item <%= active('/contratos') %>">
+        <div class="mr-icon-wrap"><svg viewBox="0 0 24 24"><path d="M7 4h8l3 3v13H7z"/><path d="M15 4v3h3"/></svg><span class="mr-glow-dot"></span></div>
+        <span class="mr-nav-label">Contratos</span>
+      </a>
+      <a href="/nda-equipo" class="mr-nav-item <%= active('/nda-equipo') %>">
+        <div class="mr-icon-wrap"><svg viewBox="0 0 24 24"><rect x="6" y="10" width="12" height="10" rx="2"/><path d="M9 10V7a3 3 0 0 1 6 0v3"/></svg><span class="mr-glow-dot"></span></div>
+        <span class="mr-nav-label">NDA Equipo</span>
+      </a>
+      <a href="/superadmin/cotizador" class="mr-nav-item <%= active('/superadmin/cotizador') %>">
+        <div class="mr-icon-wrap"><svg viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M9 7h6M9 11h6M9 15h4"/></svg><span class="mr-glow-dot"></span></div>
+        <span class="mr-nav-label">Cotizador</span>
+      </a>
+    </div>
+  <% } else if (u) { %>
+    <%# === Asistente IA (top, only for admin) === %>
+    <% if (isAdmin) { %>
+      <a href="/chat" class="mr-nav-item mr-assistant <%= active('/chat', true) %>">
+        <div class="mr-icon-wrap">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="2.2"/>
+            <circle cx="12" cy="12" r="5.3" class="mr-assistant-orbit"/>
+            <path d="M7.6 15.7c1.3-1 2.7-1.5 4.4-1.5 1.6 0 3.1.5 4.4 1.5" class="mr-assistant-wave"/>
+            <path d="M12 3.7v2.1M12 18.2v2.1M3.7 12h2.1M18.2 12h2.1"/>
+          </svg>
+          <span class="mr-glow-dot"></span>
+        </div>
+        <span class="mr-nav-label">Asistente IA</span>
+      </a>
+    <% } %>
+
+    <%# === OPS === %>
+    <div class="mr-section-title">OPS</div>
+    <div class="mr-nav-list">
+      <% if (isAdmin || isCajero) { %>
+      <a href="/caja" class="mr-nav-item <%= active('/caja', true) %>">
+        <div class="mr-icon-wrap">
+          <svg viewBox="0 0 24 24"><rect x="3.8" y="7" width="16.4" height="10" rx="2.9"/><path d="M6.2 12h4.3" class="mr-flow-path"/><circle cx="15.6" cy="12" r="1.6"/></svg>
+          <span class="mr-glow-dot"></span>
+        </div>
+        <span class="mr-nav-label">Caja</span>
+      </a>
+      <% } %>
+      <% if (isAdmin || isMesero) { %>
+      <a href="/pedidos" class="mr-nav-item <%= active('/pedidos') || active('/mesas') || active('/delivery') || active('/para-llevar') %>">
+        <div class="mr-icon-wrap">
+          <svg viewBox="0 0 24 24"><rect x="7" y="8" width="10" height="8" rx="2"/><rect x="4.2" y="8.8" width="2" height="2" rx="0.5" class="mr-table-dot"/><rect x="17.8" y="8.8" width="2" height="2" rx="0.5" class="mr-table-dot"/><rect x="4.2" y="13.2" width="2" height="2" rx="0.5" class="mr-table-dot"/><rect x="17.8" y="13.2" width="2" height="2" rx="0.5" class="mr-table-dot"/><path d="M9 16v2M15 16v2"/></svg>
+          <span class="mr-glow-dot"></span>
+        </div>
+        <span class="mr-nav-label">Pedidos</span>
+      </a>
+      <% } %>
+      <% if (isAdmin || isMesero || isCocinero) { %>
+      <a href="/cocina" class="mr-nav-item <%= active('/cocina', true) %>">
+        <div class="mr-icon-wrap">
+          <svg viewBox="0 0 24 24"><rect x="5" y="10" width="14" height="6.5" rx="2"/><path d="M8 10V8.6c0-.9.7-1.6 1.6-1.6h4.8c.9 0 1.6.7 1.6 1.6V10"/><path d="M5 12.5H3.8M20.2 12.5H19"/><path d="M7 9.2h10"/><circle cx="12" cy="8" r="0.8"/><path d="M10 5.5c0-1 .8-1.6 1.2-2" class="mr-flame"/><path d="M13 5.5c0-1 .8-1.6 1.2-2" class="mr-flame"/></svg>
+          <span class="mr-glow-dot"></span>
+        </div>
+        <span class="mr-nav-label">Cocina</span>
+      </a>
+      <% } %>
+      <% if (isAdmin) { %>
+      <a href="/ventas" class="mr-nav-item <%= active('/ventas', true) %>">
+        <div class="mr-icon-wrap">
+          <svg viewBox="0 0 24 24"><path d="M4.5 18.5V6.5"/><path d="M4.5 18.5H19"/><rect x="7" y="13" width="2.4" height="5.5" rx="0.6" class="mr-report-bar b1"/><rect x="10.8" y="10.5" width="2.4" height="8" rx="0.6" class="mr-report-bar b2"/><rect x="14.6" y="8" width="2.4" height="10.5" rx="0.6" class="mr-report-bar b3"/><path d="M7 11.8l3.8-3 3 2.2 4.2-5.2" class="mr-sales-line"/><path d="M18 5.8h2v2"/></svg>
+          <span class="mr-glow-dot"></span>
+        </div>
+        <span class="mr-nav-label">Ventas</span>
+      </a>
+      <% } %>
+    </div>
+
+    <%# === Corazón === %>
+    <% if (isAdmin || isAlmacenero || isMesero) { %>
+    <div class="mr-section-title">Corazón</div>
+    <div class="mr-nav-list">
+      <% if (isAdmin || isAlmacenero) { %>
+      <a href="/almacen" class="mr-nav-item <%= active('/almacen') %>">
+        <div class="mr-icon-wrap">
+          <svg viewBox="0 0 24 24"><path d="M3.7 10.2 12 4.6l8.3 5.6" class="mr-warehouse-roof"/><path d="M5.2 10.7h13.6V20H5.2z"/><path d="M10 20v-5.2h4V20"/></svg>
+          <span class="mr-glow-dot"></span>
+        </div>
+        <span class="mr-nav-label">Almacén</span>
+      </a>
+      <% } %>
+      <% if (isAdmin || isMesero || isAlmacenero) { %>
+      <a href="/productos" class="mr-nav-item <%= active('/productos', true) || active('/ranking', true) %>">
+        <div class="mr-icon-wrap">
+          <svg viewBox="0 0 24 24"><rect x="4" y="4" width="6.1" height="6.1" rx="1.6" class="mr-product-cell c1"/><rect x="13.9" y="4" width="6.1" height="6.1" rx="1.6" class="mr-product-cell c2"/><rect x="4" y="13.9" width="6.1" height="6.1" rx="1.6" class="mr-product-cell c3"/><path d="M13.9 17h6.1"/></svg>
+          <span class="mr-glow-dot"></span>
+        </div>
+        <span class="mr-nav-label">Productos</span>
+      </a>
+      <% } %>
+      <% if (isAdmin || isAlmacenero) { %>
+      <a href="/recetas" class="mr-nav-item <%= active('/recetas') %>">
+        <div class="mr-icon-wrap">
+          <svg viewBox="0 0 24 24"><path d="M7 4.5h8l3 3v12H7z"/><path d="M15 4.5v3h3"/><path d="M9 10h6"/><path d="M9 13h6"/><path d="M9 16h4" class="mr-sunat-lines"/><path d="M16.8 15.4c.6.5.8 1 .8 1.6 0 1-.8 1.8-1.8 1.8-.9 0-1.7-.8-1.7-1.8 0-.6.2-1.1.8-1.6.5-.4.9-.8.9-1.5v-1.2"/></svg>
+          <span class="mr-glow-dot"></span>
+        </div>
+        <span class="mr-nav-label">Recetas</span>
+      </a>
+      <% } %>
+      <% if (isAdmin) { %>
+      <a href="/clientes" class="mr-nav-item <%= active('/clientes', true) %>">
+        <div class="mr-icon-wrap">
+          <svg viewBox="0 0 24 24"><circle cx="7" cy="9" r="2.2"/><circle cx="12" cy="8" r="2.5"/><circle cx="17" cy="9" r="2.2"/><path d="M3.8 18c1.4-2.3 3.2-3.3 5.2-3.3"/><path d="M7.5 18c1.6-2.6 3.8-3.6 4.5-3.6s2.9 1 4.5 3.6" class="mr-client-arc"/><path d="M14.8 18c2-2.3 3.8-3.3 5.2-3.3"/></svg>
+          <span class="mr-glow-dot"></span>
+        </div>
+        <span class="mr-nav-label">Clientes</span>
+      </a>
+      <% } %>
+    </div>
+    <% } %>
+
+    <%# === Administración === %>
+    <% if (isAdmin || isCajero || isMesero) { %>
+    <div class="mr-section-title">Administración</div>
+    <div class="mr-nav-list">
+      <% if (isAdmin) { %>
+      <a href="/administracion" class="mr-nav-item <%= active('/administracion') %>">
+        <div class="mr-icon-wrap">
+          <svg viewBox="0 0 24 24"><path d="M4.2 18.8h15.6"/><path d="M6.6 18.8V9.6" class="mr-admin-column"/><path d="M12 18.8V9.6" class="mr-admin-column"/><path d="M17.4 18.8V9.6" class="mr-admin-column"/><path d="M4.8 9.2 12 5.3l7.2 3.9"/></svg>
+          <span class="mr-glow-dot"></span>
+        </div>
+        <span class="mr-nav-label">Administración</span>
+      </a>
+      <% } %>
+      <% if (isAdmin || isCajero || isMesero) { %>
+      <a href="/facturacion" class="mr-nav-item <%= active('/facturacion', true) %>">
+        <div class="mr-icon-wrap">
+          <svg viewBox="0 0 24 24"><path d="M7 3.8h7l3 3V20H7z"/><path d="M14 3.8v3h3"/><path d="M9 13.1l1.7 1.7 4.2-4.2" class="mr-check-mark"/></svg>
+          <span class="mr-glow-dot"></span>
+        </div>
+        <span class="mr-nav-label">Facturación</span>
+      </a>
+      <% } %>
+      <% if (isAdmin) { %>
+      <a href="/sunat" class="mr-nav-item <%= active('/sunat') %>">
+        <div class="mr-icon-wrap">
+          <svg viewBox="0 0 24 24"><rect x="5.5" y="3.8" width="13" height="16.4" rx="1.8"/><path d="M8.2 8.2h7.6M8.2 11.6h7.6M8.2 15h4.8" class="mr-sunat-lines"/></svg>
+          <span class="mr-glow-dot"></span>
+        </div>
+        <span class="mr-nav-label">SUNAT</span>
+      </a>
+      <a href="/api/reportes" class="mr-nav-item <%= active('/reportes') || active('/api/reportes') %>">
+        <div class="mr-icon-wrap">
+          <svg viewBox="0 0 24 24"><path d="M4.5 18.5V6.3"/><path d="M8.5 18.5v-5.4" class="mr-report-bar b1"/><path d="M12 18.5V9.8" class="mr-report-bar b2"/><path d="M15.5 18.5v-7" class="mr-report-bar b3"/><path d="M19 18.5v-10" class="mr-report-bar b4"/></svg>
+          <span class="mr-glow-dot"></span>
+        </div>
+        <span class="mr-nav-label">Reportes</span>
+      </a>
+      <% } %>
+    </div>
+    <% } %>
+
+    <%# === Sistema === %>
+    <div class="mr-section-title">Sistema</div>
+    <div class="mr-nav-list">
+      <% if (isAdmin) { %>
+      <a href="/usuarios" class="mr-nav-item <%= active('/usuarios', true) %>">
+        <div class="mr-icon-wrap">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="3"/><circle cx="10.8" cy="7.6" r="0.4"/><circle cx="13.2" cy="7.6" r="0.4"/><path d="M10.6 9.2c.7.6 2.1.6 2.8 0"/><path d="M5.5 18c1.6-2.6 4-3.8 6.5-3.8s4.9 1.2 6.5 3.8" class="mr-users-arc"/></svg>
+          <span class="mr-glow-dot"></span>
+        </div>
+        <span class="mr-nav-label">Usuarios</span>
+      </a>
+      <a href="/configuracion" class="mr-nav-item <%= active('/configuracion', true) %>">
+        <div class="mr-icon-wrap">
+          <svg viewBox="0 0 24 24"><path d="M5 7h14"/><circle cx="9" cy="7" r="1.6" class="mr-gear"/><path d="M5 12h14"/><circle cx="14" cy="12" r="1.6" class="mr-gear"/><path d="M5 17h14"/><circle cx="11" cy="17" r="1.6" class="mr-gear"/></svg>
+          <span class="mr-glow-dot"></span>
+        </div>
+        <span class="mr-nav-label">Configuración</span>
+      </a>
+      <% } %>
+      <a href="/soporte" class="mr-nav-item <%= active('/soporte', true) %>">
+        <div class="mr-icon-wrap">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v8" class="mr-support-wave"/><path d="M8 12h8" class="mr-support-wave"/></svg>
+          <span class="mr-glow-dot"></span>
+        </div>
+        <span class="mr-nav-label">Soporte</span>
+      </a>
+    </div>
+  <% } %>
+
+  <%# === Footer: user + logout === %>
+  <% if (u) { %>
+  <div class="mr-footer">
+    <div class="mr-user-card">
+      <div class="mr-avatar">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 13a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M5.8 19.5c1.7-2.5 4.2-3.6 6.2-3.6s4.5 1.1 6.2 3.6"/></svg>
+      </div>
+      <div>
+        <div class="mr-user-name"><%= u.usuario %></div>
+        <div class="mr-user-role"><%= rol %></div>
+      </div>
+    </div>
+    <form method="POST" action="/logout" style="margin:0;">
+      <input type="hidden" name="_csrf" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>">
+      <button type="submit" class="mr-logout-btn" title="Salir">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 17l5-5-5-5"/><path d="M19 12H9"/><path d="M10 20H5a1.5 1.5 0 0 1-1.5-1.5v-13A1.5 1.5 0 0 1 5 4h5"/></svg>
+      </button>
+    </form>
+  </div>
+  <% } %>
+</aside>

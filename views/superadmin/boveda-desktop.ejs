@@ -1,0 +1,520 @@
+<%# @variant: desktop %>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bóveda — MiRestcon</title>
+  <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+  <link rel="stylesheet" href="/css/theme.css">
+  <style>
+    body { background: #0f172a; font-family: 'Inter', sans-serif; overflow: hidden; }
+
+    /* LOCK */
+    .lock-overlay {
+      position: fixed; inset: 0; background: #0f172a;
+      display: flex; align-items: center; justify-content: center; z-index: 100;
+    }
+    .lock-card {
+      background: #1e2235; border-radius: 24px; padding: 48px;
+      border: 1px solid rgba(255,255,255,0.08); text-align: center;
+      min-width: 380px; display: flex; flex-direction: column; align-items: center; gap: 20px;
+    }
+    .lock-icon { font-size: 56px; }
+    .lock-title { font-size: 24px; font-weight: 700; color: #fff; margin: 0; }
+    .lock-sub { font-size: 13px; color: #64748b; max-width: 280px; margin: 0; }
+    .bio-btn {
+      display: flex; align-items: center; gap: 12px;
+      padding: 16px 28px; border-radius: 14px;
+      background: rgba(249,115,22,0.1); border: 2px solid rgba(249,115,22,0.3);
+      color: #f97316; cursor: pointer; font-size: 14px; font-weight: 600;
+      transition: all .2s; width: 100%; justify-content: center;
+    }
+    .bio-btn:hover { background: rgba(249,115,22,0.2); border-color: #f97316; }
+    .bio-btn i { font-size: 24px; }
+
+    /* VAULT LAYOUT */
+    .vault-layout {
+      display: none; height: 100vh; flex-direction: column;
+    }
+    .vault-topbar {
+      height: 52px; background: #1e2235; border-bottom: 1px solid rgba(255,255,255,0.06);
+      display: flex; align-items: center; padding: 0 20px; gap: 12px; flex-shrink: 0;
+    }
+    .vault-topbar-title { font-size: 15px; font-weight: 700; color: #fff; }
+    .vault-search-top {
+      flex: 1; max-width: 400px; background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;
+      padding: 6px 12px; color: #fff; font-size: 12px; outline: none;
+    }
+    .vault-search-top::placeholder { color: #475569; }
+
+    /* 2 COLUMN LAYOUT */
+    .vault-body { display: flex; flex: 1; overflow: hidden; }
+    .vault-sidebar {
+      width: 280px; flex-shrink: 0; background: #1a1f30;
+      border-right: 1px solid rgba(255,255,255,0.06);
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    .vault-cat-section { padding: 12px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+    .vault-cat-label { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #475569; margin-bottom: 6px; }
+    .vault-cat-item {
+      display: flex; align-items: center; gap: 8px; padding: 7px 10px;
+      border-radius: 8px; cursor: pointer; font-size: 12px; color: #94a3b8;
+      transition: all .15s; margin-bottom: 2px;
+    }
+    .vault-cat-item:hover { background: rgba(255,255,255,0.04); color: #e2e8f0; }
+    .vault-cat-item.active { background: rgba(249,115,22,0.1); color: #f97316; }
+    .vault-cat-count { margin-left: auto; font-size: 10px; background: rgba(255,255,255,0.08); padding: 0 6px; border-radius: 8px; }
+
+    .vault-list-section { flex: 1; overflow-y: auto; scrollbar-width: thin; }
+    .vault-row {
+      display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+      border-bottom: 1px solid rgba(255,255,255,0.04); cursor: pointer;
+      transition: background .15s;
+    }
+    .vault-row:hover { background: rgba(255,255,255,0.03); }
+    .vault-row.selected { background: rgba(249,115,22,0.08); border-left: 2px solid #f97316; }
+    .vault-row-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+    .vault-row-info { flex: 1; min-width: 0; }
+    .vault-row-title { font-size: 12px; font-weight: 600; color: #e2e8f0; }
+    .vault-row-user { font-size: 10px; color: #475569; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* DETAIL PANEL */
+    .vault-detail {
+      flex: 1; background: #0f172a; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; overflow: auto;
+    }
+    .vault-detail-empty { color: #1e2235; font-size: 64px; text-align: center; }
+    .vault-detail-card {
+      width: 100%; max-width: 520px; background: #1e2235;
+      border-radius: 16px; padding: 28px; margin: 20px;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .detail-header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; }
+    .detail-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+    .detail-title { font-size: 18px; font-weight: 700; color: #fff; }
+    .detail-cat { font-size: 10px; color: #64748b; }
+
+    .detail-field { margin-bottom: 14px; }
+    .detail-field-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: #475569; margin-bottom: 5px; }
+    .detail-field-row {
+      display: flex; align-items: center; gap: 8px;
+      background: rgba(255,255,255,0.04); border-radius: 8px; padding: 10px 14px;
+    }
+    .detail-field-val { flex: 1; font-size: 13px; color: #e2e8f0; font-family: monospace; word-break: break-all; }
+    .detail-field-val.masked { letter-spacing: 4px; font-size: 14px; }
+    .det-btn {
+      padding: 4px 10px; border-radius: 6px; border: none;
+      font-size: 11px; cursor: pointer; white-space: nowrap;
+    }
+    .det-btn-copy { background: rgba(249,115,22,0.15); color: #f97316; }
+    .det-btn-tog { background: rgba(255,255,255,0.06); color: #94a3b8; }
+    .det-btn-del { background: rgba(239,68,68,0.1); color: #ef4444; }
+    .det-btn-edit { background: rgba(99,102,241,0.1); color: #818cf8; }
+
+    /* ADD BTN */
+    .add-btn {
+      display: flex; align-items: center; gap: 8px; margin: 12px;
+      padding: 10px 14px; border-radius: 10px;
+      background: linear-gradient(135deg, rgba(239,82,15,0.15), rgba(223,44,5,0.1));
+      border: 1px solid rgba(249,115,22,0.3);
+      color: #f97316; font-size: 12px; font-weight: 600; cursor: pointer;
+      transition: all .15s;
+    }
+    .add-btn:hover { background: rgba(249,115,22,0.2); }
+
+    /* FORM PANEL */
+    .vault-form-panel {
+      display: none; width: 100%; max-width: 520px; background: #1e2235;
+      border-radius: 16px; padding: 28px; margin: 20px;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .form-field { margin-bottom: 12px; }
+    .form-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: #475569; margin-bottom: 4px; }
+    .form-input {
+      width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px; padding: 8px 12px; color: #fff; font-size: 12px; outline: none;
+      transition: border .15s;
+    }
+    .form-input:focus { border-color: #f97316; }
+  </style>
+</head>
+<body>
+
+<!-- LOCK -->
+<div class="lock-overlay" id="lockOverlay">
+  <div class="lock-card">
+    <div class="lock-icon">🔐</div>
+    <h2 class="lock-title">Bóveda de contraseñas</h2>
+    <p class="lock-sub">Verifica tu identidad con biometría para acceder a las credenciales del sistema</p>
+    <button class="bio-btn" id="btnUnlock" onclick="autenticar()" style="display:none;">
+      <i class="bi bi-fingerprint"></i>
+      Autenticar con Touch ID / Face ID
+    </button>
+    <button class="bio-btn" id="btnRegistrar" onclick="registrar()" style="display:none;border-color:rgba(99,102,241,0.4);color:#818cf8;background:rgba(99,102,241,0.1);">
+      <i class="bi bi-person-check-fill"></i>
+      Registrar huella / Face ID por primera vez
+    </button>
+    <div id="lockStatus" style="font-size:12px;color:#64748b;display:none;">Verificando…</div>
+    <div id="lockError" style="font-size:12px;color:#ef4444;display:none;"></div>
+  </div>
+</div>
+
+<!-- VAULT -->
+<div class="vault-layout" id="vaultLayout">
+  <div class="vault-topbar">
+    <a href="/superadmin" style="color:#475569;font-size:14px;text-decoration:none;">
+      <i class="bi bi-arrow-left"></i>
+    </a>
+    <i class="bi bi-shield-lock-fill" style="color:#f97316;font-size:16px;"></i>
+    <span class="vault-topbar-title">Bóveda</span>
+    <input class="vault-search-top" placeholder="🔍 Buscar credencial..." oninput="filtrar(this.value)">
+    <span style="margin-left:auto;font-size:11px;color:#475569;" id="itemCount"></span>
+    <button class="bio-btn" style="width:auto;padding:6px 14px;font-size:11px;" onclick="cerrarBoveda()">
+      <i class="bi bi-lock" style="font-size:14px;"></i> Bloquear
+    </button>
+  </div>
+
+  <div class="vault-body">
+    <!-- Sidebar categorías + lista -->
+    <div class="vault-sidebar">
+      <div class="vault-cat-section">
+        <div class="vault-cat-label">Categorías</div>
+        <div class="vault-cat-item active" onclick="filtrarCat('todas', this)">
+          <i class="bi bi-grid-fill"></i> Todas
+          <span class="vault-cat-count" id="cnt-todas">0</span>
+        </div>
+        <div class="vault-cat-item" onclick="filtrarCat('correos', this)">
+          📧 Correos <span class="vault-cat-count" id="cnt-correos">0</span>
+        </div>
+        <div class="vault-cat-item" onclick="filtrarCat('servidores', this)">
+          🖥 Servidores <span class="vault-cat-count" id="cnt-servidores">0</span>
+        </div>
+        <div class="vault-cat-item" onclick="filtrarCat('apis', this)">
+          🔑 APIs <span class="vault-cat-count" id="cnt-apis">0</span>
+        </div>
+        <div class="vault-cat-item" onclick="filtrarCat('otros', this)">
+          📁 Otros <span class="vault-cat-count" id="cnt-otros">0</span>
+        </div>
+      </div>
+
+      <button class="add-btn" onclick="abrirFormulario()">
+        <i class="bi bi-plus-lg"></i> Nueva credencial
+      </button>
+
+      <div class="vault-list-section" id="vaultList"></div>
+    </div>
+
+    <!-- Panel detalle / form -->
+    <div class="vault-detail" id="vaultDetail">
+      <div style="text-align:center;color:#1e2235;">
+        <div style="font-size:64px;">🔐</div>
+        <div style="font-size:14px;color:#1e2235;margin-top:8px;">Selecciona una credencial</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let sessionToken = null;
+let todosItems = [];
+let catActual = 'todas';
+let editId = null;
+
+const CAT_ICONS = { correos:'📧', servidores:'🖥', apis:'🔑', otros:'📁' };
+const CAT_COLORS = { correos:'rgba(99,102,241,0.2)', servidores:'rgba(249,115,22,0.2)', apis:'rgba(34,197,94,0.2)', otros:'rgba(100,116,139,0.2)' };
+
+document.addEventListener('DOMContentLoaded', async () => {
+  document.getElementById('lockStatus').style.display = 'block';
+  try {
+    const r = await fetch('/superadmin/boveda/auth/options');
+    document.getElementById('lockStatus').style.display = 'none';
+    if (r.status === 404) {
+      document.getElementById('btnRegistrar').style.display = 'flex';
+    } else {
+      document.getElementById('btnUnlock').style.display = 'flex';
+    }
+  } catch(e) {
+    document.getElementById('lockStatus').style.display = 'none';
+    document.getElementById('btnUnlock').style.display = 'flex';
+  }
+});
+
+async function registrar() {
+  const errEl = document.getElementById('lockError');
+  errEl.style.display = 'none';
+  try {
+    const optRes = await fetch('/auth/webauthn/register/options');
+    if (!optRes.ok) throw new Error((await optRes.json()).error || 'Error');
+    const options = await optRes.json();
+
+    options.challenge = base64ToBuffer(options.challenge);
+    options.user.id = base64ToBuffer(options.user.id);
+    if (options.excludeCredentials) {
+      options.excludeCredentials = options.excludeCredentials.map(c => ({ ...c, id: base64ToBuffer(c.id) }));
+    }
+
+    const credential = await navigator.credentials.create({ publicKey: options });
+    const body = {
+      id: credential.id,
+      rawId: bufferToBase64(credential.rawId),
+      type: credential.type,
+      response: {
+        attestationObject: bufferToBase64(credential.response.attestationObject),
+        clientDataJSON: bufferToBase64(credential.response.clientDataJSON),
+      }
+    };
+
+    const verRes = await fetch('/auth/webauthn/register/verify', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+    });
+    if (!verRes.ok) throw new Error((await verRes.json()).error || 'Registro fallido');
+
+    document.getElementById('btnRegistrar').style.display = 'none';
+    document.getElementById('btnUnlock').style.display = 'flex';
+    await autenticar();
+  } catch(e) {
+    errEl.textContent = e.name === 'NotAllowedError' ? 'Cancelado — vuelve a intentarlo' : e.message;
+    errEl.style.display = 'block';
+  }
+}
+
+async function autenticar() {
+  const errEl = document.getElementById('lockError');
+  errEl.style.display = 'none';
+  try {
+    const optRes = await fetch('/superadmin/boveda/auth/options');
+    const options = await optRes.json();
+    if (!optRes.ok) throw new Error(options.error || 'Error');
+
+    options.challenge = base64ToBuffer(options.challenge);
+    options.allowCredentials = (options.allowCredentials || []).map(c => ({ ...c, id: base64ToBuffer(c.id) }));
+
+    const assertion = await navigator.credentials.get({ publicKey: options });
+    const body = {
+      id: assertion.id, rawId: bufferToBase64(assertion.rawId), type: assertion.type,
+      response: {
+        authenticatorData: bufferToBase64(assertion.response.authenticatorData),
+        clientDataJSON: bufferToBase64(assertion.response.clientDataJSON),
+        signature: bufferToBase64(assertion.response.signature),
+        userHandle: assertion.response.userHandle ? bufferToBase64(assertion.response.userHandle) : null,
+      }
+    };
+
+    const verRes = await fetch('/superadmin/boveda/auth/verify', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body)
+    });
+    const verData = await verRes.json();
+    if (!verRes.ok) throw new Error(verData.error || 'Verificación fallida');
+
+    sessionToken = verData.token;
+    desbloquear();
+  } catch(e) {
+    errEl.textContent = e.name === 'NotAllowedError' ? 'Autenticación cancelada' : e.message;
+    errEl.style.display = 'block';
+  }
+}
+
+function desbloquear() {
+  document.getElementById('lockOverlay').style.display = 'none';
+  document.getElementById('vaultLayout').style.display = 'flex';
+  cargarItems();
+}
+
+function cerrarBoveda() {
+  sessionToken = null;
+  document.getElementById('lockOverlay').style.display = 'flex';
+  document.getElementById('vaultLayout').style.display = 'none';
+}
+
+async function cargarItems() {
+  const r = await fetch('/superadmin/boveda/items', { headers: { 'x-vault-token': sessionToken } });
+  const data = await r.json();
+  if (!r.ok) { cerrarBoveda(); return; }
+  todosItems = Array.isArray(data) ? data : (data.items || []);
+  actualizarContadores();
+  renderList(todosItems);
+  document.getElementById('itemCount').textContent = `${todosItems.length} credenciales`;
+}
+
+function actualizarContadores() {
+  ['correos','servidores','apis','otros'].forEach(cat => {
+    const el = document.getElementById('cnt-' + cat);
+    if (el) el.textContent = todosItems.filter(i => i.categoria === cat).length;
+  });
+  const all = document.getElementById('cnt-todas');
+  if (all) all.textContent = todosItems.length;
+}
+
+function renderList(items) {
+  const list = document.getElementById('vaultList');
+  if (!items.length) {
+    list.innerHTML = '<div style="padding:20px;text-align:center;color:#475569;font-size:12px;">Sin resultados</div>';
+    return;
+  }
+  list.innerHTML = items.map(item => `
+    <div class="vault-row" onclick="verItem(${item.id}, this)" id="row-${item.id}">
+      <div class="vault-row-icon" style="background:${CAT_COLORS[item.categoria]}">${CAT_ICONS[item.categoria]||'📁'}</div>
+      <div class="vault-row-info">
+        <div class="vault-row-title">${escHtml(item.titulo)}</div>
+        <div class="vault-row-user">${escHtml(item.usuario||'')}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function verItem(id, rowEl) {
+  document.querySelectorAll('.vault-row').forEach(r => r.classList.remove('selected'));
+  rowEl?.classList.add('selected');
+
+  const r = await fetch(`/superadmin/boveda/items/${id}`, { headers: { 'x-vault-token': sessionToken } });
+  const item = await r.json();
+  if (!r.ok) return;
+
+  editId = id;
+  document.getElementById('vaultDetail').innerHTML = `
+    <div class="vault-detail-card">
+      <div class="detail-header">
+        <div class="detail-icon" style="background:${CAT_COLORS[item.categoria]}">${CAT_ICONS[item.categoria]||'📁'}</div>
+        <div>
+          <div class="detail-title">${escHtml(item.titulo)}</div>
+          <div class="detail-cat">${item.categoria}</div>
+        </div>
+        <div style="margin-left:auto;display:flex;gap:6px;">
+          <button class="det-btn det-btn-edit" onclick="abrirFormulario(${item.id})"><i class="bi bi-pencil"></i> Editar</button>
+          <button class="det-btn det-btn-del" onclick="eliminarItem(${item.id})"><i class="bi bi-trash"></i></button>
+        </div>
+      </div>
+      ${item.usuario ? `
+      <div class="detail-field">
+        <div class="detail-field-label">Usuario / Email</div>
+        <div class="detail-field-row">
+          <span class="detail-field-val">${escHtml(item.usuario)}</span>
+          <button class="det-btn det-btn-copy" onclick="copiar('${escAttr(item.usuario)}', this)"><i class="bi bi-clipboard"></i> Copiar</button>
+        </div>
+      </div>` : ''}
+      <div class="detail-field">
+        <div class="detail-field-label">Contraseña</div>
+        <div class="detail-field-row">
+          <span class="detail-field-val masked" id="passVal">••••••••</span>
+          <button class="det-btn det-btn-tog" onclick="togglePass('${escAttr(item.password)}', this)">Ver</button>
+          <button class="det-btn det-btn-copy" onclick="copiar('${escAttr(item.password)}', this)"><i class="bi bi-clipboard"></i> Copiar</button>
+        </div>
+      </div>
+      ${item.url ? `
+      <div class="detail-field">
+        <div class="detail-field-label">URL</div>
+        <div class="detail-field-row">
+          <span class="detail-field-val">${escHtml(item.url)}</span>
+          <a href="${escHtml(item.url)}" target="_blank" class="det-btn det-btn-copy" style="text-decoration:none;">Abrir</a>
+        </div>
+      </div>` : ''}
+      ${item.notas ? `
+      <div class="detail-field">
+        <div class="detail-field-label">Notas</div>
+        <div class="detail-field-row"><span class="detail-field-val">${escHtml(item.notas)}</span></div>
+      </div>` : ''}
+    </div>
+  `;
+}
+
+function togglePass(pass, btn) {
+  const el = document.getElementById('passVal');
+  if (!el) return;
+  if (el.classList.contains('masked')) { el.textContent = pass; el.classList.remove('masked'); btn.textContent = 'Ocultar'; }
+  else { el.textContent = '••••••••'; el.classList.add('masked'); btn.textContent = 'Ver'; }
+}
+
+async function copiar(text, btn) {
+  await navigator.clipboard.writeText(text);
+  const orig = btn.innerHTML;
+  btn.innerHTML = '✓ Copiado';
+  setTimeout(() => btn.innerHTML = orig, 1500);
+}
+
+function abrirFormulario(id = null) {
+  editId = id;
+  const detail = document.getElementById('vaultDetail');
+  detail.innerHTML = `
+    <div class="vault-form-panel" style="display:block;">
+      <h5 style="color:#fff;font-weight:700;margin-bottom:20px;">${id ? 'Editar' : 'Nueva'} credencial</h5>
+      <div class="form-field"><div class="form-label">Título *</div><input class="form-input" id="fTitulo" placeholder="Ej: Correo Legal"></div>
+      <div class="form-field"><div class="form-label">Categoría</div>
+        <select class="form-input" id="fCategoria">
+          <option value="correos">📧 Correos</option>
+          <option value="servidores">🖥 Servidores</option>
+          <option value="apis">🔑 APIs</option>
+          <option value="otros">📁 Otros</option>
+        </select>
+      </div>
+      <div class="form-field"><div class="form-label">Usuario / Email</div><input class="form-input" id="fUsuario" placeholder="usuario@dominio.com"></div>
+      <div class="form-field"><div class="form-label">Contraseña *</div><input class="form-input" id="fPassword" type="password" placeholder="••••••••"></div>
+      <div class="form-field"><div class="form-label">URL (opcional)</div><input class="form-input" id="fUrl" placeholder="https://..."></div>
+      <div class="form-field"><div class="form-label">Notas (opcional)</div><input class="form-input" id="fNotas" placeholder="Notas adicionales"></div>
+      <div style="display:flex;gap:8px;margin-top:16px;">
+        <button class="det-btn" style="flex:1;padding:10px;background:rgba(255,255,255,0.06);color:#94a3b8;" onclick="cargarItems();document.getElementById('vaultDetail').innerHTML='<div style=text-align:center;color:#1e2235;padding:40px;font-size:40px;>🔐</div>'">Cancelar</button>
+        <button class="det-btn det-btn-copy" style="flex:1;padding:10px;" onclick="guardarItem()"><i class="bi bi-shield-lock"></i> Guardar</button>
+      </div>
+      <div id="formError" style="font-size:12px;color:#ef4444;margin-top:8px;display:none;"></div>
+    </div>
+  `;
+}
+
+async function guardarItem() {
+  const titulo = document.getElementById('fTitulo')?.value.trim();
+  const password = document.getElementById('fPassword')?.value;
+  if (!titulo || !password) {
+    const e = document.getElementById('formError');
+    if (e) { e.textContent = 'Título y contraseña son obligatorios'; e.style.display = 'block'; }
+    return;
+  }
+  const body = {
+    titulo, password,
+    categoria: document.getElementById('fCategoria')?.value,
+    usuario: document.getElementById('fUsuario')?.value.trim(),
+    url: document.getElementById('fUrl')?.value.trim(),
+    notas: document.getElementById('fNotas')?.value.trim(),
+  };
+  const url = editId ? `/superadmin/boveda/items/${editId}` : '/superadmin/boveda/items';
+  const r = await fetch(url, {
+    method: editId ? 'PUT' : 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-vault-token': sessionToken },
+    body: JSON.stringify(body)
+  });
+  if (r.ok) { cargarItems(); document.getElementById('vaultDetail').innerHTML = '<div style="text-align:center;color:#1e2235;padding:40px;font-size:40px;">🔐</div>'; }
+  else {
+    const d = await r.json();
+    const e = document.getElementById('formError');
+    if (e) { e.textContent = d.error || 'Error'; e.style.display = 'block'; }
+  }
+}
+
+async function eliminarItem(id) {
+  if (!confirm('¿Eliminar esta credencial?')) return;
+  await fetch(`/superadmin/boveda/items/${id}`, { method: 'DELETE', headers: { 'x-vault-token': sessionToken } });
+  cargarItems();
+  document.getElementById('vaultDetail').innerHTML = '<div style="text-align:center;color:#1e2235;padding:40px;font-size:40px;">🔐</div>';
+}
+
+function filtrar(q) {
+  const f = todosItems.filter(i => i.titulo.toLowerCase().includes(q.toLowerCase()) || (i.usuario||'').toLowerCase().includes(q.toLowerCase()));
+  renderList(catActual === 'todas' ? f : f.filter(i => i.categoria === catActual));
+}
+
+function filtrarCat(cat, el) {
+  catActual = cat;
+  document.querySelectorAll('.vault-cat-item').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  renderList(cat === 'todas' ? todosItems : todosItems.filter(i => i.categoria === cat));
+}
+
+function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function escAttr(s) { return String(s||'').replace(/'/g,'&#39;').replace(/"/g,'&quot;'); }
+function base64ToBuffer(b64) { const bin = atob(b64.replace(/-/g,'+').replace(/_/g,'/')); return Uint8Array.from(bin, c => c.charCodeAt(0)).buffer; }
+function bufferToBase64(buf) { return btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,''); }
+</script>
+</body>
+</html>

@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Emitir NC · MiRestcon</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --orange: #ef520f; --orange2: #df2c05;
+      --dark: #0a0f24; --bg: #F0F2F8;
+      --card: #ffffff; --text2: #8B8FAD;
+      --safe-bot: env(safe-area-inset-bottom, 0px);
+    }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      min-height: 100dvh;
+      max-width: 480px;
+      margin: 0 auto;
+      padding-bottom: calc(88px + var(--safe-bot));
+    }
+
+    /* ── Header ── */
+    .header {
+      background: linear-gradient(170deg, #10152f 0%, #0a0f24 50%, #090d1d 100%);
+      padding: 52px 20px 20px;
+      border-radius: 0 0 20px 20px;
+      color: #fff;
+    }
+    .header-top { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+    .btn-back {
+      background: rgba(255,255,255,0.12); border: none; color: #fff;
+      width: 36px; height: 36px; border-radius: 10px;
+      font-size: 18px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .header-title { font-size: 18px; font-weight: 700; }
+    .ref-chip {
+      background: rgba(255,255,255,0.1);
+      border-radius: 10px; padding: 8px 14px;
+      font-size: 13px; color: rgba(255,255,255,0.85);
+    }
+
+    /* ── Section card ── */
+    .card {
+      background: var(--card);
+      margin: 14px 16px 0;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+    }
+    .card-title {
+      padding: 14px 16px 10px;
+      font-size: 13px; font-weight: 600;
+      color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px;
+      border-bottom: 1px solid #F0F2F8;
+    }
+
+    /* ── Motivo segmented ── */
+    .segmented {
+      display: flex; margin: 14px 16px 0;
+      background: #E8EAF2; border-radius: 12px;
+      padding: 4px; gap: 4px;
+    }
+    .seg-btn {
+      flex: 1; padding: 9px 8px;
+      border: none; border-radius: 9px;
+      font-size: 13px; font-weight: 600;
+      cursor: pointer; background: transparent;
+      color: var(--text2); transition: all .2s;
+      font-family: 'DM Sans', sans-serif;
+      white-space: nowrap;
+    }
+    .seg-btn.active {
+      background: var(--dark); color: #fff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    }
+
+    /* ── Items checklist ── */
+    .item-row {
+      display: flex; align-items: center;
+      padding: 13px 16px;
+      border-bottom: 1px solid #F0F2F8;
+      gap: 12px; cursor: pointer;
+      transition: background .15s;
+    }
+    .item-row:last-child { border-bottom: none; }
+    .item-row:active { background: #F8F9FE; }
+
+    .check-circle {
+      width: 22px; height: 22px; border-radius: 50%;
+      border: 2px solid #C7CAD8;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; transition: all .2s;
+    }
+    .check-circle.checked {
+      background: var(--orange); border-color: var(--orange);
+      color: #fff; font-size: 12px; font-weight: 700;
+    }
+
+    .item-info { flex: 1; min-width: 0; }
+    .item-nombre { font-size: 14px; font-weight: 500; color: var(--dark); }
+    .item-cant   { font-size: 12px; color: var(--text2); margin-top: 1px; }
+    .item-precio { font-size: 14px; font-weight: 600; color: var(--dark); }
+
+    /* ── IGV row ── */
+    .igv-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 12px 16px; border-bottom: 1px solid #F0F2F8;
+    }
+    .igv-label { font-size: 13px; color: var(--text2); }
+    .igv-value { font-size: 13px; color: var(--text2); }
+
+    /* ── Total ── */
+    .total-row {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 16px;
+      background: #FFF8F5;
+    }
+    .total-label { font-size: 15px; font-weight: 700; color: var(--dark); }
+    .total-value {
+      font-size: 26px; font-weight: 800;
+      background: linear-gradient(135deg, var(--orange), var(--orange2));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+
+    /* ── Warning chip ── */
+    .warn-chip {
+      margin: 12px 16px 0;
+      background: #FFF3E0;
+      border-left: 3px solid #F97316;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 13px; color: #92400E;
+    }
+
+    /* ── CTA ── */
+    .cta-wrap {
+      position: fixed; bottom: 0; left: 50%;
+      transform: translateX(-50%);
+      width: 100%; max-width: 480px;
+      padding: 12px 16px calc(12px + var(--safe-bot));
+      background: var(--bg);
+      border-top: 1px solid #E8EAF2;
+    }
+    .cta-btn {
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      width: 100%;
+      background: linear-gradient(135deg, var(--orange), var(--orange2));
+      color: #fff; border: none; border-radius: 14px;
+      padding: 16px;
+      font-size: 16px; font-weight: 700;
+      cursor: pointer; font-family: 'DM Sans', sans-serif;
+      transition: opacity .2s;
+    }
+    .cta-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* ── Spinner overlay ── */
+    .spinner-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.4); z-index: 999;
+      align-items: center; justify-content: center;
+    }
+    .spinner-overlay.show { display: flex; }
+    .spinner {
+      width: 44px; height: 44px;
+      border: 4px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="header-top">
+      <button class="btn-back" onclick="history.back()">‹</button>
+      <span class="header-title">Emitir NC</span>
+    </div>
+    <div class="ref-chip">
+      Ref: <%= (factura.serie || 'B001') + '-' + String(factura.correlativo || 0).padStart(8,'0') %>
+      <% if (factura.mesa_numero) { %> · Mesa <%= factura.mesa_numero %><% } %>
+      · S/ <%= Number(factura.total).toFixed(2) %>
+    </div>
+  </div>
+
+  <!-- Motivo -->
+  <div class="segmented" id="motivoSeg">
+    <button class="seg-btn active" data-value="devolucion"   onclick="setMotivo(this)">Devolución</button>
+    <button class="seg-btn"        data-value="error_precio" onclick="setMotivo(this)">Error precio</button>
+    <button class="seg-btn"        data-value="anulacion"    onclick="setMotivo(this)">Anulación</button>
+  </div>
+  <input type="hidden" id="motivoInput" value="devolucion">
+
+  <!-- Items -->
+  <div class="card">
+    <div class="card-title">Items a acreditar</div>
+    <% items.forEach(function(item) { %>
+    <div class="item-row" onclick="toggleItem(this, <%= item.id %>)">
+      <div class="check-circle checked" id="chk-<%= item.id %>">✓</div>
+      <div class="item-info">
+        <div class="item-nombre"><%= item.nombre || 'Producto' %></div>
+        <div class="item-cant"><%= Number(item.cantidad) %>x · S/ <%= Number(item.precio_unitario).toFixed(2) %> c/u</div>
+      </div>
+      <div class="item-precio">S/ <%= Number(item.subtotal).toFixed(2) %></div>
+    </div>
+    <% }); %>
+
+    <div class="igv-row">
+      <div class="igv-label">IGV proporcional (18%)</div>
+      <div class="igv-value" id="igvDisplay">S/ 0.00</div>
+    </div>
+
+    <div class="total-row">
+      <div class="total-label">Total NC</div>
+      <div class="total-value" id="totalDisplay">S/ 0.00</div>
+    </div>
+  </div>
+
+  <div class="warn-chip">
+    ⚠️ Esta NC no se enviará a SUNAT inmediatamente.
+  </div>
+
+  <div class="cta-wrap">
+    <button class="cta-btn" id="ctaBtn" onclick="emitirNC()" disabled>
+      📄 Emitir nota de crédito
+    </button>
+  </div>
+
+  <div class="spinner-overlay" id="spinnerOverlay">
+    <div class="spinner"></div>
+  </div>
+
+  <script>
+    const ITEMS = [
+      <% items.forEach(function(item, i) { %>
+      { id: <%= item.id %>, subtotal: <%= Number(item.subtotal) %> }<%= i < items.length - 1 ? ',' : '' %>
+      <% }); %>
+    ];
+
+    let selectedItems = new Set(ITEMS.map(i => i.id));
+
+    function toggleItem(row, id) {
+      const chk = document.getElementById('chk-' + id);
+      if (selectedItems.has(id)) {
+        selectedItems.delete(id);
+        chk.classList.remove('checked');
+        chk.textContent = '';
+      } else {
+        selectedItems.add(id);
+        chk.classList.add('checked');
+        chk.textContent = '✓';
+      }
+      recalc();
+    }
+
+    function recalc() {
+      let subtotal = 0;
+      ITEMS.forEach(item => {
+        if (selectedItems.has(item.id)) subtotal += item.subtotal;
+      });
+      const igv   = +(subtotal * 0.18 / 1.18).toFixed(2);
+      const total = +subtotal.toFixed(2);
+
+      document.getElementById('igvDisplay').textContent   = 'S/ ' + igv.toFixed(2);
+      document.getElementById('totalDisplay').textContent = 'S/ ' + total.toFixed(2);
+
+      const btn = document.getElementById('ctaBtn');
+      btn.disabled = (selectedItems.size === 0 || total === 0);
+    }
+
+    function setMotivo(btn) {
+      document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('motivoInput').value = btn.dataset.value;
+    }
+
+    async function emitirNC() {
+      const btn = document.getElementById('ctaBtn');
+      if (btn.disabled) return;
+
+      let total = 0;
+      ITEMS.forEach(item => {
+        if (selectedItems.has(item.id)) total += item.subtotal;
+      });
+
+      document.getElementById('spinnerOverlay').classList.add('show');
+      btn.disabled = true;
+
+      try {
+        const resp = await fetch('/sunat-pwa/nota-credito/<%= factura.id %>', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            motivo:      document.getElementById('motivoInput').value,
+            items_ids:   Array.from(selectedItems),
+            monto_total: total.toFixed(2)
+          })
+        });
+        const data = await resp.json();
+        if (data.ok) {
+          window.location.href = data.redirect || '/sunat-pwa/nota-credito';
+        } else {
+          alert(data.error || 'Error emitiendo NC');
+          btn.disabled = false;
+        }
+      } catch (e) {
+        alert('Error de conexión');
+        btn.disabled = false;
+      } finally {
+        document.getElementById('spinnerOverlay').classList.remove('show');
+      }
+    }
+
+    // Init
+    recalc();
+  </script>
+  <script src="/js/dallia-fab.js"></script>
+</body>
+</html>

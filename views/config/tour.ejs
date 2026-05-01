@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#10152f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Tour del Sistema · MiRestcon</title>
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="manifest" href="/manifest.json">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --orange: #ef520f; --orange2: #df2c05;
+      --dark: #0a0f24; --bg: #F0F2F8;
+      --card: #fff; --text2: #8B8FAD;
+      --safe-bot: env(safe-area-inset-bottom, 0px);
+    }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      min-height: 100dvh;
+      max-width: 480px;
+      margin: 0 auto;
+      padding-bottom: calc(80px + var(--safe-bot));
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .header {
+      background: linear-gradient(170deg, #10152f 0%, #0a0f24 50%, #090d1d 100%);
+      padding: calc(52px + env(safe-area-inset-top, 0px)) 20px 20px;
+      border-radius: 0 0 20px 20px;
+      color: #fff;
+      display: flex; align-items: center; gap: 12px;
+    }
+    .btn-back {
+      background: rgba(255,255,255,0.12); border: none; color: #fff;
+      width: 36px; height: 36px; border-radius: 10px;
+      font-size: 20px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      text-decoration: none; flex-shrink: 0;
+    }
+    .header-title { font-size: 18px; font-weight: 700; }
+
+    .content { padding: 16px; }
+
+    /* Hero card */
+    .hero-card {
+      background: linear-gradient(135deg, #10152f 0%, #1a2040 100%);
+      border-radius: 20px;
+      padding: 28px 24px;
+      text-align: center;
+      margin-bottom: 16px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-card::before {
+      content: '';
+      position: absolute; top: -30px; right: -30px;
+      width: 120px; height: 120px; border-radius: 50%;
+      background: rgba(239,82,15,0.15);
+    }
+    .hero-icon {
+      font-size: 48px; margin-bottom: 12px; display: block;
+    }
+    .hero-title {
+      font-size: 20px; font-weight: 800; color: #fff; margin-bottom: 6px;
+    }
+    .hero-sub {
+      font-size: 13px; color: rgba(255,255,255,0.65); line-height: 1.5;
+      margin-bottom: 20px;
+    }
+
+    /* Progress bar */
+    .progress-wrap { margin-bottom: 8px; }
+    .progress-labels {
+      display: flex; justify-content: space-between;
+      font-size: 12px; color: rgba(255,255,255,0.7); margin-bottom: 6px;
+    }
+    .progress-bar {
+      height: 6px; background: rgba(255,255,255,0.15); border-radius: 3px; overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%; border-radius: 3px;
+      background: linear-gradient(90deg, var(--orange), var(--orange2));
+      transition: width .4s ease;
+    }
+
+    /* Steps list */
+    .steps-card {
+      background: var(--card);
+      border-radius: 16px;
+      padding: 4px 16px;
+      margin-bottom: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .step-row {
+      display: flex; align-items: center; gap: 14px;
+      padding: 14px 0;
+      border-bottom: 1px solid #F0F2F8;
+      text-decoration: none;
+    }
+    .step-row:last-child { border-bottom: none; }
+    .step-num {
+      width: 32px; height: 32px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 700; flex-shrink: 0;
+    }
+    .step-num.done    { background: #F0FDF4; color: #22C55E; }
+    .step-num.active  { background: linear-gradient(135deg, var(--orange), var(--orange2)); color: #fff; }
+    .step-num.locked  { background: #F1F5F9; color: #CBD5E1; }
+    .step-info { flex: 1; }
+    .step-title { font-size: 14px; font-weight: 600; }
+    .step-sub   { font-size: 12px; color: var(--text2); margin-top: 2px; }
+    .step-arrow { font-size: 18px; color: var(--text2); }
+
+    .step-row.done-row .step-title { color: #22C55E; }
+    .step-row.active-row .step-title { color: var(--orange); }
+    .step-row.locked-row .step-title { color: #CBD5E1; }
+    .step-row.locked-row .step-sub   { color: #E2E8F0; }
+
+    /* CTA buttons */
+    .btn-primary {
+      display: block; width: 100%; padding: 14px;
+      background: linear-gradient(135deg, var(--orange), var(--orange2));
+      border: none; border-radius: 14px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px; font-weight: 700; color: #fff;
+      cursor: pointer; text-align: center; text-decoration: none;
+      margin-bottom: 10px;
+      box-shadow: 0 4px 14px rgba(239,82,15,0.35);
+    }
+    .btn-skip {
+      display: block; text-align: center; padding: 10px;
+      font-size: 13px; color: var(--text2); text-decoration: none;
+    }
+
+    /* Bottom nav */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+      width: 100%; max-width: 480px;
+      padding: 8px 12px calc(8px + var(--safe-bot));
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border-top: 1px solid rgba(0,0,0,0.06);
+      display: flex; justify-content: space-around; align-items: center;
+      z-index: 100;
+    }
+    .nav-tab {
+      display: flex; flex-direction: column; align-items: center; gap: 2px;
+      text-decoration: none; color: var(--text2);
+      font-size: 10px; font-weight: 600; letter-spacing: .3px;
+      padding: 6px 10px; border-radius: 10px; flex: 1;
+    }
+    .nav-tab.active { color: var(--orange); }
+    .nav-tab svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <a href="/mas" class="btn-back">&#8592;</a>
+    <div class="header-title">Tour del Sistema</div>
+  </div>
+
+  <div class="content">
+
+    <!-- Hero -->
+    <div class="hero-card">
+      <span class="hero-icon">🎓</span>
+      <div class="hero-title">Aprende MiRestcon IA</div>
+      <div class="hero-sub">Completa cada paso y domina tu sistema en minutos. DallIA te guía en cada etapa.</div>
+      <div class="progress-wrap">
+        <div class="progress-labels">
+          <span>Progreso</span>
+          <span><%= tour.completados || 0 %> / <%= tour.total || 10 %> pasos</span>
+        </div>
+        <div class="progress-bar">
+          <div class="progress-fill" style="width:<%= Math.round(((tour.completados || 0) / (tour.total || 10)) * 100) %>%"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Steps -->
+    <div class="steps-card">
+
+      <% const pasos = [
+        { n:1,  title:'Conoce el Dashboard',          sub:'KPIs · Alertas · Accesos rápidos',   url:'/dashboard',         done: tour.completados >= 1 },
+        { n:2,  title:'Configura tu carta',           sub:'Categorías · Platos · Precios',      url:'/productos',         done: tour.completados >= 2 },
+        { n:3,  title:'Crea tus primeras mesas',      sub:'Grid de mesas · Estados',            url:'/mesas',             done: tour.completados >= 3 },
+        { n:4,  title:'Toma un pedido completo',      sub:'Mesa → Productos → Cocina → Cobro',  url:'/mesas',             done: tour.completados >= 4 },
+        { n:5,  title:'Usa DallIA Chat',               sub:'Pregunta · Alertas · Chips',         url:'/dallia',            done: tour.completados >= 5 },
+        { n:6,  title:'Abre y cierra la caja',        sub:'Monto inicial · Cuadre · Reporte',   url:'/caja',              done: tour.completados >= 6 },
+        { n:7,  title:'Configura tu inventario',      sub:'Insumos · Stock mínimo · Alertas',   url:'/almacen',           done: tour.completados >= 7 },
+        { n:8,  title:'Personaliza DallIA',            sub:'Nombre · Personalidad · Capacidades',url:'/config/dallia',    done: tour.completados >= 8 },
+        { n:9,  title:'Configura notificaciones',     sub:'Canales · WhatsApp · No molestar',   url:'/config/alertas',    done: tour.completados >= 9 },
+        { n:10, title:'¡Sistema listo!',               sub:'Revisión final · Activa todos los módulos', url:'/config/modulos', done: tour.completados >= 10 },
+      ]; %>
+
+      <% const siguiente = pasos.find(p => !p.done); %>
+
+      <% pasos.forEach(function(p) {
+        const isDone   = p.done;
+        const isActive = siguiente && p.n === siguiente.n;
+        const isLocked = !isDone && !isActive;
+        const rowClass = isDone ? 'done-row' : (isActive ? 'active-row' : 'locked-row');
+        const numClass = isDone ? 'done' : (isActive ? 'active' : 'locked');
+        const numIcon  = isDone ? '✓' : p.n;
+      %>
+      <a href="<%= isDone || isActive ? p.url : '#' %>" class="step-row <%= rowClass %>">
+        <div class="step-num <%= numClass %>"><%= numIcon %></div>
+        <div class="step-info">
+          <div class="step-title"><%= p.title %></div>
+          <div class="step-sub"><%= p.sub %></div>
+        </div>
+        <span class="step-arrow"><%= isLocked ? '🔒' : '›' %></span>
+      </a>
+      <% }); %>
+
+    </div>
+
+    <!-- CTA -->
+    <% if ((tour.completados || 0) < (tour.total || 10)) { %>
+      <% const next = pasos.find(p => !p.done); %>
+      <% if (next) { %>
+        <a href="<%= next.url %>" class="btn-primary">
+          Continuar — Paso <%= next.n %>: <%= next.title %>
+        </a>
+      <% } %>
+      <a href="/dashboard" class="btn-skip">Saltar por ahora, ir al inicio</a>
+    <% } else { %>
+      <div style="text-align:center;padding:20px;">
+        <div style="font-size:40px;margin-bottom:10px;">🎉</div>
+        <div style="font-size:17px;font-weight:700;color:var(--dark);margin-bottom:6px;">¡Tour completado!</div>
+        <div style="font-size:13px;color:var(--text2);">Ya dominas MiRestcon IA. ¡Mucho éxito!</div>
+      </div>
+      <a href="/dashboard" class="btn-primary">Ir al Dashboard</a>
+    <% } %>
+
+  </div>
+
+  <!-- Bottom Nav -->
+  <nav class="bottom-nav">
+    <a href="/dashboard" class="nav-tab">
+      <span><svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>
+      <span>INICIO</span>
+    </a>
+    <a href="/mesas" class="nav-tab">
+      <span><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></span>
+      <span>MESAS</span>
+    </a>
+    <a href="/cocina-display" class="nav-tab">
+      <span><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6 2 10.5c0 3 2 5.5 5 7v2.5a2 2 0 002 2h6a2 2 0 002-2V17.5c3-1.5 5-4 5-7C22 6 17.52 2 12 2z"/></svg></span>
+      <span>COCINA</span>
+    </a>
+    <a href="/ventas" class="nav-tab">
+      <span><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></span>
+      <span>VENTAS</span>
+    </a>
+    <a href="/mas" class="nav-tab active">
+      <span><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg></span>
+      <span>MÁS</span>
+    </a>
+  </nav>
+
+</body>
+</html>

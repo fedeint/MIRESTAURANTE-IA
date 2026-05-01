@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="/favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delivery - mirestconia.com</title>
+    <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/theme.css">
+</head>
+<body>
+    <%- include('../partials/sidebar') %>
+    <div class="dg-main">
+    <main class="flex-grow-1">
+    <div class="container">
+
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <h4 class="mb-0"><i class="bi bi-truck me-2"></i>Delivery y Para llevar</h4>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#pedidoModal">
+                <i class="bi bi-plus-lg me-1"></i>Nuevo pedido
+            </button>
+        </div>
+
+        <!-- Tabla de pedidos -->
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle" id="tablaPedidos">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Tipo</th>
+                                <th>Plataforma</th>
+                                <th>Cliente</th>
+                                <th>Dirección</th>
+                                <th>Estado</th>
+                                <th>Total</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% if (pedidos && pedidos.length) { %>
+                                <% pedidos.forEach(p => { %>
+                                <tr>
+                                    <td><%= new Date(p.created_at || p.fecha).toLocaleString('es-PE', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }) %></td>
+                                    <td>
+                                        <% if (p.tipo === 'delivery') { %>
+                                            <span class="badge bg-primary"><i class="bi bi-truck me-1"></i>Delivery</span>
+                                        <% } else { %>
+                                            <span class="badge bg-info text-dark"><i class="bi bi-bag me-1"></i>Para llevar</span>
+                                        <% } %>
+                                    </td>
+                                    <td>
+                                        <%
+                                            const platColors = {
+                                                propio: 'secondary',
+                                                rappi: 'danger',
+                                                pedidosya: 'warning',
+                                                ubereats: 'dark',
+                                                glovo: 'success',
+                                                otro: 'info'
+                                            };
+                                            const platColor = platColors[p.plataforma] || 'secondary';
+                                        %>
+                                        <span class="badge bg-<%= platColor %>"><%= p.plataforma || 'propio' %></span>
+                                    </td>
+                                    <td><%= p.nombre_cliente || p.nombre || '-' %></td>
+                                    <td><%= p.direccion || '-' %></td>
+                                    <td>
+                                        <%
+                                            const estColors = {
+                                                pendiente: 'warning',
+                                                preparando: 'info',
+                                                listo: 'primary',
+                                                en_camino: 'purple',
+                                                entregado: 'success',
+                                                cancelado: 'danger'
+                                            };
+                                            const estColor = estColors[p.estado] || 'secondary';
+                                        %>
+                                        <span class="badge bg-<%= estColor %>"><%= p.estado %></span>
+                                    </td>
+                                    <td>S/ <%= parseFloat(p.total || 0).toFixed(2) %></td>
+                                    <td>
+                                        <div class="dropdown">
+                                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                                                <i class="bi bi-gear"></i>
+                                            </button>
+                                            <ul class="dropdown-menu">
+                                                <% if (p.estado === 'pendiente') { %>
+                                                    <li><a class="dropdown-item" href="#" onclick="cambiarEstado(<%= p.id %>, 'preparando')"><i class="bi bi-fire me-2"></i>Preparando</a></li>
+                                                <% } %>
+                                                <% if (p.estado === 'preparando') { %>
+                                                    <li><a class="dropdown-item" href="#" onclick="cambiarEstado(<%= p.id %>, 'listo')"><i class="bi bi-check-circle me-2"></i>Listo</a></li>
+                                                <% } %>
+                                                <% if (p.estado === 'listo' && p.tipo === 'delivery') { %>
+                                                    <li><a class="dropdown-item" href="#" onclick="cambiarEstado(<%= p.id %>, 'en_camino')"><i class="bi bi-truck me-2"></i>En camino</a></li>
+                                                <% } %>
+                                                <% if (p.estado === 'listo' || p.estado === 'en_camino') { %>
+                                                    <li><a class="dropdown-item" href="#" onclick="cambiarEstado(<%= p.id %>, 'entregado')"><i class="bi bi-bag-check me-2"></i>Entregado</a></li>
+                                                <% } %>
+                                                <% if (p.estado !== 'entregado' && p.estado !== 'cancelado') { %>
+                                                    <li><hr class="dropdown-divider"></li>
+                                                    <li><a class="dropdown-item text-danger" href="#" onclick="cambiarEstado(<%= p.id %>, 'cancelado')"><i class="bi bi-x-circle me-2"></i>Cancelar</a></li>
+                                                <% } %>
+                                            </ul>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <% }) %>
+                            <% } else { %>
+                                <tr>
+                                    <td colspan="8" class="text-center text-muted py-4">No hay pedidos de delivery</td>
+                                </tr>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    </main>
+    <%- include('../partials/footer') %>
+    </div><!-- dg-main -->
+
+    <!-- Modal Nuevo Pedido -->
+    <div class="modal fade" id="pedidoModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-truck me-2"></i>Nuevo Pedido</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="formPedido">
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Tipo</label>
+                                <select name="tipo" class="form-select" required id="selectTipo">
+                                    <option value="delivery">Delivery</option>
+                                    <option value="para_llevar">Para llevar</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Plataforma</label>
+                                <select name="plataforma" class="form-select">
+                                    <option value="propio">Propio</option>
+                                    <option value="rappi">Rappi</option>
+                                    <option value="pedidosya">PedidosYa</option>
+                                    <option value="ubereats">Uber Eats</option>
+                                    <option value="glovo">Glovo</option>
+                                    <option value="otro">Otro</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Nombre del cliente</label>
+                                <input type="text" name="nombre_cliente" class="form-control" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Teléfono</label>
+                                <input type="text" name="telefono" class="form-control">
+                            </div>
+                            <div class="col-12" id="campoDireccion">
+                                <label class="form-label">Dirección</label>
+                                <input type="text" name="direccion" class="form-control">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Tiempo estimado (min)</label>
+                                <input type="number" name="tiempo_estimado" class="form-control" min="1" placeholder="30">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Comisión (%)</label>
+                                <input type="number" name="comision_porcentaje" class="form-control" min="0" max="100" step="0.1" placeholder="0">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Notas</label>
+                                <textarea name="notas" class="form-control" rows="2"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-save me-1"></i>Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="/vendor/jquery/jquery.min.js"></script>
+    <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="/vendor/sweetalert2/sweetalert2.all.min.js"></script>
+    <script>
+        // Toggle dirección field based on tipo
+        document.getElementById('selectTipo').addEventListener('change', function() {
+            document.getElementById('campoDireccion').style.display = this.value === 'delivery' ? '' : 'none';
+        });
+
+        // Crear pedido
+        document.getElementById('formPedido').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const data = Object.fromEntries(new FormData(this));
+            try {
+                const res = await fetch('/api/features/delivery', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await res.json();
+                if (res.ok) {
+                    Swal.fire('Pedido creado', '', 'success').then(() => location.reload());
+                } else {
+                    Swal.fire('Error', result.error || 'No se pudo crear el pedido', 'error');
+                }
+            } catch (err) {
+                Swal.fire('Error', 'Error de conexión', 'error');
+            }
+        });
+
+        // Cambiar estado
+        async function cambiarEstado(id, nuevoEstado) {
+            const confirmacion = await Swal.fire({
+                title: '¿Cambiar estado?',
+                text: `El pedido pasará a "${nuevoEstado}"`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, cambiar',
+                cancelButtonText: 'No'
+            });
+            if (!confirmacion.isConfirmed) return;
+            try {
+                const res = await fetch(`/api/features/delivery/${id}/estado`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ estado: nuevoEstado })
+                });
+                const result = await res.json();
+                if (res.ok) {
+                    Swal.fire('Actualizado', '', 'success').then(() => location.reload());
+                } else {
+                    Swal.fire('Error', result.error || 'No se pudo actualizar', 'error');
+                }
+            } catch (err) {
+                Swal.fire('Error', 'Error de conexión', 'error');
+            }
+        }
+    </script>
+</body>
+</html>

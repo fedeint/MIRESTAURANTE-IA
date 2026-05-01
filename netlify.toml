@@ -1,0 +1,19 @@
+[build]
+  command = "npm install"
+  publish = "public"
+  functions = "api"
+
+[build.environment]
+  NODE_VERSION = "18"
+
+[[redirects]]
+  from = "/*"
+  to = "/api/index.js"
+  status = 200
+
+[dev]
+  command = "npm run dev"
+  port = 1995
+  targetPort = 1995
+  publish = "public"
+  autoLaunch = true

@@ -1,0 +1,73 @@
+<nav class="navbar navbar-expand-lg dg-navbar">
+  <div class="container d-flex align-items-center gap-2 flex-nowrap">
+    <% const u = (typeof user !== 'undefined' && user) ? user : null; %>
+    <% const rol = u ? String(u.rol || '').toLowerCase() : ''; %>
+
+    <a class="navbar-brand text-truncate m-0" href="/" style="max-width:52vw;">
+      <span class="dg-brand-icon"><i class="bi bi-fire"></i></span>
+      MiRestcon<span class="dg-brand-dot">IA</span>
+    </a>
+
+    <div class="d-flex align-items-center gap-2 ms-auto flex-nowrap overflow-auto" style="max-width:46vw; scrollbar-width:none;">
+      <% if (rol === 'administrador') { %>
+        <a href="/" class="btn btn-outline-light btn-sm" data-bs-toggle="tooltip" title="Inicio"><i class="bi bi-house-door-fill"></i></a>
+        <a href="/mesas" class="btn btn-outline-light btn-sm" data-bs-toggle="tooltip" title="Mesas"><i class="bi bi-grid-3x3-gap-fill"></i></a>
+        <a href="/cocina" class="btn btn-outline-light btn-sm" data-bs-toggle="tooltip" title="Cocina"><i class="bi bi-fire"></i></a>
+        <a href="/ventas" class="btn btn-outline-light btn-sm" data-bs-toggle="tooltip" title="Ventas"><i class="bi bi-graph-up-arrow"></i></a>
+        <a href="/productos" class="btn btn-outline-light btn-sm" data-bs-toggle="tooltip" title="Productos"><i class="bi bi-box-seam-fill"></i></a>
+        <a href="/recetas" class="btn btn-outline-light btn-sm" data-bs-toggle="tooltip" title="Recetas"><i class="bi bi-journal-text"></i></a>
+        <a href="/clientes" class="btn btn-outline-light btn-sm" data-bs-toggle="tooltip" title="Clientes"><i class="bi bi-people-fill"></i></a>
+        <a href="/usuarios" class="btn btn-outline-light btn-sm" data-bs-toggle="tooltip" title="Usuarios"><i class="bi bi-person-gear"></i></a>
+        <a href="/configuracion" class="btn btn-outline-light btn-sm" data-bs-toggle="tooltip" title="Configuracion"><i class="bi bi-gear-fill"></i></a>
+      <% } %>
+
+      <% if (rol === 'mesero') { %>
+        <a href="/mesas" class="btn btn-outline-light btn-sm" data-bs-toggle="tooltip" title="Mesas"><i class="bi bi-grid-3x3-gap-fill"></i></a>
+        <a href="/cocina" class="btn btn-outline-light btn-sm" data-bs-toggle="tooltip" title="Cocina"><i class="bi bi-fire"></i></a>
+      <% } %>
+
+      <% if (rol === 'cocinero') { %>
+        <a href="/cocina" class="btn btn-outline-light btn-sm" data-bs-toggle="tooltip" title="Cocina"><i class="bi bi-fire"></i></a>
+      <% } %>
+
+      <% if (rol === 'almacenero') { %>
+        <a href="/almacen" class="btn btn-outline-light btn-sm" data-bs-toggle="tooltip" title="Almacen"><i class="bi bi-archive-fill"></i></a>
+        <a href="/productos" class="btn btn-outline-light btn-sm" data-bs-toggle="tooltip" title="Productos"><i class="bi bi-box-seam-fill"></i></a>
+        <a href="/recetas" class="btn btn-outline-light btn-sm" data-bs-toggle="tooltip" title="Recetas"><i class="bi bi-journal-text"></i></a>
+      <% } %>
+
+      <!-- Theme toggle -->
+      <button class="dg-theme-toggle" id="themeToggle" data-bs-toggle="tooltip" title="Cambiar tema">
+        <i class="bi bi-moon-fill dg-icon-moon"></i>
+        <i class="bi bi-sun-fill dg-icon-sun"></i>
+      </button>
+
+      <% if (u) { %>
+        <div class="vr bg-light opacity-50 mx-1"></div>
+        <span class="badge d-none d-md-inline-flex" data-bs-toggle="tooltip" title="Usuario actual">
+          <i class="bi bi-person-circle me-1"></i><%= u.usuario %> · <%= rol %>
+        </span>
+        <form method="POST" action="/logout" class="m-0">
+          <input type="hidden" name="_csrf" value="<%= locals.csrfToken || '' %>">
+          <button type="submit" class="btn btn-outline-light btn-sm" data-bs-toggle="tooltip" title="Cerrar sesion">
+            <i class="bi bi-box-arrow-right"></i>
+          </button>
+        </form>
+      <% } %>
+    </div>
+  </div>
+</nav>
+
+<script>
+(function(){
+  var t = localStorage.getItem('dg-theme');
+  if (!t) t = window.matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', t);
+  var btn = document.getElementById('themeToggle');
+  if (btn) btn.addEventListener('click', function(){
+    var cur = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', cur);
+    localStorage.setItem('dg-theme', cur);
+  });
+})();
+</script>

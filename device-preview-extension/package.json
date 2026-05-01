@@ -1,0 +1,79 @@
+{
+  "name": "mirestcon-device-preview",
+  "displayName": "Device Preview - Leyavi",
+  "description": "Preview Desktop, Tablet y Mobile side-by-side con Playwright tour, comentarios y terminal integrado",
+  "version": "3.0.0",
+  "publisher": "dignita",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "categories": ["Other"],
+  "activationEvents": [],
+  "main": "./extension.js",
+  "dependencies": {
+    "express": "^4.18.0"
+  },
+  "contributes": {
+    "commands": [
+      {
+        "command": "devicePreview.open",
+        "title": "Device Preview: Abrir",
+        "icon": "$(device-mobile)"
+      },
+      {
+        "command": "devicePreview.reload",
+        "title": "Device Preview: Recargar devices"
+      },
+      {
+        "command": "devicePreview.tour",
+        "title": "Device Preview: Iniciar Tour Playwright"
+      },
+      {
+        "command": "devicePreview.switchMode",
+        "title": "Device Preview: Cambiar modo (Build/Test/Mapa)"
+      },
+      {
+        "command": "devicePreview.generateMap",
+        "title": "Device Preview: Generar module-map.json"
+      }
+    ],
+    "keybindings": [
+      {
+        "command": "devicePreview.open",
+        "key": "ctrl+shift+d",
+        "mac": "cmd+shift+d"
+      },
+      {
+        "command": "devicePreview.tour",
+        "key": "ctrl+shift+t",
+        "mac": "cmd+shift+t"
+      }
+    ],
+    "configuration": {
+      "title": "Device Preview",
+      "properties": {
+        "devicePreview.appUrl": {
+          "type": "string",
+          "default": "http://localhost:1995",
+          "description": "URL de tu app local"
+        },
+        "devicePreview.autoReload": {
+          "type": "boolean",
+          "default": true,
+          "description": "Recargar devices automaticamente cuando guardas un archivo"
+        },
+        "devicePreview.defaultMode": {
+          "type": "string",
+          "enum": ["test", "build", "map"],
+          "default": "test",
+          "description": "Modo por defecto al abrir Device Preview"
+        },
+        "devicePreview.showMiniMap": {
+          "type": "boolean",
+          "default": true,
+          "description": "Mostrar panel de contexto de módulo (mini mapa) en modo Test"
+        }
+      }
+    }
+  }
+}

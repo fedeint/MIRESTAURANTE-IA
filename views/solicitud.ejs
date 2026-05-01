@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0a0f24">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Solicitud de Acceso - MiRestcon IA</title>
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'DM Sans', system-ui, sans-serif;
+      background: #F0F2F8;
+      min-height: 100vh;
+      margin: 0;
+    }
+    .sol-header {
+      background: linear-gradient(180deg, #10152f 0%, #0a0f24 100%);
+      border-radius: 0 0 20px 20px;
+      padding: 20px 16px 24px;
+      color: #fff;
+    }
+    .sol-header .back-btn {
+      color: rgba(255,255,255,0.7);
+      font-size: 0.85rem;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-bottom: 12px;
+    }
+    .sol-header h1 {
+      font-size: 1.3rem;
+      font-weight: 700;
+      margin: 0 0 4px;
+    }
+    .sol-header p {
+      font-size: 0.85rem;
+      color: rgba(255,255,255,0.6);
+      margin: 0;
+    }
+    .sol-body {
+      padding: 16px;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+    .sol-card {
+      background: #fff;
+      border-radius: 16px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .sol-card-title {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1.2px;
+      color: #8B8FAD;
+      margin-bottom: 12px;
+    }
+    .user-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .user-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      object-fit: cover;
+      background: #e2e8f0;
+    }
+    .user-avatar-placeholder {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #ef520f, #df2c05);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+    .form-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #0a0f24;
+      margin-bottom: 4px;
+    }
+    .form-label .badge-opcional {
+      font-size: 0.65rem;
+      font-weight: 500;
+      color: #8B8FAD;
+      background: #f1f3f9;
+      border-radius: 4px;
+      padding: 1px 6px;
+      margin-left: 4px;
+    }
+    .form-label .badge-required {
+      font-size: 0.65rem;
+      font-weight: 500;
+      color: #dc2626;
+      background: rgba(239,68,68,0.08);
+      border-radius: 4px;
+      padding: 1px 6px;
+      margin-left: 4px;
+    }
+    .form-control, .form-select {
+      border: 1.5px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 0.9rem;
+      font-family: 'DM Sans', system-ui, sans-serif;
+      color: #0a0f24;
+      background: #fff;
+      transition: border-color 0.2s;
+    }
+    .form-control:focus, .form-select:focus {
+      border-color: #ef520f;
+      box-shadow: 0 0 0 3px rgba(239,82,15,0.12);
+      outline: none;
+    }
+    .form-hint {
+      font-size: 0.72rem;
+      color: #8B8FAD;
+      margin-top: 4px;
+    }
+    .sol-divider {
+      height: 1px;
+      background: #f1f3f9;
+      margin: 12px 0;
+    }
+    .btn-submit {
+      display: block;
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #ef520f, #df2c05);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-family: 'DM Sans', system-ui, sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 8px;
+      transition: opacity 0.2s;
+    }
+    .btn-submit:active { opacity: 0.85; }
+    .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+    .alert-error {
+      background: rgba(239,68,68,0.08);
+      border: 1px solid rgba(239,68,68,0.2);
+      color: #dc2626;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 0.85rem;
+      margin-bottom: 12px;
+    }
+    .foto-preview {
+      width: 100%;
+      max-height: 160px;
+      object-fit: cover;
+      border-radius: 10px;
+      display: none;
+      margin-top: 8px;
+    }
+    .video-preview {
+      width: 100%;
+      max-height: 200px;
+      border-radius: 10px;
+      display: none;
+      margin-top: 8px;
+    }
+    .upload-area {
+      border: 2px dashed #e2e8f0;
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    .upload-area:hover { border-color: #ef520f; }
+    .upload-area.has-file { border-color: #22C55E; background: rgba(34,197,94,0.04); }
+    .upload-area input { display: none; }
+    .upload-icon { font-size: 1.5rem; color: #8B8FAD; }
+    .upload-text { font-size: 0.8rem; color: #8B8FAD; margin-top: 4px; }
+    .upload-filename { font-size: 0.75rem; color: #22C55E; margin-top: 4px; font-weight: 600; }
+    #map-container {
+      height: 180px;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-top: 8px;
+      display: none;
+    }
+
+    /* Location picker styles */
+    .location-search-wrap {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .location-search-wrap .search-input-wrap {
+      flex: 1;
+      position: relative;
+    }
+    .location-search-wrap .search-input-wrap .search-icon {
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #8B8FAD;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .location-search-wrap #direccionInput {
+      padding-left: 36px;
+      padding-right: 12px;
+    }
+    .btn-map-pin {
+      width: 44px;
+      height: 44px;
+      min-width: 44px;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 10px;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1.2rem;
+      transition: border-color 0.2s, background 0.2s;
+    }
+    .btn-map-pin:active {
+      border-color: #ef520f;
+      background: rgba(239,82,15,0.06);
+    }
+
+    /* Places search results */
+    .places-results {
+      display: none;
+      background: #fff;
+      border: 1.5px solid #e2e8f0;
+      border-top: none;
+      border-radius: 0 0 10px 10px;
+      max-height: 240px;
+      overflow-y: auto;
+      margin-top: -4px;
+    }
+    .places-results.active { display: block; }
+    .place-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      cursor: pointer;
+      border-bottom: 1px solid #f0f2f8;
+      transition: background 0.15s;
+    }
+    .place-item:last-child { border-bottom: none; }
+    .place-item:active { background: #f8f9fc; }
+    .place-item .pi-icon {
+      width: 32px; height: 32px; min-width: 32px;
+      border-radius: 8px;
+      background: #FFF3EC;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.9rem;
+    }
+    .place-item .pi-info { flex: 1; min-width: 0; }
+    .place-item .pi-name { font-size: 0.85rem; font-weight: 600; color: #0a0f24; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .place-item .pi-addr { font-size: 0.72rem; color: #8B8FAD; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .place-item .pi-dist { font-size: 0.7rem; color: #8B8FAD; white-space: nowrap; flex-shrink: 0; }
+
+    /* Selected place chip */
+    .selected-place {
+      display: none;
+      margin-top: 8px;
+      padding: 10px 12px;
+      background: #f8f9fc;
+      border: 1.5px solid #e2e8f0;
+      border-radius: 10px;
+      position: relative;
+    }
+    .selected-place.active { display: block; }
+    .selected-place .sp-name {
+      font-weight: 600;
+      font-size: 0.88rem;
+      color: #0a0f24;
+    }
+    .selected-place .sp-address {
+      font-size: 0.78rem;
+      color: #8B8FAD;
+      margin-top: 2px;
+    }
+    .selected-place .sp-rating {
+      font-size: 0.72rem;
+      color: #ef520f;
+      margin-top: 2px;
+    }
+    .selected-place .sp-clear {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      width: 22px;
+      height: 22px;
+      border: none;
+      background: #e2e8f0;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 0.7rem;
+      color: #8B8FAD;
+    }
+
+    /* Map preview after selection */
+    .map-preview-container {
+      display: none;
+      margin-top: 8px;
+      border-radius: 10px;
+      overflow: hidden;
+      height: 140px;
+    }
+    .map-preview-container.active { display: block; }
+
+    /* Fullscreen map overlay */
+    .map-overlay {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw;
+      height: 100vh;
+      height: 100dvh;
+      z-index: 9999;
+      background: #000;
+      flex-direction: column;
+      animation: fadeIn 0.25s ease;
+    }
+    .map-overlay.active {
+      display: flex;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .map-overlay .map-overlay-header {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      padding-top: max(12px, env(safe-area-inset-top));
+      background: linear-gradient(180deg, rgba(10,15,36,0.85) 0%, transparent 100%);
+    }
+    .map-overlay .overlay-address {
+      flex: 1;
+      color: #fff;
+      font-size: 0.82rem;
+      font-weight: 500;
+      padding: 0 12px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .map-overlay .btn-close-map {
+      width: 36px;
+      height: 36px;
+      min-width: 36px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(255,255,255,0.15);
+      backdrop-filter: blur(8px);
+      color: #fff;
+      font-size: 1.1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .map-overlay #fullscreenMap {
+      flex: 1;
+      width: 100%;
+      min-height: 0;
+    }
+    .map-overlay .center-pin {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -100%);
+      z-index: 5;
+      font-size: 2rem;
+      filter: drop-shadow(0 2px 6px rgba(0,0,0,0.4));
+      pointer-events: none;
+      transition: transform 0.15s ease;
+    }
+    .map-overlay .center-pin.bouncing {
+      transform: translate(-50%, -110%);
+    }
+    .map-overlay .center-dot {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 5;
+      width: 6px;
+      height: 6px;
+      background: rgba(0,0,0,0.25);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+    .map-overlay .map-overlay-footer {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      z-index: 10;
+      padding: 16px;
+      padding-bottom: max(16px, env(safe-area-inset-bottom));
+      background: linear-gradient(0deg, rgba(10,15,36,0.9) 0%, transparent 100%);
+    }
+    .map-overlay .btn-confirm-loc {
+      display: block;
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #ef520f, #df2c05);
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      font-family: 'DM Sans', system-ui, sans-serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .map-overlay .btn-confirm-loc:active { opacity: 0.85; }
+    .map-overlay .btn-my-location {
+      position: absolute;
+      bottom: 90px;
+      right: 16px;
+      z-index: 10;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: none;
+      background: #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .pb-safe { padding-bottom: max(16px, env(safe-area-inset-bottom)); }
+
+    /* Upload progress */
+    .upload-progress-wrap {
+      margin-top: 8px;
+    }
+    .upload-progress-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 0;
+      font-size: 0.78rem;
+      color: #0a0f24;
+    }
+    .upload-progress-item .upi-name {
+      flex: 1;
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .upload-progress-item .upi-status {
+      flex-shrink: 0;
+      font-weight: 600;
+    }
+    .upload-progress-item .upi-status.uploading { color: #ef520f; }
+    .upload-progress-item .upi-status.done { color: #22C55E; }
+    .upload-progress-item .upi-status.error { color: #EF4444; }
+    .upload-progress-bar {
+      width: 100%;
+      height: 4px;
+      background: #e2e8f0;
+      border-radius: 2px;
+      overflow: hidden;
+      margin-top: 2px;
+    }
+    .upload-progress-bar .bar {
+      height: 100%;
+      background: linear-gradient(90deg, #ef520f, #df2c05);
+      border-radius: 2px;
+      transition: width 0.3s ease;
+      width: 0%;
+    }
+    .alert-error-js {
+      background: rgba(239,68,68,0.08);
+      border: 1px solid rgba(239,68,68,0.2);
+      color: #dc2626;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 0.85rem;
+      margin-bottom: 12px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <div class="sol-header">
+    <a href="/logout" class="back-btn">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7"/></svg>
+      Salir
+    </a>
+    <h1>Activa tu restaurante con IA</h1>
+    <p style="margin-bottom:12px;">Mas de 200 restaurantes ya gestionan sus pedidos, cocina y finanzas con DallIA. Tu trial de 15 dias gratis comienza al ser aprobado.</p>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;">
+      <span style="display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:20px;padding:4px 12px;font-size:0.72rem;color:rgba(255,255,255,0.85);backdrop-filter:blur(8px);">&#129302; IA que te ayuda</span>
+      <span style="display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:20px;padding:4px 12px;font-size:0.72rem;color:rgba(255,255,255,0.85);backdrop-filter:blur(8px);">&#128241; Desde tu celular</span>
+      <span style="display:inline-flex;align-items:center;gap:4px;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:20px;padding:4px 12px;font-size:0.72rem;color:rgba(255,255,255,0.85);backdrop-filter:blur(8px);">&#9889; Listo en 24h</span>
+    </div>
+  </div>
+
+  <div class="sol-body">
+    <% if (error) { %>
+      <div class="alert-error"><%= error %></div>
+    <% } %>
+
+    <div class="alert-error-js" id="jsError"></div>
+    <form id="solicitudForm">
+
+      <!-- Google profile (read-only) -->
+      <div class="sol-card">
+        <div class="sol-card-title">Tu cuenta Google</div>
+        <div class="user-row">
+          <% if (user.google_avatar) { %>
+            <img src="<%= user.google_avatar %>" alt="Avatar" class="user-avatar">
+          <% } else { %>
+            <div class="user-avatar-placeholder"><%= (user.nombre || 'U')[0].toUpperCase() %></div>
+          <% } %>
+          <div>
+            <div style="font-weight:600;font-size:0.95rem;color:#0a0f24"><%= user.nombre %></div>
+            <div style="font-size:0.8rem;color:#8B8FAD"><%= user.google_email || user.usuario %></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Personal info -->
+      <div class="sol-card">
+        <div class="sol-card-title">Tus datos</div>
+
+        <div class="mb-3">
+          <label class="form-label">Nombre del representante *</label>
+          <input type="text" name="nombre_representante" class="form-control" placeholder="Ej: Juan Pérez López" required>
+          <div class="form-hint">Nombre completo de quien gestiona la solicitud</div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">DNI *</label>
+          <input type="text" name="dni" class="form-control" placeholder="12345678" maxlength="8" inputmode="numeric" pattern="\d{8}" required>
+          <div class="form-hint">8 dígitos de tu documento de identidad</div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Tu cargo en el negocio *</label>
+          <select name="cargo" class="form-select" required>
+            <option value="">Selecciona...</option>
+            <option value="Dueño">Dueño</option>
+            <option value="Administrador">Administrador</option>
+            <option value="Socio">Socio</option>
+            <option value="Gerente">Gerente</option>
+            <option value="Marketing">Marketing</option>
+            <option value="Consultor">Consultor</option>
+            <option value="Otro">Otro</option>
+          </select>
+        </div>
+
+        <div class="mb-0">
+          <label class="form-label">Teléfono <span class="badge-opcional">Opcional</span></label>
+          <input type="tel" name="telefono_solicitante" class="form-control" placeholder="987 654 321" inputmode="tel">
+        </div>
+      </div>
+
+      <!-- Restaurant info -->
+      <div class="sol-card">
+        <div class="sol-card-title">Tu restaurante</div>
+
+        <div class="mb-3">
+          <label class="form-label">Nombre del restaurante *</label>
+          <input type="text" name="nombre_restaurante" class="form-control" placeholder="Ej: Cevichería El Peruano" required>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">RUC <span class="badge-opcional">Opcional</span></label>
+          <input type="text" name="ruc" class="form-control" placeholder="20123456789" maxlength="11" inputmode="numeric" id="rucInput">
+          <div class="form-hint">Solo si tienes RUC — muchos negocios informales no tienen</div>
+          <div id="rucError" style="font-size:0.72rem;color:#dc2626;display:none;margin-top:4px">El RUC debe tener 11 dígitos</div>
+        </div>
+
+        <div class="mb-0">
+          <label class="form-label">Tipo de negocio *</label>
+          <select name="tipo_negocio" class="form-select" required>
+            <option value="">Selecciona...</option>
+            <optgroup label="Tipo de local">
+              <option value="Restaurante con salón">Restaurante con salón</option>
+              <option value="Solo delivery">Solo delivery</option>
+              <option value="Food truck">Food truck</option>
+            </optgroup>
+            <optgroup label="Tipo de restaurante">
+              <option value="Criolla">Criolla</option>
+              <option value="Solo vendo un plato">Solo vendo un plato</option>
+              <option value="Fast Food">Fast Food</option>
+              <option value="Comida oriental">Comida oriental</option>
+              <option value="Fusión">Fusión</option>
+              <option value="Cevichería">Cevichería</option>
+              <option value="Pollería">Pollería</option>
+              <option value="Chifa">Chifa</option>
+              <option value="Sanguchería">Sanguchería</option>
+              <option value="Cafetería">Cafetería</option>
+              <option value="Bar/Pub">Bar/Pub</option>
+              <option value="Parrilla">Parrilla</option>
+              <option value="Pastelería">Pastelería</option>
+              <option value="Juguerías">Juguerías</option>
+            </optgroup>
+            <option value="Otro">Otro</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Location -->
+      <div class="sol-card">
+        <div class="sol-card-title">Ubicación</div>
+
+        <label class="form-label">Busca tu restaurante o dirección</label>
+        <div class="location-search-wrap">
+          <div class="search-input-wrap">
+            <svg class="search-icon" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+            <input type="text" id="direccionInput" name="direccion" class="form-control" placeholder="Ej: Corkys, Av. Universitaria..." autocomplete="off">
+          </div>
+          <button type="button" class="btn-map-pin" id="btnOpenMap" title="Elegir en mapa">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ef520f" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          </button>
+        </div>
+        <!-- Search results dropdown -->
+        <div class="places-results" id="placesResults"></div>
+        <input type="hidden" name="latitud" id="latInput">
+        <input type="hidden" name="longitud" id="lngInput">
+
+        <!-- Selected place info -->
+        <div class="selected-place" id="selectedPlace">
+          <button type="button" class="sp-clear" id="clearPlace">&times;</button>
+          <div class="sp-name" id="spName"></div>
+          <div class="sp-address" id="spAddress"></div>
+          <div class="sp-rating" id="spRating"></div>
+        </div>
+
+        <!-- Small map preview after selection -->
+        <div class="map-preview-container" id="mapPreviewContainer">
+          <div id="mapPreview" style="width:100%;height:100%"></div>
+        </div>
+      </div>
+
+      <!-- Photos (REQUIRED — 2 to 3) -->
+      <div class="sol-card">
+        <div class="sol-card-title">Fotos del local <span class="badge-required">2 a 3 fotos</span></div>
+
+        <div class="upload-area" id="fotoUploadArea" onclick="document.getElementById('fotoInput').click()">
+          <input type="file" id="fotoInput" accept="image/jpeg,image/png,image/webp" multiple onchange="handleFotoSelect(event)">
+          <div class="upload-icon">📷</div>
+          <div class="upload-text">Toca para subir 2-3 fotos de tu local</div>
+          <div class="form-hint" style="margin-top:4px">JPG, PNG o WebP — se comprimen automaticamente</div>
+        </div>
+        <div id="fotoPreviews" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px"></div>
+        <div class="upload-progress-wrap" id="fotoProgress"></div>
+      </div>
+
+      <!-- Video (REQUIRED) -->
+      <div class="sol-card">
+        <div class="sol-card-title">Video del local <span class="badge-required">Obligatorio</span></div>
+
+        <div class="upload-area" id="videoUploadArea" onclick="document.getElementById('videoInput').click()">
+          <input type="file" id="videoInput" accept="video/mp4,video/mov,video/quicktime,video/webm" onchange="handleVideoSelect(event)">
+          <div class="upload-icon">🎬</div>
+          <div class="upload-text">Toca para subir un video de tu local</div>
+          <div class="form-hint" style="margin-top:4px">15-30 segundos — MP4, MOV o WebM — maximo 80 MB</div>
+        </div>
+        <video id="videoPreview" class="video-preview" controls></video>
+        <div id="videoFilename" class="upload-filename" style="display:none"></div>
+        <div id="videoError" style="font-size:0.72rem;color:#dc2626;display:none;margin-top:4px"></div>
+        <div class="upload-progress-wrap" id="videoProgress"></div>
+      </div>
+
+      <div class="pb-safe">
+        <button type="submit" class="btn-submit" id="submitBtn">
+          Enviar solicitud
+        </button>
+        <p style="font-size:0.75rem;color:#8B8FAD;text-align:center;margin-top:10px">
+          Revisamos tu solicitud en 24 horas
+        </p>
+      </div>
+
+    </form>
+  </div>
+
+  <script>
+    // ── State for uploaded file URLs ──
+    var uploadedFotoUrls = [];
+    var uploadedVideoUrl = null;
+    var isUploading = false;
+
+    // ── Compress image using canvas before upload ──
+    function compressImage(file, maxWidth, quality) {
+      return new Promise(function(resolve) {
+        var img = new Image();
+        img.onload = function() {
+          var canvas = document.createElement('canvas');
+          var w = img.width, h = img.height;
+          if (w > maxWidth) { h = Math.round(h * maxWidth / w); w = maxWidth; }
+          canvas.width = w; canvas.height = h;
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+          canvas.toBlob(function(blob) {
+            resolve(blob);
+          }, 'image/jpeg', quality);
+        };
+        img.src = URL.createObjectURL(file);
+      });
+    }
+
+    function showJsError(msg) {
+      var el = document.getElementById('jsError');
+      el.textContent = msg;
+      el.style.display = msg ? 'block' : 'none';
+      if (msg) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    // RUC validation on blur
+    document.getElementById('rucInput').addEventListener('blur', function() {
+      var val = this.value.trim();
+      var err = document.getElementById('rucError');
+      if (val && !/^\d{11}$/.test(val)) {
+        err.style.display = 'block';
+        this.style.borderColor = '#ef4444';
+      } else {
+        err.style.display = 'none';
+        this.style.borderColor = '';
+      }
+    });
+
+    // ── Upload a single file to the server (compresses images first) ──
+    async function uploadSingleFile(file, progressContainer, index) {
+      var itemId = 'upload-item-' + Date.now() + '-' + index;
+      var div = document.createElement('div');
+      div.className = 'upload-progress-item';
+      div.id = itemId;
+      div.innerHTML =
+        '<span class="upi-name">' + escFileName(file.name) + '</span>' +
+        '<span class="upi-status uploading">Comprimiendo...</span>' +
+        '<div class="upload-progress-bar"><div class="bar" id="bar-' + itemId + '"></div></div>';
+      progressContainer.appendChild(div);
+
+      // Compress images before uploading
+      var fileToUpload = file;
+      var uploadName = file.name;
+      if (file.type && file.type.startsWith('image/')) {
+        try {
+          var compressed = await compressImage(file, 800, 0.7);
+          if (compressed) {
+            fileToUpload = compressed;
+            // Change extension to .jpg since we export as JPEG
+            uploadName = file.name.replace(/\.[^.]+$/, '.jpg');
+          }
+        } catch (compErr) {
+          console.warn('Image compression failed, uploading original:', compErr);
+        }
+      }
+
+      var statusEl = div.querySelector('.upi-status');
+      statusEl.textContent = 'Subiendo...';
+
+      return new Promise(function(resolve, reject) {
+        var formData = new FormData();
+        formData.append('file', fileToUpload, uploadName);
+
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', '/solicitud/upload');
+
+        xhr.upload.addEventListener('progress', function(e) {
+          if (e.lengthComputable) {
+            var pct = Math.round((e.loaded / e.total) * 100);
+            var bar = document.getElementById('bar-' + itemId);
+            if (bar) bar.style.width = pct + '%';
+          }
+        });
+
+        xhr.onload = function() {
+          if (xhr.status === 200) {
+            try {
+              var data = JSON.parse(xhr.responseText);
+              statusEl.textContent = 'Listo';
+              statusEl.className = 'upi-status done';
+              var bar = document.getElementById('bar-' + itemId);
+              if (bar) bar.style.width = '100%';
+              resolve(data.url);
+            } catch (e) {
+              statusEl.textContent = 'Error';
+              statusEl.className = 'upi-status error';
+              reject(new Error('Respuesta invalida del servidor'));
+            }
+          } else {
+            var errMsg = 'Error al subir';
+            try { errMsg = JSON.parse(xhr.responseText).error || errMsg; } catch (_) {}
+            statusEl.textContent = 'Error';
+            statusEl.className = 'upi-status error';
+            reject(new Error(errMsg));
+          }
+        };
+
+        xhr.onerror = function() {
+          statusEl.textContent = 'Error de red';
+          statusEl.className = 'upi-status error';
+          reject(new Error('Error de red al subir archivo'));
+        };
+
+        xhr.send(formData);
+      });
+    }
+
+    function escFileName(s) { var d = document.createElement('span'); d.textContent = s; return d.innerHTML; }
+
+    // ── Handle photo selection: preview + upload immediately ──
+    function handleFotoSelect(event) {
+      var files = event.target.files;
+      if (!files || files.length === 0) return;
+      if (files.length > 3) {
+        alert('Maximo 3 fotos permitidas.');
+        event.target.value = '';
+        return;
+      }
+
+      // Show previews
+      var container = document.getElementById('fotoPreviews');
+      container.innerHTML = '';
+      for (var i = 0; i < files.length; i++) {
+        (function(f) {
+          var reader = new FileReader();
+          reader.onload = function(e) {
+            var img = document.createElement('img');
+            img.src = e.target.result;
+            img.style.cssText = 'width:90px;height:90px;object-fit:cover;border-radius:8px;border:2px solid #e2e8f0;';
+            container.appendChild(img);
+          };
+          reader.readAsDataURL(f);
+        })(files[i]);
+      }
+      document.getElementById('fotoUploadArea').classList.add('has-file');
+
+      // Upload each photo
+      var progressEl = document.getElementById('fotoProgress');
+      progressEl.innerHTML = '';
+      uploadedFotoUrls = [];
+      isUploading = true;
+      updateSubmitButton();
+
+      var promises = [];
+      for (var j = 0; j < files.length; j++) {
+        promises.push(uploadSingleFile(files[j], progressEl, j));
+      }
+
+      Promise.all(promises).then(function(urls) {
+        uploadedFotoUrls = urls;
+        isUploading = false;
+        updateSubmitButton();
+      }).catch(function(err) {
+        showJsError('Error al subir fotos: ' + err.message);
+        isUploading = false;
+        uploadedFotoUrls = [];
+        updateSubmitButton();
+      });
+    }
+
+    // ── Handle video selection: preview + upload immediately ──
+    function handleVideoSelect(event) {
+      var file = event.target.files[0];
+      var errorEl = document.getElementById('videoError');
+      var filenameEl = document.getElementById('videoFilename');
+      errorEl.style.display = 'none';
+
+      if (!file) return;
+
+      // Validate file size (80 MB max)
+      if (file.size > 80 * 1024 * 1024) {
+        errorEl.textContent = 'El video es demasiado grande. Maximo 80 MB. Graba en menor resolucion o recorta el video.';
+        errorEl.style.display = 'block';
+        event.target.value = '';
+        return;
+      }
+
+      var video = document.getElementById('videoPreview');
+      var url = URL.createObjectURL(file);
+      video.src = url;
+      video.style.display = 'block';
+      filenameEl.textContent = file.name;
+      filenameEl.style.display = 'block';
+      document.getElementById('videoUploadArea').classList.add('has-file');
+
+      // Validate duration when metadata loads
+      video.onloadedmetadata = function() {
+        if (video.duration > 60) {
+          errorEl.textContent = 'El video es muy largo. Maximo 60 segundos (recomendado: 15-30 seg).';
+          errorEl.style.display = 'block';
+        }
+      };
+
+      // Upload video
+      var progressEl = document.getElementById('videoProgress');
+      progressEl.innerHTML = '';
+      uploadedVideoUrl = null;
+      isUploading = true;
+      updateSubmitButton();
+
+      uploadSingleFile(file, progressEl, 0).then(function(fileUrl) {
+        uploadedVideoUrl = fileUrl;
+        isUploading = false;
+        updateSubmitButton();
+      }).catch(function(err) {
+        showJsError('Error al subir video: ' + err.message);
+        isUploading = false;
+        uploadedVideoUrl = null;
+        updateSubmitButton();
+      });
+    }
+
+    function updateSubmitButton() {
+      var btn = document.getElementById('submitBtn');
+      if (isUploading) {
+        btn.disabled = true;
+        btn.textContent = 'Subiendo archivos...';
+      } else {
+        btn.disabled = false;
+        btn.textContent = 'Enviar solicitud';
+      }
+    }
+
+    // ── Form submission via fetch (JSON, no files) ──
+    document.getElementById('solicitudForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      showJsError('');
+
+      if (isUploading) {
+        showJsError('Espera a que terminen de subir los archivos.');
+        return;
+      }
+
+      if (uploadedFotoUrls.length < 2) {
+        showJsError('Debes subir entre 2 y 3 fotos de tu local.');
+        return;
+      }
+
+      if (!uploadedVideoUrl) {
+        showJsError('Debes subir un video de tu local (15-30 segundos).');
+        return;
+      }
+
+      var btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.textContent = 'Enviando solicitud...';
+
+      var form = document.getElementById('solicitudForm');
+      var body = {
+        nombre_representante: form.querySelector('[name="nombre_representante"]').value,
+        dni: form.querySelector('[name="dni"]').value,
+        cargo: form.querySelector('[name="cargo"]').value,
+        nombre_restaurante: form.querySelector('[name="nombre_restaurante"]').value,
+        ruc: form.querySelector('[name="ruc"]').value,
+        tipo_negocio: form.querySelector('[name="tipo_negocio"]').value,
+        direccion: form.querySelector('[name="direccion"]').value,
+        latitud: form.querySelector('[name="latitud"]').value || null,
+        longitud: form.querySelector('[name="longitud"]').value || null,
+        telefono_solicitante: form.querySelector('[name="telefono_solicitante"]').value,
+        foto_urls: uploadedFotoUrls,
+        video_url: uploadedVideoUrl
+      };
+
+      fetch('/solicitud', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      })
+      .then(function(resp) { return resp.json().then(function(data) { return { ok: resp.ok, data: data }; }); })
+      .then(function(result) {
+        if (result.ok && result.data.redirect) {
+          window.location.href = result.data.redirect;
+        } else {
+          showJsError(result.data.error || 'Error al enviar. Intenta nuevamente.');
+          btn.disabled = false;
+          btn.textContent = 'Enviar solicitud';
+        }
+      })
+      .catch(function(err) {
+        showJsError('Error de conexion. Verifica tu internet e intenta nuevamente.');
+        btn.disabled = false;
+        btn.textContent = 'Enviar solicitud';
+      });
+    });
+
+    <% if (googleMapsApiKey) { %>
+    // ── Location Picker (New Places API) ──
+    function initMap() {
+      const input = document.getElementById('direccionInput');
+      const placesResults = document.getElementById('placesResults');
+      const PERU_CENTER = { lat: -9.19, lng: -75.01 }; // Center of Peru
+
+      let previewMap = null, previewMarker = null;
+      let fullMap = null;
+      let userLocation = null;
+      let selectedLat = null, selectedLng = null;
+      let searchTimeout = null;
+
+      const latInput = document.getElementById('latInput');
+      const lngInput = document.getElementById('lngInput');
+      const selectedPlace = document.getElementById('selectedPlace');
+      const spName = document.getElementById('spName');
+      const spAddress = document.getElementById('spAddress');
+      const spRating = document.getElementById('spRating');
+      const clearPlaceBtn = document.getElementById('clearPlace');
+      const mapPreviewContainer = document.getElementById('mapPreviewContainer');
+      const mapOverlay = document.getElementById('mapOverlay');
+      const overlayAddress = document.getElementById('overlayAddress');
+      const centerPin = document.getElementById('centerPin');
+      const btnOpenMap = document.getElementById('btnOpenMap');
+      const btnCloseMap = document.getElementById('btnCloseMap');
+      const btnConfirmLoc = document.getElementById('btnConfirmLoc');
+      const btnMyLocation = document.getElementById('btnMyLocation');
+
+      // Try to get user location early
+      getUserLocation(function(pos) { userLocation = pos; });
+
+      // ── 1. Text search using Places (New) via google.maps.places.Place ──
+      input.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        const q = input.value.trim();
+        if (q.length < 2) { placesResults.classList.remove('active'); return; }
+        searchTimeout = setTimeout(function() { searchPlaces(q); }, 350);
+      });
+      input.addEventListener('focus', function() {
+        if (placesResults.children.length > 0) placesResults.classList.add('active');
+      });
+      document.addEventListener('click', function(e) {
+        if (!e.target.closest('.location-search-wrap') && !e.target.closest('.places-results'))
+          placesResults.classList.remove('active');
+      });
+
+      async function searchPlaces(query) {
+        try {
+          const { Place } = await google.maps.importLibrary('places');
+          const request = {
+            textQuery: query,
+            fields: ['displayName', 'formattedAddress', 'location', 'rating', 'userRatingCount'],
+            locationBias: userLocation
+              ? { lat: userLocation.lat, lng: userLocation.lng, radius: 50000 }
+              : { lat: PERU_CENTER.lat, lng: PERU_CENTER.lng, radius: 500000 },
+            maxResultCount: 5,
+            region: 'pe',
+            language: 'es'
+          };
+          const { places } = await Place.searchByText(request);
+          renderResults(places || []);
+        } catch (err) {
+          console.warn('Places search error:', err);
+          // Fallback: try Geocoding
+          try {
+            const geocoder = new google.maps.Geocoder();
+            geocoder.geocode({ address: query + ', Peru' }, function(results, status) {
+              if (status === 'OK' && results) {
+                const fallback = results.slice(0, 5).map(function(r) {
+                  return {
+                    displayName: r.formatted_address.split(',')[0],
+                    formattedAddress: r.formatted_address,
+                    location: r.geometry.location,
+                    rating: 0,
+                    userRatingCount: 0
+                  };
+                });
+                renderResults(fallback);
+              }
+            });
+          } catch (_) {}
+        }
+      }
+
+      function renderResults(places) {
+        placesResults.innerHTML = '';
+        if (places.length === 0) {
+          placesResults.classList.remove('active');
+          return;
+        }
+        places.forEach(function(p) {
+          const name = p.displayName || p.Eg?.displayName || '';
+          const addr = p.formattedAddress || p.Eg?.formattedAddress || '';
+          const loc = p.location || p.Eg?.location;
+          const rating = p.rating || p.Eg?.rating || 0;
+          const count = p.userRatingCount || p.Eg?.userRatingCount || 0;
+
+          // Distance from user
+          let distText = '';
+          if (userLocation && loc) {
+            const lat2 = typeof loc.lat === 'function' ? loc.lat() : loc.lat;
+            const lng2 = typeof loc.lng === 'function' ? loc.lng() : loc.lng;
+            const d = haversine(userLocation.lat, userLocation.lng, lat2, lng2);
+            distText = d < 1 ? Math.round(d * 1000) + 'm' : d.toFixed(1) + 'km';
+          }
+
+          const div = document.createElement('div');
+          div.className = 'place-item';
+          div.innerHTML =
+            '<div class="pi-icon">📍</div>' +
+            '<div class="pi-info">' +
+              '<div class="pi-name">' + escHtml(name) + '</div>' +
+              '<div class="pi-addr">' + escHtml(addr) + '</div>' +
+            '</div>' +
+            (distText ? '<div class="pi-dist">' + distText + '</div>' : '');
+
+          div.addEventListener('click', function() {
+            const lat = typeof loc.lat === 'function' ? loc.lat() : loc.lat;
+            const lng = typeof loc.lng === 'function' ? loc.lng() : loc.lng;
+            setLocation(lat, lng, name, addr, rating, count);
+            placesResults.classList.remove('active');
+          });
+          placesResults.appendChild(div);
+        });
+        placesResults.classList.add('active');
+      }
+
+      function escHtml(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+      function haversine(lat1, lon1, lat2, lon2) {
+        var R = 6371, dLat = (lat2-lat1)*Math.PI/180, dLon = (lon2-lon1)*Math.PI/180;
+        var a = Math.sin(dLat/2)*Math.sin(dLat/2) + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)*Math.sin(dLon/2);
+        return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      }
+
+      // ── Set location helper ──
+      function setLocation(lat, lng, name, address, rating, ratingsCount) {
+        selectedLat = lat;
+        selectedLng = lng;
+        latInput.value = lat;
+        lngInput.value = lng;
+        input.value = name ? name + ' — ' + address : address;
+
+        spName.textContent = name || 'Ubicación seleccionada';
+        spAddress.textContent = address;
+        if (rating > 0) {
+          var stars = '★'.repeat(Math.round(rating)) + '☆'.repeat(5 - Math.round(rating));
+          spRating.textContent = stars + ' ' + rating.toFixed(1) + (ratingsCount ? ' (' + ratingsCount + ')' : '');
+          spRating.style.display = 'block';
+        } else { spRating.style.display = 'none'; }
+        selectedPlace.classList.add('active');
+
+        mapPreviewContainer.classList.add('active');
+        var pos = { lat: lat, lng: lng };
+        if (!previewMap) {
+          previewMap = new google.maps.Map(document.getElementById('mapPreview'), {
+            center: pos, zoom: 16, disableDefaultUI: true, gestureHandling: 'none', clickableIcons: false
+          });
+          previewMarker = new google.maps.Marker({ map: previewMap, position: pos, icon: {
+            path: google.maps.SymbolPath.CIRCLE, scale: 8, fillColor: '#ef520f', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2
+          }});
+        } else { previewMap.setCenter(pos); previewMarker.setPosition(pos); }
+      }
+
+      // ── Clear ──
+      clearPlaceBtn.addEventListener('click', function() {
+        selectedPlace.classList.remove('active');
+        mapPreviewContainer.classList.remove('active');
+        input.value = '';
+        latInput.value = ''; lngInput.value = '';
+        selectedLat = null; selectedLng = null;
+      });
+
+      // ── 2. Fullscreen Map Overlay ──
+      var overlayDragTimeout = null;
+      function openMapOverlay() {
+        mapOverlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        var center = selectedLat ? { lat: selectedLat, lng: selectedLng } : (userLocation || PERU_CENTER);
+
+        if (!fullMap) {
+          fullMap = new google.maps.Map(document.getElementById('fullscreenMap'), {
+            center: center, zoom: selectedLat ? 16 : (userLocation ? 15 : 6),
+            disableDefaultUI: true, gestureHandling: 'greedy',
+            styles: [{ featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] }]
+          });
+          fullMap.addListener('center_changed', function() {
+            centerPin.classList.add('bouncing');
+            clearTimeout(overlayDragTimeout);
+            overlayDragTimeout = setTimeout(function() {
+              centerPin.classList.remove('bouncing');
+              reverseGeocodeCenter();
+            }, 400);
+          });
+        } else { fullMap.setCenter(center); }
+
+        if (!userLocation) getUserLocation(function(pos) { userLocation = pos; if (!selectedLat) fullMap.setCenter(pos); fullMap.setZoom(15); });
+        setTimeout(function() { google.maps.event.trigger(fullMap, 'resize'); reverseGeocodeCenter(); }, 300);
+      }
+
+      function closeMapOverlay() { mapOverlay.classList.remove('active'); document.body.style.overflow = ''; }
+
+      function reverseGeocodeCenter() {
+        if (!fullMap) return;
+        var center = fullMap.getCenter();
+        var geocoder = new google.maps.Geocoder();
+        geocoder.geocode({ location: { lat: center.lat(), lng: center.lng() } }, function(results, status) {
+          overlayAddress.textContent = (status === 'OK' && results && results[0]) ? results[0].formatted_address : center.lat().toFixed(5) + ', ' + center.lng().toFixed(5);
+        });
+      }
+
+      function getUserLocation(cb) {
+        if (!navigator.geolocation) return;
+        navigator.geolocation.getCurrentPosition(
+          function(pos) { cb({ lat: pos.coords.latitude, lng: pos.coords.longitude }); },
+          function() {},
+          { enableHighAccuracy: true, timeout: 8000 }
+        );
+      }
+
+      btnConfirmLoc.addEventListener('click', function() {
+        var center = fullMap.getCenter();
+        setLocation(center.lat(), center.lng(), '', overlayAddress.textContent || '', 0, 0);
+        closeMapOverlay();
+      });
+      btnOpenMap.addEventListener('click', openMapOverlay);
+      btnCloseMap.addEventListener('click', closeMapOverlay);
+      btnMyLocation.addEventListener('click', function() {
+        getUserLocation(function(pos) { userLocation = pos; if (fullMap) { fullMap.panTo(pos); fullMap.setZoom(16); } });
+      });
+    }
+    <% } %>
+  </script>
+
+  <!-- Fullscreen map overlay (OUTSIDE form to avoid z-index/layout issues) -->
+  <div class="map-overlay" id="mapOverlay">
+    <div class="map-overlay-header">
+      <div class="overlay-address" id="overlayAddress">Mueve el mapa para elegir ubicación</div>
+      <button type="button" class="btn-close-map" id="btnCloseMap">&times;</button>
+    </div>
+    <div id="fullscreenMap"></div>
+    <div class="center-pin" id="centerPin">📍</div>
+    <div class="center-dot"></div>
+    <button type="button" class="btn-my-location" id="btnMyLocation" title="Mi ubicación">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0a0f24" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v2m0 16v2M2 12h2m16 0h2"/><circle cx="12" cy="12" r="8"/></svg>
+    </button>
+    <div class="map-overlay-footer">
+      <button type="button" class="btn-confirm-loc" id="btnConfirmLoc">Confirmar ubicación</button>
+    </div>
+  </div>
+
+  <% if (googleMapsApiKey) { %>
+  <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=<%= googleMapsApiKey %>&libraries=places&callback=initMap">
+  </script>
+  <% } %>
+  <script src="/js/ios-install-banner.js"></script>
+</body>
+</html>

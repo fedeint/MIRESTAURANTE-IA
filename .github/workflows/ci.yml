@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+# Cancel older runs of the same PR when a new commit is pushed.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Tests (Node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: ['24']
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js ${{ matrix.node }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+        # --ignore-scripts prevents supply-chain attacks via postinstall hooks
+        # from compromised transitive deps.
+
+      - name: Run test suite
+        run: npm test
+
+      - name: Verify no secrets committed
+        run: |
+          # Simple grep for common secret patterns. Not exhaustive — gitleaks runs separately.
+          if grep -rEn --include="*.js" --include="*.ejs" --include="*.sql" \
+               -e "postgres://[^\"]+:[^@\"]+@" \
+               -e "sk-[a-zA-Z0-9]{20,}" \
+               -e "-----BEGIN (RSA |)PRIVATE KEY-----" \
+               .; then
+            echo "::error::Possible secret committed in code"
+            exit 1
+          fi
+
+  security-scan:
+    name: Security scan
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+
+      - name: Install deps (for audit)
+        run: npm ci --ignore-scripts
+
+      - name: Run npm audit (high + critical only)
+        run: npm audit --audit-level=high
+        continue-on-error: false
+
+      - name: Gitleaks (scan for committed secrets)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          config-path: .gitleaks.toml
+        continue-on-error: true  # Don't block merges while we tune the config

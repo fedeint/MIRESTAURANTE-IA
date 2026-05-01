@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Mantenimiento · MiRestcon</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --orange: #ef520f; --orange2: #df2c05;
+      --dark: #0a0f24; --bg: #F0F2F8; --card: #fff; --text2: #8B8FAD;
+      --verde: #22C55E; --naranja: #F97316; --rojo: #EF4444;
+      --safe-bot: env(safe-area-inset-bottom, 0px);
+    }
+    body { font-family:'DM Sans',sans-serif; background:var(--bg); min-height:100dvh; max-width:480px; margin:0 auto; padding-bottom:calc(80px + var(--safe-bot)); }
+    .header { background:linear-gradient(170deg,#10152f 0%,#0a0f24 50%,#090d1d 100%); padding:52px 20px 20px; border-radius:0 0 20px 20px; color:#fff; display:flex; align-items:center; justify-content:space-between; }
+    .header-left { display:flex; align-items:center; gap:12px; }
+    .btn-back { background:rgba(255,255,255,.12); border:none; color:#fff; width:36px; height:36px; border-radius:10px; font-size:18px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+    .header-title { font-size:18px; font-weight:700; }
+    .btn-add { background:rgba(255,255,255,.15); border:none; color:#fff; width:36px; height:36px; border-radius:10px; font-size:20px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+    .stats-row { display:flex; gap:10px; padding:16px 16px 0; }
+    .stat-chip { flex:1; background:var(--card); border-radius:12px; padding:10px 12px; text-align:center; box-shadow:0 2px 8px rgba(0,0,0,.05); }
+    .stat-num { font-size:22px; font-weight:800; }
+    .stat-lbl { font-size:11px; color:var(--text2); margin-top:1px; }
+    .num-r{color:var(--rojo);} .num-n{color:var(--naranja);} .num-v{color:var(--verde);}
+    .list { padding:14px 16px 0; }
+    .equipo-card { background:var(--card); border-radius:14px; margin-bottom:10px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,.05); display:flex; align-items:stretch; cursor:pointer; transition:transform .15s; }
+    .equipo-card:active{transform:scale(.98);}
+    .border-strip{width:4px;flex-shrink:0;}
+    .strip-r{background:var(--rojo);} .strip-n{background:var(--naranja);} .strip-v{background:var(--verde);} .strip-g{background:#C7CAD8;}
+    .equipo-inner{flex:1;padding:14px;display:flex;align-items:center;gap:12px;}
+    .equipo-info{flex:1;min-width:0;}
+    .equipo-nombre{font-size:15px;font-weight:600;color:var(--dark);}
+    .equipo-sub{font-size:12px;margin-top:3px;}
+    .sub-r{color:var(--rojo);} .sub-n{color:var(--naranja);} .sub-v{color:var(--text2);}
+    .chevron{color:var(--text2);font-size:18px;flex-shrink:0;}
+    .empty{text-align:center;padding:48px 24px;color:var(--text2);font-size:14px;}
+    .empty-icon{font-size:40px;margin-bottom:12px;}
+    /* sheet */
+    .sheet-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:flex-end;justify-content:center;}
+    .sheet-overlay.show{display:flex;}
+    .sheet{background:var(--card);border-radius:20px 20px 0 0;width:100%;max-width:480px;max-height:88dvh;overflow-y:auto;padding:8px 20px calc(20px + var(--safe-bot));animation:slideUp .25s ease;}
+    @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+    .sheet-handle{width:40px;height:4px;background:#E0E2EE;border-radius:2px;margin:12px auto 20px;}
+    .sheet-title{font-size:17px;font-weight:700;color:var(--dark);margin-bottom:20px;}
+    .field-label{font-size:13px;font-weight:600;color:var(--text2);margin-bottom:6px;}
+    .field-input{width:100%;border:1.5px solid #E0E2EE;border-radius:12px;padding:11px 14px;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;color:var(--dark);margin-bottom:14px;transition:border-color .2s;}
+    .field-input:focus{border-color:var(--orange);}
+    .row-fields{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+    .sheet-cta{width:100%;background:linear-gradient(135deg,var(--orange),var(--orange2));color:#fff;border:none;border-radius:14px;padding:15px;font-size:15px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;}
+    .marcar-btn{width:100%;margin-top:12px;background:#DCFCE7;color:#166534;border:none;border-radius:12px;padding:13px;font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;}
+    /* bottom nav */
+    .bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:#fff;border-top:1px solid #E8EAF2;display:flex;padding-bottom:var(--safe-bot);z-index:100;}
+    .nav-item{flex:1;display:flex;flex-direction:column;align-items:center;padding:10px 4px 8px;text-decoration:none;color:var(--text2);font-size:10px;font-weight:500;}
+    .nav-item .icon{font-size:22px;margin-bottom:2px;}
+    .nav-item.active{color:var(--orange);}
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-left">
+      <button class="btn-back" onclick="history.back()">‹</button>
+      <span class="header-title">Mantenimiento</span>
+    </div>
+    <button class="btn-add" onclick="abrirAgregar()">+</button>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-chip"><div class="stat-num num-r"><%= pendientes %></div><div class="stat-lbl">Pendientes</div></div>
+    <div class="stat-chip"><div class="stat-num num-n"><%= proximos %></div><div class="stat-lbl">Programados</div></div>
+    <div class="stat-chip"><div class="stat-num num-v"><%= alDia %></div><div class="stat-lbl">Al día</div></div>
+  </div>
+
+  <div class="list">
+    <% if (equipos.length === 0) { %>
+    <div class="empty"><div class="empty-icon">🔧</div>No hay equipos registrados.</div>
+    <% } %>
+    <% equipos.forEach(function(e) {
+      const sc = {pendiente:'strip-r', proximo:'strip-n', al_dia:'strip-v', sin_fecha:'strip-g'}[e.estado] || 'strip-g';
+      const tc = {pendiente:'sub-r', proximo:'sub-n', al_dia:'sub-v', sin_fecha:'sub-v'}[e.estado] || 'sub-v';
+      let sub = 'Próximo: ' + e.proximoFmt;
+      if (e.estado==='pendiente') sub = 'Hace ' + Math.abs(e.dias) + ' días — VENCIDO';
+      else if (e.estado==='proximo') sub = 'Próximo: ' + e.proximoFmt + ' · ' + e.dias + ' días';
+      else if (e.estado==='al_dia') sub = 'Próximo: ' + e.proximoFmt + ' · Al día';
+    %>
+    <div class="equipo-card" onclick="abrirDetalle(<%= JSON.stringify(e) %>)">
+      <div class="border-strip <%= sc %>"></div>
+      <div class="equipo-inner">
+        <div class="equipo-info">
+          <div class="equipo-nombre"><%= e.nombre %></div>
+          <div class="equipo-sub <%= tc %>"><%= sub %></div>
+        </div>
+        <span class="chevron">›</span>
+      </div>
+    </div>
+    <% }); %>
+  </div>
+
+  <!-- Sheet Agregar -->
+  <div class="sheet-overlay" id="agregarSheet" onclick="cerrar('agregarSheet',event)">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title">Agregar equipo</div>
+      <div class="field-label">Nombre del equipo *</div>
+      <input class="field-input" id="nombre" placeholder="Ej: Freidora 1" autocomplete="off">
+      <div class="row-fields">
+        <div>
+          <div class="field-label">Último mantenimiento</div>
+          <input class="field-input" type="date" id="ultimoMant">
+        </div>
+        <div>
+          <div class="field-label">Próximo</div>
+          <input class="field-input" type="date" id="proximoMant">
+        </div>
+      </div>
+      <div class="field-label">Periodicidad (días)</div>
+      <input class="field-input" type="number" id="periodicidad" placeholder="30" value="30">
+      <div class="field-label">Proveedor</div>
+      <input class="field-input" id="proveedor" placeholder="Técnico o empresa" autocomplete="off">
+      <button class="sheet-cta" onclick="guardarEquipo()">Guardar equipo</button>
+    </div>
+  </div>
+
+  <!-- Sheet Detalle -->
+  <div class="sheet-overlay" id="detalleSheet" onclick="cerrar('detalleSheet',event)">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title" id="detNombre">—</div>
+      <div id="detBody"></div>
+      <button class="marcar-btn" id="marcarBtn">✓ Marcar mantenimiento realizado hoy</button>
+    </div>
+  </div>
+
+  <nav class="bottom-nav">
+    <a href="/" class="nav-item"><span class="icon">🏠</span>Inicio</a>
+    <a href="/pedidos" class="nav-item"><span class="icon">🧾</span>Pedidos</a>
+    <a href="/cocina-display" class="nav-item"><span class="icon">👨‍🍳</span>Cocina</a>
+    <a href="/caja" class="nav-item"><span class="icon">💰</span>Caja</a>
+    <a href="/mas" class="nav-item active"><span class="icon">☰</span>Más</a>
+  </nav>
+
+  <script>
+    function abrirAgregar(){ document.getElementById('agregarSheet').classList.add('show'); }
+    function cerrar(id,e){ if(e.target.classList.contains('sheet-overlay')) document.getElementById(id).classList.remove('show'); }
+
+    async function guardarEquipo(){
+      const nombre = document.getElementById('nombre').value.trim();
+      if(!nombre){ alert('Nombre requerido'); return; }
+      const body = {
+        nombre,
+        periodicidad_dias: document.getElementById('periodicidad').value,
+        ultimo_mantenimiento: document.getElementById('ultimoMant').value || null,
+        proximo_mantenimiento: document.getElementById('proximoMant').value || null,
+        proveedor: document.getElementById('proveedor').value.trim() || null
+      };
+      const r = await fetch('/sprint4/mantenimiento',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+      const d = await r.json();
+      if(d.ok) location.reload(); else alert(d.error||'Error');
+    }
+
+    let detalleId = null, detallePeriodicidad = 30;
+    function abrirDetalle(e){
+      detalleId = e.id;
+      detallePeriodicidad = e.periodicidad_dias || 30;
+      document.getElementById('detNombre').textContent = e.nombre;
+      document.getElementById('detBody').innerHTML = `
+        <div style="background:#F8F9FE;border-radius:12px;padding:12px 14px;margin-bottom:14px;font-size:14px;color:#0a0f24;line-height:1.8;">
+          Próximo: <strong>${e.proximoFmt}</strong><br>
+          Proveedor: ${e.proveedor || '—'}
+        </div>`;
+      document.getElementById('marcarBtn').onclick = marcarRealizado;
+      document.getElementById('detalleSheet').classList.add('show');
+    }
+    async function marcarRealizado(){
+      if(!detalleId) return;
+      const r = await fetch('/sprint4/mantenimiento/'+detalleId+'/marcar',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({periodicidad_dias:detallePeriodicidad})});
+      const d = await r.json();
+      if(d.ok) location.reload(); else alert(d.error||'Error');
+    }
+  </script>
+  <script src="/js/dallia-fab.js"></script>
+</body>
+</html>

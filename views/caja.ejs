@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="/favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1e1b4b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="dignita">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+    <title>Caja - mirestconia.com</title>
+    <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/theme.css">
+</head>
+<body>
+    <%- include('partials/sidebar') %>
+    <div class="dg-main">
+    <main class="flex-grow-1">
+    <div class="container">
+
+        <% if (!cajaAbierta) { %>
+        <!-- ==================== ABRIR CAJA ==================== -->
+        <div class="row justify-content-center mt-5">
+            <div class="col-md-5">
+                <div class="card shadow">
+                    <div class="card-header text-center">
+                        <h4 class="mb-0"><i class="bi bi-cash-stack me-2"></i>Abrir Caja</h4>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted text-center mb-4">No hay una caja abierta. Ingrese el monto de apertura para iniciar.</p>
+                        <form id="formAbrirCaja">
+                            <div class="mb-3">
+                                <label for="montoApertura" class="form-label">Monto de apertura</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">S/</span>
+                                    <input type="number" class="form-control" id="montoApertura" name="monto_apertura" min="0" step="0.01" required placeholder="0.00">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="turnoApertura" class="form-label">Turno</label>
+                                <select class="form-select" id="turnoApertura" name="turno_id" required>
+                                    <option value="" disabled selected>Seleccione un turno</option>
+                                    <% turnos.forEach(function(t) { %>
+                                        <option value="<%= t.id %>"><%= t.nombre %></option>
+                                    <% }); %>
+                                </select>
+                            </div>
+                        <!-- Asignar mesas a meseros -->
+                        <% if (meseros && meseros.length > 0 && mesasAll && mesasAll.length > 0) { %>
+                        <hr>
+                        <h6 class="mb-3"><i class="bi bi-people me-2"></i>Asignar mesas a meseros</h6>
+                        <div class="asignacion-mesas-container">
+                          <% meseros.forEach(function(mesero) { %>
+                          <div class="mb-3 p-2 rounded" style="background: rgba(0,0,0,0.02); border: 1px solid #eee;">
+                            <div class="fw-bold small mb-2"><i class="bi bi-person me-1"></i><%= mesero.nombre || mesero.usuario %></div>
+                            <div class="d-flex flex-wrap gap-1">
+                              <% mesasAll.forEach(function(mesa) { %>
+                              <label class="btn btn-sm btn-outline-secondary mesa-check-label" style="font-size: 0.75rem; padding: 2px 8px;">
+                                <input type="checkbox" class="mesa-asign-check d-none"
+                                  data-mesa-id="<%= mesa.id %>"
+                                  data-mesero-id="<%= mesero.id %>"
+                                  data-mesa-numero="<%= mesa.numero %>">
+                                <%= mesa.numero %>
+                              </label>
+                              <% }); %>
+                            </div>
+                          </div>
+                          <% }); %>
+                        </div>
+                        <% } %>
+                            <button type="submit" class="btn btn-success w-100">
+                                <i class="bi bi-unlock me-1"></i> Abrir Caja
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+        document.querySelectorAll('.mesa-asign-check').forEach(function(cb) {
+          cb.addEventListener('change', function() {
+            if (this.checked) {
+              var mesaId = this.dataset.mesaId;
+              var self = this;
+              document.querySelectorAll('.mesa-asign-check[data-mesa-id="' + mesaId + '"]').forEach(function(other) {
+                if (other !== self) {
+                  other.checked = false;
+                  other.closest('.mesa-check-label').classList.remove('btn-primary');
+                  other.closest('.mesa-check-label').classList.add('btn-outline-secondary');
+                }
+              });
+              this.closest('.mesa-check-label').classList.remove('btn-outline-secondary');
+              this.closest('.mesa-check-label').classList.add('btn-primary');
+            } else {
+              this.closest('.mesa-check-label').classList.remove('btn-primary');
+              this.closest('.mesa-check-label').classList.add('btn-outline-secondary');
+            }
+          });
+        });
+        </script>
+
+        <% } else { %>
+        <!-- ==================== CAJA ABIERTA ==================== -->
+
+        <!-- Header de estado -->
+        <div class="d-flex flex-wrap align-items-center justify-content-between mb-4">
+            <div>
+                <h4 class="mb-1">
+                    <i class="bi bi-cash-stack me-2"></i>Caja
+                    <span class="badge bg-success ms-2">Abierta</span>
+                </h4>
+                <small class="text-muted">
+                    Abierta: <%= new Date(cajaAbierta.fecha_apertura).toLocaleString('es-PE') %> &middot;
+                    Usuario: <strong><%= cajaAbierta.usuario_nombre || 'N/A' %></strong>
+                </small>
+            </div>
+        </div>
+
+        <!-- KPI Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="text-success mb-1"><i class="bi bi-arrow-down-circle fs-3"></i></div>
+                        <h6 class="text-muted mb-1">Ingresos</h6>
+                        <h3 class="text-success mb-0">$<%= Number(totales.ingresos || 0).toFixed(2) %></h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="text-danger mb-1"><i class="bi bi-arrow-up-circle fs-3"></i></div>
+                        <h6 class="text-muted mb-1">Egresos</h6>
+                        <h3 class="text-danger mb-0">$<%= Number(totales.egresos || 0).toFixed(2) %></h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body text-center">
+                        <div class="text-purple mb-1"><i class="bi bi-wallet2 fs-3"></i></div>
+                        <h6 class="text-muted mb-1">Efectivo actual</h6>
+                        <h3 class="mb-0" style="color:#7c3aed;">$<%= Number(totales.efectivo_actual || 0).toFixed(2) %></h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Acciones rapidas -->
+        <div class="d-flex flex-wrap gap-2 mb-4">
+            <button class="btn btn-success" id="btnRegistrarIngreso">
+                <i class="bi bi-plus-circle me-1"></i> Registrar ingreso
+            </button>
+            <button class="btn btn-danger" id="btnRegistrarEgreso">
+                <i class="bi bi-dash-circle me-1"></i> Registrar egreso
+            </button>
+            <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#modalCerrarCaja">
+                <i class="bi bi-lock me-1"></i> Cerrar caja
+            </button>
+        </div>
+
+        <!-- Meseros en turno -->
+        <%
+          var meserosConMesas = [];
+          if (meseros && mesasAll) {
+            meseros.forEach(function(m) {
+              var misMesas = mesasAll.filter(function(mesa) { return mesa.mesero_asignado_id === m.id; });
+              if (misMesas.length > 0) {
+                var prodData = productosPorMesero ? productosPorMesero.find(function(p) { return p.mesero_id === m.id; }) : null;
+                meserosConMesas.push({
+                  id: m.id,
+                  nombre: m.nombre || m.usuario,
+                  mesas: misMesas,
+                  productos: prodData ? Number(prodData.productos) : 0
+                });
+              }
+            });
+            meserosConMesas.sort(function(a, b) { return b.productos - a.productos; });
+          }
+        %>
+        <% if (meserosConMesas.length > 0) { %>
+        <div class="card shadow-sm mb-4">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h5 class="mb-0"><i class="bi bi-people me-2"></i>Meseros en turno</h5>
+              <button class="btn btn-sm btn-outline-primary" id="btnEditarAsignaciones">
+                <i class="bi bi-pencil me-1"></i>Editar
+              </button>
+            </div>
+            <div class="row g-2 mb-3">
+              <% meserosConMesas.forEach(function(mc) { %>
+              <div class="col-md-4 col-sm-6">
+                <div class="p-3 rounded" style="background: #f8f9fa; border: 1px solid #e9ecef;">
+                  <div class="fw-bold"><i class="bi bi-person-badge me-1"></i><%= mc.nombre %></div>
+                  <div class="text-muted small mt-1">
+                    <% mc.mesas.forEach(function(mesa) { %>
+                      <span class="badge bg-light text-dark border me-1">Mesa <%= mesa.numero %></span>
+                    <% }); %>
+                  </div>
+                  <div class="mt-2">
+                    <span class="badge bg-primary"><%= mc.productos %> productos</span>
+                  </div>
+                </div>
+              </div>
+              <% }); %>
+            </div>
+            <h6 class="mt-3"><i class="bi bi-trophy me-2"></i>Ranking del dia</h6>
+            <div class="table-responsive">
+              <table class="table table-sm table-hover mb-0">
+                <thead><tr><th>#</th><th>Mesero</th><th>Mesas</th><th>Productos</th></tr></thead>
+                <tbody>
+                  <% meserosConMesas.forEach(function(mc, idx) { %>
+                  <tr><td><%= idx + 1 %></td><td><%= mc.nombre %></td><td><%= mc.mesas.length %></td><td><strong><%= mc.productos %></strong></td></tr>
+                  <% }); %>
+                </tbody>
+              </table>
+            </div>
+            <div class="text-end mt-2">
+              <button class="btn btn-sm btn-link text-decoration-none" id="btnVerHistorialRanking">
+                <i class="bi bi-clock-history me-1"></i>Ver historial completo
+              </button>
+            </div>
+          </div>
+        </div>
+        <% } %>
+
+        <!-- Tabla de movimientos -->
+        <div class="card shadow-sm">
+            <div class="card-header">
+                <h6 class="mb-0"><i class="bi bi-list-ul me-1"></i>Movimientos</h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Hora</th>
+                                <th>Tipo</th>
+                                <th>Concepto</th>
+                                <th class="text-end">Monto</th>
+                                <th>Metodo</th>
+                                <th>Usuario</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% if (movimientos.length === 0) { %>
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted py-4">No hay movimientos registrados</td>
+                                </tr>
+                            <% } %>
+                            <% movimientos.forEach(function(m) { %>
+                                <tr>
+                                    <td><%= new Date(m.fecha || m.created_at).toLocaleTimeString('es-PE', {hour:'2-digit', minute:'2-digit'}) %></td>
+                                    <td>
+                                        <% if (m.tipo === 'ingreso') { %>
+                                            <span class="badge bg-success">Ingreso</span>
+                                        <% } else { %>
+                                            <span class="badge bg-danger">Egreso</span>
+                                        <% } %>
+                                    </td>
+                                    <td><%= m.concepto || '-' %></td>
+                                    <td class="text-end fw-bold">$<%= Number(m.monto || 0).toFixed(2) %></td>
+                                    <td><%= m.metodo_pago || m.metodo || '-' %></td>
+                                    <td><%= m.usuario_nombre || '-' %></td>
+                                </tr>
+                            <% }); %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <% } %>
+
+    </div><!-- container -->
+    </main>
+    <%- include('partials/footer') %>
+    </div><!-- dg-main -->
+
+        <!-- ==================== MODAL CERRAR CAJA ==================== -->
+        <div class="modal fade" id="modalCerrarCaja" tabindex="-1" aria-labelledby="modalCerrarCajaLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header bg-warning text-dark">
+                        <h5 class="modal-title" id="modalCerrarCajaLabel"><i class="bi bi-lock me-1"></i> Cerrar Caja</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <form id="formCerrarCaja">
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="montoReal" class="form-label fw-bold">Monto real en caja</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">S/</span>
+                                    <input type="number" class="form-control" id="montoReal" name="monto_cierre" min="0" step="0.01" required placeholder="0.00">
+                                </div>
+                            </div>
+
+                            <h6 class="mb-3">Denominaciones</h6>
+                            <div class="row g-2 mb-3">
+                                <div class="col-4 col-md-3">
+                                    <label class="form-label small">Billetes S/200</label>
+                                    <input type="number" class="form-control form-control-sm denom-field" data-valor="200" name="b200" min="0" value="0">
+                                </div>
+                                <div class="col-4 col-md-3">
+                                    <label class="form-label small">Billetes S/100</label>
+                                    <input type="number" class="form-control form-control-sm denom-field" data-valor="100" name="b100" min="0" value="0">
+                                </div>
+                                <div class="col-4 col-md-3">
+                                    <label class="form-label small">Billetes S/50</label>
+                                    <input type="number" class="form-control form-control-sm denom-field" data-valor="50" name="b50" min="0" value="0">
+                                </div>
+                                <div class="col-4 col-md-3">
+                                    <label class="form-label small">Billetes S/20</label>
+                                    <input type="number" class="form-control form-control-sm denom-field" data-valor="20" name="b20" min="0" value="0">
+                                </div>
+                                <div class="col-4 col-md-3">
+                                    <label class="form-label small">Billetes S/10</label>
+                                    <input type="number" class="form-control form-control-sm denom-field" data-valor="10" name="b10" min="0" value="0">
+                                </div>
+                                <div class="col-4 col-md-3">
+                                    <label class="form-label small">Monedas S/5</label>
+                                    <input type="number" class="form-control form-control-sm denom-field" data-valor="5" name="m5" min="0" value="0">
+                                </div>
+                                <div class="col-4 col-md-3">
+                                    <label class="form-label small">Monedas S/2</label>
+                                    <input type="number" class="form-control form-control-sm denom-field" data-valor="2" name="m2" min="0" value="0">
+                                </div>
+                                <div class="col-4 col-md-3">
+                                    <label class="form-label small">Monedas S/1</label>
+                                    <input type="number" class="form-control form-control-sm denom-field" data-valor="1" name="m1" min="0" value="0">
+                                </div>
+                                <div class="col-4 col-md-3">
+                                    <label class="form-label small">Monedas S/0.50</label>
+                                    <input type="number" class="form-control form-control-sm denom-field" data-valor="0.5" name="m050" min="0" value="0">
+                                </div>
+                            </div>
+                            <div class="alert alert-info py-2">
+                                <strong>Total efectivo (billetes+monedas):</strong> S/<span id="totalDenominaciones">0.00</span>
+                            </div>
+
+                            <!-- Medios digitales -->
+                            <h6 class="fw-bold mt-3"><i class="bi bi-phone me-1"></i>Medios digitales y tarjeta</h6>
+                            <div class="row g-2 mb-3">
+                                <div class="col-md-4">
+                                    <label class="form-label small">Yape</label>
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text">S/</span>
+                                        <input type="number" class="form-control digital-field" id="cierreYape" min="0" step="0.01" value="0">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small">Plin</label>
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text">S/</span>
+                                        <input type="number" class="form-control digital-field" id="cierrePlin" min="0" step="0.01" value="0">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small">Tarjeta (POS)</label>
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text">S/</span>
+                                        <input type="number" class="form-control digital-field" id="cierreTarjeta" min="0" step="0.01" value="0">
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small">Transferencia</label>
+                                    <div class="input-group input-group-sm">
+                                        <span class="input-group-text">S/</span>
+                                        <input type="number" class="form-control digital-field" id="cierreTransferencia" min="0" step="0.01" value="0">
+                                    </div>
+                                </div>
+                                <div class="col-md-8">
+                                    <label class="form-label small">&nbsp;</label>
+                                    <div class="alert alert-success py-2 mb-0">
+                                        <strong>TOTAL GENERAL:</strong> S/<span id="totalCierreGeneral">0.00</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="notasCierre" class="form-label">Notas</label>
+                                <textarea class="form-control" id="notasCierre" name="notas" rows="3" placeholder="Observaciones del cierre..."></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-warning"><i class="bi bi-lock me-1"></i> Cerrar Caja</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== MODAL REGISTRAR MOVIMIENTO ==================== -->
+        <div class="modal fade" id="modalMovimiento" tabindex="-1" aria-labelledby="modalMovimientoLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalMovimientoLabel"><i class="bi bi-arrow-left-right me-1"></i> Registrar Movimiento</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <form id="formMovimiento">
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="movTipo" class="form-label">Tipo</label>
+                                <select class="form-select" id="movTipo" name="tipo" required>
+                                    <option value="ingreso">Ingreso</option>
+                                    <option value="egreso">Egreso</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="movConcepto" class="form-label">Concepto</label>
+                                <select class="form-select" id="movConcepto" name="concepto" required>
+                                    <option value="" disabled selected>Seleccione un concepto</option>
+                                    <optgroup label="Ingresos">
+                                        <option value="venta_factura">Venta</option>
+                                        <option value="propina">Propina</option>
+                                    </optgroup>
+                                    <optgroup label="Egresos">
+                                        <option value="gasto_compra_almacen">Compra almacen</option>
+                                        <option value="gasto_servicio">Gasto servicio</option>
+                                        <option value="gasto_otro">Otro gasto</option>
+                                        <option value="pago_planilla">Pago planilla</option>
+                                        <option value="retiro_caja_fuerte">Retiro a caja fuerte</option>
+                                        <option value="retiro_banco">Retiro a banco</option>
+                                        <option value="retiro_propietario">Retiro propietario</option>
+                                        <option value="devolucion_cliente">Devolucion cliente</option>
+                                    </optgroup>
+                                    <optgroup label="Otros">
+                                        <option value="ajuste">Ajuste</option>
+                                    </optgroup>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="movMonto" class="form-label">Monto</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">S/</span>
+                                    <input type="number" class="form-control" id="movMonto" name="monto" min="0.01" step="0.01" required placeholder="0.00">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="movMetodo" class="form-label">Metodo de pago</label>
+                                <select class="form-select" id="movMetodo" name="metodo_pago" required>
+                                    <option value="" disabled selected>Seleccione un metodo</option>
+                                    <% metodos.forEach(function(met) { %>
+                                        <option value="<%= met.id %>"><%= met.nombre %> <% if (met.comision_pct > 0) { %>(comision <%= met.comision_pct %>%)<% } %></option>
+                                    <% }); %>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i> Registrar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Editar Asignaciones -->
+        <div class="modal fade" id="modalEditarAsignaciones" tabindex="-1">
+          <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-pencil me-2"></i>Editar asignaciones de mesas</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body">
+                <% meseros.forEach(function(mesero) { %>
+                <div class="mb-3 p-2 rounded" style="background: rgba(0,0,0,0.02); border: 1px solid #eee;">
+                  <div class="fw-bold small mb-2"><i class="bi bi-person me-1"></i><%= mesero.nombre || mesero.usuario %></div>
+                  <div class="d-flex flex-wrap gap-1">
+                    <% mesasAll.forEach(function(mesa) { %>
+                    <label class="btn btn-sm <%= mesa.mesero_asignado_id === mesero.id ? 'btn-primary' : 'btn-outline-secondary' %> edit-mesa-check-label" style="font-size: 0.75rem; padding: 2px 8px;">
+                      <input type="checkbox" class="edit-mesa-check d-none"
+                        data-mesa-id="<%= mesa.id %>"
+                        data-mesero-id="<%= mesero.id %>"
+                        <%= mesa.mesero_asignado_id === mesero.id ? 'checked' : '' %>>
+                      <%= mesa.numero %>
+                    </label>
+                    <% }); %>
+                  </div>
+                </div>
+                <% }); %>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btnGuardarAsignaciones"><i class="bi bi-check-lg me-1"></i>Guardar</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Modal Historial Ranking -->
+        <div class="modal fade" id="modalHistorialRanking" tabindex="-1">
+          <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+              <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-trophy me-2"></i>Historial de Meseros</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+              </div>
+              <div class="modal-body">
+                <div class="btn-group mb-3" role="group">
+                  <button class="btn btn-sm btn-primary ranking-periodo" data-periodo="hoy">Hoy</button>
+                  <button class="btn btn-sm btn-outline-secondary ranking-periodo" data-periodo="semana">Semana</button>
+                  <button class="btn btn-sm btn-outline-secondary ranking-periodo" data-periodo="mes">Mes</button>
+                  <button class="btn btn-sm btn-outline-secondary ranking-periodo" data-periodo="todo">Todo</button>
+                </div>
+                <div class="table-responsive">
+                  <table class="table table-sm table-hover">
+                    <thead><tr><th>#</th><th>Mesero</th><th>Mesas</th><th>Productos</th><th>Prom/mesa</th></tr></thead>
+                    <tbody id="historialRankingBody">
+                      <tr><td colspan="5" class="text-center text-muted">Cargando...</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+    <script src="/vendor/jquery/jquery.min.js"></script>
+    <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+    (function(){
+        // ===================== ABRIR CAJA =====================
+        const formAbrir = document.getElementById('formAbrirCaja');
+        if (formAbrir) {
+            formAbrir.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const monto = document.getElementById('montoApertura').value;
+                const turno_id = document.getElementById('turnoApertura').value;
+
+                if (!monto || !turno_id) {
+                    return Swal.fire('Campos requeridos', 'Ingrese monto y seleccione turno.', 'warning');
+                }
+
+                const confirm = await Swal.fire({
+                    title: 'Abrir caja',
+                    text: `Se abrira la caja con S/${Number(monto).toFixed(2)}`,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Si, abrir',
+                    cancelButtonText: 'Cancelar'
+                });
+                if (!confirm.isConfirmed) return;
+
+                try {
+                    var asignaciones = [];
+                    document.querySelectorAll('.mesa-asign-check:checked').forEach(function(cb) {
+                      asignaciones.push({ mesa_id: parseInt(cb.dataset.mesaId), mesero_id: parseInt(cb.dataset.meseroId) });
+                    });
+                    const res = await fetch('/api/caja/abrir', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ monto_apertura: parseFloat(monto), turno_id: parseInt(turno_id), asignaciones: asignaciones })
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        await Swal.fire('Caja abierta', 'La caja se abrio correctamente.', 'success');
+                        location.reload();
+                    } else {
+                        Swal.fire('Error', data.error || 'No se pudo abrir la caja.', 'error');
+                    }
+                } catch(err) {
+                    Swal.fire('Error', 'Error de conexion.', 'error');
+                }
+            });
+        }
+
+        // ===================== DENOMINACIONES =====================
+        const denomFields = document.querySelectorAll('.denom-field');
+        function calcDenominaciones() {
+            let total = 0;
+            denomFields.forEach(function(inp) {
+                const cantidad = parseInt(inp.value) || 0;
+                const valor = parseFloat(inp.dataset.valor) || 0;
+                total += cantidad * valor;
+            });
+            const el = document.getElementById('totalDenominaciones');
+            if (el) el.textContent = total.toFixed(2);
+        }
+        denomFields.forEach(function(inp) { inp.addEventListener('input', calcDenominaciones); inp.addEventListener('input', calcTotalGeneral); });
+
+        // Total general (efectivo + digitales)
+        const digitalFields = document.querySelectorAll('.digital-field');
+        function calcTotalGeneral() {
+            let efectivo = 0;
+            denomFields.forEach(function(inp) { efectivo += (parseInt(inp.value)||0) * (parseFloat(inp.dataset.valor)||0); });
+            let digital = 0;
+            digitalFields.forEach(function(inp) { digital += parseFloat(inp.value) || 0; });
+            var totalGen = document.getElementById('totalCierreGeneral');
+            if (totalGen) totalGen.textContent = (efectivo + digital).toFixed(2);
+            // Actualizar monto real automaticamente
+            var montoReal = document.getElementById('montoReal');
+            if (montoReal) montoReal.value = (efectivo + digital).toFixed(2);
+        }
+        digitalFields.forEach(function(inp) { inp.addEventListener('input', calcTotalGeneral); });
+
+        // ===================== CERRAR CAJA =====================
+        const formCerrar = document.getElementById('formCerrarCaja');
+        if (formCerrar) {
+            formCerrar.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const monto_cierre = parseFloat(document.getElementById('montoReal').value);
+                const notas = document.getElementById('notasCierre').value;
+
+                if (isNaN(monto_cierre) || monto_cierre < 0) {
+                    return Swal.fire('Error', 'Ingrese un monto de cierre valido.', 'warning');
+                }
+
+                const denominaciones = {};
+                denomFields.forEach(function(inp) {
+                    denominaciones[inp.name] = parseInt(inp.value) || 0;
+                });
+
+                const confirm = await Swal.fire({
+                    title: 'Cerrar caja',
+                    text: `Monto real: S/${monto_cierre.toFixed(2)}. Esta seguro?`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Si, cerrar',
+                    cancelButtonText: 'Cancelar'
+                });
+                if (!confirm.isConfirmed) return;
+
+                try {
+                    const res = await fetch('/api/caja/cerrar', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ monto_cierre, denominaciones, notas })
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        await Swal.fire('Caja cerrada', 'La caja se cerro correctamente.', 'success');
+                        location.reload();
+                    } else if (data.mesas_ocupadas && data.mesas_ocupadas.length > 0) {
+                        // Mostrar mesas ocupadas con boton de liberar
+                        var mesasHtml = '<div class="text-start"><p class="fw-bold text-danger">Hay mesas ocupadas. Liberalas primero:</p><div class="list-group">';
+                        data.mesas_ocupadas.forEach(function(m) {
+                            mesasHtml += '<div class="list-group-item d-flex justify-content-between align-items-center">';
+                            mesasHtml += '<span><strong>Mesa ' + m.numero + '</strong> <small class="text-muted">' + (m.descripcion||'') + '</small></span>';
+                            mesasHtml += '<button class="btn btn-sm btn-danger btn-liberar-mesa" data-mesa-id="' + m.id + '"><i class="bi bi-unlock me-1"></i>Liberar</button>';
+                            mesasHtml += '</div>';
+                        });
+                        mesasHtml += '</div></div>';
+                        var result = await Swal.fire({
+                            title: 'No se puede cerrar caja',
+                            html: mesasHtml,
+                            icon: 'warning',
+                            showConfirmButton: false,
+                            showCloseButton: true
+                        });
+                    } else {
+                        Swal.fire('Error', data.error || 'No se pudo cerrar la caja.', 'error');
+                    }
+                } catch(err) {
+                    Swal.fire('Error', 'Error de conexion.', 'error');
+                }
+            });
+        }
+
+        // ===================== LIBERAR MESA DESDE CAJA =====================
+        document.addEventListener('click', async function(e) {
+            var btn = e.target.closest('.btn-liberar-mesa');
+            if (!btn) return;
+            var mesaId = btn.getAttribute('data-mesa-id');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+            try {
+                var r = await fetch('/api/mesas/' + mesaId + '/liberar', { method: 'PUT', headers: { 'Content-Type': 'application/json' } });
+                var d = await r.json();
+                if (!r.ok) throw new Error(d.error || 'Error');
+                btn.outerHTML = '<span class="badge bg-success">Liberada</span>';
+            } catch(err) {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-unlock me-1"></i>Liberar';
+                Swal.fire('Error', err.message, 'error');
+            }
+        });
+
+        // ===================== REGISTRAR MOVIMIENTO =====================
+        const modalMovimiento = document.getElementById('modalMovimiento');
+        const modalMovimientoBS = modalMovimiento ? new bootstrap.Modal(modalMovimiento) : null;
+
+        const btnIngreso = document.getElementById('btnRegistrarIngreso');
+        const btnEgreso = document.getElementById('btnRegistrarEgreso');
+
+        if (btnIngreso) {
+            btnIngreso.addEventListener('click', function() {
+                document.getElementById('movTipo').value = 'ingreso';
+                document.getElementById('modalMovimientoLabel').innerHTML = '<i class="bi bi-plus-circle me-1 text-success"></i> Registrar Ingreso';
+                document.getElementById('formMovimiento').reset();
+                document.getElementById('movTipo').value = 'ingreso';
+                modalMovimientoBS.show();
+            });
+        }
+        if (btnEgreso) {
+            btnEgreso.addEventListener('click', function() {
+                document.getElementById('movTipo').value = 'egreso';
+                document.getElementById('modalMovimientoLabel').innerHTML = '<i class="bi bi-dash-circle me-1 text-danger"></i> Registrar Egreso';
+                document.getElementById('formMovimiento').reset();
+                document.getElementById('movTipo').value = 'egreso';
+                modalMovimientoBS.show();
+            });
+        }
+
+        const formMov = document.getElementById('formMovimiento');
+        if (formMov) {
+            formMov.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const tipo = document.getElementById('movTipo').value;
+                const concepto = document.getElementById('movConcepto').value;
+                const monto = parseFloat(document.getElementById('movMonto').value);
+                const metodo_pago = document.getElementById('movMetodo').value;
+
+                if (!tipo || !concepto || isNaN(monto) || monto <= 0 || !metodo_pago) {
+                    return Swal.fire('Campos requeridos', 'Complete todos los campos.', 'warning');
+                }
+
+                try {
+                    const res = await fetch('/api/caja/movimiento', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ tipo, concepto, monto, metodo_pago })
+                    });
+                    const data = await res.json();
+                    if (res.ok) {
+                        modalMovimientoBS.hide();
+                        await Swal.fire('Registrado', 'El movimiento se registro correctamente.', 'success');
+                        location.reload();
+                    } else {
+                        Swal.fire('Error', data.error || 'No se pudo registrar el movimiento.', 'error');
+                    }
+                } catch(err) {
+                    Swal.fire('Error', 'Error de conexion.', 'error');
+                }
+            });
+        }
+
+        // === Meseros: Editar asignaciones ===
+        document.getElementById('btnEditarAsignaciones')?.addEventListener('click', function() {
+          new bootstrap.Modal(document.getElementById('modalEditarAsignaciones')).show();
+        });
+
+        document.querySelectorAll('.edit-mesa-check').forEach(function(cb) {
+          cb.addEventListener('change', function() {
+            if (this.checked) {
+              var mesaId = this.dataset.mesaId;
+              var self = this;
+              document.querySelectorAll('.edit-mesa-check[data-mesa-id="' + mesaId + '"]').forEach(function(other) {
+                if (other !== self) {
+                  other.checked = false;
+                  other.closest('.edit-mesa-check-label').classList.remove('btn-primary');
+                  other.closest('.edit-mesa-check-label').classList.add('btn-outline-secondary');
+                }
+              });
+              this.closest('.edit-mesa-check-label').classList.remove('btn-outline-secondary');
+              this.closest('.edit-mesa-check-label').classList.add('btn-primary');
+            } else {
+              this.closest('.edit-mesa-check-label').classList.remove('btn-primary');
+              this.closest('.edit-mesa-check-label').classList.add('btn-outline-secondary');
+            }
+          });
+        });
+
+        document.getElementById('btnGuardarAsignaciones')?.addEventListener('click', async function() {
+          var asignaciones = [];
+          document.querySelectorAll('.edit-mesa-check:checked').forEach(function(cb) {
+            asignaciones.push({ mesa_id: parseInt(cb.dataset.mesaId), mesero_id: parseInt(cb.dataset.meseroId) });
+          });
+          try {
+            var resp = await fetch('/api/caja/reasignar-mesas', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ asignaciones: asignaciones })
+            });
+            var data = await resp.json();
+            if (resp.ok) {
+              Swal.fire({ icon: 'success', title: 'Asignaciones actualizadas', timer: 1500, showConfirmButton: false });
+              setTimeout(function() { location.reload(); }, 1500);
+            } else {
+              Swal.fire({ icon: 'error', title: 'Error', text: data.error });
+            }
+          } catch (err) {
+            Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo guardar' });
+          }
+        });
+
+        // === Historial ranking ===
+        document.getElementById('btnVerHistorialRanking')?.addEventListener('click', function() {
+          new bootstrap.Modal(document.getElementById('modalHistorialRanking')).show();
+          cargarRanking('hoy');
+        });
+
+        document.querySelectorAll('.ranking-periodo').forEach(function(btn) {
+          btn.addEventListener('click', function() {
+            document.querySelectorAll('.ranking-periodo').forEach(function(b) {
+              b.classList.remove('btn-primary');
+              b.classList.add('btn-outline-secondary');
+            });
+            this.classList.remove('btn-outline-secondary');
+            this.classList.add('btn-primary');
+            cargarRanking(this.dataset.periodo);
+          });
+        });
+
+        async function cargarRanking(periodo) {
+          var tbody = document.getElementById('historialRankingBody');
+          tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Cargando...</td></tr>';
+          try {
+            var resp = await fetch('/api/caja/ranking-meseros?periodo=' + periodo);
+            var data = await resp.json();
+            if (data.ranking && data.ranking.length > 0) {
+              tbody.innerHTML = data.ranking.map(function(r, i) {
+                return '<tr><td>' + (i+1) + '</td><td>' + r.nombre + '</td><td>' + r.mesas_atendidas + '</td><td><strong>' + r.productos_servidos + '</strong></td><td>' + r.promedio_por_mesa + '</td></tr>';
+              }).join('');
+            } else {
+              tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted">Sin datos para este periodo</td></tr>';
+            }
+          } catch (err) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center text-danger">Error al cargar</td></tr>';
+          }
+        }
+
+    })();
+    </script>
+</body>
+</html>

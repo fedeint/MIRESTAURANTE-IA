@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="/favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1e1b4b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="dignita">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+    <title>Caja - mirestconia.com</title>
+    <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/theme.css">
+    <style>
+      .caja-kpi {
+        border: none;
+        border-radius: 16px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        transition: transform 0.15s;
+      }
+      .caja-kpi:hover { transform: translateY(-2px); }
+
+      .task-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        border-radius: 12px;
+        background: #fff;
+        box-shadow: 0 1px 6px rgba(0,0,0,0.04);
+        margin-bottom: 10px;
+        transition: background 0.15s;
+      }
+      .task-item:hover { background: #FFF8F0; }
+
+      .task-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        flex-shrink: 0;
+      }
+
+      .metodo-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid #F3F4F6;
+      }
+      .metodo-row:last-child { border-bottom: none; }
+
+      .badge-caja-open {
+        background: #22C55E20;
+        color: #16A34A;
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-family: 'DM Sans', sans-serif;
+      }
+      .badge-caja-closed {
+        background: #EF444420;
+        color: #DC2626;
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 3px 10px;
+        border-radius: 20px;
+        font-family: 'DM Sans', sans-serif;
+      }
+    </style>
+</head>
+<body>
+    <%- include('partials/sidebar') %>
+    <div class="dg-main">
+    <main class="flex-grow-1">
+    <div class="container-fluid" style="max-width:960px;padding-top:1.5rem;">
+
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h3 class="fw-bold mb-1" style="font-family:'DM Sans',sans-serif;letter-spacing:-0.02em;">
+                    <% var hora = new Date().getHours(); %>
+                    <%= hora < 12 ? 'Buenos dias' : hora < 18 ? 'Buenas tardes' : 'Buenas noches' %>, <%= cajaDash.userName %>
+                </h3>
+                <p class="text-muted small mb-0">
+                    <%= new Date().toLocaleDateString('es-PE', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) %>
+                    &nbsp;&middot;&nbsp;
+                    <span class="<%= cajaDash.cajaAbierta ? 'badge-caja-open' : 'badge-caja-closed' %>">
+                        <i class="bi bi-<%= cajaDash.cajaAbierta ? 'unlock' : 'lock' %>-fill" style="font-size:0.65rem;"></i>
+                        Caja <%= cajaDash.cajaAbierta ? 'ABIERTA' : 'CERRADA' %>
+                    </span>
+                </p>
+            </div>
+            <a href="/caja" class="btn" style="background:#FF6B35;color:#fff;border-radius:10px;font-size:0.82rem;font-weight:600;padding:8px 18px;">
+                <i class="bi bi-cash-coin me-1"></i>
+                <%= cajaDash.cajaAbierta ? 'Gestionar caja' : 'Abrir caja' %>
+            </a>
+        </div>
+
+        <!-- Alerta si caja cerrada -->
+        <% if (!cajaDash.cajaAbierta) { %>
+        <div class="alert d-flex align-items-center gap-3 mb-4" style="background:#FEF2F2;border:1px solid #FECACA;border-radius:14px;padding:14px 18px;">
+            <i class="bi bi-exclamation-triangle-fill" style="color:#EF4444;font-size:1.2rem;flex-shrink:0;"></i>
+            <div>
+                <div class="fw-bold" style="font-size:0.9rem;color:#DC2626;">Caja cerrada</div>
+                <div style="font-size:0.8rem;color:#7F1D1D;">Abre la caja antes de empezar a registrar pagos del dia.</div>
+            </div>
+            <a href="/caja" class="btn btn-sm ms-auto" style="background:#EF4444;color:#fff;border-radius:8px;font-size:0.75rem;font-weight:600;white-space:nowrap;">Abrir ahora</a>
+        </div>
+        <% } %>
+
+        <div class="row g-4">
+            <!-- COLUMNA IZQUIERDA: KPIs + metodos -->
+            <div class="col-lg-7">
+
+                <!-- KPIs del dia -->
+                <h6 class="fw-bold mb-3" style="font-family:'DM Sans',sans-serif;">Resumen del dia</h6>
+                <div class="row g-3 mb-4">
+                    <!-- Ventas hoy -->
+                    <div class="col-6">
+                        <div class="card caja-kpi">
+                            <div class="card-body py-3 px-4">
+                                <div class="d-flex align-items-center gap-2 mb-1">
+                                    <div style="width:32px;height:32px;background:#22C55E20;border-radius:10px;display:flex;align-items:center;justify-content:center;">
+                                        <i class="bi bi-currency-dollar" style="color:#22C55E;font-size:1rem;"></i>
+                                    </div>
+                                    <span style="font-size:0.72rem;color:#6B7280;font-weight:500;">Ventas hoy</span>
+                                </div>
+                                <div style="font-size:1.5rem;font-weight:800;color:#22C55E;font-family:'DM Sans',sans-serif;line-height:1.1;">
+                                    S/ <%= cajaDash.ventasHoy %>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Facturas hoy -->
+                    <div class="col-6">
+                        <div class="card caja-kpi">
+                            <div class="card-body py-3 px-4">
+                                <div class="d-flex align-items-center gap-2 mb-1">
+                                    <div style="width:32px;height:32px;background:#6366F120;border-radius:10px;display:flex;align-items:center;justify-content:center;">
+                                        <i class="bi bi-receipt" style="color:#6366F1;font-size:1rem;"></i>
+                                    </div>
+                                    <span style="font-size:0.72rem;color:#6B7280;font-weight:500;">Comprobantes</span>
+                                </div>
+                                <div style="font-size:1.5rem;font-weight:800;color:#6366F1;font-family:'DM Sans',sans-serif;line-height:1.1;">
+                                    <%= cajaDash.facturasHoy %>
+                                    <span style="font-size:0.75rem;font-weight:500;color:#9CA3AF;">emitidos</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Efectivo en caja -->
+                    <div class="col-6">
+                        <div class="card caja-kpi">
+                            <div class="card-body py-3 px-4">
+                                <div class="d-flex align-items-center gap-2 mb-1">
+                                    <div style="width:32px;height:32px;background:#FF6B3520;border-radius:10px;display:flex;align-items:center;justify-content:center;">
+                                        <i class="bi bi-cash-stack" style="color:#FF6B35;font-size:1rem;"></i>
+                                    </div>
+                                    <span style="font-size:0.72rem;color:#6B7280;font-weight:500;">Efectivo en caja</span>
+                                </div>
+                                <div style="font-size:1.5rem;font-weight:800;color:#FF6B35;font-family:'DM Sans',sans-serif;line-height:1.1;">
+                                    S/ <%= cajaDash.efectivoEnCaja %>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Estado -->
+                    <div class="col-6">
+                        <div class="card caja-kpi" style="<%= cajaDash.cajaAbierta ? 'border:1.5px solid #22C55E40;' : 'border:1.5px solid #EF444440;' %>">
+                            <div class="card-body py-3 px-4">
+                                <div class="d-flex align-items-center gap-2 mb-1">
+                                    <div style="width:32px;height:32px;background:<%= cajaDash.cajaAbierta ? '#22C55E20' : '#EF444420' %>;border-radius:10px;display:flex;align-items:center;justify-content:center;">
+                                        <i class="bi bi-<%= cajaDash.cajaAbierta ? 'unlock' : 'lock' %>-fill" style="color:<%= cajaDash.cajaAbierta ? '#22C55E' : '#EF4444' %>;font-size:1rem;"></i>
+                                    </div>
+                                    <span style="font-size:0.72rem;color:#6B7280;font-weight:500;">Estado de caja</span>
+                                </div>
+                                <div style="font-size:1.1rem;font-weight:800;color:<%= cajaDash.cajaAbierta ? '#22C55E' : '#EF4444' %>;font-family:'DM Sans',sans-serif;line-height:1.1;">
+                                    <%= cajaDash.cajaAbierta ? 'Abierta' : 'Cerrada' %>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Desglose por metodo de pago -->
+                <% if (cajaDash.metodosHoy && cajaDash.metodosHoy.length > 0) { %>
+                <div class="card mb-3" style="border:none;border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                    <div class="card-body px-4 py-3">
+                        <h6 class="fw-bold mb-3" style="font-family:'DM Sans',sans-serif;font-size:0.9rem;">
+                            <i class="bi bi-pie-chart-fill me-1" style="color:#FF6B35;"></i> Por metodo de pago
+                        </h6>
+                        <% cajaDash.metodosHoy.forEach(function(m) { %>
+                        <div class="metodo-row">
+                            <div class="d-flex align-items-center gap-2">
+                                <i class="bi bi-<%= (m.metodo || '').toLowerCase().includes('yape') || (m.metodo || '').toLowerCase().includes('plin') ? 'phone' : (m.metodo || '').toLowerCase().includes('tarjeta') ? 'credit-card' : 'cash-coin' %>"
+                                   style="color:#6B7280;font-size:0.9rem;"></i>
+                                <span style="font-size:0.85rem;font-weight:500;"><%= m.metodo || 'Sin especificar' %></span>
+                                <span style="font-size:0.7rem;color:#9CA3AF;"><%= m.qty %> comprobante<%= m.qty != 1 ? 's' : '' %></span>
+                            </div>
+                            <span style="font-size:0.9rem;font-weight:700;color:#1A1A1A;">S/ <%= Number(m.total).toFixed(2) %></span>
+                        </div>
+                        <% }); %>
+                    </div>
+                </div>
+                <% } else if (cajaDash.cajaAbierta) { %>
+                <div class="card mb-3" style="border:none;border-radius:16px;box-shadow:0 2px 8px rgba(0,0,0,0.04);">
+                    <div class="card-body px-4 py-3 text-center">
+                        <i class="bi bi-inbox" style="font-size:1.6rem;color:#D1D5DB;"></i>
+                        <p class="text-muted mb-0 mt-1" style="font-size:0.8rem;">Sin ventas registradas todavia hoy.</p>
+                    </div>
+                </div>
+                <% } %>
+
+            </div>
+
+            <!-- COLUMNA DERECHA: Tareas + DalIA -->
+            <div class="col-lg-5">
+
+                <!-- Tareas del cajero -->
+                <h6 class="fw-bold mb-3" style="font-family:'DM Sans',sans-serif;">Tareas del turno</h6>
+
+                <div class="task-item">
+                    <div class="task-dot" style="background:<%= cajaDash.cajaAbierta ? '#22C55E' : '#EF4444' %>;"></div>
+                    <div class="flex-grow-1">
+                        <div class="fw-semibold" style="font-size:0.88rem;">
+                            <%= cajaDash.cajaAbierta ? 'Caja abierta y lista' : 'Abrir la caja del dia' %>
+                        </div>
+                        <div class="text-muted" style="font-size:0.74rem;">
+                            <%= cajaDash.cajaAbierta ? 'Todo listo para registrar pagos' : 'Necesaria antes de operar' %>
+                        </div>
+                    </div>
+                    <% if (!cajaDash.cajaAbierta) { %>
+                    <a href="/caja" class="btn btn-sm" style="background:#EF4444;color:#fff;border-radius:7px;font-size:0.72rem;font-weight:600;white-space:nowrap;">Abrir</a>
+                    <% } else { %>
+                    <i class="bi bi-check-circle-fill" style="color:#22C55E;font-size:1rem;"></i>
+                    <% } %>
+                </div>
+
+                <div class="task-item">
+                    <div class="task-dot" style="background:#FF6B35;"></div>
+                    <div class="flex-grow-1">
+                        <div class="fw-semibold" style="font-size:0.88rem;">Verificar cierre de caja</div>
+                        <div class="text-muted" style="font-size:0.74rem;">Al final del turno, contar y cuadrar</div>
+                    </div>
+                    <a href="/caja" class="btn btn-sm" style="background:#FF6B3520;color:#FF6B35;border-radius:7px;font-size:0.72rem;font-weight:600;">Ver</a>
+                </div>
+
+                <div class="task-item">
+                    <div class="task-dot" style="background:#6366F1;"></div>
+                    <div class="flex-grow-1">
+                        <div class="fw-semibold" style="font-size:0.88rem;">Cuadrar efectivo</div>
+                        <div class="text-muted" style="font-size:0.74rem;">Billetes + monedas debe coincidir con el sistema</div>
+                    </div>
+                    <a href="/caja" class="btn btn-sm" style="background:#6366F120;color:#6366F1;border-radius:7px;font-size:0.72rem;font-weight:600;">Ir</a>
+                </div>
+
+                <div class="task-item">
+                    <div class="task-dot" style="background:#F59E0B;"></div>
+                    <div class="flex-grow-1">
+                        <div class="fw-semibold" style="font-size:0.88rem;">Revisar comprobantes emitidos</div>
+                        <div class="text-muted" style="font-size:0.74rem;"><%= cajaDash.facturasHoy %> comprobante<%= cajaDash.facturasHoy != 1 ? 's' : '' %> hoy</div>
+                    </div>
+                    <a href="/facturas" class="btn btn-sm" style="background:#F59E0B20;color:#D97706;border-radius:7px;font-size:0.72rem;font-weight:600;">Ver</a>
+                </div>
+
+                <!-- DalIA dice -->
+                <h6 class="fw-bold mt-4 mb-3" style="font-family:'DM Sans',sans-serif;">
+                    <img src="/uploads/dalia.png" alt="DalIA" style="width:18px;height:18px;object-fit:cover;border-radius:50%;vertical-align:middle;margin-right:5px;">
+                    DalIA dice:
+                </h6>
+
+                <div class="card" style="border:none;border-radius:14px;box-shadow:0 2px 8px rgba(0,0,0,0.04);border-top:3px solid #FF6B35;">
+                    <div class="card-body px-4 py-3">
+                        <% if (!cajaDash.cajaAbierta) { %>
+                        <div class="d-flex align-items-start gap-2 mb-2">
+                            <div style="width:6px;height:6px;border-radius:3px;background:#EF4444;margin-top:6px;flex-shrink:0;"></div>
+                            <div style="font-size:0.82rem;font-weight:500;">La caja esta cerrada. Abrela antes de que lleguen los primeros clientes.</div>
+                        </div>
+                        <% } else { %>
+                        <div class="d-flex align-items-start gap-2 mb-2">
+                            <div style="width:6px;height:6px;border-radius:3px;background:#22C55E;margin-top:6px;flex-shrink:0;"></div>
+                            <div style="font-size:0.82rem;font-weight:500;">La caja lleva S/ <%= cajaDash.ventasHoy %> hoy y <%= cajaDash.facturasHoy %> comprobante<%= cajaDash.facturasHoy != 1 ? 's' : '' %> emitido<%= cajaDash.facturasHoy != 1 ? 's' : '' %>.</div>
+                        </div>
+                        <% } %>
+                        <div class="d-flex align-items-start gap-2 mb-2">
+                            <div style="width:6px;height:6px;border-radius:3px;background:#F59E0B;margin-top:6px;flex-shrink:0;"></div>
+                            <div style="font-size:0.82rem;font-weight:500;">Al cerrar, cuenta el efectivo fisico antes de ingresar el monto en el sistema.</div>
+                        </div>
+                        <div class="d-flex align-items-start gap-2">
+                            <div style="width:6px;height:6px;border-radius:3px;background:#6366F1;margin-top:6px;flex-shrink:0;"></div>
+                            <div style="font-size:0.82rem;font-weight:500;">Registra Yape y Plin por separado para un cierre limpio.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Acceso rapido -->
+                <h6 class="fw-bold mt-4 mb-3" style="font-family:'DM Sans',sans-serif;">Acceso rapido</h6>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <a href="/caja" class="card text-decoration-none" style="border:none;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,0.04);">
+                            <div class="card-body py-2 px-3 d-flex align-items-center gap-2">
+                                <i class="bi bi-cash-coin" style="color:#22C55E;"></i>
+                                <span style="font-size:0.8rem;font-weight:500;color:#1A1A1A;">Caja</span>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a href="/facturas" class="card text-decoration-none" style="border:none;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,0.04);">
+                            <div class="card-body py-2 px-3 d-flex align-items-center gap-2">
+                                <i class="bi bi-receipt" style="color:#6366F1;"></i>
+                                <span style="font-size:0.8rem;font-weight:500;color:#1A1A1A;">Facturas</span>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a href="/clientes" class="card text-decoration-none" style="border:none;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,0.04);">
+                            <div class="card-body py-2 px-3 d-flex align-items-center gap-2">
+                                <i class="bi bi-people-fill" style="color:#FF6B35;"></i>
+                                <span style="font-size:0.8rem;font-weight:500;color:#1A1A1A;">Clientes</span>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-6">
+                        <a href="/ventas" class="card text-decoration-none" style="border:none;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,0.04);">
+                            <div class="card-body py-2 px-3 d-flex align-items-center gap-2">
+                                <i class="bi bi-graph-up-arrow" style="color:#F59E0B;"></i>
+                                <span style="font-size:0.8rem;font-weight:500;color:#1A1A1A;">Ventas</span>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="text-center mt-4 mb-3">
+            <span class="text-muted" style="font-size:0.7rem;">Creado por <strong>Leonidas Yauri</strong>, CEO de <strong style="color:#FF6B35;">mirestconia.com</strong></span>
+        </div>
+
+    </div>
+    </main>
+    <%- include('partials/footer') %>
+    </div>
+    <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

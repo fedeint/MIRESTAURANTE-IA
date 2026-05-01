@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="/favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1e1b4b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="dignita">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+    <title>SUNAT - mirestconia.com</title>
+    <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/theme.css">
+</head>
+<body>
+    <%- include('partials/sidebar') %>
+    <div class="dg-main">
+    <main class="flex-grow-1">
+    <div class="container mt-4">
+
+        <!-- Header -->
+        <h2 class="mb-4"><i class="bi bi-file-earmark-check me-2"></i>Facturacion Electronica SUNAT</h2>
+
+        <!-- Configuracion SUNAT -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="bi bi-gear me-1"></i>Configuracion SUNAT
+            </div>
+            <div class="card-body">
+                <form id="formSunatConfig">
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">RUC Emisor</label>
+                            <input type="text" class="form-control" name="ruc_emisor" value="<%= config.ruc_emisor || '' %>" maxlength="11" minlength="11" pattern="\d{11}" placeholder="Ej: 20123456789" required>
+                            <div class="form-text">11 digitos</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Razon Social Emisor</label>
+                            <input type="text" class="form-control" name="razon_social_emisor" value="<%= config.razon_social_emisor || '' %>" placeholder="Nombre de la empresa" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Direccion Emisor</label>
+                            <input type="text" class="form-control" name="direccion_emisor" value="<%= config.direccion_emisor || '' %>" placeholder="Direccion fiscal">
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Proveedor OSE</label>
+                            <select class="form-select" name="proveedor_ose">
+                                <option value="nubefact" <%= (config.proveedor_ose === 'nubefact') ? 'selected' : '' %>>Nubefact</option>
+                                <option value="sunat_directo" <%= (config.proveedor_ose === 'sunat_directo') ? 'selected' : '' %>>SUNAT Directo</option>
+                                <option value="efact" <%= (config.proveedor_ose === 'efact') ? 'selected' : '' %>>eFact</option>
+                                <option value="bizlinks" <%= (config.proveedor_ose === 'bizlinks') ? 'selected' : '' %>>Bizlinks</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Token OSE</label>
+                            <input type="text" class="form-control" name="token_ose" value="<%= config.token_ose || '' %>" placeholder="Token de autenticacion">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">URL OSE</label>
+                            <input type="text" class="form-control" name="url_ose" value="<%= config.url_ose || '' %>" placeholder="https://...">
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-2">
+                            <label class="form-label">IGV %</label>
+                            <input type="number" class="form-control" name="igv_porcentaje" value="<%= config.igv_porcentaje || 18 %>" min="0" max="100" step="0.01">
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <div class="form-check form-switch mb-2">
+                                <input class="form-check-input" type="checkbox" role="switch" name="produccion" id="switchProduccion" <%= config.produccion ? 'checked' : '' %>>
+                                <label class="form-check-label" for="switchProduccion">Produccion</label>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Serie Boleta</label>
+                            <input type="text" class="form-control" name="serie_boleta" value="<%= config.serie_boleta || 'B001' %>" maxlength="4">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Serie Factura</label>
+                            <input type="text" class="form-control" name="serie_factura" value="<%= config.serie_factura || 'F001' %>" maxlength="4">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Serie Nota Credito</label>
+                            <input type="text" class="form-control" name="serie_nota_credito" value="<%= config.serie_nota_credito || 'BC01' %>" maxlength="4">
+                        </div>
+                    </div>
+
+                    <div class="text-end">
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-save me-1"></i>Guardar configuracion</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Configuracion WhatsApp -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-whatsapp me-1 text-success"></i>Configuracion WhatsApp</span>
+                <div class="form-check form-switch mb-0">
+                    <input class="form-check-input" type="checkbox" role="switch"
+                           id="switchWaActivo" <%= config.whatsapp_activo ? 'checked' : '' %>>
+                    <label class="form-check-label fw-semibold" for="switchWaActivo">Activar envio por WhatsApp</label>
+                </div>
+            </div>
+            <div class="card-body">
+                <form id="formWhatsAppConfig">
+                    <div class="row mb-3">
+                        <div class="col-md-3">
+                            <label class="form-label">Proveedor</label>
+                            <select class="form-select" id="waProvider" name="whatsapp_provider">
+                                <option value="meta" <%= (!config.whatsapp_provider || config.whatsapp_provider === 'meta') ? 'selected' : '' %>>Meta Cloud API</option>
+                                <option value="twilio" <%= (config.whatsapp_provider === 'twilio') ? 'selected' : '' %>>Twilio</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Meta fields -->
+                    <div id="waMetaFields">
+                        <div class="row mb-3">
+                            <div class="col-md-5">
+                                <label class="form-label">Token de acceso permanente (Meta)</label>
+                                <input type="password" class="form-control" name="whatsapp_token"
+                                       value="<%= config.whatsapp_token || '' %>"
+                                       placeholder="EAAxxxxxxxxxxxxxxxx..." autocomplete="new-password">
+                                <div class="form-text">Token de larga duracion del App de Meta Business</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Phone Number ID</label>
+                                <input type="text" class="form-control" name="whatsapp_phone_id"
+                                       value="<%= config.whatsapp_phone_id || '' %>"
+                                       placeholder="123456789012345">
+                                <div class="form-text">ID del numero en Meta Business Suite</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Twilio fields -->
+                    <div id="waTwilioFields" class="d-none">
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Account SID</label>
+                                <input type="text" class="form-control" name="whatsapp_twilio_sid"
+                                       value="<%= config.whatsapp_twilio_sid || '' %>"
+                                       placeholder="ACxxxxxxxxxxxxxxxx">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Auth Token</label>
+                                <input type="password" class="form-control" name="whatsapp_twilio_token"
+                                       value="<%= config.whatsapp_twilio_token || '' %>"
+                                       placeholder="Token secreto de Twilio" autocomplete="new-password">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Numero From (solo digitos)</label>
+                                <input type="text" class="form-control" name="whatsapp_twilio_from"
+                                       value="<%= config.whatsapp_twilio_from || '' %>"
+                                       placeholder="14155238886">
+                                <div class="form-text">Sin "+" ni "whatsapp:"</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Test send -->
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Telefono de prueba (9 digitos, Peru)</label>
+                            <div class="input-group">
+                                <span class="input-group-text">+51</span>
+                                <input type="text" class="form-control" id="waTelefonoPrueba"
+                                       maxlength="9" placeholder="987654321">
+                            </div>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button type="button" class="btn btn-outline-success w-100" id="btnWaPrueba">
+                                <i class="bi bi-whatsapp me-1"></i>Enviar mensaje de prueba
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="text-end">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save me-1"></i>Guardar configuracion WhatsApp
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Comprobantes Electronicos -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="bi bi-receipt me-1"></i>Comprobantes Electronicos
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>Tipo</th>
+                                <th>Serie-Correlativo</th>
+                                <th>Fecha</th>
+                                <th>Cliente</th>
+                                <th class="text-end">Subtotal</th>
+                                <th class="text-end">IGV</th>
+                                <th class="text-end">Total</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% comprobantes.forEach(function(c) { %>
+                            <tr>
+                                <td>
+                                    <% if (c.tipo === 'boleta') { %>
+                                        <span class="badge bg-info">Boleta</span>
+                                    <% } else if (c.tipo === 'factura') { %>
+                                        <span class="badge bg-primary">Factura</span>
+                                    <% } else if (c.tipo === 'nota_credito') { %>
+                                        <span class="badge bg-warning text-dark">Nota Credito</span>
+                                    <% } else { %>
+                                        <span class="badge bg-secondary"><%= c.tipo %></span>
+                                    <% } %>
+                                </td>
+                                <td><%= c.serie %>-<%= c.correlativo %></td>
+                                <td><%= c.fecha %></td>
+                                <td><%= c.cliente_razon_social || c.cliente_num_doc || '-' %></td>
+                                <td class="text-end">S/ <%= parseFloat(c.subtotal_sin_igv || 0).toFixed(2) %></td>
+                                <td class="text-end">S/ <%= parseFloat(c.igv || 0).toFixed(2) %></td>
+                                <td class="text-end fw-bold">S/ <%= parseFloat(c.total_con_igv || 0).toFixed(2) %></td>
+                                <td>
+                                    <% if (c.estado === 'aceptado') { %>
+                                        <span class="badge bg-success">Aceptado</span>
+                                    <% } else if (c.estado === 'rechazado') { %>
+                                        <span class="badge bg-danger">Rechazado</span>
+                                    <% } else if (c.estado === 'pendiente') { %>
+                                        <span class="badge bg-warning text-dark">Pendiente</span>
+                                    <% } else if (c.estado === 'anulado') { %>
+                                        <span class="badge bg-dark">Anulado</span>
+                                    <% } else { %>
+                                        <span class="badge bg-secondary"><%= c.estado %></span>
+                                    <% } %>
+                                </td>
+                                <td>
+                                    <% if (c.pdf_url) { %>
+                                    <a href="<%= c.pdf_url %>" target="_blank" class="btn btn-sm btn-outline-secondary me-1" title="Ver PDF">
+                                        <i class="bi bi-file-earmark-pdf"></i>
+                                    </a>
+                                    <% } %>
+                                    <button type="button"
+                                            class="btn btn-sm btn-outline-success btn-wa-enviar"
+                                            data-comprobante-id="<%= c.id %>"
+                                            data-serie="<%= c.serie %>"
+                                            data-correlativo="<%= c.correlativo %>"
+                                            data-tipo="<%= c.tipo %>"
+                                            title="Enviar por WhatsApp">
+                                        <i class="bi bi-whatsapp"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            <% }); %>
+                            <% if (comprobantes.length === 0) { %>
+                            <tr>
+                                <td colspan="9" class="text-center text-muted py-4">No hay comprobantes electronicos registrados</td>
+                            </tr>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal: Enviar por WhatsApp -->
+        <div class="modal fade" id="modalWhatsApp" tabindex="-1" aria-labelledby="modalWhatsAppLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalWhatsAppLabel">
+                            <i class="bi bi-whatsapp text-success me-2"></i>Enviar por WhatsApp
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="text-muted mb-3" id="waModalSubtitle">Comprobante: —</p>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Numero de WhatsApp del cliente</label>
+                            <div class="input-group">
+                                <span class="input-group-text">+51</span>
+                                <input type="text" class="form-control" id="waTelefonoEnvio"
+                                       maxlength="9" placeholder="987654321">
+                            </div>
+                            <div class="form-text">Numero movil peruano (9 digitos, sin prefijo)</div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-success" id="btnWaEnviarConfirm">
+                            <i class="bi bi-send me-1"></i>Enviar comprobante
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    </main>
+    <%- include('partials/footer') %>
+    </div>
+
+    <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="/vendor/sweetalert2/sweetalert2.all.min.js"></script>
+    <script>
+    // -------------------------------------------------------------------------
+    // SUNAT Config form
+    // -------------------------------------------------------------------------
+    document.getElementById('formSunatConfig').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const data = Object.fromEntries(formData.entries());
+        data.produccion = document.getElementById('switchProduccion').checked;
+        data.igv_porcentaje = parseFloat(data.igv_porcentaje);
+
+        try {
+            const res = await fetch('/api/sunat/config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const result = await res.json();
+            if (res.ok) {
+                Swal.fire('Guardado', 'Configuracion SUNAT actualizada correctamente', 'success');
+            } else {
+                Swal.fire('Error', result.error || 'No se pudo guardar la configuracion', 'error');
+            }
+        } catch (err) {
+            Swal.fire('Error', 'Error de conexion al guardar configuracion', 'error');
+        }
+    });
+
+    // -------------------------------------------------------------------------
+    // WhatsApp provider toggle
+    // -------------------------------------------------------------------------
+    const waProvider = document.getElementById('waProvider');
+    const waMetaFields = document.getElementById('waMetaFields');
+    const waTwilioFields = document.getElementById('waTwilioFields');
+
+    function toggleWaProvider() {
+        const isTwilio = waProvider.value === 'twilio';
+        waMetaFields.classList.toggle('d-none', isTwilio);
+        waTwilioFields.classList.toggle('d-none', !isTwilio);
+    }
+    waProvider.addEventListener('change', toggleWaProvider);
+    toggleWaProvider(); // run on page load
+
+    // -------------------------------------------------------------------------
+    // WhatsApp Config save
+    // -------------------------------------------------------------------------
+    document.getElementById('formWhatsAppConfig').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        const formData = new FormData(this);
+        const data = Object.fromEntries(formData.entries());
+
+        // Merge with SUNAT form so we don't blank out the other section
+        const sunatFormData = new FormData(document.getElementById('formSunatConfig'));
+        const sunatData = Object.fromEntries(sunatFormData.entries());
+        sunatData.produccion = document.getElementById('switchProduccion').checked;
+        sunatData.igv_porcentaje = parseFloat(sunatData.igv_porcentaje);
+        sunatData.whatsapp_activo = document.getElementById('switchWaActivo').checked;
+
+        const payload = Object.assign({}, sunatData, data, {
+            whatsapp_activo: document.getElementById('switchWaActivo').checked
+        });
+
+        try {
+            const res = await fetch('/api/sunat/config', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const result = await res.json();
+            if (res.ok) {
+                Swal.fire('Guardado', 'Configuracion WhatsApp guardada correctamente', 'success');
+            } else {
+                Swal.fire('Error', result.error || 'No se pudo guardar la configuracion WhatsApp', 'error');
+            }
+        } catch (err) {
+            Swal.fire('Error', 'Error de conexion al guardar configuracion WhatsApp', 'error');
+        }
+    });
+
+    // -------------------------------------------------------------------------
+    // WhatsApp test message
+    // -------------------------------------------------------------------------
+    document.getElementById('btnWaPrueba').addEventListener('click', async function() {
+        const telefono = document.getElementById('waTelefonoPrueba').value.trim();
+        if (!telefono || telefono.replace(/\D/g, '').length < 7) {
+            Swal.fire('Atencion', 'Ingresa un numero de telefono valido para la prueba', 'warning');
+            return;
+        }
+
+        const btn = this;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Enviando...';
+
+        try {
+            const res = await fetch('/api/sunat/whatsapp-prueba', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ telefono })
+            });
+            const result = await res.json();
+            if (result.ok) {
+                Swal.fire('Enviado', 'Mensaje de prueba enviado correctamente a +51' + telefono, 'success');
+            } else {
+                Swal.fire('Error', result.error || 'No se pudo enviar el mensaje de prueba', 'error');
+            }
+        } catch (err) {
+            Swal.fire('Error', 'Error de conexion al enviar prueba WhatsApp', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-whatsapp me-1"></i>Enviar mensaje de prueba';
+        }
+    });
+
+    // -------------------------------------------------------------------------
+    // WhatsApp: open modal when clicking a comprobante's send button
+    // -------------------------------------------------------------------------
+    let currentComprobanteId = null;
+    const modalWa = new bootstrap.Modal(document.getElementById('modalWhatsApp'));
+
+    document.querySelectorAll('.btn-wa-enviar').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            currentComprobanteId = this.dataset.comprobanteId;
+            const label = this.dataset.tipo === 'factura' ? 'Factura' : 'Boleta';
+            document.getElementById('waModalSubtitle').textContent =
+                label + ': ' + this.dataset.serie + '-' + this.dataset.correlativo;
+            document.getElementById('waTelefonoEnvio').value = '';
+            modalWa.show();
+        });
+    });
+
+    // -------------------------------------------------------------------------
+    // WhatsApp: confirm send from modal
+    // -------------------------------------------------------------------------
+    document.getElementById('btnWaEnviarConfirm').addEventListener('click', async function() {
+        const telefono = document.getElementById('waTelefonoEnvio').value.trim();
+        if (!telefono || telefono.replace(/\D/g, '').length < 7) {
+            Swal.fire('Atencion', 'Ingresa el numero de WhatsApp del cliente (9 digitos)', 'warning');
+            return;
+        }
+
+        if (!currentComprobanteId) {
+            Swal.fire('Error', 'No se selecciono ningun comprobante', 'error');
+            return;
+        }
+
+        const btn = this;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Enviando...';
+
+        try {
+            const res = await fetch('/api/sunat/whatsapp/' + currentComprobanteId, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ telefono })
+            });
+            const result = await res.json();
+
+            modalWa.hide();
+
+            if (result.ok) {
+                Swal.fire('Enviado', 'Comprobante enviado por WhatsApp correctamente a +51' + telefono, 'success');
+            } else {
+                Swal.fire('Error al enviar', result.error || 'No se pudo enviar el comprobante por WhatsApp', 'error');
+            }
+        } catch (err) {
+            Swal.fire('Error', 'Error de conexion al enviar por WhatsApp', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-send me-1"></i>Enviar comprobante';
+        }
+    });
+    </script>
+</body>
+</html>

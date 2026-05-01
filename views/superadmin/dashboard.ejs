@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Superadmin Dashboard - mirestconia.com</title>
+  <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+  <link rel="stylesheet" href="/css/theme.css">
+  <style>
+    .sa-card {
+      background: #1e2235;
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 16px;
+      padding: 1.5rem;
+      color: #e2e8f0;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .sa-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+    .sa-kpi-value { font-size: 2rem; font-weight: 800; color: #fff; line-height: 1; }
+    .sa-kpi-label { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: #94a3b8; margin-top: 4px; }
+    .sa-kpi-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; }
+    .sa-badge-activo { background: rgba(34,197,94,0.15); color: #22c55e; border-radius: 20px; padding: 2px 10px; font-size: 0.72rem; font-weight: 700; }
+    .sa-badge-inactivo { background: rgba(239,68,68,0.15); color: #ef4444; border-radius: 20px; padding: 2px 10px; font-size: 0.72rem; font-weight: 700; }
+    .sa-badge-prueba { background: rgba(251,191,36,0.15); color: #fbbf24; border-radius: 20px; padding: 2px 10px; font-size: 0.72rem; font-weight: 700; }
+    .sa-badge-plan { background: rgba(249,115,22,0.15); color: #f97316; border-radius: 20px; padding: 3px 10px; font-size: 0.72rem; font-weight: 700; }
+    .sa-table th { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #64748b; border-bottom: 1px solid rgba(255,255,255,0.06); padding: 10px 12px; }
+    .sa-table td { font-size: 0.83rem; color: #cbd5e1; padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: middle; }
+    .sa-table tr:hover td { background: rgba(255,255,255,0.03); }
+    .sa-section-title { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: #64748b; padding: 8px 0 12px; }
+    body { background: #0f172a; }
+    .dg-main { background: #0f172a; }
+    .plan-free { color: #94a3b8; }
+    .plan-pro { color: #f97316; }
+    .plan-enterprise { color: #a78bfa; }
+  </style>
+</head>
+<body>
+  <%- include('../partials/sidebar') %>
+  <div class="dg-main">
+    <main class="flex-grow-1">
+      <div class="container-fluid" style="max-width:1300px;padding:1.5rem 1.5rem 3rem;">
+
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <div>
+            <div class="sa-section-title">PANEL DE CONTROL</div>
+            <h3 class="fw-bold mb-1" style="color:#fff;font-family:'DM Sans',sans-serif;letter-spacing:-0.02em;">
+              <i class="bi bi-shield-fill-check me-2" style="color:#f97316;"></i>Superadmin
+            </h3>
+            <p class="mb-0" style="color:#64748b;font-size:0.82rem;">mirestconia.com SaaS &mdash; <%= new Date().toLocaleDateString('es-PE', { weekday:'long', year:'numeric', month:'long', day:'numeric' }) %></p>
+          </div>
+          <div class="d-flex gap-2">
+            <a href="/superadmin/tenants" class="btn btn-sm" style="background:#f97316;color:#fff;border-radius:10px;font-weight:600;">
+              <i class="bi bi-building me-1"></i>Tenants
+            </a>
+            <a href="/superadmin/billing" class="btn btn-sm" style="background:#1e2235;color:#94a3b8;border:1px solid rgba(255,255,255,0.1);border-radius:10px;">
+              <i class="bi bi-cash-stack me-1"></i>Billing
+            </a>
+            <button id="btn-solicitudes" class="btn btn-sm position-relative" style="background:#1e2235;color:#94a3b8;border:1px solid rgba(255,255,255,0.1);border-radius:10px;" onclick="toggleSolicitudes()">
+              <i class="bi bi-person-check me-1"></i>Solicitudes
+              <span id="solicitudes-badge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display:none;">0</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- KPI Row 1 -->
+        <div class="row g-3 mb-4">
+          <div class="col-6 col-lg-3">
+            <div class="sa-card">
+              <div class="d-flex justify-content-between align-items-start">
+                <div>
+                  <div class="sa-kpi-value">S/ <%= stats.mrr.toLocaleString('es-PE', {minimumFractionDigits:0,maximumFractionDigits:0}) %></div>
+                  <div class="sa-kpi-label">MRR Activo</div>
+                </div>
+                <div class="sa-kpi-icon" style="background:rgba(34,197,94,0.1);color:#22c55e;">
+                  <i class="bi bi-graph-up-arrow"></i>
+                </div>
+              </div>
+              <div class="mt-2" style="font-size:0.72rem;color:#64748b;">ARR S/ <%= stats.arr.toLocaleString('es-PE', {minimumFractionDigits:0}) %></div>
+            </div>
+          </div>
+          <div class="col-6 col-lg-3">
+            <div class="sa-card">
+              <div class="d-flex justify-content-between align-items-start">
+                <div>
+                  <div class="sa-kpi-value"><%= stats.tenantsActivos %></div>
+                  <div class="sa-kpi-label">Tenants Activos</div>
+                </div>
+                <div class="sa-kpi-icon" style="background:rgba(249,115,22,0.1);color:#f97316;">
+                  <i class="bi bi-building"></i>
+                </div>
+              </div>
+              <div class="mt-2" style="font-size:0.72rem;color:#64748b;"><%= stats.nuevosEsteMes %> nuevos este mes</div>
+            </div>
+          </div>
+          <div class="col-6 col-lg-3">
+            <div class="sa-card">
+              <div class="d-flex justify-content-between align-items-start">
+                <div>
+                  <div class="sa-kpi-value"><%= stats.usuariosTotal %></div>
+                  <div class="sa-kpi-label">Usuarios Total</div>
+                </div>
+                <div class="sa-kpi-icon" style="background:rgba(99,102,241,0.1);color:#818cf8;">
+                  <i class="bi bi-people-fill"></i>
+                </div>
+              </div>
+              <div class="mt-2" style="font-size:0.72rem;color:#64748b;">Todos los tenants</div>
+            </div>
+          </div>
+          <div class="col-6 col-lg-3">
+            <div class="sa-card">
+              <div class="d-flex justify-content-between align-items-start">
+                <div>
+                  <div class="sa-kpi-value"><%= stats.facturasTotal.toLocaleString() %></div>
+                  <div class="sa-kpi-label">Facturas Emitidas</div>
+                </div>
+                <div class="sa-kpi-icon" style="background:rgba(20,184,166,0.1);color:#2dd4bf;">
+                  <i class="bi bi-receipt"></i>
+                </div>
+              </div>
+              <div class="mt-2" style="font-size:0.72rem;color:#64748b;">Todas las operaciones</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Plan distribution + Tenant list -->
+        <div class="row g-3">
+
+          <!-- Plan distribution -->
+          <div class="col-lg-4">
+            <div class="sa-card h-100">
+              <div class="sa-section-title mb-2">Distribucion por Plan</div>
+              <% if (stats.suscripcionesPorPlan.length === 0) { %>
+                <div style="color:#64748b;font-size:0.82rem;text-align:center;padding:2rem 0;">Sin suscripciones aun</div>
+              <% } else { %>
+                <% stats.suscripcionesPorPlan.forEach(function(s) { %>
+                  <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                      <span class="sa-badge-plan plan-<%= s.plan %>"><%= s.plan.toUpperCase() %></span>
+                      <span style="color:#94a3b8;font-size:0.78rem;margin-left:8px;"><%= s.total %> tenants</span>
+                    </div>
+                    <div style="color:#fff;font-weight:700;font-size:0.9rem;">
+                      S/ <%= Number(s.revenue).toLocaleString('es-PE', {minimumFractionDigits:2,maximumFractionDigits:2}) %>
+                    </div>
+                  </div>
+                  <div class="mb-3" style="height:4px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden;">
+                    <div style="height:100%;border-radius:4px;background:<%= s.plan==='enterprise'?'#a78bfa':s.plan==='pro'?'#f97316':'#64748b' %>;width:<%= Math.min(100, Math.round((Number(s.total)/Math.max(1, stats.tenantsTotal))*100)) %>%"></div>
+                  </div>
+                <% }); %>
+              <% } %>
+
+              <div class="mt-4 pt-3" style="border-top:1px solid rgba(255,255,255,0.06);">
+                <div class="sa-section-title mb-2">Quick Actions</div>
+                <a href="/superadmin/tenants" class="btn btn-sm w-100 mb-2" style="background:rgba(249,115,22,0.12);color:#f97316;border:1px solid rgba(249,115,22,0.2);border-radius:8px;font-weight:600;font-size:0.8rem;">
+                  <i class="bi bi-plus-circle me-1"></i> Nuevo Tenant
+                </a>
+                <a href="/superadmin/billing" class="btn btn-sm w-100" style="background:rgba(255,255,255,0.04);color:#94a3b8;border:1px solid rgba(255,255,255,0.08);border-radius:8px;font-weight:600;font-size:0.8rem;">
+                  <i class="bi bi-cash-stack me-1"></i> Ver P&L
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tenants table -->
+          <div class="col-lg-8">
+            <div class="sa-card">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="sa-section-title mb-0">Todos los Tenants</div>
+                <a href="/superadmin/tenants" style="font-size:0.78rem;color:#f97316;text-decoration:none;">Ver gestion completa <i class="bi bi-arrow-right"></i></a>
+              </div>
+              <div class="table-responsive">
+                <table class="sa-table w-100">
+                  <thead>
+                    <tr>
+                      <th>Restaurante</th>
+                      <th>Plan</th>
+                      <th>Estado</th>
+                      <th>Usuarios</th>
+                      <th>MRR</th>
+                      <th>Creado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <% if (!tenants || tenants.length === 0) { %>
+                      <tr><td colspan="6" class="text-center" style="color:#64748b;padding:2rem;">Sin tenants registrados</td></tr>
+                    <% } else { %>
+                      <% tenants.slice(0, 10).forEach(function(t) { %>
+                        <tr>
+                          <td>
+                            <div style="font-weight:600;color:#e2e8f0;"><%= t.nombre %></div>
+                            <div style="font-size:0.7rem;color:#64748b;">mirestconia.com/<%= t.subdominio %></div>
+                          </td>
+                          <td>
+                            <span class="sa-badge-plan plan-<%= t.plan %>"><%= (t.plan||'free').toUpperCase() %></span>
+                          </td>
+                          <td>
+                            <% if (t.activo) { %>
+                              <span class="sa-badge-activo">Activo</span>
+                            <% } else { %>
+                              <span class="sa-badge-inactivo">Inactivo</span>
+                            <% } %>
+                          </td>
+                          <td><%= t.usuarios_count || 0 %></td>
+                          <td style="color:<%= t.precio_mensual > 0 ? '#22c55e' : '#64748b' %>;">
+                            S/ <%= Number(t.precio_mensual || 0).toFixed(2) %>
+                          </td>
+                          <td style="color:#64748b;font-size:0.75rem;">
+                            <%= t.created_at ? new Date(t.created_at).toLocaleDateString('es-PE') : '-' %>
+                          </td>
+                        </tr>
+                      <% }); %>
+                    <% } %>
+                  </tbody>
+                </table>
+              </div>
+              <% if (tenants && tenants.length > 10) { %>
+                <div class="text-center mt-2">
+                  <a href="/superadmin/tenants" style="font-size:0.78rem;color:#f97316;text-decoration:none;">Ver <%= tenants.length - 10 %> mas <i class="bi bi-arrow-right"></i></a>
+                </div>
+              <% } %>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Solicitudes Panel (hidden by default) -->
+        <div id="solicitudes-panel" style="display:none;" class="mt-4">
+          <div class="sa-card">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h5 class="fw-bold mb-0" style="color:#fff;"><i class="bi bi-person-check me-2 text-warning"></i>Solicitudes de Registro</h5>
+              <button class="btn btn-sm btn-outline-secondary" onclick="loadSolicitudes()"><i class="bi bi-arrow-clockwise"></i></button>
+            </div>
+            <div id="solicitudes-list">
+              <p class="text-muted">Cargando...</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+  <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script src="/vendor/sweetalert2/sweetalert2.all.min.js"></script>
+  <script>
+    let solicitudesVisible = false;
+
+    function toggleSolicitudes() {
+      solicitudesVisible = !solicitudesVisible;
+      document.getElementById('solicitudes-panel').style.display = solicitudesVisible ? '' : 'none';
+      if (solicitudesVisible) loadSolicitudes();
+    }
+
+    function loadSolicitudes() {
+      fetch('/superadmin/solicitudes')
+        .then(r => r.json())
+        .then(data => {
+          const list = document.getElementById('solicitudes-list');
+          const badge = document.getElementById('solicitudes-badge');
+          const solicitudes = data.solicitudes || [];
+
+          badge.textContent = solicitudes.length;
+          badge.style.display = solicitudes.length > 0 ? '' : 'none';
+
+          if (solicitudes.length === 0) {
+            list.innerHTML = '<p style="color:#64748b;">No hay solicitudes pendientes.</p>';
+            return;
+          }
+
+          list.innerHTML = solicitudes.map(s => {
+            const hace = timeAgo(s.created_at);
+            const fotos = s.fotos || [];
+            const fotosHtml = fotos.map((f, i) =>
+              f.url ? `<a href="${escHtml(f.url)}" target="_blank" class="me-1"><img src="${escHtml(f.url)}" style="width:60px;height:60px;object-fit:cover;border-radius:6px;border:1px solid rgba(255,255,255,0.1);"></a>`
+              : `<span class="badge bg-secondary me-1">Foto ${i+1}</span>`
+            ).join('');
+
+            return `
+              <div class="border rounded p-3 mb-3" style="border-color:rgba(255,255,255,0.08) !important;background:rgba(255,255,255,0.02);">
+                <div class="d-flex justify-content-between align-items-start mb-2">
+                  <div>
+                    <h6 class="fw-bold mb-0" style="color:#fff;">${escHtml(s.tenant_nombre || 'Sin nombre')}</h6>
+                    <small style="color:#94a3b8;">${escHtml(s.usuario_nombre || '')} &bull; ${escHtml(s.google_email || '')}</small>
+                  </div>
+                  <small style="color:#64748b;">${hace}</small>
+                </div>
+                <div class="mb-2" style="color:#94a3b8;font-size:0.82rem;">
+                  <i class="bi bi-geo-alt me-1"></i>${escHtml(s.distrito || '-')}, ${escHtml(s.departamento || '-')}
+                  ${s.latitud && s.longitud ? `<a href="https://www.google.com/maps?q=${s.latitud},${s.longitud}" target="_blank" class="ms-2" style="color:#f97316;font-size:0.75rem;"><i class="bi bi-map"></i> Ver en mapa</a>` : ''}
+                </div>
+                <div class="mb-2" style="color:#94a3b8;font-size:0.82rem;">
+                  <i class="bi bi-table me-1"></i>${s.num_mesas || '-'} mesas &bull;
+                  <i class="bi bi-people me-1"></i>${s.num_trabajadores || '-'} trabajadores &bull;
+                  Antigüedad: ${escHtml(formatAntiguedad(s.antiguedad))}
+                </div>
+                <div class="mb-2">
+                  <strong style="color:#94a3b8;font-size:0.75rem;">FOTOS:</strong>
+                  <div class="mt-1">${fotosHtml || '<span style="color:#64748b;">Sin fotos</span>'}</div>
+                </div>
+                ${s.video_url ? `<div class="mb-2"><a href="${escHtml(s.video_url)}" target="_blank" class="btn btn-sm btn-outline-light"><i class="bi bi-play-circle me-1"></i>Ver video</a></div>` : ''}
+                <div class="d-flex gap-2 mt-3">
+                  <button class="btn btn-sm btn-success" onclick="aprobarSolicitud(${s.id})">
+                    <i class="bi bi-check-circle me-1"></i>Aprobar
+                  </button>
+                  <button class="btn btn-sm btn-danger" onclick="rechazarSolicitud(${s.id})">
+                    <i class="bi bi-x-circle me-1"></i>Rechazar
+                  </button>
+                </div>
+              </div>
+            `;
+          }).join('');
+        })
+        .catch(err => {
+          document.getElementById('solicitudes-list').innerHTML = '<p class="text-danger">Error cargando solicitudes</p>';
+        });
+    }
+
+    function aprobarSolicitud(id) {
+      Swal.fire({
+        title: '¿Aprobar esta solicitud?',
+        text: 'Se activará la prueba gratuita de 5 días para este restaurante.',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, aprobar',
+        cancelButtonText: 'Cancelar',
+        background: '#1e2235',
+        color: '#e2e8f0'
+      }).then(result => {
+        if (!result.isConfirmed) return;
+        fetch(`/superadmin/solicitudes/${id}/aprobar`, { method: 'POST', headers: { 'Content-Type': 'application/json' } })
+          .then(r => r.json())
+          .then(data => {
+            if (data.error) return Swal.fire('Error', data.error, 'error');
+            Swal.fire({ title: 'Aprobado', text: `Trial activado para ${data.nombre || 'el restaurante'}`, icon: 'success', background: '#1e2235', color: '#e2e8f0' });
+            loadSolicitudes();
+          });
+      });
+    }
+
+    function rechazarSolicitud(id) {
+      Swal.fire({
+        title: 'Rechazar solicitud',
+        input: 'textarea',
+        inputLabel: 'Motivo del rechazo (obligatorio)',
+        inputPlaceholder: 'Escribe el motivo...',
+        showCancelButton: true,
+        confirmButtonText: 'Rechazar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#ef4444',
+        background: '#1e2235',
+        color: '#e2e8f0',
+        inputValidator: (value) => {
+          if (!value || !value.trim()) return 'El motivo es obligatorio';
+        }
+      }).then(result => {
+        if (!result.isConfirmed) return;
+        fetch(`/superadmin/solicitudes/${id}/rechazar`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ motivo: result.value })
+        })
+          .then(r => r.json())
+          .then(data => {
+            if (data.error) return Swal.fire('Error', data.error, 'error');
+            Swal.fire({ title: 'Rechazado', text: 'Se notificará al usuario.', icon: 'info', background: '#1e2235', color: '#e2e8f0' });
+            loadSolicitudes();
+          });
+      });
+    }
+
+    function timeAgo(dateStr) {
+      const diff = Date.now() - new Date(dateStr).getTime();
+      const mins = Math.floor(diff / 60000);
+      if (mins < 60) return `Hace ${mins} min`;
+      const hrs = Math.floor(mins / 60);
+      if (hrs < 24) return `Hace ${hrs}h`;
+      return `Hace ${Math.floor(hrs / 24)}d`;
+    }
+
+    function formatAntiguedad(code) {
+      const map = { 'MENOS_1': '<1 año', '1_3': '1-3 años', '3_5': '3-5 años', '5_10': '5-10 años', 'MAS_10': '+10 años' };
+      return map[code] || code || '-';
+    }
+
+    function escHtml(str) {
+      if (!str) return '';
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    }
+
+    // Auto-load badge count on page load
+    fetch('/superadmin/solicitudes')
+      .then(r => r.json())
+      .then(data => {
+        const count = (data.solicitudes || []).length;
+        const badge = document.getElementById('solicitudes-badge');
+        badge.textContent = count;
+        badge.style.display = count > 0 ? '' : 'none';
+      })
+      .catch(() => {});
+  </script>
+</body>
+</html>

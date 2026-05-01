@@ -1,0 +1,252 @@
+<%# @variant: desktop — Admin dashboard desktop variant. Reference: UI.DELSISTEMA.pen frame 1920w default (9RPaz). Must NEVER be byte-identical to dashboard.ejs (pwa variant). %>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1280, initial-scale=1">
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <title>Inicio — mirestconia.com</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fredoka+One&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/vendor/bootstrap-icons/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --dg-bg-start: #fff8f0;
+            --dg-bg-end: #fafaf7;
+            --dg-main-bg: #ffffffc7;
+            --dg-text-primary: #1f2430;
+            --dg-text-secondary: #7a8090;
+            --dg-text-muted: #9ba3b2;
+            --dg-card-shadow: 0 14px 26.25px #0f172a14;
+            --dg-orange-solid: #f1703a;
+            --dg-orange-btn: linear-gradient(180deg, #f08a4f 0%, #d9501f 100%);
+            --dg-orange-day: linear-gradient(180deg, #f6a456 0%, #de5a25 100%);
+            --dg-orange-glow: 0 12px 19.25px #df4f1e47;
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            color: var(--dg-text-primary);
+            background: linear-gradient(135deg, var(--dg-bg-start) 0%, var(--dg-bg-end) 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+        a { text-decoration: none; color: inherit; }
+        .dg-main-desktop {
+            margin-left: 320px;       /* 280 (sidebar) + 40 (gap) */
+            margin-right: 40px;
+            margin-top: 40px;
+            margin-bottom: 40px;
+            padding: 40px 48px;
+            background: var(--dg-main-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-radius: 12px;
+            box-shadow: 0 18px 39.375px #0f172a14;
+            min-height: calc(100vh - 80px);
+        }
+        @media (max-width: 1280px) {
+            .dg-main-desktop { margin-left: 300px; margin-right: 20px; padding: 28px; }
+        }
+
+        /* ===== HEADER ===== */
+        .dash-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; }
+        .dash-greeting h1 { font-size: 38px; font-weight: 800; letter-spacing: -1.52px; line-height: 1.05; color: var(--dg-text-primary); }
+        .dash-greeting p { font-size: 18px; color: var(--dg-text-secondary); margin-top: 14px; }
+        .dash-actions { display: flex; gap: 14px; align-items: center; flex-shrink: 0; }
+        .dash-toggle-dallia { display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: #ffffffe0; border-radius: 999px; box-shadow: 0 8px 19.25px #0f172a14; border: 1px solid #0f172a14; }
+        .dash-toggle-dallia__avatar { width: 26px; height: 26px; border-radius: 50%; background: linear-gradient(135deg, #ef520f, #FF6B35); }
+        .dash-toggle-dallia__label { font-size: 16px; color: #686f7f; font-weight: 500; }
+        .dash-toggle-dallia__switch { width: 48px; height: 24px; border-radius: 999px; background: linear-gradient(180deg, #f08a4f, #e56c38); position: relative; }
+        .dash-toggle-dallia__switch::after { content: ''; position: absolute; right: 3px; top: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; }
+        .dash-icon-btn { width: 42px; height: 42px; border-radius: 14px; background: #ffffffd1; border: 1px solid #0f172a14; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 19.25px #0f172a0f; cursor: pointer; }
+        .dash-icon-btn i { font-size: 18px; color: #686f7f; }
+        .dash-avatar { width: 48px; height: 48px; border-radius: 50%; background: linear-gradient(180deg, #f08a4f, #e56c38); color: #fff; font-size: 20px; font-weight: 800; display: flex; align-items: center; justify-content: center; border: 1px solid #0f172a14; }
+
+        /* ===== TWO-COLUMN BODY ===== */
+        .dash-body { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(360px, 1fr); gap: 48px; margin-top: 34px; }
+
+        .dash-h2 { font-size: 22px; font-weight: 800; color: #22252e; }
+        .dash-h2-light { font-size: 22px; font-weight: 400; color: #252834; }
+
+        /* Left column */
+        .dash-left { display: flex; flex-direction: column; gap: 28px; }
+        .dash-pendientes-header { display: flex; justify-content: space-between; align-items: center; }
+        .dash-btn-primary { padding: 12px 28px; background: var(--dg-orange-btn); color: #fff; font-size: 18px; font-weight: 700; border: none; border-radius: 16px; box-shadow: var(--dg-orange-glow); cursor: pointer; }
+        .dash-card { background: #ffffffc7; border: 1px solid #1921300d; border-radius: 20px; box-shadow: var(--dg-card-shadow); padding: 22px 26px; }
+        .dash-card-radius-28 { border-radius: 28px; }
+
+        .dash-task { display: flex; align-items: center; gap: 22px; }
+        .dash-task + .dash-task { margin-top: 18px; padding-top: 18px; border-top: 1px solid #1921300d; }
+        .dash-task__check { width: 28px; height: 28px; border-radius: 50%; border: 3px solid #2b2f3b; flex-shrink: 0; }
+        .dash-task__check--urgent { border-color: #ef4444; }
+        .dash-task__body { flex: 1; min-width: 0; }
+        .dash-task__title { display: flex; align-items: center; gap: 10px; font-size: 20px; font-weight: 800; color: #252834; }
+        .dash-task__badge { font-size: 13px; font-weight: 600; color: #ef520f; background: #f8915924; padding: 4px 10px; border-radius: 8px; }
+        .dash-task__subtitle { font-size: 17px; color: #81889a; margin-top: 6px; }
+        .dash-task__btn { padding: 12px 24px; background: #15192c; color: #fff; font-size: 16px; font-weight: 700; border: none; border-radius: 16px; cursor: pointer; flex-shrink: 0; }
+        .dash-task__empty { text-align: center; color: #81889a; font-size: 16px; padding: 16px 0; }
+
+        .dash-agenda__header { display: flex; justify-content: space-between; align-items: center; }
+        .dash-agenda__today { font-size: 18px; font-weight: 800; color: var(--dg-orange-solid); text-transform: capitalize; }
+        .dash-agenda__days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 14px; margin-top: 22px; }
+        .dash-day { text-align: center; padding: 18px 0; border-radius: 18px; background: #ffffff; border: 1px solid #f1f2f6; }
+        .dash-day__label { font-size: 13px; color: #9ba3b2; text-transform: capitalize; }
+        .dash-day__num { font-size: 22px; font-weight: 800; color: #252834; margin-top: 4px; }
+        .dash-day--active { background: var(--dg-orange-day); border: none; box-shadow: var(--dg-orange-glow); }
+        .dash-day--active .dash-day__label, .dash-day--active .dash-day__num { color: #fff; }
+
+        .dash-completadas { display: flex; align-items: center; gap: 14px; cursor: pointer; }
+        .dash-completadas__count { padding: 6px 14px; background: var(--dg-orange-btn); color: #fff; font-size: 16px; font-weight: 800; border-radius: 12px; }
+        .dash-completadas__chevron { color: #7a8090; font-size: 18px; }
+
+        /* Right column */
+        .dash-right { display: flex; flex-direction: column; gap: 28px; }
+        .dash-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+        .dash-kpi { background: #ffffffc7; border: 1px solid #1921300d; border-radius: 22px; padding: 18px 12px; text-align: center; box-shadow: var(--dg-card-shadow); }
+        .dash-kpi__value { font-size: 18px; font-weight: 800; color: #1e2330; }
+        .dash-kpi__value--orange { color: var(--dg-orange-solid); }
+        .dash-kpi__label { font-size: 14px; color: var(--dg-text-muted); margin-top: 8px; }
+
+        .dash-insight { background: #ffffffc7; border: 1px solid #1921300d; border-radius: 22px; padding: 20px 22px; box-shadow: var(--dg-card-shadow); display: flex; gap: 16px; }
+        .dash-insight + .dash-insight { margin-top: 14px; }
+        .dash-insight__dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 10px; }
+        .dash-insight__body { flex: 1; min-width: 0; }
+        .dash-insight__text { font-size: 16px; font-weight: 600; color: #2a2e38; line-height: 1.45; }
+        .dash-insight__sub { font-size: 14px; color: var(--dg-text-muted); margin-top: 6px; }
+
+        .dash-quick { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+        .dash-quick-btn { display: flex; align-items: center; gap: 14px; padding: 20px 22px; background: #ffffffc7; border: 1px solid #1921300d; border-radius: 20px; box-shadow: var(--dg-card-shadow); color: #252834; font-weight: 700; font-size: 16px; }
+        .dash-quick-btn i { font-size: 20px; color: #ef520f; }
+    </style>
+</head>
+<body>
+    <%- include('./partials/sidebar', { user: typeof user !== 'undefined' ? user : null, reqPath: '/', csrfToken: typeof csrfToken !== 'undefined' ? csrfToken : '' }) %>
+
+    <main class="dg-main-desktop">
+
+        <!-- ========== HEADER ========== -->
+        <section class="dash-header">
+            <div class="dash-greeting">
+                <h1>Buenos dias, <%= user && user.usuario ? user.usuario : 'Administrador' %></h1>
+                <p><%= new Date().toLocaleDateString('es-PE', { weekday:'long', day:'numeric', month:'long', year:'numeric' }) %> · <%= (typeof tenant !== 'undefined' && tenant && tenant.subdominio) ? tenant.subdominio + '.mirestconia.com' : 'restaurante.mirestconia.com' %></p>
+            </div>
+            <div class="dash-actions">
+                <div class="dash-toggle-dallia">
+                    <div class="dash-toggle-dallia__avatar"></div>
+                    <span class="dash-toggle-dallia__label">DallIA</span>
+                    <div class="dash-toggle-dallia__switch"></div>
+                </div>
+                <button class="dash-icon-btn" aria-label="Notificaciones"><i class="bi bi-bell"></i></button>
+                <div class="dash-avatar"><%= (user && user.usuario ? user.usuario.substring(0,2) : 'AD').toUpperCase() %></div>
+            </div>
+        </section>
+
+        <!-- ========== TWO-COLUMN BODY ========== -->
+        <div class="dash-body">
+
+            <!-- LEFT: Pendientes + Agenda + Completadas -->
+            <div class="dash-left">
+
+                <section>
+                    <div class="dash-pendientes-header">
+                        <h2 class="dash-h2">Pendientes</h2>
+                        <button class="dash-btn-primary" onclick="window.location.href='/administracion'">+ Agregar</button>
+                    </div>
+                    <div class="dash-card" style="margin-top: 18px;">
+                        <% const pend = (dashboard && dashboard.pendientes && dashboard.pendientes.length) ? dashboard.pendientes : []; %>
+                        <% if (pend.length === 0) { %>
+                            <div class="dash-task__empty">No hay pendientes por hoy</div>
+                        <% } else { pend.slice(0, 5).forEach(function(p){ %>
+                        <div class="dash-task">
+                            <div class="dash-task__check <%= p.urgente ? 'dash-task__check--urgent' : '' %>"></div>
+                            <div class="dash-task__body">
+                                <div class="dash-task__title">
+                                    <%= p.titulo %>
+                                    <% if (p.tipo === 'auto') { %><span class="dash-task__badge">DallIA</span><% } %>
+                                </div>
+                                <div class="dash-task__subtitle"><%= p.desc || '' %></div>
+                            </div>
+                            <a href="<%= p.href || '#' %>" class="dash-task__btn"><%= p.btn || 'Ver' %></a>
+                        </div>
+                        <% }) } %>
+                    </div>
+                </section>
+
+                <section class="dash-card dash-card-radius-28" style="padding: 28px 30px;">
+                    <div class="dash-agenda__header">
+                        <h2 class="dash-h2-light">Agenda</h2>
+                        <span class="dash-agenda__today"><%= new Date().toLocaleDateString('es-PE', { weekday:'short', day:'numeric', month:'short' }) %></span>
+                    </div>
+                    <div class="dash-agenda__days">
+                        <% const dias = ['Lun','Mar','Mie','Jue','Vie','Sab','Dom']; const hoy = new Date(); const dow = (hoy.getDay()+6)%7; const start = new Date(hoy); start.setDate(hoy.getDate()-dow); %>
+                        <% for(let i=0;i<7;i++){ const d = new Date(start); d.setDate(start.getDate()+i); const active = i===dow; %>
+                        <div class="dash-day <%= active ? 'dash-day--active' : '' %>">
+                            <div class="dash-day__label"><%= dias[i] %></div>
+                            <div class="dash-day__num"><%= d.getDate() %></div>
+                        </div>
+                        <% } %>
+                    </div>
+                </section>
+
+                <section class="dash-completadas">
+                    <h3 class="dash-h2">Completadas</h3>
+                    <span class="dash-completadas__count"><%= (dashboard && dashboard.historialTareas && dashboard.historialTareas.length) || 0 %></span>
+                    <i class="bi bi-chevron-down dash-completadas__chevron"></i>
+                </section>
+
+            </div>
+
+            <!-- RIGHT: KPIs + DallIA dice + Acceso rapido -->
+            <div class="dash-right">
+
+                <section>
+                    <h2 class="dash-h2">Hoy en numeros</h2>
+                    <div class="dash-kpis" style="margin-top: 18px;">
+                        <div class="dash-kpi">
+                            <div class="dash-kpi__value">S/ <%= (dashboard && dashboard.ventasHoy) ? Number(dashboard.ventasHoy).toFixed(2) : '0.00' %></div>
+                            <div class="dash-kpi__label">Ventas</div>
+                        </div>
+                        <div class="dash-kpi">
+                            <div class="dash-kpi__value dash-kpi__value--orange"><%= (dashboard && dashboard.mesasOcupadas) || 0 %>/<%= (dashboard && dashboard.mesasTotal) || 0 %></div>
+                            <div class="dash-kpi__label">Mesas</div>
+                        </div>
+                        <div class="dash-kpi">
+                            <div class="dash-kpi__value"><%= (dashboard && dashboard.platosHoy) || 0 %></div>
+                            <div class="dash-kpi__label">Platos</div>
+                        </div>
+                    </div>
+                </section>
+
+                <section>
+                    <h2 class="dash-h2">DallIA dice:</h2>
+                    <div style="margin-top: 18px;">
+                        <% const insights = (dashboard && dashboard.iaInsights && dashboard.iaInsights.length) ? dashboard.iaInsights : [{ color:'#e0a038', texto:'Dashboard sin datos aun' }]; %>
+                        <% insights.forEach(function(ins){ %>
+                        <div class="dash-insight">
+                            <div class="dash-insight__dot" style="background: <%= ins.color || '#e0a038' %>;"></div>
+                            <div class="dash-insight__body">
+                                <div class="dash-insight__text"><%= ins.texto %></div>
+                                <div class="dash-insight__sub">Consejo de DallIA</div>
+                            </div>
+                        </div>
+                        <% }) %>
+                    </div>
+                </section>
+
+                <section>
+                    <h2 class="dash-h2">Acceso rapido</h2>
+                    <div class="dash-quick" style="margin-top: 18px;">
+                        <a href="/mesas" class="dash-quick-btn"><i class="bi bi-grid-3x3-gap-fill"></i> Mesas</a>
+                        <a href="/cocina" class="dash-quick-btn"><i class="bi bi-fire"></i> Cocina</a>
+                        <a href="/productos" class="dash-quick-btn"><i class="bi bi-egg-fried"></i> Productos</a>
+                        <a href="/chat" class="dash-quick-btn"><i class="bi bi-stars"></i> Asistente IA</a>
+                    </div>
+                </section>
+
+            </div>
+
+        </div>
+    </main>
+</body>
+</html>

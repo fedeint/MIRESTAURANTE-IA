@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="/favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Almacen - mirestconia.com</title>
+    <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/theme.css">
+</head>
+<body>
+    <%- include('../partials/sidebar') %>
+    <div class="dg-main">
+    <main class="flex-grow-1">
+    <div class="container">
+
+        <div class="d-flex align-items-center mb-4 mt-3">
+            <i class="bi bi-box-seam fs-2 me-2"></i>
+            <h2 class="mb-0">Almacen</h2>
+        </div>
+
+        <!-- KPI Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body d-flex align-items-center">
+                        <div class="rounded-circle bg-success bg-opacity-10 p-3 me-3">
+                            <i class="bi bi-egg-fried fs-3 text-success"></i>
+                        </div>
+                        <div>
+                            <h6 class="text-muted mb-1">Total Ingredientes</h6>
+                            <h3 class="mb-0"><%= stats.totalIngredientes %></h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body d-flex align-items-center">
+                        <div class="rounded-circle bg-danger bg-opacity-10 p-3 me-3">
+                            <i class="bi bi-exclamation-triangle fs-3 text-danger"></i>
+                        </div>
+                        <div>
+                            <h6 class="text-muted mb-1">Alertas Stock Bajo</h6>
+                            <h3 class="mb-0">
+                                <% if (stats.alertas > 0) { %>
+                                    <span class="text-danger"><%= stats.alertas %></span>
+                                <% } else { %>
+                                    <span class="text-success">0</span>
+                                <% } %>
+                            </h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body d-flex align-items-center">
+                        <div class="rounded-circle bg-purple bg-opacity-10 p-3 me-3" style="background-color: rgba(111,66,193,0.1);">
+                            <i class="bi bi-cash-stack fs-3" style="color: #6f42c1;"></i>
+                        </div>
+                        <div>
+                            <h6 class="text-muted mb-1">Valor Inventario</h6>
+                            <h3 class="mb-0">S/ <%= stats.valorInventario %></h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Access -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h6 class="card-title mb-3">Acceso Rapido</h6>
+                <div class="row g-2">
+                    <div class="col">
+                        <a href="/almacen/inventario" class="btn btn-outline-primary w-100">
+                            <i class="bi bi-list-ul"></i><br>Inventario
+                        </a>
+                    </div>
+                    <div class="col">
+                        <a href="/almacen/proveedores" class="btn btn-outline-primary w-100">
+                            <i class="bi bi-truck"></i><br>Proveedores
+                        </a>
+                    </div>
+                    <div class="col">
+                        <a href="/almacen/entradas" class="btn btn-outline-primary w-100">
+                            <i class="bi bi-box-arrow-in-down"></i><br>Ingreso diario
+                        </a>
+                    </div>
+                    <div class="col">
+                        <a href="/almacen/salidas" class="btn btn-outline-primary w-100">
+                            <i class="bi bi-box-arrow-up"></i><br>Salida insumos
+                        </a>
+                    </div>
+                    <div class="col">
+                        <a href="/almacen/que-comprar" class="btn btn-outline-danger w-100">
+                            <i class="bi bi-cart-plus"></i><br>Que comprar
+                        </a>
+                    </div>
+                    <div class="col">
+                        <a href="/almacen/historial" class="btn btn-outline-primary w-100">
+                            <i class="bi bi-clock-history"></i><br>Historial
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Categorias como acceso rapido -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header d-flex align-items-center gap-2">
+                <i class="bi bi-grid-fill" style="color:var(--dg-primary);"></i>
+                <span class="fw-bold">Categorias del Almacen</span>
+                <span class="badge bg-secondary ms-auto"><%= stats.categorias.length %></span>
+            </div>
+            <div class="card-body">
+                <div class="row g-2">
+                    <% stats.categorias.forEach(function(cat) { %>
+                        <div class="col-6 col-md-4 col-lg-3">
+                            <a href="/almacen/inventario?categoria=<%= cat.id %>" class="d-flex align-items-center gap-2 p-2 rounded text-decoration-none" style="background:<%= cat.color %>10;border:1px solid <%= cat.color %>30;border-radius:.75rem!important;">
+                                <div style="width:32px;height:32px;background:<%= cat.color %>;border-radius:.5rem;display:flex;align-items:center;justify-content:center;color:#fff;font-size:.85rem;flex-shrink:0;">
+                                    <i class="bi <%= cat.icono || 'bi-box' %>"></i>
+                                </div>
+                                <div class="small fw-semibold" style="color:<%= cat.color %>;"><%= cat.nombre %></div>
+                            </a>
+                        </div>
+                    <% }); %>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    </main>
+    <%- include('../partials/footer') %>
+    </div>
+    <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="/vendor/sweetalert2/sweetalert2.all.min.js"></script>
+</body>
+</html>

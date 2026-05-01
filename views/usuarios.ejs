@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1e1b4b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="dignita">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+  <title>Usuarios - mirestconia.com</title>
+  <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+  <link rel="stylesheet" href="/css/theme.css">
+  <style>
+    /* ---- DM Sans override for this page ---- */
+    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap');
+    .usr-page { font-family: 'DM Sans', sans-serif; }
+
+    /* ---- View Toggle Tabs ---- */
+    .usr-view-tabs {
+      display: inline-flex;
+      background: #fff;
+      border: 1.5px solid #E5E7EB;
+      border-radius: 50px;
+      padding: 4px;
+      gap: 2px;
+    }
+    .usr-view-tab {
+      padding: 7px 20px;
+      border-radius: 50px;
+      border: none;
+      background: transparent;
+      color: #6B7280;
+      font-size: 0.875rem;
+      font-weight: 600;
+      font-family: 'DM Sans', sans-serif;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .usr-view-tab:hover { color: #FF6B35; }
+    .usr-view-tab.active {
+      background: #FF6B35;
+      color: #fff;
+      box-shadow: 0 2px 10px rgba(255,107,53,0.35);
+    }
+
+    /* ---- Page Header ---- */
+    .usr-header { margin-bottom: 1.75rem; }
+    .usr-header h2 {
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: #1A1A1A;
+      margin-bottom: 0.25rem;
+      letter-spacing: -0.03em;
+    }
+    .usr-header .subtitle { color: #6B7280; font-size: 0.925rem; }
+
+    /* ---- Table View Enhancements ---- */
+    .perm-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      padding: 2px 8px;
+      border-radius: 50px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      margin: 1px;
+      white-space: nowrap;
+    }
+    .perm-badges-wrap { display: flex; flex-wrap: wrap; gap: 2px; max-width: 340px; }
+
+    /* ---- Card View ---- */
+    .usr-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.25rem;
+    }
+    @media (max-width: 992px) { .usr-cards-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 576px) { .usr-cards-grid { grid-template-columns: 1fr; } }
+
+    .usr-card {
+      background: #fff;
+      border-radius: 18px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.05);
+      border: 1px solid rgba(0,0,0,0.04);
+      overflow: hidden;
+      transition: box-shadow 0.2s ease, transform 0.2s ease;
+    }
+    .usr-card:hover { box-shadow: 0 12px 32px rgba(0,0,0,0.09); transform: translateY(-2px); }
+    .usr-card.inactive { opacity: 0.6; }
+
+    .usr-card-top {
+      height: 70px;
+      position: relative;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      padding-bottom: 0;
+    }
+    .usr-card-top.admin-grad { background: linear-gradient(135deg, #FF6B35 0%, #E55A2B 100%); }
+    .usr-card-top.mesero-grad { background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%); }
+    .usr-card-top.cocinero-grad { background: linear-gradient(135deg, #22C55E 0%, #16A34A 100%); }
+
+    .usr-card-avatar {
+      width: 58px;
+      height: 58px;
+      border-radius: 50%;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #1A1A1A;
+      position: absolute;
+      bottom: -29px;
+      left: 50%;
+      transform: translateX(-50%);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+      border: 3px solid #fff;
+    }
+
+    .usr-card-body {
+      padding: 38px 20px 16px;
+      text-align: center;
+    }
+
+    .usr-card-name {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #1A1A1A;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin-bottom: 4px;
+      transition: color 0.15s;
+    }
+    .usr-card-name:hover { color: #FF6B35; }
+
+    .usr-card-username { font-size: 0.8rem; color: #9CA3AF; margin-bottom: 8px; font-family: monospace; }
+
+    .usr-card-role-badge {
+      display: inline-block;
+      padding: 3px 10px;
+      border-radius: 50px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: capitalize;
+      margin-bottom: 8px;
+    }
+    .role-admin { background: rgba(255,107,53,0.12); color: #E55A2B; }
+    .role-mesero { background: rgba(59,130,246,0.12); color: #2563EB; }
+    .role-cocinero { background: rgba(34,197,94,0.12); color: #16A34A; }
+
+    .usr-status-badge {
+      display: inline-block;
+      padding: 2px 10px;
+      border-radius: 50px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+    .status-activo { background: rgba(34,197,94,0.1); color: #16A34A; }
+    .status-inactivo { background: rgba(107,114,128,0.1); color: #6B7280; }
+
+    /* Chevron toggle */
+    .usr-card-chevron {
+      display: inline-flex;
+      align-items: center;
+      color: #9CA3AF;
+      font-size: 0.9rem;
+      transition: transform 0.25s ease, color 0.15s;
+    }
+    .usr-card-chevron.open { transform: rotate(180deg); color: #FF6B35; }
+
+    /* Expandable permisos section */
+    .card-permisos {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.35s ease;
+      padding: 0 16px;
+    }
+    .card-permisos.open { max-height: 200px; }
+    .card-permisos-inner {
+      border-top: 1px solid #F3F4F6;
+      padding: 10px 0 4px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      justify-content: center;
+    }
+    .card-permisos-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: #9CA3AF;
+      width: 100%;
+      text-align: center;
+      margin-bottom: 4px;
+    }
+
+    .usr-card-actions {
+      padding: 10px 16px 14px;
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+    }
+
+    /* Add user card */
+    .usr-card-add {
+      background: transparent;
+      border: 2px dashed #D1D5DB;
+      border-radius: 18px;
+      min-height: 200px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      gap: 10px;
+      transition: all 0.2s ease;
+      color: #9CA3AF;
+    }
+    .usr-card-add:hover {
+      border-color: #FF6B35;
+      color: #FF6B35;
+      background: rgba(255,107,53,0.03);
+    }
+    .usr-card-add .add-icon {
+      width: 48px; height: 48px;
+      border-radius: 50%;
+      border: 2px dashed currentColor;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem;
+    }
+    .usr-card-add span { font-size: 0.9rem; font-weight: 600; }
+
+    /* ---- Org Chart View ---- */
+    .org-chart {
+      padding: 2rem 1rem;
+      overflow-x: auto;
+    }
+    .org-level {
+      display: flex;
+      justify-content: center;
+      gap: 0;
+      position: relative;
+    }
+
+    /* Vertical connector from parent to children row */
+    .org-connector-v {
+      width: 2px;
+      height: 32px;
+      background: #E5E7EB;
+      margin: 0 auto;
+    }
+
+    /* Horizontal connector bar spanning children */
+    .org-connector-h-wrap {
+      display: flex;
+      justify-content: center;
+      position: relative;
+      margin-bottom: 0;
+    }
+    .org-connector-h {
+      position: relative;
+      display: flex;
+      justify-content: space-around;
+      width: 100%;
+    }
+    .org-connector-h::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: calc(16.6%);
+      right: calc(16.6%);
+      height: 2px;
+      background: #E5E7EB;
+    }
+    .org-child-branch {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 1;
+    }
+    .org-child-branch .org-connector-v { height: 28px; }
+
+    .org-node {
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.07);
+      border: 1px solid rgba(0,0,0,0.05);
+      padding: 14px 16px;
+      text-align: center;
+      min-width: 150px;
+      max-width: 185px;
+      transition: box-shadow 0.2s ease;
+      position: relative;
+    }
+    .org-node:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.11); }
+    .org-node.vacant {
+      border: 2px dashed #D1D5DB;
+      box-shadow: none;
+      background: rgba(255,255,255,0.6);
+    }
+    .org-node-avatar {
+      width: 44px; height: 44px;
+      border-radius: 50%;
+      margin: 0 auto 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem; font-weight: 800;
+      color: #fff;
+    }
+    .org-node-avatar.admin-av { background: linear-gradient(135deg, #FF6B35, #E55A2B); }
+    .org-node-avatar.mesero-av { background: linear-gradient(135deg, #3B82F6, #2563EB); }
+    .org-node-avatar.cocinero-av { background: linear-gradient(135deg, #22C55E, #16A34A); }
+    .org-node-avatar.vacant-av {
+      background: #F3F4F6;
+      color: #9CA3AF;
+      border: 2px dashed #D1D5DB;
+    }
+
+    .org-node-name { font-size: 0.875rem; font-weight: 700; color: #1A1A1A; margin-bottom: 3px; }
+    .org-node-role { font-size: 0.72rem; color: #9CA3AF; text-transform: capitalize; margin-bottom: 6px; }
+    .org-node-dept { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
+    .org-node-dept.dept-admin { color: #FF6B35; }
+    .org-node-dept.dept-mesero { color: #3B82F6; }
+    .org-node-dept.dept-cocinero { color: #22C55E; }
+    .org-node-dept.dept-caja { color: #F59E0B; }
+
+    .org-status-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      position: absolute; top: 12px; right: 12px;
+    }
+    .dot-activo { background: #22C55E; }
+    .dot-inactivo { background: #D1D5DB; }
+
+    .org-multi-role {
+      display: flex; gap: 3px; justify-content: center; flex-wrap: wrap; margin-top: 4px;
+    }
+    .org-role-chip {
+      font-size: 0.65rem; font-weight: 700;
+      padding: 1px 6px; border-radius: 50px;
+    }
+
+    /* Sections label */
+    .usr-section-label {
+      font-size: 0.7rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #9CA3AF;
+      margin-bottom: 0.75rem;
+    }
+
+    /* Permisos grid in modal */
+    .permisos-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+    }
+    @media (max-width: 480px) { .permisos-grid { grid-template-columns: repeat(2, 1fr); } }
+    .perm-check-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 8px;
+      border: 1.5px solid #E5E7EB;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #374151;
+      background: #FAFAFA;
+      user-select: none;
+    }
+    .perm-check-item:hover { border-color: #FF6B35; background: rgba(255,107,53,0.04); }
+    .perm-check-item.checked { border-color: transparent; }
+    .perm-check-item input[type="checkbox"] { display: none; }
+    .perm-check-dot {
+      width: 14px; height: 14px; border-radius: 4px;
+      border: 2px solid #D1D5DB;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      font-size: 0.55rem; color: #fff;
+      transition: all 0.15s;
+    }
+    .perm-check-item.checked .perm-check-dot { border-color: transparent; }
+
+    /* Quick-select bar for permisos */
+    .perm-quick-btns { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
+    .perm-quick-btn {
+      font-size: 0.75rem; font-weight: 600; padding: 3px 10px;
+      border-radius: 50px; border: 1.5px solid #E5E7EB;
+      background: #fff; cursor: pointer; transition: all 0.15s;
+      color: #6B7280;
+    }
+    .perm-quick-btn:hover { border-color: #FF6B35; color: #FF6B35; }
+  </style>
+</head>
+<body>
+  <%- include('partials/sidebar') %>
+  <div class="dg-main">
+  <main class="flex-grow-1 usr-page">
+    <div class="container-fluid" style="max-width:1200px; padding-top:1.5rem; padding-bottom:2rem;">
+
+      <!-- ===== PAGE HEADER ===== -->
+      <div class="usr-header d-flex flex-wrap align-items-center justify-content-between gap-3">
+        <div>
+          <h2><i class="bi bi-people-fill me-2" style="color:#FF6B35;"></i>Equipo del Restaurante</h2>
+          <p class="subtitle mb-0">
+            <span id="totalMiembros"><%= (usuarios || []).length %></span> miembros &middot; 3 roles
+          </p>
+        </div>
+        <div class="d-flex align-items-center gap-3 flex-wrap">
+          <div class="usr-view-tabs" id="viewTabs">
+            <button class="usr-view-tab active" data-view="tabla" type="button">
+              <i class="bi bi-table"></i> Tabla
+            </button>
+            <button class="usr-view-tab" data-view="cards" type="button">
+              <i class="bi bi-grid-1x2-fill"></i> Cards
+            </button>
+            <button class="usr-view-tab" data-view="organigrama" type="button">
+              <i class="bi bi-diagram-3-fill"></i> Organigrama
+            </button>
+          </div>
+          <button class="btn btn-primary" id="btnNuevoUsuario" type="button">
+            <i class="bi bi-plus-lg me-1"></i>Nuevo Usuario
+          </button>
+        </div>
+      </div>
+
+      <!-- ===== VIEW 1: TABLA ===== -->
+      <div id="viewTabla" class="usr-view">
+        <div class="card">
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th>Usuario</th>
+                    <th>Nombre</th>
+                    <th>Rol</th>
+                    <th>Estado</th>
+                    <th>Mesas</th>
+                    <th>Permisos</th>
+                    <th>Ultimo login</th>
+                    <th class="text-end">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="tbodyUsuarios">
+                  <% (usuarios || []).forEach(u => { %>
+                    <tr data-id="<%= u.id %>" data-permisos="<%= JSON.stringify(u.permisosArr || []) %>">
+                      <td class="mono fw-semibold"><%= u.usuario %></td>
+                      <td><%= u.nombre || '' %></td>
+                      <td>
+                        <% if (u.rol === 'administrador') { %>
+                          <span class="perm-badge" style="background:rgba(255,107,53,0.12);color:#E55A2B;">administrador</span>
+                        <% } else if (u.rol === 'mesero') { %>
+                          <span class="perm-badge" style="background:rgba(59,130,246,0.12);color:#2563EB;">mesero</span>
+                        <% } else { %>
+                          <span class="perm-badge" style="background:rgba(34,197,94,0.12);color:#16A34A;">cocinero</span>
+                        <% } %>
+                      </td>
+                      <td>
+                        <% if (Number(u.activo) === 1) { %>
+                          <span class="perm-badge" style="background:rgba(34,197,94,0.1);color:#16A34A;">Activo</span>
+                        <% } else { %>
+                          <span class="perm-badge" style="background:rgba(107,114,128,0.1);color:#6B7280;">Inactivo</span>
+                        <% } %>
+                      </td>
+                      <td>
+                        <% if (u.mesasAsignadas && u.mesasAsignadas.length > 0) { %>
+                          <% u.mesasAsignadas.forEach(num => { %>
+                            <span class="badge bg-light text-dark border" style="font-size:0.7rem;">Mesa <%= num %></span>
+                          <% }) %>
+                        <% } else if (u.rol === 'mesero') { %>
+                          <span class="text-muted small">Sin asignar</span>
+                        <% } else { %>
+                          <span class="text-muted small">—</span>
+                        <% } %>
+                      </td>
+                      <td>
+                        <div class="perm-badges-wrap">
+                          <% (u.permisosArr || []).forEach(pkey => {
+                            const mod = (allModules || []).find(m => m.key === pkey);
+                            if (mod) { %>
+                              <span class="perm-badge" style="background:<%= mod.color %>20;color:<%= mod.color %>;">
+                                <i class="bi <%= mod.icon %>" style="font-size:0.65rem;"></i><%= mod.label %>
+                              </span>
+                          <% } }) %>
+                        </div>
+                      </td>
+                      <td class="small text-muted">
+                        <%= u.last_login ? new Date(u.last_login).toLocaleString() : '-' %>
+                      </td>
+                      <td class="text-end">
+                        <div class="btn-group">
+                          <button class="btn btn-sm btn-outline-primary" data-action="editar" title="Editar">
+                            <i class="bi bi-pencil"></i>
+                          </button>
+                          <button class="btn btn-sm btn-outline-warning" data-action="password" title="Cambiar contrasena">
+                            <i class="bi bi-key"></i>
+                          </button>
+                          <button class="btn btn-sm btn-outline-danger" data-action="eliminar" title="Eliminar">
+                            <i class="bi bi-trash"></i>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== VIEW 2: CARDS ===== -->
+      <div id="viewCards" class="usr-view" style="display:none;">
+        <div class="usr-cards-grid" id="cardsGrid">
+          <!-- Rendered by JS -->
+        </div>
+      </div>
+
+      <!-- ===== VIEW 3: ORGANIGRAMA ===== -->
+      <div id="viewOrganigrama" class="usr-view" style="display:none;">
+        <div class="card">
+          <div class="card-body">
+            <div class="org-chart" id="orgChart">
+              <!-- Rendered by JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- ===== MODAL CREAR / EDITAR USUARIO ===== -->
+  <div class="modal fade" id="usuarioModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-person-badge me-2"></i><span id="usuarioModalTitle">Nuevo usuario</span></h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="usuarioId">
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label">Usuario</label>
+              <input id="usuarioUsuario" class="form-control" placeholder="ej: juan" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Nombre completo</label>
+              <input id="usuarioNombre" class="form-control" placeholder="ej: Juan Perez">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Rol</label>
+              <select id="usuarioRol" class="form-select">
+                <% (roles || []).forEach(r => { %>
+                  <option value="<%= r %>"><%= r %></option>
+                <% }) %>
+              </select>
+            </div>
+            <div class="col-md-6 d-flex align-items-end">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" role="switch" id="usuarioActivo" checked>
+                <label class="form-check-label" for="usuarioActivo">Usuario activo</label>
+              </div>
+            </div>
+            <div class="col-12" id="wrapPassword">
+              <label class="form-label">Contrasena</label>
+              <input id="usuarioPassword" type="password" class="form-control" placeholder="&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull;">
+              <div class="form-text">En edicion, deja vacio si no quieres cambiarla.</div>
+            </div>
+          </div>
+
+          <!-- PERMISOS SECTION -->
+          <hr class="my-3">
+          <div class="mb-1 d-flex align-items-center justify-content-between flex-wrap gap-2">
+            <label class="form-label mb-0">
+              <i class="bi bi-shield-check me-1" style="color:#FF6B35;"></i>Permisos de acceso
+            </label>
+            <div class="perm-quick-btns">
+              <button type="button" class="perm-quick-btn" id="btnPermAllAdmin">Todos (Admin)</button>
+              <button type="button" class="perm-quick-btn" id="btnPermMesero">Mesero</button>
+              <button type="button" class="perm-quick-btn" id="btnPermCocinero">Cocinero</button>
+              <button type="button" class="perm-quick-btn" id="btnPermNone">Ninguno</button>
+            </div>
+          </div>
+          <div class="permisos-grid" id="permisosGrid">
+            <% (allModules || []).forEach(mod => { %>
+              <label class="perm-check-item" data-key="<%= mod.key %>" data-color="<%= mod.color %>">
+                <input type="checkbox" class="perm-checkbox" value="<%= mod.key %>">
+                <span class="perm-check-dot" style="background:<%= mod.color %>20; border-color:#D1D5DB;">
+                  <i class="bi bi-check2" style="display:none;"></i>
+                </span>
+                <i class="bi <%= mod.icon %>" style="color:<%= mod.color %>; font-size:0.9rem;"></i>
+                <span><%= mod.label %></span>
+              </label>
+            <% }) %>
+          </div>
+
+          <div id="usuarioError" class="alert alert-danger small d-none mt-3 mb-0"></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Cancelar</button>
+          <button class="btn btn-primary" id="btnGuardarUsuario" type="button">
+            <i class="bi bi-save me-1"></i>Guardar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== MODAL CAMBIAR PASSWORD ===== -->
+  <div class="modal fade" id="passwordModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-key me-2"></i>Cambiar contrasena</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <input type="hidden" id="passwordUserId">
+          <div class="mb-3">
+            <label class="form-label">Nueva contrasena</label>
+            <input id="passwordNueva" type="password" class="form-control" required>
+          </div>
+          <div class="mb-2">
+            <label class="form-label">Confirmar</label>
+            <input id="passwordNueva2" type="password" class="form-control" required>
+          </div>
+          <div id="passwordError" class="alert alert-danger small d-none mb-0"></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" data-bs-dismiss="modal" type="button">Cancelar</button>
+          <button class="btn btn-warning" id="btnGuardarPassword" type="button">
+            <i class="bi bi-check2 me-1"></i>Actualizar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <%- include('partials/footer') %>
+  </div><!-- dg-main -->
+
+  <!-- Pass server data to JS -->
+  <script>
+    window.DG_USUARIOS = <%- JSON.stringify((usuarios || []).map(u => ({
+      id: u.id,
+      usuario: u.usuario,
+      nombre: u.nombre || '',
+      rol: u.rol,
+      activo: Number(u.activo),
+      last_login: u.last_login ? new Date(u.last_login).toISOString() : null,
+      created_at: u.created_at ? new Date(u.created_at).toISOString() : null,
+      permisosArr: u.permisosArr || [],
+      mesasAsignadas: u.mesasAsignadas || []
+    }))) %>;
+    window.DG_ALL_MODULES = <%- JSON.stringify(allModules || []) %>;
+    window.DG_ROLES = <%- JSON.stringify(roles || []) %>;
+    window.DG_DEFAULT_PERMISOS = {
+      administrador: ["caja","facturacion","mesas","cocina","ventas","almacen","productos","clientes","administracion","canales","usuarios","configuracion"],
+      mesero: ["mesas","cocina"],
+      cocinero: ["cocina"]
+    };
+  </script>
+
+  <script src="/vendor/jquery/jquery.min.js"></script>
+  <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script src="/vendor/sweetalert2/sweetalert2.all.min.js"></script>
+  <script src="/js/usuarios.js"></script>
+</body>
+</html>

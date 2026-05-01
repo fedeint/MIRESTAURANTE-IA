@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 🔒 Reportar problema de seguridad
+    url: https://github.com/Leonidasx8/MiRestconIA/blob/main/SECURITY.md
+    about: NO abras un issue público. Lee SECURITY.md para el canal privado.
+  - name: 💬 Preguntas generales
+    url: https://github.com/Leonidasx8/MiRestconIA/discussions
+    about: Para preguntas que no son bug ni feature request.

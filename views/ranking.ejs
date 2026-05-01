@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="/favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1e1b4b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="dignita">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+    <title>Ranking - mirestconia.com</title>
+    <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/theme.css">
+</head>
+<body>
+    <%- include('partials/sidebar') %>
+    <div class="dg-main">
+    <main class="flex-grow-1">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h4 class="fw-bold mb-1"><i class="bi bi-trophy-fill me-2" style="color:var(--dg-primary);"></i>Ranking por Producto</h4>
+                <p class="text-muted small mb-0">Rendimiento de cada producto: ventas, cantidades y posicion (ultimos 30 dias)</p>
+            </div>
+        </div>
+
+        <!-- KPI Cards -->
+        <div class="row g-4 mb-4">
+            <!-- Ventas del mes -->
+            <div class="col-md-6 col-lg-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center gap-3">
+                            <div style="width:52px;height:52px;background:linear-gradient(135deg,#6366f1,#8b5cf6);border-radius:1rem;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.4rem;">
+                                <i class="bi bi-cash-stack"></i>
+                            </div>
+                            <div>
+                                <p class="text-muted small mb-0">Ventas del mes</p>
+                                <h4 class="fw-bold mb-0">S/ <%= stats.ventasMes %></h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Producto estrella -->
+            <div class="col-md-6 col-lg-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center gap-3">
+                            <div style="width:52px;height:52px;background:linear-gradient(135deg,#f59e0b,#f97316);border-radius:1rem;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.4rem;">
+                                <i class="bi bi-star-fill"></i>
+                            </div>
+                            <div>
+                                <p class="text-muted small mb-0">Producto estrella</p>
+                                <h5 class="fw-bold mb-0"><%= stats.productoEstrella %></h5>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Clientes activos -->
+            <div class="col-md-6 col-lg-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center gap-3">
+                            <div style="width:52px;height:52px;background:linear-gradient(135deg,#10b981,#059669);border-radius:1rem;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.4rem;">
+                                <i class="bi bi-people-fill"></i>
+                            </div>
+                            <div>
+                                <p class="text-muted small mb-0">Clientes activos</p>
+                                <h4 class="fw-bold mb-0"><%= stats.clientesActivos %></h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Ticket promedio -->
+            <div class="col-md-6 col-lg-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center gap-3">
+                            <div style="width:52px;height:52px;background:linear-gradient(135deg,#ec4899,#f43f5e);border-radius:1rem;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.4rem;">
+                                <i class="bi bi-receipt"></i>
+                            </div>
+                            <div>
+                                <p class="text-muted small mb-0">Ticket promedio</p>
+                                <h4 class="fw-bold mb-0">S/ <%= stats.ticketPromedio %></h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Secondary KPI -->
+        <div class="row g-4 mb-4">
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center gap-3">
+                            <div style="width:52px;height:52px;background:linear-gradient(135deg,#3b82f6,#2563eb);border-radius:1rem;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.4rem;">
+                                <i class="bi bi-graph-up-arrow"></i>
+                            </div>
+                            <div>
+                                <p class="text-muted small mb-0">Ventas de hoy</p>
+                                <h4 class="fw-bold mb-0">S/ <%= stats.ventasHoy %></h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top 10 Products -->
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold mb-0"><i class="bi bi-bar-chart-fill me-2" style="color:var(--dg-primary);"></i>Top 10 Productos</h6>
+                <span class="badge" style="background:var(--dg-primary);color:#fff;">Ranking</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th style="width:8%;">#</th>
+                                <th style="width:45%;">Producto</th>
+                                <th style="width:20%;" class="text-center">Cantidad vendida</th>
+                                <th style="width:27%;" class="text-end">Total generado</th>
+                            </tr>
+                        </thead>
+                        <tbody id="topProductsBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    </main>
+    <%- include('partials/footer') %>
+    </div>
+
+    <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script>
+    (function(){
+        var topProductos = <%= JSON.stringify(stats.topProductos) %>;
+        var tbody = document.getElementById('topProductsBody');
+
+        if (!topProductos || topProductos.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4"><i class="bi bi-inbox" style="font-size:2rem;"></i><p class="mb-0 mt-2">No hay datos de productos disponibles</p></td></tr>';
+            return;
+        }
+
+        var medalColors = ['#f59e0b', '#9ca3af', '#cd7f32'];
+        var html = '';
+        topProductos.forEach(function(p, i) {
+            var rankBadge = '';
+            if (i < 3) {
+                rankBadge = '<span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:' + medalColors[i] + ';color:#fff;font-weight:bold;font-size:.8rem;">' + (i + 1) + '</span>';
+            } else {
+                rankBadge = '<span class="badge" style="background:rgba(100,116,139,0.1);color:#64748b;">' + (i + 1) + '</span>';
+            }
+
+            html += '<tr>';
+            html += '<td>' + rankBadge + '</td>';
+            html += '<td class="fw-semibold">' + (p.nombre || p.name || '-') + '</td>';
+            html += '<td class="text-center"><span class="badge" style="background:rgba(99,102,241,0.1);color:#6366f1;font-size:.85rem;">' + (p.qty || p.cantidad || 0) + '</span></td>';
+            html += '<td class="text-end fw-semibold">S/ ' + Number(p.monto || p.total || 0).toFixed(2) + '</td>';
+            html += '</tr>';
+        });
+        tbody.innerHTML = html;
+    })();
+    </script>
+</body>
+</html>

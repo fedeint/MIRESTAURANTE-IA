@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="/favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reservas - mirestconia.com</title>
+    <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/theme.css">
+</head>
+<body>
+    <%- include('../partials/sidebar') %>
+    <div class="dg-main">
+    <main class="flex-grow-1">
+    <div class="container">
+
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <h4 class="mb-0"><i class="bi bi-calendar-check me-2"></i>Reservas</h4>
+            <div class="d-flex gap-2 align-items-center flex-wrap">
+                <form method="GET" class="d-flex align-items-center gap-2">
+                    <label for="inputFecha" class="form-label mb-0 fw-semibold">Fecha:</label>
+                    <input type="date" id="inputFecha" name="fecha" class="form-control form-control-sm" value="<%= fecha %>" onchange="this.form.submit()">
+                </form>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#reservaModal">
+                    <i class="bi bi-plus-lg me-1"></i>Nueva reserva
+                </button>
+            </div>
+        </div>
+
+        <!-- Tabla de reservas -->
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle" id="tablaReservas">
+                        <thead>
+                            <tr>
+                                <th>Hora</th>
+                                <th>Personas</th>
+                                <th>Mesa #</th>
+                                <th>Nombre</th>
+                                <th>Teléfono</th>
+                                <th>Canal</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% if (reservas && reservas.length) { %>
+                                <% reservas.forEach(r => { %>
+                                <tr>
+                                    <td><%= r.hora %></td>
+                                    <td><%= r.cantidad_personas %></td>
+                                    <td><%= r.mesa_numero || r.mesa_id || '-' %></td>
+                                    <td><%= r.nombre_cliente %></td>
+                                    <td><%= r.telefono || '-' %></td>
+                                    <td>
+                                        <span class="badge bg-info text-dark"><%= r.canal_origen || 'directo' %></span>
+                                    </td>
+                                    <td>
+                                        <% const estadoColor = {
+                                            pendiente: 'warning',
+                                            confirmada: 'success',
+                                            cancelada: 'danger',
+                                            completada: 'secondary',
+                                            no_show: 'dark'
+                                        }; %>
+                                        <span class="badge bg-<%= estadoColor[r.estado] || 'secondary' %>"><%= r.estado %></span>
+                                    </td>
+                                    <td>
+                                        <% if (r.estado === 'pendiente') { %>
+                                            <button class="btn btn-sm btn-outline-success me-1" onclick="cambiarEstado(<%= r.id %>, 'confirmada')" title="Confirmar">
+                                                <i class="bi bi-check-lg"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger" onclick="cambiarEstado(<%= r.id %>, 'cancelada')" title="Cancelar">
+                                                <i class="bi bi-x-lg"></i>
+                                            </button>
+                                        <% } else if (r.estado === 'confirmada') { %>
+                                            <button class="btn btn-sm btn-outline-primary me-1" onclick="cambiarEstado(<%= r.id %>, 'completada')" title="Completada">
+                                                <i class="bi bi-check-circle"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-warning" onclick="cambiarEstado(<%= r.id %>, 'no_show')" title="No show">
+                                                <i class="bi bi-person-x"></i>
+                                            </button>
+                                        <% } %>
+                                    </td>
+                                </tr>
+                                <% }) %>
+                            <% } else { %>
+                                <tr>
+                                    <td colspan="8" class="text-center text-muted py-4">No hay reservas para esta fecha</td>
+                                </tr>
+                            <% } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    </main>
+    <%- include('../partials/footer') %>
+    </div><!-- dg-main -->
+
+    <!-- Modal Nueva Reserva -->
+    <div class="modal fade" id="reservaModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-calendar-plus me-2"></i>Nueva Reserva</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <form id="formReserva">
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Fecha</label>
+                                <input type="date" name="fecha" class="form-control" value="<%= fecha %>" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Hora</label>
+                                <input type="time" name="hora" class="form-control" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Cantidad de personas</label>
+                                <input type="number" name="cantidad_personas" class="form-control" min="1" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Mesa</label>
+                                <select name="mesa_id" class="form-select">
+                                    <option value="">Sin asignar</option>
+                                    <% if (mesas && mesas.length) { %>
+                                        <% mesas.forEach(m => { %>
+                                            <option value="<%= m.id %>">Mesa #<%= m.numero %> (<%= m.capacidad || '' %> pers.)</option>
+                                        <% }) %>
+                                    <% } %>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Nombre del cliente</label>
+                                <input type="text" name="nombre_cliente" class="form-control" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Teléfono</label>
+                                <input type="text" name="telefono" class="form-control">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Canal de origen</label>
+                                <select name="canal_origen" class="form-select">
+                                    <option value="directo">Directo (presencial)</option>
+                                    <option value="telefono">Teléfono</option>
+                                    <option value="whatsapp">WhatsApp</option>
+                                    <option value="web">Web</option>
+                                    <option value="redes_sociales">Redes sociales</option>
+                                    <option value="otro">Otro</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Notas</label>
+                                <textarea name="notas" class="form-control" rows="2"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary"><i class="bi bi-save me-1"></i>Guardar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script src="/vendor/jquery/jquery.min.js"></script>
+    <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="/vendor/sweetalert2/sweetalert2.all.min.js"></script>
+    <script>
+        // Crear reserva
+        document.getElementById('formReserva').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const data = Object.fromEntries(new FormData(this));
+            try {
+                const res = await fetch('/api/features/reservas', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await res.json();
+                if (res.ok) {
+                    Swal.fire('Reserva creada', '', 'success').then(() => location.reload());
+                } else {
+                    Swal.fire('Error', result.error || 'No se pudo crear la reserva', 'error');
+                }
+            } catch (err) {
+                Swal.fire('Error', 'Error de conexión', 'error');
+            }
+        });
+
+        // Cambiar estado
+        async function cambiarEstado(id, nuevoEstado) {
+            const confirmacion = await Swal.fire({
+                title: '¿Cambiar estado?',
+                text: `La reserva pasará a "${nuevoEstado}"`,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, cambiar',
+                cancelButtonText: 'No'
+            });
+            if (!confirmacion.isConfirmed) return;
+            try {
+                const res = await fetch(`/api/features/reservas/${id}/estado`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ estado: nuevoEstado })
+                });
+                const result = await res.json();
+                if (res.ok) {
+                    Swal.fire('Actualizado', '', 'success').then(() => location.reload());
+                } else {
+                    Swal.fire('Error', result.error || 'No se pudo actualizar', 'error');
+                }
+            } catch (err) {
+                Swal.fire('Error', 'Error de conexión', 'error');
+            }
+        }
+    </script>
+</body>
+</html>

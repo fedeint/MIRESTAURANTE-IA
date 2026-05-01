@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0a0f24">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="MiRestcon IA">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+  <title>Prueba Finalizada - MiRestcon IA</title>
+  <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'DM Sans', system-ui, sans-serif;
+      background: linear-gradient(180deg, #0a0f24 0%, #10152f 50%, #0a0f24 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .card-trial {
+      max-width: 480px;
+      width: 100%;
+      background: #1e2235;
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 20px;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.3);
+      color: #e2e8f0;
+    }
+    .btn-whatsapp {
+      background: #25D366;
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      padding: 14px 24px;
+      font-weight: 700;
+      font-size: 15px;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      text-decoration: none;
+      transition: opacity 0.2s;
+    }
+    .btn-whatsapp:hover { opacity: 0.9; color: #fff; }
+    .btn-email-contact {
+      background: rgba(255,255,255,0.06);
+      color: #94a3b8;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 14px 24px;
+      font-weight: 600;
+      font-size: 15px;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+    .btn-email-contact:hover { background: rgba(255,255,255,0.1); color: #e2e8f0; }
+  </style>
+</head>
+<body>
+  <div class="card-trial">
+    <div class="text-center" style="padding:36px 28px 0;">
+      <div style="width:70px;height:70px;border-radius:50%;background:rgba(251,191,36,0.12);display:inline-flex;align-items:center;justify-content:center;margin-bottom:16px;">
+        <i class="bi bi-hourglass-bottom" style="font-size:32px;color:#fbbf24;"></i>
+      </div>
+      <h4 style="font-weight:700;color:#fff;margin-bottom:8px;">Tu período de prueba terminó</h4>
+      <p style="color:#94a3b8;font-size:14px;line-height:1.6;margin-bottom:0;">
+        <strong style="color:#e2e8f0;"><%= (tenant && tenant.nombre) ? tenant.nombre : 'Tu restaurante' %></strong>, tuviste 15 días para explorar el sistema. ¿Listo para seguir?
+      </p>
+    </div>
+
+    <div style="padding:24px 28px;">
+      <div style="background:rgba(255,255,255,0.03);border-radius:12px;padding:16px;margin-bottom:24px;">
+        <p style="font-size:13px;color:#64748b;margin:0 0 6px;font-weight:600;">
+          <i class="bi bi-shield-check" style="color:#22c55e;margin-right:4px;"></i>Tus datos están seguros
+        </p>
+        <p style="font-size:12px;color:#475569;margin:0;line-height:1.5;">
+          Conservamos toda tu información. Si activas tu plan, todo seguirá como lo dejaste.
+        </p>
+      </div>
+
+      <div class="d-grid gap-3">
+        <%
+          const whatsappNumber = typeof process !== 'undefined' ? (process.env.SUPERADMIN_WHATSAPP || '51999000000') : '51999000000';
+          const contactEmail = typeof process !== 'undefined' ? (process.env.CONTACT_EMAIL || process.env.SMTP_USER || 'hola@mirestconia.com') : 'hola@mirestconia.com';
+          const nombreUsuario = (usuario && usuario.nombre) ? usuario.nombre : '';
+          const nombreRestaurante = (tenant && tenant.nombre) ? tenant.nombre : '';
+          const msgWhatsapp = encodeURIComponent('Hola, soy ' + nombreUsuario + ' de ' + nombreRestaurante + '. Quiero activar mi plan en MiRestcon IA.');
+        %>
+        <a href="https://wa.me/<%= whatsappNumber %>?text=<%= msgWhatsapp %>" target="_blank" rel="noopener" class="btn-whatsapp">
+          <i class="bi bi-whatsapp" style="font-size:20px;"></i>
+          Escribirnos por WhatsApp
+        </a>
+        <a href="mailto:<%= contactEmail %>?subject=Activar plan — <%= nombreRestaurante %>&body=Hola, soy <%= nombreUsuario %> de <%= nombreRestaurante %>. Quiero activar mi plan en MiRestcon IA." class="btn-email-contact">
+          <i class="bi bi-envelope" style="font-size:18px;"></i>
+          Escribirnos por Email
+        </a>
+      </div>
+    </div>
+
+    <div class="text-center" style="padding:0 28px 28px;">
+      <a href="/logout" style="color:#475569;font-size:13px;text-decoration:none;">
+        ¿No eres tú? Cerrar sesión
+      </a>
+    </div>
+  </div>
+</body>
+</html>

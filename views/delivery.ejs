@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1e1b4b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="dignita">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+    <title>Delivery - mirestconia.com</title>
+    <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/theme.css">
+</head>
+<body>
+    <%- include('partials/sidebar') %>
+    <div class="dg-main">
+    <main class="flex-grow-1">
+    <div class="container-fluid py-3">
+      <h4><i class="bi bi-bicycle"></i> Delivery</h4>
+
+      <!-- Analytics cards -->
+      <div class="row g-3 mb-4">
+        <% (analytics || []).forEach(a => { %>
+        <div class="col-md-4">
+          <div class="card">
+            <div class="card-body">
+              <h6 class="text-capitalize"><%= a.plataforma %></h6>
+              <p class="mb-1"><strong><%= a.pedidos %></strong> pedidos (30d)</p>
+              <p class="mb-1">Venta: <strong>S/ <%= Number(a.venta_total).toFixed(2) %></strong></p>
+              <p class="mb-1">Comisiones: <strong>S/ <%= Number(a.comisiones).toFixed(2) %></strong></p>
+              <p class="mb-0">Neto: <strong>S/ <%= Number(a.ingreso_neto).toFixed(2) %></strong></p>
+            </div>
+          </div>
+        </div>
+        <% }) %>
+        <% if (!analytics || analytics.length === 0) { %>
+        <div class="col-12"><p class="text-muted">Sin datos de delivery en los ultimos 30 dias</p></div>
+        <% } %>
+      </div>
+
+      <!-- Active orders -->
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">Pedidos activos</h5>
+        <div>
+          <button class="btn btn-success btn-sm" data-bs-toggle="modal" data-bs-target="#modalManual"><i class="bi bi-plus"></i> Pedido manual</button>
+          <a href="/delivery/config" class="btn btn-outline-secondary btn-sm"><i class="bi bi-gear"></i> Configurar</a>
+        </div>
+      </div>
+
+      <div class="table-responsive">
+        <table class="table table-sm table-hover">
+          <thead><tr><th>#</th><th>Plataforma</th><th>Cliente</th><th>Items</th><th>Total</th><th>Estado</th><th>Hora</th><th>Acciones</th></tr></thead>
+          <tbody>
+            <% (pedidos || []).forEach(p => { %>
+            <tr>
+              <td><%= p.pedido_externo_id || p.id %></td>
+              <td><span class="badge bg-info text-capitalize"><%= p.plataforma %></span></td>
+              <td><%= p.cliente_nombre %></td>
+              <td><%= Array.isArray(p.items) ? p.items.length : 0 %></td>
+              <td>S/ <%= Number(p.total).toFixed(2) %></td>
+              <td><span class="badge bg-warning"><%= p.estado_interno %></span></td>
+              <td><%= new Date(p.created_at).toLocaleTimeString('es-PE') %></td>
+              <td>
+                <select class="form-select form-select-sm" style="width:auto;display:inline" onchange="cambiarEstado(<%= p.id %>, this.value)">
+                  <option value="">Cambiar...</option>
+                  <option value="aceptado">Aceptar</option>
+                  <option value="preparando">Preparando</option>
+                  <option value="listo">Listo</option>
+                  <option value="despachado">Despachado</option>
+                  <option value="entregado">Entregado</option>
+                  <option value="cancelado">Cancelar</option>
+                </select>
+              </td>
+            </tr>
+            <% }) %>
+            <% if (!pedidos || pedidos.length === 0) { %>
+            <tr><td colspan="8" class="text-center text-muted">Sin pedidos activos</td></tr>
+            <% } %>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Modal pedido manual -->
+    <div class="modal fade" id="modalManual" tabindex="-1">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header"><h5 class="modal-title">Nuevo pedido manual</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+          <div class="modal-body">
+            <form id="formManual">
+              <div class="mb-2"><label class="form-label">Plataforma</label>
+                <select name="plataforma" class="form-select form-select-sm"><option value="llamafood">LlamaFood</option><option value="rappi">Rappi</option><option value="pedidosya">PedidosYa</option></select>
+              </div>
+              <div class="mb-2"><label class="form-label">Cliente</label><input name="cliente_nombre" class="form-control form-control-sm" required></div>
+              <div class="mb-2"><label class="form-label">Telefono</label><input name="cliente_telefono" class="form-control form-control-sm"></div>
+              <div class="mb-2"><label class="form-label">Direccion</label><input name="cliente_direccion" class="form-control form-control-sm"></div>
+              <div class="mb-2"><label class="form-label">Total (S/)</label><input name="total" type="number" step="0.01" class="form-control form-control-sm" required></div>
+              <div class="mb-2"><label class="form-label">Notas</label><textarea name="cliente_notas" class="form-control form-control-sm" rows="2"></textarea></div>
+              <button type="submit" class="btn btn-primary btn-sm">Crear pedido</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    </main>
+    </div>
+    <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script>
+    async function cambiarEstado(id, estado) {
+      if (!estado) return;
+      const r = await fetch('/api/delivery/'+id+'/estado', { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({estado}) });
+      if (r.ok) location.reload();
+      else alert('Error al cambiar estado');
+    }
+    document.getElementById('formManual').addEventListener('submit', async e => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const data = Object.fromEntries(fd);
+      data.items = [];
+      const r = await fetch('/delivery/manual', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data) });
+      if (r.ok) location.reload();
+      else alert('Error al crear pedido');
+    });
+    </script>
+    <%- include('partials/footer') %>
+</body>
+</html>

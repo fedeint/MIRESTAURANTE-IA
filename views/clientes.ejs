@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="/favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1e1b4b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="dignita">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+    <title>Clientes - mirestconia.com</title>
+    <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/theme.css">
+</head>
+<body>
+    <%- include('partials/sidebar') %>
+    <div class="dg-main">
+    <main class="flex-grow-1">
+    <div class="container">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="bi bi-people-fill me-2"></i>
+                    Gestión de Clientes
+                </div>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#clienteModal">
+                    <i class="bi bi-plus-lg me-1"></i>
+                    Nuevo Cliente
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col">
+                        <div class="input-group search-box ms-auto">
+                            <span class="input-group-text">
+                                <i class="bi bi-search"></i>
+                            </span>
+                            <input type="text" class="form-control" id="buscarCliente" placeholder="Buscar cliente...">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Doc.</th>
+                                <th>Nombre</th>
+                                <th>Direccion</th>
+                                <th>Telefono</th>
+                                <th>Email</th>
+                                <th class="text-center">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="clientesTabla">
+                            <% clientes.forEach(function(cliente) { %>
+                                <tr>
+                                    <td><% if (cliente.numero_documento) { %><span class="badge bg-secondary"><%= cliente.tipo_documento || 'DNI' %></span><br><small><%= cliente.numero_documento %></small><% } else { %>-<% } %></td>
+                                    <td><strong><%= cliente.nombre %></strong></td>
+                                    <td><%= cliente.direccion || '-' %></td>
+                                    <td><%= cliente.telefono || '-' %></td>
+                                    <td><%= cliente.email || '-' %></td>
+                                    <td class="text-center">
+                                        <div class="action-buttons">
+                                            <button class="btn btn-sm btn-outline-primary me-1" 
+                                                    data-cliente-id="<%= cliente.id %>"
+                                                    data-action="editar"
+                                                    title="Editar">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger"
+                                                    data-cliente-id="<%= cliente.id %>"
+                                                    data-action="eliminar"
+                                                    title="Eliminar">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    </main>
+    <%- include('partials/footer') %>
+    </div><!-- dg-main -->
+
+    <!-- Modal Cliente -->
+    <div class="modal fade" id="clienteModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bi bi-person-fill me-2"></i>
+                        <span id="modalTitle">Nuevo Cliente</span>
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formCliente">
+                        <input type="hidden" id="clienteId">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label fw-bold">Tipo Doc.</label>
+                                <select class="form-select" id="tipo_documento">
+                                    <option value="DNI">DNI</option>
+                                    <option value="RUC">RUC</option>
+                                    <option value="CE">CE</option>
+                                    <option value="PASAPORTE">Pasaporte</option>
+                                </select>
+                            </div>
+                            <div class="col-md-8">
+                                <label class="form-label fw-bold">N° Documento</label>
+                                <input type="text" class="form-control" id="numero_documento" placeholder="DNI: 8 digitos / RUC: 11 digitos">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-bold">Nombre / Razon Social</label>
+                                <input type="text" class="form-control" id="nombre" required placeholder="Persona o empresa">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Direccion</label>
+                                <input type="text" class="form-control" id="direccion">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Telefono</label>
+                                <input type="text" class="form-control" id="telefono">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Email</label>
+                                <input type="email" class="form-control" id="email" placeholder="Para envio de comprobantes">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="guardarCliente">
+                        <i class="bi bi-save me-1"></i>
+                        Guardar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/vendor/jquery/jquery.min.js"></script>
+    <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/clientes.js"></script>
+</body>
+</html> 

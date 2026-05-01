@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="/favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventario - mirestconia.com</title>
+    <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/theme.css">
+</head>
+<body>
+    <%- include('../partials/sidebar') %>
+    <div class="dg-main">
+    <main class="flex-grow-1">
+    <div class="container">
+
+        <div class="d-flex justify-content-between align-items-center mb-4 mt-3">
+            <h2 class="mb-0"><i class="bi bi-list-ul me-2"></i>Inventario</h2>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalIngrediente" onclick="resetForm()">
+                <i class="bi bi-plus-lg me-1"></i>Nuevo Ingrediente
+            </button>
+        </div>
+
+        <!-- Filtros -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <div class="row g-2 align-items-end">
+                    <div class="col-md-4">
+                        <label class="form-label">Categoria</label>
+                        <select id="filtroCategoria" class="form-select" onchange="filtrarTabla()">
+                            <option value="">Todas las categorias</option>
+                            <% categorias.forEach(function(cat) { %>
+                                <option value="<%= cat.nombre %>"><%= cat.nombre %></option>
+                            <% }); %>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">Buscar</label>
+                        <input type="text" id="filtroBuscar" class="form-control" placeholder="Buscar por nombre o codigo..." oninput="filtrarTabla()">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabla -->
+        <div class="card shadow-sm">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0" id="tablaInventario">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Codigo</th>
+                            <th>Nombre / Proveedor</th>
+                            <th>Categoria</th>
+                            <th>Stock</th>
+                            <th>Minimo</th>
+                            <th>Costo</th>
+                            <th>Ultimo ingreso</th>
+                            <th>Estado</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% ingredientes.forEach(function(i) { %>
+                        <tr data-categoria="<%= i.categoria_nombre || '' %>" data-nombre="<%= i.nombre %>" data-codigo="<%= i.codigo %>">
+                            <td><code><%= i.codigo %></code></td>
+                            <td><strong><%= i.nombre %></strong><% if (i.proveedor_nombre) { %><br><small class="text-muted"><%= i.proveedor_nombre %></small><% } %></td>
+                            <td>
+                                <span class="badge" style="background-color: <%= i.categoria_color || '#6c757d' %>;">
+                                    <%= i.categoria_nombre || 'Sin categoria' %>
+                                </span>
+                            </td>
+                            <td><%= Number(i.stock_actual).toFixed(1) %> <small class="text-muted"><%= i.unidad_medida %></small></td>
+                            <td><%= Number(i.stock_minimo).toFixed(1) %></td>
+                            <td>S/ <%= Number(i.costo_unitario).toFixed(2) %></td>
+                            <td class="small">
+                                <% if (i.ultimo_ingreso_fecha) { %>
+                                    <%= new Date(i.ultimo_ingreso_fecha).toLocaleDateString('es-PE') %> <%= new Date(i.ultimo_ingreso_fecha).toLocaleTimeString('es-PE',{hour:'2-digit',minute:'2-digit'}) %><br>
+                                    <span class="text-muted"><i class="bi bi-person-fill me-1"></i><%= i.ultimo_ingreso_usuario || '-' %></span>
+                                <% } else { %>
+                                    <span class="text-muted">Sin ingresos</span>
+                                <% } %>
+                            </td>
+                            <td>
+                                <% if (i.stock_actual === 0) { %>
+                                    <span class="badge bg-dark">Agotado</span>
+                                <% } else if (i.stock_actual <= i.stock_minimo) { %>
+                                    <span class="badge bg-danger">Critico</span>
+                                <% } else if (i.stock_actual <= i.stock_minimo * 1.5) { %>
+                                    <span class="badge bg-warning text-dark">Bajo</span>
+                                <% } else { %>
+                                    <span class="badge bg-success">OK</span>
+                                <% } %>
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary" onclick="editarIngrediente('<%= i._id %>')">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- RANKING DE PLATOS DISPONIBLES -->
+        <div class="card shadow-sm mt-4">
+            <div class="card-header fw-bold d-flex align-items-center gap-2">
+                <i class="bi bi-trophy-fill text-warning"></i>
+                Ranking: Platos disponibles segun inventario
+                <span class="badge bg-primary ms-auto"><%= rankingPlatos ? rankingPlatos.length : 0 %> platos</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead><tr><th>#</th><th>Plato</th><th class="text-center">Disponible</th><th>Ingrediente limitante</th><th class="text-center">Ingredientes</th></tr></thead>
+                        <tbody>
+                            <% if (!rankingPlatos || rankingPlatos.length === 0) { %>
+                                <tr><td colspan="5" class="text-center text-muted py-3">No hay platos con receta configurada</td></tr>
+                            <% } else { rankingPlatos.forEach(function(p, idx) { %>
+                                <tr<% if (p.disponible === 0) { %> style="background:rgba(239,68,68,0.06);"<% } else if (p.disponible <= 5) { %> style="background:rgba(245,158,11,0.06);"<% } %>>
+                                    <td><%= idx + 1 %></td>
+                                    <td class="fw-semibold"><%= p.nombre %></td>
+                                    <td class="text-center">
+                                        <% if (p.disponible === 0) { %>
+                                            <span class="badge bg-danger">AGOTADO</span>
+                                        <% } else if (p.disponible <= 5) { %>
+                                            <span class="badge bg-warning text-dark"><%= p.disponible %></span>
+                                        <% } else if (p.disponible <= 20) { %>
+                                            <span class="badge bg-info"><%= p.disponible %></span>
+                                        <% } else { %>
+                                            <span class="badge bg-success"><%= p.disponible %></span>
+                                        <% } %>
+                                    </td>
+                                    <td class="small text-muted"><%= p.ingrediente_limitante || '-' %></td>
+                                    <td class="text-center"><span class="badge bg-light text-dark"><%= p.ingredientes_total %></span></td>
+                                </tr>
+                            <% }); } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    </main>
+    <%- include('../partials/footer') %>
+    </div>
+
+    <!-- Modal Ingrediente -->
+    <div class="modal fade" id="modalIngrediente" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalTitle">Nuevo Ingrediente</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formIngrediente">
+                        <input type="hidden" id="ingredienteId">
+                        <div class="mb-3">
+                            <label class="form-label">Categoria</label>
+                            <select id="categoria" class="form-select" required>
+                                <option value="">Seleccionar...</option>
+                                <% categorias.forEach(function(cat) { %>
+                                    <option value="<%= cat.id %>"><%= cat.nombre %></option>
+                                <% }); %>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Codigo</label>
+                            <input type="text" id="codigo" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Nombre</label>
+                            <input type="text" id="nombre" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Unidad de Medida</label>
+                            <select id="unidad_medida" class="form-select" required>
+                                <option value="">Seleccionar...</option>
+                                <option value="kg">Kilogramo (kg)</option>
+                                <option value="g">Gramo (g)</option>
+                                <option value="lt">Litro (lt)</option>
+                                <option value="ml">Mililitro (ml)</option>
+                                <option value="unidad">Unidad</option>
+                                <option value="docena">Docena</option>
+                                <option value="paquete">Paquete</option>
+                                <option value="caja">Caja</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Stock Minimo</label>
+                            <input type="number" id="stock_minimo" class="form-control" step="0.01" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Costo Unitario (S/)</label>
+                            <input type="number" id="costo_unitario" class="form-control" step="0.01" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Ubicacion</label>
+                            <input type="text" id="ubicacion" class="form-control" placeholder="Ej: Estante A, Refrigerador 1">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="guardarIngrediente()">Guardar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="/vendor/sweetalert2/sweetalert2.all.min.js"></script>
+    <script>
+        function resetForm() {
+            document.getElementById('formIngrediente').reset();
+            document.getElementById('ingredienteId').value = '';
+            document.getElementById('modalTitle').textContent = 'Nuevo Ingrediente';
+        }
+
+        async function editarIngrediente(id) {
+            try {
+                const res = await fetch('/almacen/api/ingredientes/' + id);
+                const data = await res.json();
+                document.getElementById('ingredienteId').value = data._id;
+                document.getElementById('categoria').value = data.categoria;
+                document.getElementById('codigo').value = data.codigo;
+                document.getElementById('nombre').value = data.nombre;
+                document.getElementById('unidad_medida').value = data.unidad_medida;
+                document.getElementById('stock_minimo').value = data.stock_minimo;
+                document.getElementById('costo_unitario').value = data.costo_unitario;
+                document.getElementById('ubicacion').value = data.ubicacion || '';
+                document.getElementById('modalTitle').textContent = 'Editar Ingrediente';
+                new bootstrap.Modal(document.getElementById('modalIngrediente')).show();
+            } catch (err) {
+                Swal.fire('Error', 'No se pudo cargar el ingrediente', 'error');
+            }
+        }
+
+        async function guardarIngrediente() {
+            const id = document.getElementById('ingredienteId').value;
+            const body = {
+                categoria: document.getElementById('categoria').value,
+                codigo: document.getElementById('codigo').value,
+                nombre: document.getElementById('nombre').value,
+                unidad_medida: document.getElementById('unidad_medida').value,
+                stock_minimo: parseFloat(document.getElementById('stock_minimo').value),
+                costo_unitario: parseFloat(document.getElementById('costo_unitario').value),
+                ubicacion: document.getElementById('ubicacion').value
+            };
+
+            try {
+                const url = id ? '/almacen/api/ingredientes/' + id : '/almacen/api/ingredientes';
+                const method = id ? 'PUT' : 'POST';
+                const res = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body)
+                });
+                const data = await res.json();
+                if (data.success) {
+                    Swal.fire('Exito', id ? 'Ingrediente actualizado' : 'Ingrediente creado', 'success')
+                        .then(() => location.reload());
+                } else {
+                    Swal.fire('Error', data.message || 'Error al guardar', 'error');
+                }
+            } catch (err) {
+                Swal.fire('Error', 'Error de conexion', 'error');
+            }
+        }
+
+        function filtrarTabla() {
+            const cat = document.getElementById('filtroCategoria').value.toLowerCase();
+            const buscar = document.getElementById('filtroBuscar').value.toLowerCase();
+            const filas = document.querySelectorAll('#tablaInventario tbody tr');
+            filas.forEach(function(fila) {
+                const filaCat = (fila.dataset.categoria || '').toLowerCase();
+                const filaNombre = (fila.dataset.nombre || '').toLowerCase();
+                const filaCodigo = (fila.dataset.codigo || '').toLowerCase();
+                const coincideCat = !cat || filaCat === cat;
+                const coincideBuscar = !buscar || filaNombre.includes(buscar) || filaCodigo.includes(buscar);
+                fila.style.display = (coincideCat && coincideBuscar) ? '' : 'none';
+            });
+        }
+    </script>
+</body>
+</html>

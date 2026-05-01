@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Planilla del Mes · MiRestcon</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --orange: #ef520f; --orange2: #df2c05;
+      --dark: #0a0f24; --bg: #F0F2F8;
+      --card: #ffffff; --text2: #8B8FAD;
+      --success: #22C55E;
+      --safe-bot: env(safe-area-inset-bottom, 0px);
+    }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      min-height: 100dvh;
+      max-width: 480px;
+      margin: 0 auto;
+      padding-bottom: calc(72px + var(--safe-bot));
+    }
+
+    /* ── Header ── */
+    .header {
+      background: linear-gradient(170deg, #10152f 0%, #0a0f24 50%, #090d1d 100%);
+      padding: 52px 20px 24px;
+      border-radius: 0 0 20px 20px;
+      color: #fff;
+    }
+    .header-top { display: flex; align-items: center; gap: 12px; margin-bottom: 4px; }
+    .btn-back {
+      background: rgba(255,255,255,0.12); border: none; color: #fff;
+      width: 36px; height: 36px; border-radius: 10px;
+      font-size: 18px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .header-title { font-size: 18px; font-weight: 700; }
+
+    /* ── Summary card ── */
+    .summary-card {
+      background: var(--card);
+      margin: 16px 16px 0;
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+    .summary-total {
+      font-size: 13px; color: var(--text2); margin-bottom: 4px;
+    }
+    .summary-monto {
+      font-size: 28px; font-weight: 800; color: var(--dark); margin-bottom: 16px;
+    }
+    .summary-chips { display: flex; gap: 10px; }
+    .chip-contrib {
+      flex: 1; background: #FFF8F5;
+      border-radius: 12px; padding: 10px 12px;
+    }
+    .chip-label { font-size: 11px; color: var(--text2); margin-bottom: 2px; }
+    .chip-value { font-size: 16px; font-weight: 700; color: var(--orange); }
+
+    /* ── Employees ── */
+    .section-label {
+      font-size: 13px; font-weight: 600;
+      color: var(--text2); text-transform: uppercase; letter-spacing: 0.5px;
+      padding: 20px 16px 10px;
+    }
+
+    .emp-card {
+      background: var(--card);
+      margin: 0 16px 10px;
+      border-radius: 16px;
+      padding: 14px 16px;
+      display: flex; align-items: center; gap: 14px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .emp-avatar {
+      width: 44px; height: 44px; border-radius: 14px;
+      background: linear-gradient(135deg, var(--orange), var(--orange2));
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 16px; font-weight: 700;
+      flex-shrink: 0;
+    }
+    .emp-info { flex: 1; min-width: 0; }
+    .emp-nombre { font-size: 15px; font-weight: 600; color: var(--dark); }
+    .emp-cargo  { font-size: 12px; color: var(--text2); margin-top: 2px; }
+    .emp-montos { text-align: right; flex-shrink: 0; }
+    .emp-sueldo { font-size: 13px; color: var(--text2); }
+    .emp-neto   { font-size: 15px; font-weight: 700; color: var(--success); margin-top: 2px; }
+
+    /* ── Empty state ── */
+    .empty {
+      text-align: center; padding: 48px 24px;
+      color: var(--text2); font-size: 14px;
+    }
+    .empty-icon { font-size: 40px; margin-bottom: 12px; }
+
+    /* ── Bottom nav ── */
+    .bottom-nav {
+      position: fixed; bottom: 0; left: 50%;
+      transform: translateX(-50%);
+      width: 100%; max-width: 480px;
+      background: #fff; border-top: 1px solid #E8EAF2;
+      display: flex; padding-bottom: var(--safe-bot); z-index: 100;
+    }
+    .nav-item {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; padding: 10px 4px 8px;
+      text-decoration: none; color: var(--text2);
+      font-size: 10px; font-weight: 500;
+    }
+    .nav-item .icon { font-size: 22px; margin-bottom: 2px; }
+    .nav-item.active { color: var(--orange); }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="header-top">
+      <button class="btn-back" onclick="history.back()">‹</button>
+      <span class="header-title">Planilla del Mes</span>
+    </div>
+  </div>
+
+  <div class="summary-card">
+    <div class="summary-total">S/ <%= totalBruto.toFixed(2) %> Total planilla · <%= nombreMes %> <%= anio %></div>
+    <div class="summary-monto">S/ <%= totalBruto.toFixed(2) %></div>
+    <div class="summary-chips">
+      <div class="chip-contrib">
+        <div class="chip-label">ESSALUD (9%)</div>
+        <div class="chip-value">S/ <%= essalud.toFixed(2) %></div>
+      </div>
+      <div class="chip-contrib">
+        <div class="chip-label">AFP (~13%)</div>
+        <div class="chip-value">S/ <%= afp.toFixed(2) %></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-label">Empleados (<%= empleados.length %>)</div>
+
+  <% if (empleados.length === 0) { %>
+  <div class="empty">
+    <div class="empty-icon">👥</div>
+    No hay personal registrado.<br>Agrega empleados en la sección Personal.
+  </div>
+  <% } else { %>
+    <% empleados.forEach(function(e) {
+      const iniciales = e.nombre.split(' ').slice(0,2).map(n => n[0]).join('').toUpperCase();
+      const neto = e.monto_neto != null
+        ? Number(e.monto_neto)
+        : +(Number(e.monto_pago || 0) * 0.87).toFixed(2);
+    %>
+    <div class="emp-card">
+      <div class="emp-avatar"><%= iniciales %></div>
+      <div class="emp-info">
+        <div class="emp-nombre"><%= e.nombre %></div>
+        <div class="emp-cargo"><%= e.cargo %></div>
+      </div>
+      <div class="emp-montos">
+        <div class="emp-sueldo">Sueldo S/ <%= Number(e.monto_pago).toFixed(2) %></div>
+        <div class="emp-neto">Neto: S/ <%= neto.toFixed(2) %></div>
+      </div>
+    </div>
+    <% }); %>
+  <% } %>
+
+  <!-- Bottom Nav -->
+  <nav class="bottom-nav">
+    <a href="/" class="nav-item"><span class="icon">🏠</span>Inicio</a>
+    <a href="/pedidos" class="nav-item"><span class="icon">🧾</span>Pedidos</a>
+    <a href="/cocina-display" class="nav-item"><span class="icon">👨‍🍳</span>Cocina</a>
+    <a href="/caja" class="nav-item"><span class="icon">💰</span>Caja</a>
+    <a href="/mas" class="nav-item active"><span class="icon">☰</span>Más</a>
+  </nav>
+
+  <script src="/js/dallia-fab.js"></script>
+</body>
+</html>

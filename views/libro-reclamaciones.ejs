@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1e1b4b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="dignita">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+  <title>Libro de Reclamaciones - mirestconia.com</title>
+  <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Inter', sans-serif; background: #f8fafc; color: #1e293b; min-height: 100vh; }
+
+    /* HEADER */
+    .lr-header {
+      background: linear-gradient(135deg, #0f0a2e 0%, #1e1b4b 60%, #312e81 100%);
+      padding: 1.25rem 0;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .lr-header .brand { color: #fff; font-weight: 800; font-size: 1.1rem; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; }
+    .lr-header .brand .accent { color: #22d3ee; }
+    .lr-header .back-link { color: rgba(255,255,255,0.6); font-size: 0.85rem; text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem; transition: color 0.2s; }
+    .lr-header .back-link:hover { color: #22d3ee; }
+
+    /* LEGAL NOTICE BANNER */
+    .legal-notice {
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-radius: 0.875rem;
+      padding: 1rem 1.25rem;
+      display: flex;
+      gap: 0.875rem;
+      align-items: flex-start;
+      margin-bottom: 2rem;
+    }
+    .legal-notice i { color: #d97706; font-size: 1.25rem; flex-shrink: 0; margin-top: 0.1rem; }
+    .legal-notice p { font-size: 0.875rem; color: #92400e; margin: 0; line-height: 1.55; }
+    .legal-notice p strong { font-weight: 700; color: #78350f; }
+
+    /* SECTION TITLE */
+    .section-badge {
+      display: inline-flex; align-items: center; gap: 0.4rem;
+      background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.18);
+      border-radius: 2rem; padding: 0.3rem 0.9rem;
+      font-size: 0.78rem; font-weight: 600; color: #6366f1; margin-bottom: 0.75rem;
+    }
+    .page-title { font-size: 1.75rem; font-weight: 800; color: #1e293b; letter-spacing: -0.03em; margin-bottom: 0.5rem; }
+    .page-subtitle { color: #64748b; font-size: 0.95rem; line-height: 1.6; max-width: 580px; }
+
+    /* CARD */
+    .lr-card {
+      background: #fff;
+      border: 1px solid rgba(0,0,0,0.06);
+      border-radius: 1.25rem;
+      padding: 2rem;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.05);
+    }
+    .lr-card-header {
+      border-bottom: 1px solid #f1f5f9;
+      margin-bottom: 1.75rem;
+      padding-bottom: 1.25rem;
+    }
+    .lr-card-header h3 { font-size: 1.1rem; font-weight: 700; color: #1e293b; margin-bottom: 0.25rem; }
+    .lr-card-header p { font-size: 0.85rem; color: #64748b; margin: 0; }
+
+    /* FORM */
+    .form-label { font-size: 0.875rem; font-weight: 600; color: #374151; margin-bottom: 0.4rem; }
+    .form-label .required { color: #ef4444; margin-left: 2px; }
+    .form-control, .form-select {
+      border: 1.5px solid #e2e8f0; border-radius: 0.625rem;
+      padding: 0.65rem 0.875rem; font-size: 0.9rem; color: #1e293b;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .form-control:focus, .form-select:focus {
+      border-color: #6366f1;
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
+      outline: none;
+    }
+    .form-hint { font-size: 0.78rem; color: #94a3b8; margin-top: 0.3rem; }
+
+    /* TIPO SELECTOR */
+    .tipo-selector { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+    .tipo-option input[type="radio"] { display: none; }
+    .tipo-option label {
+      display: flex; align-items: flex-start; gap: 0.75rem;
+      border: 1.5px solid #e2e8f0; border-radius: 0.75rem;
+      padding: 1rem; cursor: pointer; transition: all 0.2s; width: 100%;
+    }
+    .tipo-option label:hover { border-color: #a5b4fc; background: rgba(99,102,241,0.03); }
+    .tipo-option input:checked + label { border-color: #6366f1; background: rgba(99,102,241,0.06); }
+    .tipo-option .tipo-icon { font-size: 1.35rem; flex-shrink: 0; }
+    .tipo-queja .tipo-icon { color: #f59e0b; }
+    .tipo-reclamo .tipo-icon { color: #ef4444; }
+    .tipo-option .tipo-text strong { display: block; font-weight: 700; font-size: 0.9rem; color: #1e293b; margin-bottom: 0.2rem; }
+    .tipo-option .tipo-text span { font-size: 0.8rem; color: #64748b; line-height: 1.4; }
+
+    /* DOCUMENT GRUPO */
+    .doc-group { display: grid; grid-template-columns: 130px 1fr; gap: 0.75rem; }
+
+    /* SUBMIT BUTTON */
+    .btn-submit {
+      background: linear-gradient(135deg, #6366f1, #4f46e5);
+      color: #fff; border: none; border-radius: 0.75rem;
+      padding: 0.875rem 2rem; font-weight: 700; font-size: 1rem;
+      width: 100%; cursor: pointer; transition: all 0.3s;
+      box-shadow: 0 6px 20px rgba(99,102,241,0.35);
+    }
+    .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(99,102,241,0.45); }
+    .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+    /* SUCCESS STATE */
+    .success-box {
+      background: linear-gradient(135deg, #f0fdf4, #dcfce7);
+      border: 1.5px solid #86efac;
+      border-radius: 1rem;
+      padding: 2.5rem;
+      text-align: center;
+    }
+    .success-box .success-icon { font-size: 3.5rem; color: #22c55e; margin-bottom: 1rem; }
+    .success-box h3 { font-weight: 800; font-size: 1.4rem; color: #14532d; margin-bottom: 0.5rem; }
+    .success-box .claim-number {
+      display: inline-block;
+      background: #fff; border: 2px solid #22c55e;
+      border-radius: 0.625rem; padding: 0.625rem 1.5rem;
+      font-size: 1.35rem; font-weight: 900; color: #15803d;
+      letter-spacing: 0.08em; margin: 1rem 0;
+    }
+    .success-box p { color: #166534; font-size: 0.9rem; line-height: 1.6; }
+    .success-timeline { display: flex; flex-direction: column; gap: 0.625rem; margin-top: 1.25rem; text-align: left; }
+    .success-timeline .tl-item { display: flex; align-items: center; gap: 0.625rem; background: rgba(255,255,255,0.6); border-radius: 0.5rem; padding: 0.625rem 0.875rem; font-size: 0.85rem; color: #166534; }
+    .success-timeline .tl-item i { color: #22c55e; flex-shrink: 0; }
+
+    /* STATUS CHECKER */
+    .status-card {
+      background: #fff;
+      border: 1px solid rgba(0,0,0,0.06);
+      border-radius: 1.25rem;
+      padding: 1.75rem 2rem;
+      box-shadow: 0 2px 16px rgba(0,0,0,0.05);
+    }
+    .status-card h4 { font-size: 1.05rem; font-weight: 700; color: #1e293b; margin-bottom: 0.25rem; }
+    .status-card p { font-size: 0.85rem; color: #64748b; margin-bottom: 1.25rem; }
+    .btn-check-status {
+      background: #f1f5f9; color: #475569; border: 1.5px solid #e2e8f0;
+      border-radius: 0.625rem; padding: 0.65rem 1.25rem;
+      font-weight: 600; font-size: 0.9rem; cursor: pointer; transition: all 0.2s;
+      white-space: nowrap;
+    }
+    .btn-check-status:hover { background: #e2e8f0; border-color: #cbd5e1; color: #1e293b; }
+
+    /* STATUS RESULT */
+    .status-result { margin-top: 1rem; padding: 1rem; border-radius: 0.75rem; font-size: 0.875rem; display: none; }
+    .status-result.show { display: block; }
+    .status-result.found { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e3a8a; }
+    .status-result.not-found { background: #fef2f2; border: 1px solid #fecaca; color: #7f1d1d; }
+    .status-badge {
+      display: inline-flex; align-items: center; gap: 0.35rem;
+      padding: 0.3rem 0.75rem; border-radius: 2rem; font-size: 0.78rem; font-weight: 700;
+    }
+    .status-recibido { background: #dbeafe; color: #1d4ed8; }
+    .status-en_proceso { background: #fef9c3; color: #854d0e; }
+    .status-respondido { background: #dcfce7; color: #166534; }
+    .status-cerrado { background: #f1f5f9; color: #475569; }
+
+    /* LEGAL FRAMEWORK */
+    .legal-framework {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 0.875rem;
+      padding: 1.25rem 1.5rem;
+    }
+    .legal-framework h6 { font-size: 0.8rem; font-weight: 700; color: #475569; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.875rem; }
+    .legal-framework ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.5rem; }
+    .legal-framework li { font-size: 0.82rem; color: #64748b; display: flex; align-items: flex-start; gap: 0.5rem; line-height: 1.5; }
+    .legal-framework li i { color: #6366f1; flex-shrink: 0; margin-top: 0.1rem; font-size: 0.9rem; }
+
+    /* FOOTER */
+    .lr-footer { background: #0f0a2e; padding: 1.25rem 0; margin-top: 3rem; border-top: 1px solid rgba(255,255,255,0.06); }
+    .lr-footer span { color: rgba(255,255,255,0.4); font-size: 0.82rem; }
+    .lr-footer a { color: rgba(255,255,255,0.5); font-size: 0.82rem; text-decoration: none; }
+    .lr-footer a:hover { color: #22d3ee; }
+
+    /* ALERT */
+    .alert-error { background: #fef2f2; border: 1px solid #fecaca; border-radius: 0.75rem; padding: 0.875rem 1rem; color: #7f1d1d; font-size: 0.875rem; margin-bottom: 1.25rem; }
+    .alert-error i { margin-right: 0.4rem; }
+
+    @media (max-width: 768px) {
+      .lr-card { padding: 1.25rem; }
+      .tipo-selector { grid-template-columns: 1fr; }
+      .doc-group { grid-template-columns: 1fr; }
+      .page-title { font-size: 1.4rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="lr-header">
+    <div class="container">
+      <div class="d-flex justify-content-between align-items-center">
+        <a href="/landing" class="brand">
+          <i class="bi bi-fire" style="color:#22d3ee;"></i>
+          mirestconia<span class="accent">.com</span>
+        </a>
+        <a href="/landing" class="back-link">
+          <i class="bi bi-arrow-left"></i> Volver al inicio
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT -->
+  <main class="container py-4 py-md-5" style="max-width: 860px;">
+
+    <!-- PAGE HEADING -->
+    <div class="mb-4">
+      <div class="section-badge"><i class="bi bi-journal-text"></i> Proteccion al consumidor</div>
+      <h1 class="page-title">Libro de Reclamaciones</h1>
+      <p class="page-subtitle">
+        Conforme a lo establecido por la <strong>Ley N.° 32495</strong> y el
+        <strong>Codigo de Proteccion y Defensa del Consumidor (Ley 29571)</strong>,
+        ponemos a su disposicion este Libro de Reclamaciones electronico.
+        Su reclamo o queja sera atendido en un plazo maximo de <strong>15 dias habiles</strong>.
+      </p>
+    </div>
+
+    <!-- LEGAL NOTICE -->
+    <div class="legal-notice">
+      <i class="bi bi-info-circle-fill"></i>
+      <p>
+        <strong>Informacion importante:</strong> El Libro de Reclamaciones es un mecanismo de
+        proteccion al consumidor exigido por INDECOPI. Presentar una queja no impide acudir a otras
+        instancias (INDECOPI, Poder Judicial). La empresa proveedora del servicio es
+        <strong>Dignita Tech S.A.C.</strong> — mirestconia.com
+      </p>
+    </div>
+
+    <div class="row g-4">
+      <!-- FORM COLUMN -->
+      <div class="col-lg-8">
+
+        <% if (typeof submitted !== 'undefined' && submitted && numeroClaim) { %>
+        <!-- SUCCESS STATE -->
+        <div class="success-box">
+          <div class="success-icon"><i class="bi bi-check-circle-fill"></i></div>
+          <h3>Registro exitoso</h3>
+          <p>Su <%= tipo || 'reclamo' %> ha sido registrado correctamente.</p>
+          <div class="claim-number"><%= numeroClaim %></div>
+          <p>Guarde este numero para consultar el estado de su caso.</p>
+          <div class="success-timeline">
+            <div class="tl-item"><i class="bi bi-check2"></i> Registro recibido y sellado electronicamente</div>
+            <div class="tl-item"><i class="bi bi-clock"></i> Plazo de respuesta: hasta <strong>15 dias habiles</strong></div>
+            <div class="tl-item"><i class="bi bi-envelope"></i> Recibirá respuesta en el email proporcionado</div>
+            <div class="tl-item"><i class="bi bi-shield-check"></i> Puede escalar a INDECOPI si no hay respuesta</div>
+          </div>
+          <div class="mt-3">
+            <a href="/libro-reclamaciones" class="btn btn-sm btn-outline-success">Registrar otro reclamo</a>
+          </div>
+        </div>
+
+        <% } else { %>
+        <!-- FORM -->
+        <div class="lr-card">
+          <div class="lr-card-header">
+            <h3><i class="bi bi-pencil-square me-2" style="color:#6366f1;"></i>Nuevo reclamo o queja</h3>
+            <p>Complete todos los campos marcados con asterisco (<span style="color:#ef4444;">*</span>). Sus datos son confidenciales.</p>
+          </div>
+
+          <div id="form-error" class="alert-error" style="display:none;">
+            <i class="bi bi-exclamation-circle"></i>
+            <span id="form-error-msg"></span>
+          </div>
+
+          <form id="reclamacionForm" novalidate>
+
+            <!-- TIPO -->
+            <div class="mb-4">
+              <label class="form-label">Tipo de registro <span class="required">*</span></label>
+              <div class="tipo-selector">
+                <div class="tipo-option tipo-queja">
+                  <input type="radio" name="tipo" id="tipo_queja" value="queja" required>
+                  <label for="tipo_queja">
+                    <div class="tipo-icon"><i class="bi bi-chat-square-text"></i></div>
+                    <div class="tipo-text">
+                      <strong>Queja</strong>
+                      <span>Disconformidad con la atencion o servicio recibido, sin afectacion economica directa.</span>
+                    </div>
+                  </label>
+                </div>
+                <div class="tipo-option tipo-reclamo">
+                  <input type="radio" name="tipo" id="tipo_reclamo" value="reclamo" required>
+                  <label for="tipo_reclamo">
+                    <div class="tipo-icon"><i class="bi bi-exclamation-triangle"></i></div>
+                    <div class="tipo-text">
+                      <strong>Reclamo</strong>
+                      <span>Disconformidad con el bien o servicio adquirido, con posible afectacion economica.</span>
+                    </div>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <!-- DATOS PERSONALES -->
+            <div class="lr-card-header" style="margin-top:1.75rem; padding-top:1.5rem; border-top:1px solid #f1f5f9; border-bottom:none; margin-bottom:1.25rem; padding-bottom:0;">
+              <h3 style="font-size:0.95rem;"><i class="bi bi-person me-2" style="color:#6366f1;"></i>Datos del reclamante</h3>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label" for="nombre">Nombre completo <span class="required">*</span></label>
+              <input type="text" class="form-control" id="nombre" name="nombre" placeholder="Ej: Juan Carlos Perez Ramirez" maxlength="200" required>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Documento de identidad <span class="required">*</span></label>
+              <div class="doc-group">
+                <select class="form-select" name="documento_tipo" id="documento_tipo">
+                  <option value="DNI">DNI</option>
+                  <option value="RUC">RUC</option>
+                  <option value="CE">Carnet de Extranjeria</option>
+                  <option value="PASAPORTE">Pasaporte</option>
+                </select>
+                <input type="text" class="form-control" id="documento_numero" name="documento_numero" placeholder="Numero de documento" maxlength="20" required>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label" for="direccion">Direccion</label>
+              <input type="text" class="form-control" id="direccion" name="direccion" placeholder="Av. Ejemplo 123, Lima" maxlength="300">
+              <div class="form-hint">Opcional — recomendado para facilitar la respuesta.</div>
+            </div>
+
+            <div class="row g-3 mb-3">
+              <div class="col-sm-6">
+                <label class="form-label" for="telefono">Telefono <span class="required">*</span></label>
+                <input type="tel" class="form-control" id="telefono" name="telefono" placeholder="9XXXXXXXX" maxlength="20" required>
+              </div>
+              <div class="col-sm-6">
+                <label class="form-label" for="email">Correo electronico <span class="required">*</span></label>
+                <input type="email" class="form-control" id="email" name="email" placeholder="correo@ejemplo.com" maxlength="200" required>
+              </div>
+            </div>
+
+            <!-- DETALLE DEL RECLAMO -->
+            <div class="lr-card-header" style="margin-top:1.75rem; padding-top:1.5rem; border-top:1px solid #f1f5f9; border-bottom:none; margin-bottom:1.25rem; padding-bottom:0;">
+              <h3 style="font-size:0.95rem;"><i class="bi bi-file-text me-2" style="color:#6366f1;"></i>Descripcion del hecho</h3>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label" for="detalle">Descripcion del hecho reclamado <span class="required">*</span></label>
+              <textarea class="form-control" id="detalle" name="detalle" rows="5"
+                placeholder="Describa con detalle el hecho que motiva su reclamo o queja: fecha, lugar, producto o servicio involucrado, y circunstancias relevantes."
+                maxlength="3000" required></textarea>
+              <div class="form-hint">Minimo 10 caracteres. Cuanto mas detalle proporcione, mas rapido podremos atenderlo.</div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label" for="pedido_consumidor">Lo que usted solicita <span class="required">*</span></label>
+              <textarea class="form-control" id="pedido_consumidor" name="pedido_consumidor" rows="3"
+                placeholder="Ej: Solicito la devolucion del monto pagado / Solicito una disculpa formal y mejora del servicio / Solicito la reparacion del bien..."
+                maxlength="2000" required></textarea>
+            </div>
+
+            <div class="mb-4">
+              <label class="form-label" for="monto_reclamado">Monto reclamado (S/)</label>
+              <input type="number" class="form-control" id="monto_reclamado" name="monto_reclamado"
+                placeholder="0.00" min="0" step="0.01" max="999999.99" style="max-width:200px;">
+              <div class="form-hint">Solo si aplica una afectacion economica cuantificable.</div>
+            </div>
+
+            <!-- LEGAL NOTICE -->
+            <div class="mb-4" style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:0.75rem;padding:1rem 1.125rem;">
+              <div class="d-flex gap-3 align-items-start">
+                <input type="checkbox" id="acepta_terminos" name="acepta_terminos" class="form-check-input mt-1" required style="flex-shrink:0;width:1rem;height:1rem;cursor:pointer;">
+                <label for="acepta_terminos" style="font-size:0.82rem;color:#475569;cursor:pointer;line-height:1.55;">
+                  Declaro que los datos proporcionados son veraces y completos. Autorizo a
+                  <strong>Dignita Tech S.A.C.</strong> a tratar mis datos personales con la
+                  finalidad de atender mi reclamo, de conformidad con la
+                  <strong>Ley N.° 29733</strong> de Proteccion de Datos Personales.
+                  Entiendo que presentar este reclamo no me impide acudir a INDECOPI u otras
+                  instancias competentes.
+                </label>
+              </div>
+            </div>
+
+            <button type="submit" class="btn-submit" id="submitBtn">
+              <i class="bi bi-send me-2"></i>Enviar reclamo
+            </button>
+
+          </form>
+        </div>
+        <% } %>
+
+      </div>
+
+      <!-- SIDEBAR COLUMN -->
+      <div class="col-lg-4">
+
+        <!-- STATUS CHECKER -->
+        <div class="status-card mb-3">
+          <h4><i class="bi bi-search me-2" style="color:#6366f1;"></i>Consultar estado</h4>
+          <p>Ingresa el numero de tu reclamo para ver el estado actual.</p>
+          <div class="d-flex gap-2">
+            <input type="text" class="form-control" id="statusInput" placeholder="RC-2026-0001" maxlength="12" style="font-family:monospace;font-weight:700;text-transform:uppercase;">
+            <button class="btn-check-status" onclick="consultarEstado()">
+              <i class="bi bi-search"></i>
+            </button>
+          </div>
+          <div id="statusResult" class="status-result"></div>
+        </div>
+
+        <!-- LEGAL FRAMEWORK -->
+        <div class="legal-framework mb-3">
+          <h6><i class="bi bi-scale me-2"></i>Marco legal</h6>
+          <ul>
+            <li><i class="bi bi-check-circle-fill"></i> Ley N.° 32495 — Libro de Reclamaciones</li>
+            <li><i class="bi bi-check-circle-fill"></i> Ley 29571 — Codigo de Proteccion al Consumidor</li>
+            <li><i class="bi bi-check-circle-fill"></i> Ley 29733 — Proteccion de Datos Personales</li>
+            <li><i class="bi bi-check-circle-fill"></i> Supervision: INDECOPI Peru</li>
+          </ul>
+        </div>
+
+        <!-- CONTACT INFO -->
+        <div class="legal-framework">
+          <h6><i class="bi bi-headset me-2"></i>Canales de atencion</h6>
+          <ul>
+            <li><i class="bi bi-envelope"></i> legal@mirestconia.com</li>
+            <li><i class="bi bi-whatsapp"></i> +51 999 999 999</li>
+            <li><i class="bi bi-clock"></i> Plazo maximo: 15 dias habiles</li>
+            <li><i class="bi bi-building"></i> INDECOPI: 0-800-4-4040 (gratuito)</li>
+          </ul>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="lr-footer">
+    <div class="container text-center">
+      <span>&copy; <%= new Date().getFullYear() %> mirestconia.com &mdash; Dignita Tech S.A.C. &nbsp;|&nbsp;</span>
+      <a href="/privacidad">Politica de Privacidad</a>
+      <span style="color:rgba(255,255,255,0.2);margin:0 0.5rem;">|</span>
+      <a href="/terminos">Terminos de Servicio</a>
+    </div>
+  </footer>
+
+  <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // ── Form submission ────────────────────────────────────────────────────
+    document.getElementById('reclamacionForm')?.addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      const submitBtn = document.getElementById('submitBtn');
+      const errorDiv  = document.getElementById('form-error');
+      const errorMsg  = document.getElementById('form-error-msg');
+
+      // Client-side validation
+      const tipo = document.querySelector('input[name="tipo"]:checked')?.value;
+      if (!tipo) {
+        errorDiv.style.display = 'block';
+        errorMsg.textContent = 'Por favor seleccione si es una queja o reclamo.';
+        errorDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+
+      const aceptaTerminos = document.getElementById('acepta_terminos').checked;
+      if (!aceptaTerminos) {
+        errorDiv.style.display = 'block';
+        errorMsg.textContent = 'Debe aceptar la declaracion jurada para continuar.';
+        errorDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+
+      errorDiv.style.display = 'none';
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Enviando...';
+
+      const formData = new FormData(this);
+      const body = {};
+      formData.forEach((v, k) => { body[k] = v; });
+
+      try {
+        const res  = await fetch('/api/legal/reclamo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        });
+        const data = await res.json();
+
+        if (data.ok) {
+          // Show success state
+          window._claimNumber = data.numero;
+          window._claimTipo   = tipo;
+          renderSuccess(data.numero, tipo);
+        } else {
+          const msgs = data.errors ? data.errors.join(' ') : (data.error || 'Error desconocido.');
+          errorDiv.style.display = 'block';
+          errorMsg.textContent = msgs;
+          errorDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '<i class="bi bi-send me-2"></i>Enviar reclamo';
+        }
+      } catch (err) {
+        errorDiv.style.display = 'block';
+        errorMsg.textContent = 'Error de conexion. Por favor intente nuevamente.';
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="bi bi-send me-2"></i>Enviar reclamo';
+      }
+    });
+
+    function renderSuccess(numero, tipo) {
+      const tipoStr = tipo === 'queja' ? 'queja' : 'reclamo';
+      const formCol = document.querySelector('.col-lg-8');
+      formCol.innerHTML = `
+        <div class="success-box">
+          <div class="success-icon"><i class="bi bi-check-circle-fill"></i></div>
+          <h3>Registro exitoso</h3>
+          <p>Su ${tipoStr} ha sido registrado correctamente en nuestro Libro de Reclamaciones.</p>
+          <div class="claim-number">${numero}</div>
+          <p>Conserve este numero para hacer seguimiento a su caso.</p>
+          <div class="success-timeline">
+            <div class="tl-item"><i class="bi bi-check2"></i> Registro recibido y sellado electronicamente</div>
+            <div class="tl-item"><i class="bi bi-clock"></i> Plazo de respuesta: hasta <strong>15 dias habiles</strong></div>
+            <div class="tl-item"><i class="bi bi-envelope"></i> Recibirá respuesta en el email proporcionado</div>
+            <div class="tl-item"><i class="bi bi-shield-check"></i> Puede escalar a INDECOPI si no hay respuesta oportuna</div>
+          </div>
+          <div class="mt-3">
+            <a href="/libro-reclamaciones" class="btn btn-sm btn-outline-success">Registrar otro reclamo</a>
+          </div>
+        </div>`;
+    }
+
+    // ── Status checker ─────────────────────────────────────────────────────
+    async function consultarEstado() {
+      const input  = document.getElementById('statusInput');
+      const result = document.getElementById('statusResult');
+      const numero = input.value.trim().toUpperCase();
+
+      if (!numero.match(/^RC-\d{4}-\d{4}$/)) {
+        result.className = 'status-result not-found show';
+        result.innerHTML = '<i class="bi bi-exclamation-circle me-1"></i> Formato invalido. Use: RC-YYYY-NNNN';
+        return;
+      }
+
+      result.className = 'status-result found show';
+      result.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Consultando...';
+
+      try {
+        const res  = await fetch(`/api/legal/reclamo/${numero}`);
+        const data = await res.json();
+
+        if (data.ok) {
+          const r      = data.reclamo;
+          const fechaReg = new Date(r.fecha_registro).toLocaleDateString('es-PE', { day:'2-digit', month:'long', year:'numeric' });
+          const estadoMap = {
+            recibido: { label: 'Recibido', css: 'status-recibido' },
+            en_proceso: { label: 'En proceso', css: 'status-en_proceso' },
+            respondido: { label: 'Respondido', css: 'status-respondido' },
+            cerrado: { label: 'Cerrado', css: 'status-cerrado' }
+          };
+          const estadoInfo = estadoMap[r.estado] || { label: r.estado, css: 'status-recibido' };
+
+          let html = `
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <strong style="font-size:0.95rem;">${r.numero}</strong>
+              <span class="status-badge ${estadoInfo.css}">${estadoInfo.label}</span>
+            </div>
+            <div style="font-size:0.82rem;color:#475569;">
+              <div>Registrado el ${fechaReg}</div>
+              <div>Dias transcurridos: ${r.dias_transcurridos} de 15 habiles maximos</div>
+            </div>`;
+
+          if (r.respuesta) {
+            html += `<div style="margin-top:0.75rem;padding:0.75rem;background:#fff;border-radius:0.5rem;border:1px solid #bfdbfe;font-size:0.82rem;"><strong>Respuesta:</strong><br>${r.respuesta}</div>`;
+          }
+          if (r.plazo_vence && r.estado !== 'respondido' && r.estado !== 'cerrado') {
+            html += `<div style="margin-top:0.75rem;font-size:0.8rem;color:#7f1d1d;"><i class="bi bi-exclamation-triangle me-1"></i>Plazo vencido. Puede escalar a INDECOPI: 0-800-4-4040</div>`;
+          }
+
+          result.className = 'status-result found show';
+          result.innerHTML = html;
+        } else {
+          result.className = 'status-result not-found show';
+          result.innerHTML = `<i class="bi bi-x-circle me-1"></i> ${data.error || 'Numero no encontrado.'}`;
+        }
+      } catch (err) {
+        result.className = 'status-result not-found show';
+        result.innerHTML = '<i class="bi bi-wifi-off me-1"></i> Error de conexion. Intente nuevamente.';
+      }
+    }
+
+    // Allow Enter key in status input
+    document.getElementById('statusInput')?.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') consultarEstado();
+      // Auto-uppercase
+      this.value = this.value.toUpperCase();
+    });
+  </script>
+</body>
+</html>

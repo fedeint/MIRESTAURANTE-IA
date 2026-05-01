@@ -1,0 +1,78 @@
+<%
+  /* Limelight Quick Nav - acceso rapido a secciones principales
+     Incluir con: include('partials/limelight-nav')
+     Requiere: /css/limelight-nav.css en el head
+  */
+  const rl = (typeof reqPath !== 'undefined') ? reqPath : '';
+  const ur = (typeof user !== 'undefined' && user) ? String(user.rol || '').toLowerCase() : '';
+%>
+<div class="limelight-nav" id="limelightNav">
+  <a href="/" class="limelight-nav-item <%= rl === '/' ? 'active' : '' %>" data-index="0">
+    <i class="bi bi-columns-gap"></i>
+    <span class="limelight-label">Inicio</span>
+  </a>
+  <% if (ur === 'administrador' || ur === 'mesero') { %>
+  <a href="/mesas" class="limelight-nav-item <%= rl === '/mesas' ? 'active' : '' %>" data-index="1">
+    <i class="bi bi-grid-3x3-gap-fill"></i>
+    <span class="limelight-label">Mesas</span>
+  </a>
+  <% } %>
+  <% if (ur === 'administrador' || ur === 'mesero' || ur === 'cocinero') { %>
+  <a href="/cocina" class="limelight-nav-item <%= rl === '/cocina' ? 'active' : '' %>" data-index="2">
+    <i class="bi bi-fire"></i>
+    <span class="limelight-label">Cocina</span>
+  </a>
+  <% } %>
+  <% if (ur === 'administrador' || ur === 'mesero' || ur === 'almacenero') { %>
+  <a href="/productos" class="limelight-nav-item <%= rl === '/productos' ? 'active' : '' %>" data-index="3">
+    <i class="bi bi-egg-fried"></i>
+    <span class="limelight-label">Productos</span>
+  </a>
+  <% } %>
+  <% if (ur === 'administrador') { %>
+  <a href="/chat" class="limelight-nav-item <%= rl === '/chat' ? 'active' : '' %>" data-index="4">
+    <i class="bi bi-stars"></i>
+    <span class="limelight-label">DalIA</span>
+  </a>
+  <% } %>
+  <div class="limelight-indicator" id="limelightIndicator" style="left:-999px">
+    <div class="limelight-beam"></div>
+  </div>
+</div>
+
+<script>
+(function() {
+  var nav = document.getElementById('limelightNav');
+  var indicator = document.getElementById('limelightIndicator');
+  if (!nav || !indicator) return;
+
+  var items = nav.querySelectorAll('.limelight-nav-item');
+  var activeItem = nav.querySelector('.limelight-nav-item.active');
+
+  function moveIndicator(item) {
+    if (!item) return;
+    var left = item.offsetLeft + item.offsetWidth / 2 - indicator.offsetWidth / 2;
+    indicator.style.left = left + 'px';
+  }
+
+  // Set initial position without animation
+  if (activeItem) {
+    indicator.style.transition = 'none';
+    moveIndicator(activeItem);
+    // Enable animation after initial position is set
+    setTimeout(function() {
+      indicator.style.transition = '';
+    }, 50);
+  }
+
+  // Hover effect
+  items.forEach(function(item) {
+    item.addEventListener('mouseenter', function() {
+      moveIndicator(item);
+    });
+    item.addEventListener('mouseleave', function() {
+      if (activeItem) moveIndicator(activeItem);
+    });
+  });
+})();
+</script>

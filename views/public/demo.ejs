@@ -1,0 +1,357 @@
+<%- include('../partials/public-header') %>
+
+<link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+
+  body, .demo-page {
+    background-color: #0a0f24;
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    color: #ffffff;
+  }
+
+  .demo-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 16px;
+  }
+
+  .demo-card {
+    background: #141828;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 20px;
+    max-width: 520px;
+    width: 100%;
+    padding: 40px 36px;
+  }
+
+  @media (max-width: 480px) {
+    .demo-card {
+      padding: 28px 20px;
+    }
+  }
+
+  .demo-header {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+
+  .demo-logo {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-bottom: 16px;
+  }
+
+  .demo-title {
+    font-size: 26px;
+    font-weight: 800;
+    color: #ffffff;
+    letter-spacing: 0.04em;
+    margin: 0 0 6px 0;
+    text-transform: uppercase;
+  }
+
+  .demo-subtitle {
+    font-size: 15px;
+    font-weight: 400;
+    color: rgba(255, 255, 255, 0.55);
+    margin: 0;
+  }
+
+  .form-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 6px;
+    display: block;
+    letter-spacing: 0.02em;
+  }
+
+  .form-control,
+  .form-select {
+    background-color: #0a0f24 !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 12px !important;
+    color: #ffffff !important;
+    height: 48px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    padding: 0 16px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    width: 100%;
+  }
+
+  .form-control::placeholder {
+    color: rgba(255, 255, 255, 0.3);
+  }
+
+  .form-control:focus,
+  .form-select:focus {
+    outline: none !important;
+    border-color: #FF6B35 !important;
+    box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.18) !important;
+    background-color: #0a0f24 !important;
+    color: #ffffff !important;
+  }
+
+  .form-select option {
+    background-color: #141828;
+    color: #ffffff;
+  }
+
+  input[type="date"].form-control::-webkit-calendar-picker-indicator {
+    filter: invert(0.6);
+    cursor: pointer;
+  }
+
+  .form-group {
+    margin-bottom: 18px;
+  }
+
+  .btn-demo {
+    width: 100%;
+    height: 52px;
+    border: none;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #FF6B35 0%, #e85520 100%);
+    color: #ffffff;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: opacity 0.2s, transform 0.15s;
+    margin-top: 8px;
+    letter-spacing: 0.01em;
+  }
+
+  .btn-demo:hover:not(:disabled) {
+    opacity: 0.9;
+    transform: translateY(-1px);
+  }
+
+  .btn-demo:active:not(:disabled) {
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+  .btn-demo:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .demo-contact {
+    text-align: center;
+    margin-top: 22px;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.4);
+  }
+
+  .demo-contact a {
+    color: #FF6B35;
+    text-decoration: none;
+    font-weight: 500;
+  }
+
+  .demo-contact a:hover {
+    text-decoration: underline;
+  }
+
+  .alert-demo {
+    border-radius: 12px;
+    font-size: 14px;
+    font-weight: 500;
+    padding: 14px 18px;
+    margin-top: 18px;
+    display: none;
+  }
+
+  .alert-demo.success {
+    background: rgba(34, 197, 94, 0.12);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    color: #4ade80;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .alert-demo.error {
+    background: rgba(239, 68, 68, 0.12);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #f87171;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+</style>
+
+<div class="demo-page">
+  <div class="demo-card">
+    <div class="demo-header">
+      <img src="/isotipo.png" alt="MiRestcon IA" class="demo-logo">
+      <h1 class="demo-title">Agenda tu Demo</h1>
+      <p class="demo-subtitle">Conoce MiRestcon IA en acción</p>
+    </div>
+
+    <form id="demoForm" novalidate>
+      <div class="form-group">
+        <label class="form-label" for="nombre">Nombre</label>
+        <input
+          type="text"
+          class="form-control"
+          id="nombre"
+          name="nombre"
+          placeholder="Tu nombre completo"
+          required
+        >
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="restaurante">Nombre del restaurante</label>
+        <input
+          type="text"
+          class="form-control"
+          id="restaurante"
+          name="restaurante"
+          placeholder="Nombre de tu local"
+        >
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="whatsapp">WhatsApp</label>
+        <input
+          type="tel"
+          class="form-control"
+          id="whatsapp"
+          name="whatsapp"
+          placeholder="+51 999 000 000"
+          required
+        >
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="paquete">Paquete de interés</label>
+        <select class="form-select" id="paquete" name="paquete">
+          <option value="" disabled selected>Selecciona un paquete</option>
+          <option value="solo-software">Solo Software &nbsp; S/500</option>
+          <option value="basico">Básico &nbsp; S/1,500</option>
+          <option value="completo">Completo &nbsp; S/3,000</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="fecha">Fecha preferida</label>
+        <input
+          type="date"
+          class="form-control"
+          id="fecha"
+          name="fecha"
+        >
+      </div>
+
+      <button type="submit" class="btn-demo" id="submitBtn">
+        <i class="bi bi-rocket-takeoff-fill"></i>
+        Agendar demo
+      </button>
+
+      <div class="alert-demo" id="demoAlert"></div>
+    </form>
+
+    <p class="demo-contact">
+      ¿Dudas? Escríbenos a
+      <a href="mailto:ventas@mirestconia.com">ventas@mirestconia.com</a>
+    </p>
+  </div>
+</div>
+
+<script>
+  (function () {
+    var form = document.getElementById('demoForm');
+    var btn = document.getElementById('submitBtn');
+    var alert = document.getElementById('demoAlert');
+    var submitting = false;
+
+    function showAlert(type, message) {
+      alert.className = 'alert-demo ' + type;
+      var icon = type === 'success'
+        ? '<i class="bi bi-check-circle-fill"></i>'
+        : '<i class="bi bi-exclamation-circle-fill"></i>';
+      alert.innerHTML = icon + '<span>' + message + '</span>';
+      alert.style.display = 'flex';
+    }
+
+    function hideAlert() {
+      alert.style.display = 'none';
+      alert.className = 'alert-demo';
+    }
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      if (submitting) return;
+
+      hideAlert();
+
+      var nombre = document.getElementById('nombre').value.trim();
+      var whatsapp = document.getElementById('whatsapp').value.trim();
+
+      if (!nombre) {
+        showAlert('error', 'Por favor ingresa tu nombre.');
+        return;
+      }
+
+      if (!whatsapp) {
+        showAlert('error', 'Por favor ingresa tu WhatsApp.');
+        return;
+      }
+
+      submitting = true;
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Enviando...';
+
+      var payload = {
+        nombre: nombre,
+        restaurante: document.getElementById('restaurante').value.trim(),
+        whatsapp: whatsapp,
+        paquete: document.getElementById('paquete').value,
+        fecha: document.getElementById('fecha').value
+      };
+
+      fetch('/api/demos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+        .then(function (res) {
+          if (res.ok) {
+            showAlert('success', '¡Demo agendada! Te contactaremos pronto por WhatsApp.');
+            form.reset();
+          } else {
+            return res.json().catch(function () { return {}; }).then(function (data) {
+              throw new Error(data.message || 'Error al agendar. Intenta de nuevo.');
+            });
+          }
+        })
+        .catch(function (err) {
+          showAlert('error', err.message || 'Error de conexión. Intenta de nuevo.');
+        })
+        .finally(function () {
+          submitting = false;
+          btn.disabled = false;
+          btn.innerHTML = '<i class="bi bi-rocket-takeoff-fill"></i> Agendar demo';
+        });
+    });
+  })();
+</script>
+
+<%- include('../partials/public-footer') %>

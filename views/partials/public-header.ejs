@@ -1,0 +1,45 @@
+<!-- Public Header — Shared across all public pages -->
+<nav style="position:sticky;top:0;z-index:100;background:#0a0f24;border-bottom:1px solid rgba(255,255,255,0.06);padding:0 24px;">
+  <div style="max-width:1200px;margin:0 auto;height:64px;display:flex;align-items:center;justify-content:space-between;">
+    <!-- Logo -->
+    <a href="/home" style="display:flex;align-items:center;text-decoration:none;">
+      <img src="/imagotipo.svg" alt="MiRestcon IA" style="height:36px;">
+    </a>
+
+    <!-- Desktop Nav -->
+    <div class="public-nav-desktop" style="display:flex;align-items:center;gap:28px;">
+      <a href="/paquetes" style="font-family:'DM Sans',sans-serif;font-size:14px;color:#94a3b8;text-decoration:none;font-weight:500;transition:color .15s;">Paquetes</a>
+      <a href="/demo" style="font-family:'DM Sans',sans-serif;font-size:14px;color:#94a3b8;text-decoration:none;font-weight:500;transition:color .15s;">Demo</a>
+      <a href="/restaurantes-ia" style="font-family:'DM Sans',sans-serif;font-size:14px;color:#94a3b8;text-decoration:none;font-weight:500;transition:color .15s;">Restaurantes</a>
+      <a href="/beneficios" style="font-family:'DM Sans',sans-serif;font-size:14px;color:#94a3b8;text-decoration:none;font-weight:500;transition:color .15s;">Beneficios</a>
+      <a href="/marketplace" style="font-family:'DM Sans',sans-serif;font-size:14px;color:#94a3b8;text-decoration:none;font-weight:500;transition:color .15s;">Marketplace</a>
+      <a href="/auth/google" style="display:inline-flex;align-items:center;gap:6px;padding:8px 20px;border-radius:10px;background:#FF6B35;color:#fff;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:700;text-decoration:none;transition:opacity .15s;">
+        Probar gratis
+      </a>
+    </div>
+
+    <!-- Mobile Hamburger -->
+    <button class="public-nav-hamburger" onclick="document.getElementById('mobileMenu').classList.toggle('open')" style="display:none;background:none;border:none;color:#fff;font-size:24px;cursor:pointer;padding:4px;">
+      <i class="bi bi-list"></i>
+    </button>
+  </div>
+
+  <!-- Mobile Menu -->
+  <div id="mobileMenu" class="public-nav-mobile" style="display:none;padding:0 0 20px;flex-direction:column;gap:4px;">
+    <a href="/paquetes" style="display:block;padding:12px 0;color:#94a3b8;text-decoration:none;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:500;border-bottom:1px solid rgba(255,255,255,0.04);">Paquetes</a>
+    <a href="/demo" style="display:block;padding:12px 0;color:#94a3b8;text-decoration:none;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:500;border-bottom:1px solid rgba(255,255,255,0.04);">Demo</a>
+    <a href="/restaurantes-ia" style="display:block;padding:12px 0;color:#94a3b8;text-decoration:none;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:500;border-bottom:1px solid rgba(255,255,255,0.04);">Restaurantes</a>
+    <a href="/beneficios" style="display:block;padding:12px 0;color:#94a3b8;text-decoration:none;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:500;border-bottom:1px solid rgba(255,255,255,0.04);">Beneficios</a>
+    <a href="/marketplace" style="display:block;padding:12px 0;color:#94a3b8;text-decoration:none;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:500;border-bottom:1px solid rgba(255,255,255,0.04);">Marketplace</a>
+    <a href="/auth/google" style="display:block;text-align:center;margin-top:8px;padding:12px;border-radius:10px;background:#FF6B35;color:#fff;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:700;text-decoration:none;">Probar gratis</a>
+  </div>
+</nav>
+
+<style>
+  @media (max-width: 768px) {
+    .public-nav-desktop { display: none !important; }
+    .public-nav-hamburger { display: block !important; }
+    .public-nav-mobile.open { display: flex !important; }
+  }
+  .public-nav-desktop a:hover { color: #ffffff !important; }
+</style>

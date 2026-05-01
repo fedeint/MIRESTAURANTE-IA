@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="/favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Salida de productos (insumos) - mirestconia.com</title>
+    <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/theme.css">
+</head>
+<body>
+    <%- include('../partials/sidebar') %>
+    <div class="dg-main">
+    <main class="flex-grow-1">
+    <div class="container">
+        <div class="d-flex align-items-center justify-content-between mb-4 mt-3">
+            <div>
+                <h4 class="fw-bold mb-0"><i class="bi bi-box-arrow-up me-2 text-danger"></i>Salida de productos (insumos)</h4>
+                <p class="text-muted small mb-0">Insumos descontados automaticamente al enviar platos a cocina</p>
+            </div>
+            <span class="badge bg-danger"><%= new Date().toLocaleDateString('es-PE') %></span>
+        </div>
+
+        <!-- INFO CAJA -->
+        <% if (cajaInfo) { %>
+        <div class="card mb-4" style="background:linear-gradient(135deg,rgba(16,185,129,0.06),rgba(6,182,212,0.04))!important;border:1px solid rgba(16,185,129,0.15)!important;">
+            <div class="card-body py-3">
+                <div class="d-flex align-items-center gap-3 flex-wrap">
+                    <div style="width:44px;height:44px;background:linear-gradient(135deg,#10b981,#059669);border-radius:.75rem;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.2rem;">
+                        <i class="bi bi-person-badge-fill"></i>
+                    </div>
+                    <div>
+                        <div class="fw-bold">Cajero: <%= cajaInfo.usuario_nombre_completo || cajaInfo.usuario_nombre || 'Sin nombre' %></div>
+                        <div class="small text-muted">
+                            Caja abierta a las <strong><%= new Date(cajaInfo.fecha_apertura).toLocaleTimeString('es-PE', {hour:'2-digit',minute:'2-digit'}) %></strong>
+                            &middot; Estado: <span class="badge bg-<%= cajaInfo.estado === 'abierta' ? 'success' : 'secondary' %>"><%= cajaInfo.estado %></span>
+                            <% if (cajaInfo.fecha_cierre) { %>
+                                &middot; Cerrada: <%= new Date(cajaInfo.fecha_cierre).toLocaleTimeString('es-PE', {hour:'2-digit',minute:'2-digit'}) %>
+                            <% } %>
+                        </div>
+                    </div>
+                    <div class="ms-auto text-end">
+                        <div class="small text-muted">Todas las salidas de hoy son bajo la caja de</div>
+                        <strong style="color:#059669;"><%= cajaInfo.usuario_nombre_completo || cajaInfo.usuario_nombre %></strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <% } else { %>
+        <div class="alert alert-warning small mb-4">
+            <i class="bi bi-exclamation-triangle me-1"></i>No hay caja abierta hoy. Las salidas no se registraran hasta que se abra caja.
+        </div>
+        <% } %>
+
+        <!-- RANKING TOP 10 -->
+        <div class="card mb-4">
+            <div class="card-header fw-bold d-flex align-items-center gap-2">
+                <i class="bi bi-trophy-fill text-warning"></i>
+                Top 10 productos que mas salen hoy
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead><tr><th>#</th><th>Producto</th><th class="text-center">Veces</th><th class="text-end">Costo insumos</th></tr></thead>
+                        <tbody>
+                            <% if (!ranking || ranking.length === 0) { %>
+                                <tr><td colspan="4" class="text-center text-muted py-3">Sin datos hoy</td></tr>
+                            <% } else { ranking.forEach(function(r, idx) { %>
+                                <tr>
+                                    <td>
+                                        <% if (idx === 0) { %><span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:#f59e0b;color:#fff;font-weight:bold;font-size:.75rem;">1</span>
+                                        <% } else if (idx === 1) { %><span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:#9ca3af;color:#fff;font-weight:bold;font-size:.75rem;">2</span>
+                                        <% } else if (idx === 2) { %><span style="display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:50%;background:#cd7f32;color:#fff;font-weight:bold;font-size:.75rem;">3</span>
+                                        <% } else { %><span class="badge bg-light text-dark"><%= idx+1 %></span><% } %>
+                                    </td>
+                                    <td class="fw-semibold"><%= r.nombre %></td>
+                                    <td class="text-center"><span class="badge" style="background:rgba(99,102,241,0.1);color:#6366f1;"><%= r.veces %></span></td>
+                                    <td class="text-end">S/ <%= Number(r.costo_total || 0).toFixed(2) %></td>
+                                </tr>
+                            <% }); } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- PLATOS ENVIADOS A COCINA HOY (con ingredientes desplegables) -->
+        <div class="card mb-4">
+            <div class="card-header fw-bold d-flex align-items-center gap-2">
+                <i class="bi bi-fire text-danger"></i>
+                Platos enviados a cocina hoy - insumos descontados
+                <span class="badge bg-success ms-auto"><%= platos ? platos.length : 0 %> platos</span>
+            </div>
+            <div class="card-body">
+                <% if (!platos || platos.length === 0) { %>
+                    <div class="text-center text-muted py-4">
+                        <i class="bi bi-inbox" style="font-size:2rem;"></i>
+                        <p class="mt-2">Sin platos enviados a cocina hoy.<br>Los insumos se descuentan automaticamente cuando el mesero envia el pedido.</p>
+                    </div>
+                <% } else { platos.forEach(function(plato, idx) { %>
+                    <div class="border rounded mb-2" style="border-color:rgba(0,0,0,0.06)!important;">
+                        <div class="d-flex align-items-center justify-content-between p-3" style="cursor:pointer;" data-bs-toggle="collapse" data-bs-target="#plato<%= idx %>">
+                            <div class="d-flex align-items-center gap-3">
+                                <div style="width:40px;height:40px;background:linear-gradient(135deg,#ef4444,#dc2626);border-radius:.625rem;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1rem;">
+                                    <i class="bi bi-egg-fried"></i>
+                                </div>
+                                <div>
+                                    <strong><%= plato.producto_nombre %></strong> <span class="text-muted">x<%= Number(plato.cantidad || 1) %></span>
+                                    <br>
+                                    <small class="text-muted">
+                                        <i class="bi bi-grid-3x3-gap me-1"></i>Mesa <%= plato.mesa_numero || '-' %>
+                                        &middot;
+                                        <i class="bi bi-clock me-1"></i><%= new Date(plato.hora).toLocaleTimeString('es-PE', {hour:'2-digit',minute:'2-digit'}) %>
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-danger"><%= plato.items.length %> insumos</span>
+                                <i class="bi bi-chevron-down ms-2 text-muted"></i>
+                            </div>
+                        </div>
+                        <div class="collapse" id="plato<%= idx %>">
+                            <div class="px-3 pb-3">
+                                <table class="table table-sm mb-0">
+                                    <thead><tr><th>Ingrediente</th><th class="text-end">Cantidad</th><th class="text-end">Costo</th></tr></thead>
+                                    <tbody>
+                                        <% plato.items.forEach(function(item) { %>
+                                            <tr>
+                                                <td><%= item.ingrediente_nombre %></td>
+                                                <td class="text-end text-danger">-<%= Number(item.cantidad).toFixed(2) %></td>
+                                                <td class="text-end">S/ <%= Number(item.costo_total || 0).toFixed(2) %></td>
+                                            </tr>
+                                        <% }); %>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                <% }); } %>
+            </div>
+        </div>
+
+        <!-- Salida manual -->
+        <div class="card">
+            <div class="card-header fw-bold"><i class="bi bi-exclamation-triangle text-warning me-1"></i>Salida manual (merma, vencimiento, consumo interno - NO platos)</div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Ingrediente</label>
+                        <select id="sal_ingrediente" class="form-select" required>
+                            <option value="">-- Seleccionar --</option>
+                            <% ingredientes.forEach(function(i) { %>
+                                <option value="<%= i.id %>"><%= i.nombre %> (<%= Number(i.stock_actual).toFixed(1) %> <%= i.unidad_medida %>)</option>
+                            <% }); %>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold">Cantidad</label>
+                        <input type="number" id="sal_cantidad" class="form-control" step="0.01" min="0.01">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Motivo</label>
+                        <select id="sal_motivo" class="form-select">
+                            <option value="merma_vencimiento">Vencido</option>
+                            <option value="merma_dano">Danado</option>
+                            <option value="merma_preparacion">Desperdicio</option>
+                            <option value="consumo_interno">Comida personal</option>
+                            <option value="regalo">Regalo</option>
+                            <option value="robo_perdida">Perdida</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Justificacion</label>
+                        <input type="text" id="sal_notas" class="form-control" placeholder="Obligatorio">
+                    </div>
+                    <div class="col-12">
+                        <button type="button" class="btn btn-warning w-100" onclick="registrarSalida()"><i class="bi bi-box-arrow-up me-1"></i>Registrar salida</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    </main>
+    <%- include('../partials/footer') %>
+    </div>
+    <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="/vendor/sweetalert2/sweetalert2.all.min.js"></script>
+    <script>
+    async function registrarSalida(){
+        var i=document.getElementById('sal_ingrediente').value,c=parseFloat(document.getElementById('sal_cantidad').value),m=document.getElementById('sal_motivo').value,n=document.getElementById('sal_notas').value;
+        if(!i||!c||!m||!n){Swal.fire('','Completa todos los campos','warning');return;}
+        var r=await Swal.fire({title:'Confirmar',text:'Descontar '+c+' por '+m,icon:'warning',showCancelButton:true,confirmButtonText:'Si'});
+        if(!r.isConfirmed)return;
+        try{var res=await fetch('/almacen/api/salida',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({ingrediente_id:i,cantidad:c,motivo:m,notas:n})});var d=await res.json();if(!res.ok)throw new Error(d.error);Swal.fire({icon:'success',title:'Registrado',timer:1500,showConfirmButton:false}).then(()=>location.reload());}catch(e){Swal.fire('Error',e.message,'error');}
+    }
+    </script>
+</body>
+</html>

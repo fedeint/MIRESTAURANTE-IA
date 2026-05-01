@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="/favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1e1b4b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="dignita">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+    <title>NDA Equipo - MiRestconIA</title>
+    <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/theme.css">
+</head>
+<body>
+    <%- include('partials/sidebar') %>
+    <div class="dg-main">
+    <main class="flex-grow-1">
+    <div class="container" style="max-width:860px;">
+
+        <div class="d-flex align-items-center gap-3 mb-4">
+            <div style="width:52px;height:52px;border-radius:14px;background:linear-gradient(135deg,#6366F1,#4F46E5);display:flex;align-items:center;justify-content:center;">
+                <i class="bi bi-shield-lock" style="font-size:1.5rem;color:#fff;"></i>
+            </div>
+            <div>
+                <h4 class="mb-0" style="font-weight:700;">NDA — Acuerdo de Confidencialidad</h4>
+                <small class="text-muted">Para miembros del equipo — dignita.tech</small>
+            </div>
+        </div>
+
+        <form id="formNda">
+
+            <!-- Datos del Miembro -->
+            <div class="card border-0 shadow-sm mb-4" style="border-radius:16px;">
+                <div class="card-body p-4">
+                    <h5 class="mb-3" style="font-weight:700;color:#6366F1;">
+                        <i class="bi bi-person-badge me-2"></i>Datos del Miembro del Equipo
+                    </h5>
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Nombre Completo <span class="text-danger">*</span></label>
+                            <input type="text" name="nombre_completo" class="form-control" required placeholder="Nombre completo">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">DNI <span class="text-danger">*</span></label>
+                            <input type="text" name="dni" class="form-control" required maxlength="15" placeholder="12345678">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">Teléfono</label>
+                            <input type="text" name="telefono" class="form-control" placeholder="987654321">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Email</label>
+                            <input type="email" name="email" class="form-control" placeholder="miembro@email.com">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">Cargo / Posición</label>
+                            <input type="text" name="cargo" class="form-control" placeholder="Ej: Desarrollador, Diseñador...">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small fw-bold">Área</label>
+                            <input type="text" name="area" class="form-control" placeholder="Ej: Desarrollo, Marketing...">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Preview del contenido -->
+            <div class="card border-0 shadow-sm mb-4" style="border-radius:16px;background:linear-gradient(135deg,#F0F0FF,#fff);">
+                <div class="card-body p-4">
+                    <h5 class="mb-3" style="font-weight:700;color:#1a1a2e;">
+                        <i class="bi bi-list-check me-2"></i>Contenido del NDA
+                    </h5>
+                    <div class="row g-2">
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-start gap-2 mb-2">
+                                <i class="bi bi-check-circle-fill text-success mt-1"></i>
+                                <small>Definición de Información Confidencial</small>
+                            </div>
+                            <div class="d-flex align-items-start gap-2 mb-2">
+                                <i class="bi bi-check-circle-fill text-success mt-1"></i>
+                                <small>Obligaciones de confidencialidad (7 puntos)</small>
+                            </div>
+                            <div class="d-flex align-items-start gap-2 mb-2">
+                                <i class="bi bi-check-circle-fill text-success mt-1"></i>
+                                <small>Propiedad intelectual — creaciones de la empresa</small>
+                            </div>
+                            <div class="d-flex align-items-start gap-2 mb-2">
+                                <i class="bi bi-check-circle-fill text-success mt-1"></i>
+                                <small>Excepciones a la confidencialidad</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-start gap-2 mb-2">
+                                <i class="bi bi-check-circle-fill text-success mt-1"></i>
+                                <small>Vigencia: 5 años desde la firma</small>
+                            </div>
+                            <div class="d-flex align-items-start gap-2 mb-2">
+                                <i class="bi bi-check-circle-fill text-success mt-1"></i>
+                                <small>Penalidades por incumplimiento</small>
+                            </div>
+                            <div class="d-flex align-items-start gap-2 mb-2">
+                                <i class="bi bi-check-circle-fill text-success mt-1"></i>
+                                <small>Legislación peruana aplicable</small>
+                            </div>
+                            <div class="d-flex align-items-start gap-2 mb-2">
+                                <i class="bi bi-check-circle-fill text-success mt-1"></i>
+                                <small>Firma electrónica con validez legal</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3 p-3 rounded-3" style="background:rgba(99,102,241,0.08);">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-shield-check" style="font-size:1.2rem;color:#6366F1;"></i>
+                            <div>
+                                <strong style="color:#6366F1;">Decreto Legislativo N° 823 + Ley N° 29733</strong>
+                                <small class="text-muted ms-1">Protección de Propiedad Industrial y Datos Personales</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Botón -->
+            <div class="d-grid gap-2 mb-5">
+                <button type="submit" class="btn btn-lg text-white fw-bold" style="background:linear-gradient(135deg,#6366F1,#4F46E5);border:none;border-radius:14px;padding:0.9rem;">
+                    <i class="bi bi-file-earmark-pdf me-2"></i>Generar NDA y Enviar
+                </button>
+            </div>
+
+            <!-- Resultado de generación -->
+            <div id="resultado" style="display:none;"></div>
+
+        </form>
+
+        <!-- NDAs Enviados -->
+        <div class="card border-0 shadow-sm mb-4" style="border-radius:16px;">
+            <div class="card-body p-4">
+                <h5 class="mb-3" style="font-weight:700;">
+                    <i class="bi bi-table me-2"></i>NDAs Enviados
+                </h5>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr><th>Nro</th><th>Nombre</th><th>Cargo</th><th>Estado</th><th>Fecha</th><th>Acciones</th></tr>
+                        </thead>
+                        <tbody id="nda-tbody">
+                            <tr><td colspan="6" class="text-center text-muted py-4">Cargando...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    </main>
+    </div>
+
+    <script src="/vendor/jquery/jquery.min.js"></script>
+    <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="/vendor/sweetalert2/sweetalert2.all.min.js"></script>
+    <script>
+    // Form submit via fetch
+    document.getElementById('formNda').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData.entries());
+
+        const btn = e.target.querySelector('button[type="submit"]');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Generando...';
+
+        try {
+            const resp = await fetch('/api/nda-equipo/generar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            const result = await resp.json();
+            if (result.error) throw new Error(result.error);
+
+            document.getElementById('resultado').innerHTML = `
+                <div class="card border-0 shadow-sm mb-4" style="border-radius:16px;border-left:4px solid #22c55e !important;">
+                    <div class="card-body p-4">
+                        <h5 class="text-success"><i class="bi bi-check-circle me-2"></i>NDA Generado</h5>
+                        <p class="mb-1"><strong>Nro:</strong> ${result.nro_nda}</p>
+                        <p class="mb-2"><strong>Link de firma:</strong></p>
+                        <div class="input-group mb-2">
+                            <input type="text" class="form-control" value="${result.link}" readonly id="linkFirma">
+                            <button class="btn btn-outline-secondary" onclick="navigator.clipboard.writeText(document.getElementById('linkFirma').value); Swal.fire({toast:true,position:'top-end',icon:'success',title:'Link copiado',showConfirmButton:false,timer:1500});">
+                                <i class="bi bi-clipboard"></i>
+                            </button>
+                        </div>
+                        <span class="badge ${result.email_enviado ? 'bg-success' : 'bg-warning text-dark'}">
+                            ${result.email_enviado ? 'Email enviado' : (result.email_reason || 'Email no enviado')}
+                        </span>
+                    </div>
+                </div>
+            `;
+            document.getElementById('resultado').style.display = 'block';
+            loadNdas();
+        } catch (err) {
+            Swal.fire({ icon: 'error', title: 'Error', text: err.message });
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-file-earmark-pdf me-2"></i>Generar NDA y Enviar';
+        }
+    });
+
+    // Load NDAs table
+    async function loadNdas() {
+        try {
+            const resp = await fetch('/api/nda-equipo/lista');
+            const ndas = await resp.json();
+            const tbody = document.getElementById('nda-tbody');
+            if (!ndas.length) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">No hay NDAs generados aún</td></tr>';
+                return;
+            }
+            tbody.innerHTML = ndas.map(c => {
+                const estadoBadge = c.estado === 'firmado' ? 'bg-success' : c.estado === 'expirado' ? 'bg-danger' : 'bg-warning text-dark';
+                const fecha = new Date(c.created_at).toLocaleDateString('es-PE');
+                const linkFirma = `${window.location.origin}/firmar/${c.token}`;
+                return `<tr>
+                    <td><small class="fw-bold">${c.nro_nda}</small></td>
+                    <td>${c.nombre_completo}</td>
+                    <td><small>${c.cargo || '-'}</small></td>
+                    <td><span class="badge ${estadoBadge}">${c.estado}</span></td>
+                    <td><small>${fecha}</small></td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-secondary" title="Copiar link" onclick="navigator.clipboard.writeText('${linkFirma}'); Swal.fire({toast:true,position:'top-end',icon:'success',title:'Link copiado',showConfirmButton:false,timer:1500});">
+                                <i class="bi bi-clipboard"></i>
+                            </button>
+                            ${c.email ? `<button class="btn btn-outline-primary" title="Reenviar email" onclick="reenviar(${c.id})"><i class="bi bi-envelope"></i></button>` : ''}
+                            <a href="/api/nda-equipo/${c.id}/descargar/original" class="btn btn-outline-dark" title="Descargar original"><i class="bi bi-download"></i></a>
+                            ${c.estado === 'firmado' ? `<a href="/api/nda-equipo/${c.id}/descargar/firmado" class="btn btn-outline-success" title="Descargar firmado"><i class="bi bi-file-earmark-check"></i></a>` : ''}
+                        </div>
+                    </td>
+                </tr>`;
+            }).join('');
+        } catch (err) {
+            console.error('Error loading NDAs:', err);
+        }
+    }
+
+    async function reenviar(id) {
+        try {
+            const resp = await fetch(`/api/nda-equipo/${id}/reenviar`, { method: 'POST' });
+            const data = await resp.json();
+            Swal.fire({ toast:true, position:'top-end', icon: data.ok ? 'success' : 'error', title: data.message, showConfirmButton:false, timer:2000 });
+        } catch (err) {
+            Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo reenviar' });
+        }
+    }
+
+    loadNdas();
+    </script>
+</body>
+</html>

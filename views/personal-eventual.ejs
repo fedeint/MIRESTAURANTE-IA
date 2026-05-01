@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Personal Eventual · MiRestcon</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    :root{
+      --orange:#ef520f;--orange2:#df2c05;--dark:#0a0f24;--bg:#F0F2F8;
+      --card:#fff;--text2:#8B8FAD;--verde:#22C55E;--rojo:#EF4444;
+      --safe-bot:env(safe-area-inset-bottom,0px);
+    }
+    body{font-family:'DM Sans',sans-serif;background:var(--bg);min-height:100dvh;max-width:480px;margin:0 auto;padding-bottom:calc(88px + var(--safe-bot));}
+
+    /* Header */
+    .header{background:linear-gradient(170deg,#10152f 0%,#0a0f24 50%,#090d1d 100%);padding:52px 20px 20px;border-radius:0 0 20px 20px;color:#fff;}
+    .header-top{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+    .btn-back{background:rgba(255,255,255,.12);border:none;color:#fff;width:36px;height:36px;border-radius:10px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+    .header-title{font-size:18px;font-weight:700;}
+    .header-sub{font-size:13px;color:rgba(255,255,255,.6);}
+
+    /* Stats */
+    .stats-row{display:flex;gap:10px;padding:16px 16px 0;}
+    .stat-chip{flex:1;background:var(--card);border-radius:12px;padding:10px 12px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,.05);}
+    .stat-num{font-size:22px;font-weight:800;}
+    .stat-lbl{font-size:11px;color:var(--text2);margin-top:1px;}
+    .num-d{color:var(--dark);} .num-o{color:var(--orange);} .num-v{color:var(--verde);}
+
+    /* Section */
+    .section-label{font-size:13px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;padding:20px 16px 10px;}
+
+    /* Card eventual */
+    .ev-card{background:var(--card);margin:0 16px 10px;border-radius:16px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.05);display:flex;}
+    .ev-strip{width:4px;flex-shrink:0;}
+    .strip-activo{background:var(--verde);}
+    .strip-prueba{background:var(--orange);}
+    .strip-recurrente{background:#6366F1;}
+    .ev-body{flex:1;padding:14px 16px;}
+    .ev-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;}
+    .ev-nombre{font-size:15px;font-weight:600;color:var(--dark);}
+    .ev-monto{font-size:14px;font-weight:700;color:var(--orange);}
+    .ev-meta{font-size:12px;color:var(--text2);}
+    .tipo-badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;margin-left:6px;vertical-align:middle;}
+    .badge-prueba{background:#FFF3E0;color:#92400E;}
+    .badge-recurrente{background:#EEF2FF;color:#4338CA;}
+    .badge-semana{background:#DCFCE7;color:#166534;}
+    .badge-por_dia{background:#F3F4F6;color:#6B7280;}
+    .badge-dos_tres_dias{background:#F0FDF4;color:#166534;}
+    .dias-chip{font-size:11px;font-weight:600;color:var(--text2);margin-top:6px;display:flex;align-items:center;gap:6px;}
+    .dias-chip span{background:#F0F2F8;padding:2px 8px;border-radius:6px;}
+    .dias-urgente{background:#FEE2E2;color:var(--rojo);}
+
+    /* Empty */
+    .empty{text-align:center;padding:40px 24px;color:var(--text2);font-size:14px;}
+    .empty-icon{font-size:36px;margin-bottom:10px;}
+
+    /* CTA */
+    .cta-wrap{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;padding:12px 16px calc(12px + var(--safe-bot));background:var(--bg);border-top:1px solid #E8EAF2;}
+    .cta-btn{width:100%;background:linear-gradient(135deg,var(--orange),var(--orange2));color:#fff;border:none;border-radius:14px;padding:16px;font-size:16px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;}
+
+    /* Bottom nav */
+    .bottom-nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:#fff;border-top:1px solid #E8EAF2;display:flex;padding-bottom:var(--safe-bot);z-index:100;}
+    .nav-item{flex:1;display:flex;flex-direction:column;align-items:center;padding:10px 4px 8px;text-decoration:none;color:var(--text2);font-size:10px;font-weight:500;}
+    .nav-item .icon{font-size:22px;margin-bottom:2px;}
+    .nav-item.active{color:var(--orange);}
+
+    /* Sheet */
+    .sheet-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:200;align-items:flex-end;justify-content:center;}
+    .sheet-overlay.show{display:flex;}
+    .sheet{background:var(--card);border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:8px 20px calc(24px + var(--safe-bot));max-height:90dvh;overflow-y:auto;animation:slideUp .25s ease;}
+    @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+    .sheet-handle{width:40px;height:4px;background:#E0E2EE;border-radius:2px;margin:12px auto 20px;}
+    .sheet-title{font-size:17px;font-weight:700;color:var(--dark);margin-bottom:20px;}
+    .field-label{font-size:13px;font-weight:600;color:var(--text2);margin-bottom:6px;}
+    .field-input{width:100%;border:1.5px solid #E0E2EE;border-radius:12px;padding:11px 14px;font-size:14px;font-family:'DM Sans',sans-serif;outline:none;color:var(--dark);margin-bottom:14px;transition:border-color .2s;}
+    .field-input:focus{border-color:var(--orange);}
+    .field-row{display:flex;gap:10px;}
+    .field-row .field-input{flex:1;}
+
+    /* Tipo chips */
+    .tipo-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
+    .tipo-chip{padding:8px 14px;border-radius:10px;border:2px solid #E0E2EE;font-size:13px;font-weight:600;cursor:pointer;background:#fff;color:var(--text2);font-family:'DM Sans',sans-serif;transition:all .2s;}
+    .tipo-chip.active{background:var(--dark);color:#fff;border-color:var(--dark);}
+
+    .sheet-cta{width:100%;background:linear-gradient(135deg,var(--orange),var(--orange2));color:#fff;border:none;border-radius:14px;padding:15px;font-size:15px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:4px;}
+
+    /* Detail sheet */
+    .detail-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #F0F2F8;}
+    .detail-row:last-child{border-bottom:none;}
+    .detail-lbl{font-size:13px;color:var(--text2);}
+    .detail-val{font-size:14px;font-weight:600;color:var(--dark);}
+    .action-btn{width:100%;padding:14px;border:none;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;margin-top:10px;}
+    .btn-terminar{background:#FEE2E2;color:#991B1B;}
+    .btn-promover{background:#DCFCE7;color:#166534;}
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="header-top">
+      <button class="btn-back" onclick="history.back()">‹</button>
+      <div>
+        <div class="header-title">Personal Eventual</div>
+        <div class="header-sub">Trabajadores por día, semana o prueba</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-chip">
+      <div class="stat-num num-d"><%= totalActivos %></div>
+      <div class="stat-lbl">Activos hoy</div>
+    </div>
+    <div class="stat-chip">
+      <div class="stat-num num-o">S/ <%= Number(costoDia).toFixed(0) %></div>
+      <div class="stat-lbl">Costo/día</div>
+    </div>
+    <div class="stat-chip">
+      <div class="stat-num num-v"><%= enPrueba %></div>
+      <div class="stat-lbl">En prueba</div>
+    </div>
+  </div>
+
+  <div class="section-label">Activos (<%= lista.length %>)</div>
+
+  <% if (lista.length === 0) { %>
+  <div class="empty">
+    <div class="empty-icon">👷</div>
+    Sin personal eventual activo.<br>Registra ayudantes por día o semana.
+  </div>
+  <% } %>
+
+  <% lista.forEach(function(e) {
+    const tipoLabel = {
+      por_dia:'Por día', dos_tres_dias:'2-3 días', semana:'Semana', prueba:'Prueba', recurrente:'Recurrente'
+    }[e.tipo_contrato] || e.tipo_contrato;
+    const stripClass = e.tipo_contrato === 'prueba' ? 'strip-prueba'
+                     : e.tipo_contrato === 'recurrente' ? 'strip-recurrente'
+                     : 'strip-activo';
+    const badgeClass = 'badge-' + e.tipo_contrato;
+  %>
+  <div class="ev-card" onclick="verDetalle(<%= JSON.stringify(e) %>)">
+    <div class="ev-strip <%= stripClass %>"></div>
+    <div class="ev-body">
+      <div class="ev-top">
+        <div class="ev-nombre">
+          <%= e.nombre %>
+          <span class="tipo-badge <%= badgeClass %>"><%= tipoLabel %></span>
+        </div>
+        <div class="ev-monto">S/ <%= Number(e.monto_dia).toFixed(0) %>/día</div>
+      </div>
+      <div class="ev-meta"><%= e.cargo %><% if(e.telefono){ %> · <%= e.telefono %><% } %></div>
+      <div class="dias-chip">
+        <span><%= e.diasTrabajados %> días trabajados</span>
+        <% if (e.diasRestantes !== null) { %>
+          <span class="<%= e.diasRestantes <= 1 ? 'dias-urgente' : '' %>">
+            <% if (e.diasRestantes < 0) { %>vencido<% } else if (e.diasRestantes === 0) { %>hoy termina<% } else { %><%= e.diasRestantes %>d restantes<% } %>
+          </span>
+        <% } %>
+      </div>
+    </div>
+  </div>
+  <% }); %>
+
+  <% if (terminados.length > 0) { %>
+  <div class="section-label">Recientes terminados</div>
+  <% terminados.slice(0,3).forEach(function(e) { %>
+  <div class="ev-card" style="opacity:.55">
+    <div class="ev-strip" style="background:#C7CAD8"></div>
+    <div class="ev-body">
+      <div class="ev-top">
+        <div class="ev-nombre"><%= e.nombre %></div>
+        <div style="font-size:12px;color:var(--text2)"><%= e.estado === 'promovido' ? '⬆ Promovido' : '✓ Terminado' %></div>
+      </div>
+      <div class="ev-meta"><%= e.cargo %> · S/ <%= Number(e.monto_dia).toFixed(0) %>/día</div>
+    </div>
+  </div>
+  <% }); %>
+  <% } %>
+
+  <div class="cta-wrap">
+    <button class="cta-btn" onclick="abrirRegistrar()">+ Registrar eventual</button>
+  </div>
+
+  <!-- Sheet registrar -->
+  <div class="sheet-overlay" id="regSheet" onclick="cerrarSheet(event,'regSheet')">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title">Registrar eventual</div>
+
+      <div class="field-label">Nombre *</div>
+      <input class="field-input" id="regNombre" placeholder="Ej: Juan Pérez" autocomplete="off">
+
+      <div class="field-row">
+        <div style="flex:1">
+          <div class="field-label">Cargo</div>
+          <input class="field-input" id="regCargo" placeholder="Ayudante" value="Ayudante">
+        </div>
+        <div style="flex:1">
+          <div class="field-label">Teléfono</div>
+          <input class="field-input" id="regTelefono" type="tel" placeholder="+51 xxx">
+        </div>
+      </div>
+
+      <div class="field-label">Tipo de contrato</div>
+      <div class="tipo-chips" id="tipoChips">
+        <button class="tipo-chip active" data-val="por_dia" onclick="setTipo(this)">Por día</button>
+        <button class="tipo-chip" data-val="dos_tres_dias" onclick="setTipo(this)">2-3 días</button>
+        <button class="tipo-chip" data-val="semana" onclick="setTipo(this)">Semana</button>
+        <button class="tipo-chip" data-val="prueba" onclick="setTipo(this)">En prueba</button>
+        <button class="tipo-chip" data-val="recurrente" onclick="setTipo(this)">Recurrente</button>
+      </div>
+      <input type="hidden" id="regTipo" value="por_dia">
+
+      <div class="field-row">
+        <div style="flex:1">
+          <div class="field-label">Fecha inicio</div>
+          <input class="field-input" id="regFechaInicio" type="date">
+        </div>
+        <div style="flex:1">
+          <div class="field-label">Fecha fin</div>
+          <input class="field-input" id="regFechaFin" type="date">
+        </div>
+      </div>
+
+      <div class="field-row">
+        <div style="flex:1">
+          <div class="field-label">Pago por día (S/)</div>
+          <input class="field-input" id="regMonto" type="number" placeholder="50" min="0">
+        </div>
+        <div style="flex:1">
+          <div class="field-label">Horas/día</div>
+          <input class="field-input" id="regHoras" type="number" placeholder="8" value="8" min="1" max="16">
+        </div>
+      </div>
+
+      <div class="field-label">Notas</div>
+      <input class="field-input" id="regNotas" placeholder="Ej: Buena actitud, sabe cocinar...">
+
+      <button class="sheet-cta" onclick="registrar()">✓ Registrar</button>
+    </div>
+  </div>
+
+  <!-- Sheet detalle -->
+  <div class="sheet-overlay" id="detailSheet" onclick="cerrarSheet(event,'detailSheet')">
+    <div class="sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title" id="detailNombre">—</div>
+
+      <div id="detailRows"></div>
+
+      <button class="action-btn btn-promover" onclick="terminar('promovido')">⬆ Promover a personal fijo</button>
+      <button class="action-btn btn-terminar" onclick="terminar('terminado')">✗ Marcar como terminado</button>
+    </div>
+  </div>
+
+  <nav class="bottom-nav">
+    <a href="/" class="nav-item"><span class="icon">🏠</span>Inicio</a>
+    <a href="/pedidos" class="nav-item"><span class="icon">🧾</span>Pedidos</a>
+    <a href="/cocina-display" class="nav-item"><span class="icon">👨‍🍳</span>Cocina</a>
+    <a href="/caja" class="nav-item"><span class="icon">💰</span>Caja</a>
+    <a href="/mas" class="nav-item active"><span class="icon">☰</span>Más</a>
+  </nav>
+
+  <script src="/js/dallia-fab.js"></script>
+  <script>
+    // Set today as default start date
+    document.getElementById('regFechaInicio').value = new Date().toISOString().slice(0,10);
+
+    function abrirRegistrar() {
+      document.getElementById('regSheet').classList.add('show');
+    }
+    function cerrarSheet(e, id) {
+      if (e.target.classList.contains('sheet-overlay')) document.getElementById(id).classList.remove('show');
+    }
+    function setTipo(btn) {
+      document.querySelectorAll('.tipo-chip').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      document.getElementById('regTipo').value = btn.dataset.val;
+    }
+
+    async function registrar() {
+      const nombre = document.getElementById('regNombre').value.trim();
+      if (!nombre) { alert('Nombre requerido'); return; }
+      const body = {
+        nombre,
+        cargo:        document.getElementById('regCargo').value.trim() || 'Ayudante',
+        telefono:     document.getElementById('regTelefono').value.trim(),
+        tipo_contrato:document.getElementById('regTipo').value,
+        fecha_inicio: document.getElementById('regFechaInicio').value,
+        fecha_fin:    document.getElementById('regFechaFin').value || null,
+        monto_dia:    document.getElementById('regMonto').value || 0,
+        horas_dia:    document.getElementById('regHoras').value || 8,
+        notas:        document.getElementById('regNotas').value.trim()
+      };
+      const r = await fetch('/sprint4/personal-eventual', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+      const d = await r.json();
+      if (d.ok) location.reload(); else alert(d.error || 'Error');
+    }
+
+    let currentId = null;
+    function verDetalle(e) {
+      currentId = e.id;
+      document.getElementById('detailNombre').textContent = e.nombre;
+      const tipoLabel = {por_dia:'Por día',dos_tres_dias:'2-3 días',semana:'Semana',prueba:'En prueba',recurrente:'Recurrente'}[e.tipo_contrato] || e.tipo_contrato;
+      const rows = [
+        ['Cargo',          e.cargo],
+        ['Tipo contrato',  tipoLabel],
+        ['Pago/día',       'S/ ' + Number(e.monto_dia).toFixed(2)],
+        ['Horas/día',      (e.horas_dia || 8) + 'h'],
+        ['Fecha inicio',   e.fecha_inicio ? new Date(e.fecha_inicio).toLocaleDateString('es-PE') : '—'],
+        ['Fecha fin',      e.fecha_fin    ? new Date(e.fecha_fin).toLocaleDateString('es-PE')    : 'Abierta'],
+        ['Teléfono',       e.telefono || '—'],
+        ['Notas',          e.notas || '—'],
+      ];
+      document.getElementById('detailRows').innerHTML = rows.map(([l,v]) =>
+        `<div class="detail-row"><span class="detail-lbl">${l}</span><span class="detail-val">${v}</span></div>`
+      ).join('');
+      document.getElementById('detailSheet').classList.add('show');
+    }
+
+    async function terminar(estado) {
+      if (!currentId) return;
+      const r = await fetch('/sprint4/personal-eventual/' + currentId + '/terminar', {
+        method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ estado })
+      });
+      const d = await r.json();
+      if (d.ok) location.reload(); else alert(d.error || 'Error');
+    }
+  </script>
+</body>
+</html>

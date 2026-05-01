@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="/favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Que comprar - mirestconia.com</title>
+    <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/theme.css">
+</head>
+<body>
+    <%- include('../partials/sidebar') %>
+    <div class="dg-main">
+    <main class="flex-grow-1">
+    <div class="container">
+        <div class="d-flex align-items-center justify-content-between mb-4 mt-3">
+            <div>
+                <h4 class="fw-bold mb-0"><i class="bi bi-cart-plus me-2 text-danger"></i>Que comprar hoy</h4>
+                <p class="text-muted small mb-0">Basado en el consumo del <strong><%= diaSemana %></strong> pasado (<%= fechaRef %>) + stock actual</p>
+            </div>
+            <span class="badge bg-danger"><%= new Date().toLocaleDateString('es-PE') %></span>
+        </div>
+
+        <!-- Alertas: bajo minimo -->
+        <% if (bajoMinimo && bajoMinimo.length > 0) { %>
+        <div class="card mb-4" style="border-left:4px solid #ef4444!important;">
+            <div class="card-header fw-bold d-flex align-items-center gap-2 text-danger">
+                <i class="bi bi-exclamation-triangle-fill"></i>
+                Insumos BAJO MINIMO - compra urgente
+                <span class="badge bg-danger ms-auto"><%= bajoMinimo.length %></span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                        <thead><tr><th>Insumo</th><th class="text-end">Stock actual</th><th class="text-end">Minimo</th><th>Proveedor</th></tr></thead>
+                        <tbody>
+                            <% bajoMinimo.forEach(function(i) { %>
+                            <tr style="background:rgba(239,68,68,0.04);">
+                                <td class="fw-bold"><%= i.nombre %></td>
+                                <td class="text-end text-danger fw-bold"><%= Number(i.stock_actual).toFixed(1) %> <%= i.unidad_medida %></td>
+                                <td class="text-end"><%= Number(i.stock_minimo).toFixed(1) %></td>
+                                <td><%= i.proveedor_nombre || '-' %></td>
+                            </tr>
+                            <% }); %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <% } %>
+
+        <!-- Lista de compras basada en consumo -->
+        <div class="card mb-4">
+            <div class="card-header fw-bold d-flex align-items-center gap-2">
+                <i class="bi bi-clipboard-data text-primary"></i>
+                Prediccion de compras (basado en <%= diaSemana %> pasado)
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Insumo</th>
+                                <th class="text-end">Consumo <%= diaSemana %> pasado</th>
+                                <th class="text-end">Stock actual</th>
+                                <th class="text-end">Comprar</th>
+                                <th class="text-end">Costo estimado</th>
+                                <th>Proveedor</th>
+                                <th class="text-center">Dias de stock</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <% if (!listaCompras || listaCompras.length === 0) { %>
+                                <tr><td colspan="7" class="text-center text-muted py-4">No hay datos de consumo del <%= diaSemana %> pasado (<%= fechaRef %>). Los datos se generan cuando se envian platos a cocina.</td></tr>
+                            <% } else { listaCompras.forEach(function(i) { %>
+                                <tr<% if (i.urgente) { %> style="background:rgba(239,68,68,0.06);"<% } %>>
+                                    <td class="fw-semibold">
+                                        <%= i.nombre %>
+                                        <% if (i.urgente) { %><span class="badge bg-danger ms-1">URGENTE</span><% } %>
+                                    </td>
+                                    <td class="text-end"><%= Number(i.consumo).toFixed(1) %> <%= i.unidad_medida %></td>
+                                    <td class="text-end <% if (i.urgente) { %>text-danger fw-bold<% } %>"><%= Number(i.stock_actual).toFixed(1) %></td>
+                                    <td class="text-end">
+                                        <% if (i.necesita > 0) { %>
+                                            <span class="fw-bold text-danger"><%= Number(i.necesita).toFixed(1) %> <%= i.unidad_medida %></span>
+                                        <% } else { %>
+                                            <span class="text-success">Suficiente</span>
+                                        <% } %>
+                                    </td>
+                                    <td class="text-end">S/ <%= i.costo_estimado %></td>
+                                    <td><%= i.proveedor_nombre || '-' %></td>
+                                    <td class="text-center">
+                                        <% if (i.dias_stock <= 1) { %>
+                                            <span class="badge bg-danger"><%= i.dias_stock %>d</span>
+                                        <% } else if (i.dias_stock <= 3) { %>
+                                            <span class="badge bg-warning text-dark"><%= i.dias_stock %>d</span>
+                                        <% } else { %>
+                                            <span class="badge bg-success"><%= i.dias_stock %>d</span>
+                                        <% } %>
+                                    </td>
+                                </tr>
+                            <% }); } %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="alert alert-info small">
+            <i class="bi bi-info-circle me-1"></i>
+            <strong>Como funciona:</strong> Se compara lo que se consumio el mismo dia de la semana pasada con el stock actual.
+            Si el stock no alcanza para cubrir el consumo esperado + el minimo, aparece como "Comprar".
+            Los dias de stock indican cuantos dias mas aguanta sin comprar.
+        </div>
+    </div>
+    </main>
+    <%- include('../partials/footer') %>
+    </div>
+    <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

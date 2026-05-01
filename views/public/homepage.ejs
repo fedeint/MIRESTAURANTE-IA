@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MiRestcon IA — Conversa con tu restaurante</title>
+  <meta name="description" content="Pedidos, cocina, inventario, reportes — todo con una conversación. La IA para restaurantes peruanos.">
+  <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: #F0F2F8; color: #0a0f24;
+      color: #fff;
+      overflow-x: hidden;
+    }
+
+    /* ---- HERO ---- */
+    .hero {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 80px 20px 60px;
+      background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(255,107,53,0.13) 0%, transparent 70%),
+                  #0a0f24;
+      position: relative;
+    }
+
+    .hero-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,107,53,0.12);
+      border: 1px solid rgba(255,107,53,0.35);
+      border-radius: 100px;
+      padding: 6px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #FF6B35;
+      letter-spacing: 0.04em;
+      margin-bottom: 28px;
+    }
+
+    .hero-title {
+      font-size: clamp(28px, 5vw, 52px);
+      font-weight: 900;
+      line-height: 1.08;
+      letter-spacing: -0.02em;
+      color: #fff;
+      max-width: 780px;
+      margin: 0 auto 20px;
+    }
+
+    .hero-title span {
+      background: linear-gradient(90deg, #FF6B35, #fd9931);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-subtitle {
+      font-size: clamp(15px, 2vw, 20px);
+      font-weight: 400;
+      color: rgba(255,255,255,0.55);
+      max-width: 560px;
+      margin: 0 auto 36px;
+      line-height: 1.55;
+    }
+
+    .btn-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: linear-gradient(90deg, #fefbf5, #fd9931, #df2c05);
+      color: #fff;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      padding: 15px 32px;
+      border-radius: 100px;
+      border: none;
+      text-decoration: none;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+      box-shadow: 0 8px 32px rgba(255,107,53,0.35);
+    }
+
+    .btn-cta:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 14px 40px rgba(255,107,53,0.5);
+      color: #fff;
+      text-decoration: none;
+    }
+
+    .btn-cta-secondary {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: transparent;
+      color: #FF6B35;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+      padding: 14px 32px;
+      border-radius: 100px;
+      border: 2px solid #FF6B35;
+      text-decoration: none;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .btn-cta-secondary:hover {
+      background: rgba(255,107,53,0.1);
+      color: #FF6B35;
+      text-decoration: none;
+    }
+
+    .hero-social-proof {
+      margin-top: 28px;
+      font-size: 13px;
+      color: rgba(255,255,255,0.4);
+      letter-spacing: 0.02em;
+    }
+
+    .hero-social-proof strong {
+      color: rgba(255,255,255,0.75);
+    }
+
+    /* ---- OLD MODEL ---- */
+    .section-old {
+      background: #0d1229;
+      padding: 96px 20px;
+      text-align: center;
+    }
+
+    .section-label {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.35);
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      font-size: clamp(24px, 4vw, 40px);
+      font-weight: 800;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+      color: #fff;
+      max-width: 640px;
+      margin: 0 auto 16px;
+    }
+
+    .section-subtitle {
+      font-size: 16px;
+      color: rgba(255,255,255,0.45);
+      max-width: 480px;
+      margin: 0 auto 56px;
+      line-height: 1.6;
+    }
+
+    .old-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      max-width: 900px;
+      margin: 0 auto 48px;
+    }
+
+    .old-card {
+      background: #141828;
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 20px;
+      padding: 32px 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .old-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: rgba(255,255,255,0.06);
+    }
+
+    .old-card-icon {
+      font-size: 36px;
+      opacity: 0.5;
+      filter: grayscale(1);
+    }
+
+    .old-card-name {
+      font-size: 15px;
+      font-weight: 700;
+      color: rgba(255,255,255,0.55);
+    }
+
+    .old-card-desc {
+      font-size: 12px;
+      color: rgba(255,255,255,0.3);
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    .old-card-x {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      width: 20px;
+      height: 20px;
+      background: rgba(220,53,69,0.2);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      color: #dc3545;
+      font-weight: 900;
+    }
+
+    .old-message {
+      font-size: clamp(18px, 3vw, 28px);
+      font-weight: 800;
+      color: rgba(255,255,255,0.18);
+      max-width: 560px;
+      margin: 0 auto;
+      line-height: 1.3;
+      letter-spacing: -0.01em;
+    }
+
+    .old-message span {
+      color: #FF6B35;
+    }
+
+    /* ---- FEATURES ---- */
+    .section-features {
+      background: #0a0f24;
+      padding: 96px 20px;
+    }
+
+    .section-features .inner {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .features-header {
+      text-align: center;
+      margin-bottom: 56px;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    @media (max-width: 900px) {
+      .features-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 560px) {
+      .features-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .feature-card {
+      background: #141828;
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 20px;
+      padding: 32px 24px;
+      transition: border-color 0.2s, transform 0.2s;
+    }
+
+    .feature-card:hover {
+      border-color: rgba(255,107,53,0.3);
+      transform: translateY(-3px);
+    }
+
+    .feature-icon {
+      width: 48px;
+      height: 48px;
+      background: rgba(255,107,53,0.12);
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      color: #FF6B35;
+      margin-bottom: 18px;
+    }
+
+    .feature-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 8px;
+    }
+
+    .feature-desc {
+      font-size: 14px;
+      color: rgba(255,255,255,0.45);
+      line-height: 1.6;
+    }
+
+    /* ---- SEARCH ---- */
+    .section-search {
+      background: #f5f6fa;
+      padding: 96px 20px;
+      text-align: center;
+    }
+
+    .section-search .section-title {
+      color: #0a0f24;
+    }
+
+    .section-search .section-subtitle {
+      color: rgba(10,15,36,0.55);
+    }
+
+    .search-wrap {
+      max-width: 520px;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 18px 24px 18px 52px;
+      border-radius: 100px;
+      border: 2px solid rgba(10,15,36,0.12);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 16px;
+      font-weight: 500;
+      background: #fff;
+      color: #0a0f24;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .search-input:focus {
+      border-color: #FF6B35;
+      box-shadow: 0 0 0 4px rgba(255,107,53,0.12);
+    }
+
+    .search-input::placeholder {
+      color: rgba(10,15,36,0.35);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 20px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: rgba(10,15,36,0.4);
+      font-size: 20px;
+      pointer-events: none;
+    }
+
+    .search-dropdown {
+      position: absolute;
+      top: calc(100% + 8px);
+      left: 0;
+      right: 0;
+      background: #fff;
+      border: 1px solid rgba(10,15,36,0.1);
+      border-radius: 18px;
+      box-shadow: 0 20px 60px rgba(10,15,36,0.15);
+      overflow: hidden;
+      z-index: 100;
+      display: none;
+    }
+
+    .search-dropdown.active {
+      display: block;
+    }
+
+    .search-item {
+      padding: 14px 22px;
+      text-align: left;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 500;
+      color: #0a0f24;
+      border-bottom: 1px solid rgba(10,15,36,0.06);
+      transition: background 0.12s;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .search-item:last-child {
+      border-bottom: none;
+    }
+
+    .search-item:hover {
+      background: rgba(255,107,53,0.06);
+    }
+
+    .search-item-icon {
+      color: #FF6B35;
+      font-size: 16px;
+    }
+
+    .search-item-sub {
+      font-size: 12px;
+      color: rgba(10,15,36,0.4);
+      font-weight: 400;
+    }
+
+    .search-loading {
+      padding: 16px 22px;
+      font-size: 14px;
+      color: rgba(10,15,36,0.4);
+      text-align: center;
+    }
+
+    /* ---- PLANS ---- */
+    .section-plans {
+      background: #0d1229;
+      padding: 96px 20px;
+    }
+
+    .section-plans .inner {
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+
+    .plans-header {
+      text-align: center;
+      margin-bottom: 56px;
+    }
+
+    .plans-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    @media (max-width: 768px) {
+      .plans-grid {
+        grid-template-columns: 1fr;
+        max-width: 380px;
+        margin: 0 auto;
+      }
+    }
+
+    .plan-card {
+      background: #141828;
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 24px;
+      padding: 36px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      position: relative;
+      transition: border-color 0.2s;
+    }
+
+    .plan-card.featured {
+      border-color: rgba(255,107,53,0.4);
+      background: linear-gradient(160deg, rgba(255,107,53,0.08) 0%, #141828 60%);
+    }
+
+    .plan-card.featured::before {
+      content: 'MÁS POPULAR';
+      position: absolute;
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(90deg, #FF6B35, #fd9931);
+      color: #fff;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      padding: 4px 14px;
+      border-radius: 100px;
+      white-space: nowrap;
+    }
+
+    .plan-name {
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.4);
+    }
+
+    .plan-price {
+      font-size: 36px;
+      font-weight: 900;
+      color: #fff;
+      letter-spacing: -0.02em;
+      line-height: 1;
+    }
+
+    .plan-price span {
+      font-size: 16px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.4);
+      letter-spacing: 0;
+    }
+
+    .plan-desc {
+      font-size: 14px;
+      color: rgba(255,255,255,0.45);
+      line-height: 1.6;
+    }
+
+    .plan-features {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      flex: 1;
+    }
+
+    .plan-features li {
+      font-size: 14px;
+      color: rgba(255,255,255,0.7);
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+
+    .plan-features li i {
+      color: #FF6B35;
+      font-size: 15px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    .plan-btn {
+      display: block;
+      text-align: center;
+      padding: 13px 24px;
+      border-radius: 100px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      text-decoration: none;
+      transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
+    }
+
+    .plan-btn-ghost {
+      background: rgba(255,255,255,0.06);
+      color: rgba(255,255,255,0.7);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    .plan-btn-ghost:hover {
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+    }
+
+    .plan-btn-orange {
+      background: linear-gradient(90deg, #FF6B35, #fd9931);
+      color: #fff;
+      box-shadow: 0 6px 24px rgba(255,107,53,0.3);
+    }
+
+    .plan-btn-orange:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 32px rgba(255,107,53,0.45);
+      color: #fff;
+    }
+
+    .plans-see-all {
+      text-align: center;
+      margin-top: 40px;
+    }
+
+    .plans-see-all a {
+      font-size: 14px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.4);
+      text-decoration: none;
+      transition: color 0.15s;
+    }
+
+    .plans-see-all a:hover {
+      color: #FF6B35;
+    }
+
+    /* ---- FINAL CTA ---- */
+    .section-final-cta {
+      background: #0a0f24;
+      padding: 120px 20px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .section-final-cta::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 700px;
+      height: 400px;
+      background: radial-gradient(ellipse, rgba(255,107,53,0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .final-cta-title {
+      font-size: clamp(26px, 5vw, 52px);
+      font-weight: 900;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      color: #fff;
+      max-width: 760px;
+      margin: 0 auto 20px;
+    }
+
+    .final-cta-title span {
+      background: linear-gradient(90deg, #FF6B35, #fd9931);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .final-cta-sub {
+      font-size: 17px;
+      color: rgba(255,255,255,0.45);
+      margin-bottom: 40px;
+    }
+
+    .cta-buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      justify-content: center;
+    }
+
+    /* ---- DIVIDER ---- */
+    .divider-glow {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255,107,53,0.3), transparent);
+      margin: 0;
+    }
+
+    /* ---- RESPONSIVE tweaks ---- */
+    @media (max-width: 480px) {
+      .old-cards-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .btn-cta, .btn-cta-secondary {
+        font-size: 15px;
+        padding: 13px 24px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<%- include('../partials/public-header') %>
+
+<!-- ═══════════════════════════════════════════
+     HERO
+════════════════════════════════════════════ -->
+<section class="hero">
+  <img src="/isotipo.png" style="width:64px;height:64px;border-radius:16px;margin-bottom:24px;box-shadow:0 8px 32px rgba(255,107,53,0.25);" alt="DallIA">
+
+  <div class="hero-label">
+    <i class="bi bi-stars"></i>
+    DallIA — Tu IA de restaurante
+  </div>
+
+  <h1 class="hero-title">
+    DEJA DE OPERAR <span>SOFTWARE.</span><br>
+    CONVERSA CON TU RESTAURANTE.
+  </h1>
+
+  <p class="hero-subtitle">
+    Pedidos, cocina, inventario, reportes —<br>todo con una conversación.
+  </p>
+
+  <a href="/auth/google" class="btn-cta">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;">
+      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#fff" opacity=".9"/>
+      <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#fff" opacity=".9"/>
+      <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#fff" opacity=".9"/>
+      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#fff" opacity=".9"/>
+    </svg>
+    Probar gratis con Google
+  </a>
+
+  <p class="hero-social-proof">
+    <strong>50+ restaurantes</strong> en Perú ya lo usan · Sin tarjeta de crédito
+  </p>
+</section>
+
+<div class="divider-glow"></div>
+
+<!-- ═══════════════════════════════════════════
+     EL VIEJO MODELO
+════════════════════════════════════════════ -->
+<section class="section-old">
+  <span class="section-label">El problema</span>
+  <h2 class="section-title">El viejo modelo<br>te está frenando</h2>
+  <p class="section-subtitle">Mientras sigues usando esto, tu competencia ya conversa con su restaurante.</p>
+
+  <div class="old-cards-grid">
+    <div class="old-card">
+      <div class="old-card-x">✕</div>
+      <div class="old-card-icon">📊</div>
+      <div class="old-card-name">Excel</div>
+      <div class="old-card-desc">Columnas, fórmulas rotas y datos de hace 3 semanas</div>
+    </div>
+    <div class="old-card">
+      <div class="old-card-x">✕</div>
+      <div class="old-card-icon">💬</div>
+      <div class="old-card-name">WhatsApp</div>
+      <div class="old-card-desc">Pedidos mezclados con memes y audios sin escuchar</div>
+    </div>
+    <div class="old-card">
+      <div class="old-card-x">✕</div>
+      <div class="old-card-icon">📓</div>
+      <div class="old-card-name">Cuadernos</div>
+      <div class="old-card-desc">Letra ilegible, hojas perdidas, sin respaldo</div>
+    </div>
+    <div class="old-card">
+      <div class="old-card-x">✕</div>
+      <div class="old-card-icon">🧮</div>
+      <div class="old-card-name">Calculadora</div>
+      <div class="old-card-desc">Cierres manuales que duran horas y siguen con errores</div>
+    </div>
+  </div>
+
+  <p class="old-message">
+    Ese no es el futuro<br>de tu restaurante. <span>Este sí.</span>
+  </p>
+</section>
+
+<div class="divider-glow"></div>
+
+<!-- ═══════════════════════════════════════════
+     FEATURES
+════════════════════════════════════════════ -->
+<section class="section-features">
+  <div class="inner">
+    <div class="features-header">
+      <span class="section-label">Todo en uno</span>
+      <h2 class="section-title" style="text-align:center;">Todo lo que tu<br>restaurante necesita</h2>
+      <p class="section-subtitle" style="text-align:center;margin:0 auto;">Un solo sistema. Una sola conversación. Cero complicaciones.</p>
+    </div>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon"><i class="bi bi-receipt-cutoff"></i></div>
+        <div class="feature-title">Pedidos y Mesas</div>
+        <div class="feature-desc">Toma pedidos por mesa, barra o delivery. Comanda digital instantánea a cocina sin papel ni gritos.</div>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon"><i class="bi bi-fire"></i></div>
+        <div class="feature-title">Cocina en tiempo real</div>
+        <div class="feature-desc">Display de cocina con estados, tiempos y alertas. Tu equipo sabe exactamente qué preparar y cuándo.</div>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon"><i class="bi bi-box-seam"></i></div>
+        <div class="feature-title">Almacén e Inventario</div>
+        <div class="feature-desc">Control de insumos, alertas de stock bajo, mermas y costos reales por plato. Sin sorpresas.</div>
+      </div>
+
+      <div class="feature-card" style="border-color:rgba(255,107,53,0.25); background: linear-gradient(160deg, rgba(255,107,53,0.07) 0%, #141828 70%);">
+        <div class="feature-icon" style="background:rgba(255,107,53,0.2);"><i class="bi bi-robot"></i></div>
+        <div class="feature-title" style="color:#FF6B35;">DallIA — Asistente IA</div>
+        <div class="feature-desc">Pregunta en lenguaje natural: "¿Qué vendí ayer?", "¿Cuánto stock de pollo tengo?". Tu IA responde al instante.</div>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon"><i class="bi bi-graph-up-arrow"></i></div>
+        <div class="feature-title">Reportes y KPIs</div>
+        <div class="feature-desc">Ventas, ticket promedio, platos más rentables, horas pico. Datos que realmente usas para crecer.</div>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon"><i class="bi bi-cash-coin"></i></div>
+        <div class="feature-title">Caja y Facturación</div>
+        <div class="feature-desc">Cierre de caja, métodos de pago, propinas y emisión de comprobantes electrónicos SUNAT integrado.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="divider-glow"></div>
+
+<!-- ═══════════════════════════════════════════
+     BUSCAR RESTAURANTE
+════════════════════════════════════════════ -->
+<section class="section-search">
+  <span class="section-label" style="color:rgba(10,15,36,0.4);">Ya eres cliente</span>
+  <h2 class="section-title">¿Ya tienes tu restaurante<br>en MiRestcon IA?</h2>
+  <p class="section-subtitle">Encuéntralo y accede directo a tu panel.</p>
+
+  <div class="search-wrap">
+    <i class="bi bi-search search-icon"></i>
+    <input
+      type="text"
+      id="restaurantSearch"
+      class="search-input"
+      placeholder="Escribe el nombre de tu restaurante..."
+      autocomplete="off"
+    >
+    <div class="search-dropdown" id="searchDropdown"></div>
+  </div>
+</section>
+
+<div class="divider-glow"></div>
+
+<!-- ═══════════════════════════════════════════
+     PLANES
+════════════════════════════════════════════ -->
+<section class="section-plans">
+  <div class="inner">
+    <div class="plans-header">
+      <span class="section-label">Precios</span>
+      <h2 class="section-title" style="text-align:center;">Sin sorpresas.<br>Sin comisiones.</h2>
+      <p class="section-subtitle" style="text-align:center;margin:0 auto;">Elige el plan que mejor se adapta a tu restaurante.</p>
+    </div>
+
+    <div class="plans-grid">
+      <!-- Free -->
+      <div class="plan-card">
+        <div class="plan-name">Gratuito</div>
+        <div class="plan-price">S/ 0<span> /mes</span></div>
+        <div class="plan-desc">Empieza sin costo. Ideal para conocer el sistema.</div>
+        <ul class="plan-features">
+          <li><i class="bi bi-check-circle-fill"></i> 1 usuario</li>
+          <li><i class="bi bi-check-circle-fill"></i> Hasta 50 pedidos/mes</li>
+          <li><i class="bi bi-check-circle-fill"></i> DallIA con límite</li>
+          <li><i class="bi bi-check-circle-fill"></i> Reportes básicos</li>
+        </ul>
+        <a href="/auth/google" class="plan-btn plan-btn-ghost">Empezar gratis</a>
+      </div>
+
+      <!-- Anual -->
+      <div class="plan-card featured">
+        <div class="plan-name">Anual</div>
+        <div class="plan-price">S/ 3,200<span> /año</span></div>
+        <div class="plan-desc">Todo incluido. Ahorra frente al pago mensual.</div>
+        <ul class="plan-features">
+          <li><i class="bi bi-check-circle-fill"></i> Usuarios ilimitados</li>
+          <li><i class="bi bi-check-circle-fill"></i> Pedidos ilimitados</li>
+          <li><i class="bi bi-check-circle-fill"></i> DallIA IA completa</li>
+          <li><i class="bi bi-check-circle-fill"></i> Facturación SUNAT</li>
+          <li><i class="bi bi-check-circle-fill"></i> Soporte prioritario</li>
+        </ul>
+        <a href="/auth/google" class="plan-btn plan-btn-orange">Empezar ahora</a>
+      </div>
+
+      <!-- Lifetime -->
+      <div class="plan-card">
+        <div class="plan-name">De por vida</div>
+        <div class="plan-price">S/ 4,500<span> único</span></div>
+        <div class="plan-desc">Paga una vez. Úsalo para siempre. Sin renovaciones.</div>
+        <ul class="plan-features">
+          <li><i class="bi bi-check-circle-fill"></i> Todo del plan Anual</li>
+          <li><i class="bi bi-check-circle-fill"></i> Acceso de por vida</li>
+          <li><i class="bi bi-check-circle-fill"></i> Futuras funciones incluidas</li>
+          <li><i class="bi bi-check-circle-fill"></i> Onboarding personalizado</li>
+        </ul>
+        <a href="/paquetes" class="plan-btn plan-btn-ghost">Ver detalles</a>
+      </div>
+    </div>
+
+    <div class="plans-see-all">
+      <a href="/paquetes">Ver todos los planes y comparar funciones <i class="bi bi-arrow-right"></i></a>
+    </div>
+  </div>
+</section>
+
+<div class="divider-glow"></div>
+
+<!-- ═══════════════════════════════════════════
+     FINAL CTA
+════════════════════════════════════════════ -->
+<section class="section-final-cta">
+  <img src="/isotipo.png" style="width:56px;height:56px;border-radius:14px;margin-bottom:28px;opacity:0.9;" alt="DallIA">
+
+  <h2 class="final-cta-title">
+    EL FUTURO DE TU RESTAURANTE<br>
+    EMPIEZA CON <span>UNA CONVERSACIÓN.</span>
+  </h2>
+
+  <p class="final-cta-sub">Sin complicaciones. Sin tarjeta de crédito. En menos de 2 minutos.</p>
+
+  <div class="cta-buttons">
+    <a href="/auth/google" class="btn-cta">
+      <i class="bi bi-robot"></i>
+      Conversar con DallIA gratis
+    </a>
+    <a href="/paquetes" class="btn-cta-secondary">Ver planes</a>
+  </div>
+</section>
+
+<%- include('../partials/public-footer') %>
+
+<script>
+(function () {
+  const input = document.getElementById('restaurantSearch');
+  const dropdown = document.getElementById('searchDropdown');
+  let debounceTimer = null;
+
+  function showDropdown(items) {
+    if (!items || items.length === 0) {
+      dropdown.innerHTML = '<div class="search-loading">No encontramos ese restaurante</div>';
+      dropdown.classList.add('active');
+      return;
+    }
+
+    dropdown.innerHTML = items.map(function (r) {
+      var name = r.nombre || r.name || '';
+      var subdomain = r.subdominio || r.subdomain || '';
+      var city = r.ciudad || r.city || '';
+      return (
+        '<div class="search-item" data-subdomain="' + subdomain + '">' +
+        '<i class="bi bi-shop search-item-icon"></i>' +
+        '<div>' +
+        '<div>' + name + '</div>' +
+        (city ? '<div class="search-item-sub">' + city + '</div>' : '') +
+        '</div>' +
+        '</div>'
+      );
+    }).join('');
+
+    dropdown.querySelectorAll('.search-item').forEach(function (el) {
+      el.addEventListener('click', function () {
+        var sub = el.getAttribute('data-subdomain');
+        if (sub) {
+          window.location.href = '/' + sub;
+        }
+      });
+    });
+
+    dropdown.classList.add('active');
+  }
+
+  function hideDropdown() {
+    dropdown.classList.remove('active');
+    dropdown.innerHTML = '';
+  }
+
+  function search(query) {
+    if (!query || query.length < 2) {
+      hideDropdown();
+      return;
+    }
+
+    dropdown.innerHTML = '<div class="search-loading">Buscando...</div>';
+    dropdown.classList.add('active');
+
+    fetch('/api/restaurantes?buscar=' + encodeURIComponent(query))
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        var items = Array.isArray(data) ? data : (data.restaurantes || data.data || []);
+        showDropdown(items);
+      })
+      .catch(function () {
+        dropdown.innerHTML = '<div class="search-loading">Error al buscar. Intenta de nuevo.</div>';
+      });
+  }
+
+  input.addEventListener('input', function () {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(function () {
+      search(input.value.trim());
+    }, 320);
+  });
+
+  document.addEventListener('click', function (e) {
+    if (!e.target.closest('.search-wrap')) {
+      hideDropdown();
+    }
+  });
+
+  input.addEventListener('focus', function () {
+    if (input.value.trim().length >= 2) {
+      search(input.value.trim());
+    }
+  });
+})();
+</script>
+
+</body>
+</html>

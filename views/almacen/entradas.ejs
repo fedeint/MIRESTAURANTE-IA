@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="/favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entrada de Insumos - mirestconia.com</title>
+    <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/theme.css">
+</head>
+<body>
+    <%- include('../partials/sidebar') %>
+    <div class="dg-main">
+    <main class="flex-grow-1">
+    <div class="container">
+        <div class="d-flex align-items-center justify-content-between mb-4 mt-3">
+            <div>
+                <h4 class="fw-bold mb-0"><i class="bi bi-box-arrow-in-down me-2 text-success"></i>Ingreso diario de insumos</h4>
+                <p class="text-muted small mb-0">Actualizacion diaria: registra compras, proveedor, quien ingreso</p>
+            </div>
+            <span class="badge bg-success"><%= new Date().toLocaleDateString('es-PE') %></span>
+        </div>
+
+        <div class="card mb-4">
+            <div class="card-body">
+                <form id="formEntrada">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Ingrediente</label>
+                            <select id="ingrediente_id" class="form-select" required>
+                                <option value="">-- Seleccionar ingrediente --</option>
+                                <% ingredientes.forEach(function(i) { %>
+                                    <option value="<%= i.id %>" data-stock="<%= i.stock_actual %>" data-unidad="<%= i.unidad_medida %>" data-costo="<%= i.costo_unitario %>">
+                                        <%= i.codigo %> - <%= i.nombre %> (Stock: <%= Number(i.stock_actual).toFixed(1) %> <%= i.unidad_medida %>)
+                                    </option>
+                                <% }); %>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">Cantidad</label>
+                            <input type="number" id="cantidad" class="form-control" step="0.01" min="0.01" required placeholder="Ej: 5.00">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">Costo unitario (S/)</label>
+                            <input type="number" id="costo_unitario" class="form-control" step="0.01" min="0" placeholder="Ej: 25.00">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Proveedor</label>
+                            <select id="proveedor_id" class="form-select">
+                                <option value="">-- Sin proveedor --</option>
+                                <% proveedores.forEach(function(p) { %>
+                                    <option value="<%= p.id %>"><%= p.nombre %></option>
+                                <% }); %>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Comprobante</label>
+                            <input type="text" id="comprobante" class="form-control" placeholder="Boleta/Factura #">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Quien ingresa</label>
+                            <input type="text" id="quien_ingresa" class="form-control" value="<%= typeof user !== 'undefined' && user ? user.usuario : '' %>" readonly>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label">Notas</label>
+                            <input type="text" id="notas" class="form-control" placeholder="Observaciones...">
+                        </div>
+                        <div class="col-12">
+                            <button type="button" class="btn btn-success w-100 py-2" onclick="registrarEntrada()">
+                                <i class="bi bi-box-arrow-in-down me-1"></i>Registrar Entrada
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Entradas de hoy -->
+        <div class="card">
+            <div class="card-header fw-bold"><i class="bi bi-clock-history me-1"></i>Entradas de hoy</div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0">
+                        <thead><tr><th>Hora</th><th>Ingrediente</th><th>Cantidad</th><th>Costo</th><th>Proveedor</th><th>Usuario</th><th>Comprobante</th></tr></thead>
+                        <tbody id="entradasHoy"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    </main>
+    <%- include('../partials/footer') %>
+    </div>
+    <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="/vendor/sweetalert2/sweetalert2.all.min.js"></script>
+    <script>
+        // Auto-fill costo when selecting ingredient
+        document.getElementById('ingrediente_id').addEventListener('change', function(){
+            var opt = this.options[this.selectedIndex];
+            if (opt && opt.dataset.costo) document.getElementById('costo_unitario').value = Number(opt.dataset.costo).toFixed(2);
+        });
+
+        async function registrarEntrada() {
+            var ingrediente_id = document.getElementById('ingrediente_id').value;
+            var cantidad = parseFloat(document.getElementById('cantidad').value);
+            if (!ingrediente_id || !cantidad || cantidad <= 0) { Swal.fire('','Selecciona ingrediente y cantidad','warning'); return; }
+
+            try {
+                var res = await fetch('/almacen/api/entrada', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        ingrediente_id: ingrediente_id,
+                        cantidad: cantidad,
+                        costo_unitario: parseFloat(document.getElementById('costo_unitario').value) || 0,
+                        comprobante: document.getElementById('comprobante').value,
+                        notas: document.getElementById('notas').value
+                    })
+                });
+                var data = await res.json();
+                if (!res.ok) throw new Error(data.error || 'Error');
+                Swal.fire({icon:'success', title:'Entrada registrada', text:'Stock actualizado: ' + data.stock_actual, timer:2000, showConfirmButton:false});
+                document.getElementById('formEntrada').reset();
+                document.getElementById('quien_ingresa').value = '<%= typeof user !== "undefined" && user ? user.usuario : "" %>';
+                cargarEntradasHoy();
+            } catch(e) { Swal.fire('Error', e.message, 'error'); }
+        }
+
+        async function cargarEntradasHoy() {
+            try {
+                var hoy = new Date().toISOString().split('T')[0];
+                var res = await fetch('/almacen/api/movimientos?tipo=entrada&desde=' + hoy + '&hasta=' + hoy);
+                var data = await res.json();
+                var tbody = document.getElementById('entradasHoy');
+                tbody.innerHTML = '';
+                if (!data || data.length === 0) { tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-3">No hay entradas hoy</td></tr>'; return; }
+                data.forEach(function(m){
+                    var hora = new Date(m.created_at).toLocaleTimeString('es-PE', {hour:'2-digit',minute:'2-digit'});
+                    tbody.innerHTML += '<tr><td>' + hora + '</td><td>' + (m.ingrediente_nombre||'') + '</td><td>' + Number(m.cantidad).toFixed(2) + '</td><td>S/ ' + Number(m.costo_total||0).toFixed(2) + '</td><td>' + (m.comprobante||'-') + '</td><td>' + (m.usuario_nombre||'-') + '</td><td>' + (m.comprobante||'-') + '</td></tr>';
+                });
+            } catch(e) {}
+        }
+        cargarEntradasHoy();
+    </script>
+</body>
+</html>

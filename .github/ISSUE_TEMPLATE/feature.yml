@@ -1,0 +1,79 @@
+name: ✨ Feature / Mejora
+description: Proponer una mejora o una funcionalidad nueva
+title: "[Feature] "
+labels: ["enhancement", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Gracias por proponer una mejora. Llena el formulario para que podamos evaluarla.
+
+  - type: textarea
+    id: problema
+    attributes:
+      label: ¿Qué problema resuelve?
+      description: Explica qué dolor de usuario o de negocio estás atacando. No arranques con la solución.
+      placeholder: "Los cajeros pierden tiempo buscando un pedido porque no hay filtro por fecha"
+    validations:
+      required: true
+
+  - type: textarea
+    id: solucion
+    attributes:
+      label: Solución propuesta
+      description: Cómo la imaginas. Sé específico pero no hace falta diseño final.
+      placeholder: "Agregar un selector de fecha arriba del listado de pedidos..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternativas
+    attributes:
+      label: Alternativas consideradas
+      description: ¿Qué otras formas de resolverlo pensaste? ¿Por qué la solución propuesta es mejor?
+      placeholder: "Opción A: ... (descartada porque...) | Opción B: ..."
+
+  - type: dropdown
+    id: modulo
+    attributes:
+      label: Módulo afectado
+      options:
+        - Caja
+        - Cocina
+        - Mesas
+        - Delivery
+        - Productos
+        - Clientes
+        - Recetas
+        - Reportes
+        - Almacén
+        - Dashboard
+        - SUNAT
+        - Superadmin
+        - Transversal (afecta a varios)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: prioridad
+    attributes:
+      label: Prioridad (tu opinión)
+      options:
+        - Baja — nice to have
+        - Media — mejora importante
+        - Alta — necesaria para operar
+        - Crítica — bloquea al cliente
+    validations:
+      required: true
+
+  - type: textarea
+    id: impacto
+    attributes:
+      label: Impacto en usuarios
+      description: ¿A cuántos tenants/usuarios beneficia? ¿Cuánto tiempo ahorran? ¿Más ventas?
+
+  - type: textarea
+    id: notas
+    attributes:
+      label: Notas adicionales
+      description: Referencias, screenshots, casos reales de clientes que lo pidieron, etc.

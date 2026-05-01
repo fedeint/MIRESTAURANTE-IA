@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Cocina — MiRestcon</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      font-family: 'DM Sans', sans-serif;
+      background: #F0F2F8;
+      min-height: 100dvh;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+    /* HEADER */
+    .app-header {
+      background: linear-gradient(180deg, #10152f 0%, #0a0f24 60%, #090d1d 100%);
+      border-radius: 0 0 20px 20px;
+      padding: 48px 20px 20px;
+      color: white;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .header-title { font-size: 20px; font-weight: 700; }
+    .live-pill {
+      display: flex; align-items: center; gap: 6px;
+      background: rgba(34,197,94,0.2);
+      border: 1px solid rgba(34,197,94,0.4);
+      padding: 5px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #4ade80;
+    }
+    .live-dot {
+      width: 7px; height: 7px;
+      background: #22c55e;
+      border-radius: 50%;
+      animation: pulse 1.4s infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+    .stats-row {
+      display: flex;
+      gap: 16px;
+      margin-top: 16px;
+    }
+    .stat-item { display: flex; flex-direction: column; }
+    .stat-num { font-size: 22px; font-weight: 700; }
+    .stat-num.orange { color: #ef520f; }
+    .stat-num.green { color: #22c55e; }
+    .stat-label { font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 2px; }
+    .stat-divider { width: 1px; background: rgba(255,255,255,0.15); }
+    /* CONTENT */
+    .content-area {
+      padding: 16px 16px 80px;
+    }
+    /* PEDIDO CARD */
+    .pedido-card {
+      background: white;
+      border-radius: 16px;
+      margin-bottom: 12px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+      border-left: 4px solid #8B8FAD;
+    }
+    .pedido-card.preparando { border-left-color: #ef520f; }
+    .pedido-card.listo { border-left-color: #22c55e; }
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 16px 10px;
+    }
+    .type-badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 8px;
+      flex-shrink: 0;
+    }
+    .badge-delivery { background: #fee2e2; color: #dc2626; }
+    .badge-mesa { background: #fff7ed; color: #ea580c; }
+    .badge-para-llevar { background: #f3e8ff; color: #7c3aed; }
+    .pedido-num { font-size: 15px; font-weight: 700; color: #0a0f24; flex: 1; }
+    .timer {
+      font-size: 13px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 8px;
+      flex-shrink: 0;
+    }
+    .timer-green { background: #dcfce7; color: #16a34a; }
+    .timer-orange { background: #fff7ed; color: #ea580c; }
+    .timer-red { background: #fee2e2; color: #dc2626; }
+    .card-items {
+      padding: 0 16px 12px;
+    }
+    .item-line {
+      font-size: 14px;
+      color: #0a0f24;
+      padding: 3px 0;
+      border-bottom: 1px solid #f0f2f8;
+    }
+    .item-line:last-child { border-bottom: none; }
+    .item-nota { font-size: 12px; color: #8B8FAD; margin-left: 8px; }
+    .card-action {
+      padding: 0 16px 14px;
+    }
+    .action-btn {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 12px;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+    .action-btn:active { opacity: 0.8; transform: scale(0.98); }
+    .btn-marcar-listo {
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      color: white;
+    }
+    .btn-despachar {
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      color: white;
+    }
+    /* RECHAZADOS ACCORDION */
+    .rechazados-section {
+      margin-top: 8px;
+      margin-bottom: 8px;
+    }
+    .rechazados-toggle {
+      width: 100%;
+      background: white;
+      border: none;
+      border-radius: 16px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      color: #dc2626;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    }
+    .rechazados-body { display: none; }
+    .rechazados-body.open { display: block; }
+    .rechazado-item {
+      background: white;
+      border-radius: 12px;
+      padding: 10px 14px;
+      margin-top: 8px;
+      border-left: 3px solid #dc2626;
+      font-size: 13px;
+      color: #0a0f24;
+    }
+    /* EMPTY STATE */
+    .empty-state {
+      text-align: center;
+      padding: 48px 24px;
+      color: #8B8FAD;
+    }
+    .empty-icon { font-size: 48px; margin-bottom: 12px; }
+    .empty-text { font-size: 15px; font-weight: 500; }
+    /* BOTTOM NAV */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 480px;
+      background: white;
+      display: flex;
+      justify-content: space-around;
+      padding: 8px 0;
+      padding-bottom: max(8px, env(safe-area-inset-bottom));
+      box-shadow: 0 -2px 16px rgba(0,0,0,0.08);
+      z-index: 100;
+    }
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      color: #8B8FAD;
+      text-decoration: none;
+      font-size: 10px;
+      font-weight: 500;
+    }
+    .nav-item.active { color: #ef520f; }
+    .nav-icon { font-size: 22px; }
+    /* TOAST */
+    .toast {
+      position: fixed;
+      top: 80px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      background: #0a0f24;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 12px;
+      font-size: 14px;
+      font-weight: 500;
+      opacity: 0;
+      transition: opacity 0.3s, transform 0.3s;
+      z-index: 200;
+      white-space: nowrap;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .toast.success { background: #16a34a; }
+    .toast.error { background: #dc2626; }
+    .refresh-indicator {
+      text-align: center;
+      font-size: 11px;
+      color: #8B8FAD;
+      padding: 8px 0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="app-header">
+    <div class="header-row">
+      <div class="header-title">&#128293; Cocina</div>
+      <div class="live-pill">
+        <div class="live-dot"></div>
+        EN VIVO
+      </div>
+    </div>
+    <div class="stats-row">
+      <div class="stat-item">
+        <div class="stat-num orange" id="statPreparando">0</div>
+        <div class="stat-label">Preparando</div>
+      </div>
+      <div class="stat-divider"></div>
+      <div class="stat-item">
+        <div class="stat-num green" id="statListo">0</div>
+        <div class="stat-label">Listos</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- CONTENT -->
+  <div class="content-area">
+    <div id="pedidosContainer"></div>
+    <div class="rechazados-section" id="rechazadosSection" style="display:none">
+      <button class="rechazados-toggle" onclick="toggleRechazados()">
+        <span id="rechazadosLabel">Rechazados (0)</span>
+        <span id="rechazadosArrow">&#9660;</span>
+      </button>
+      <div class="rechazados-body" id="rechazadosBody"></div>
+    </div>
+    <div class="refresh-indicator" id="refreshIndicator">Actualizando en <span id="countdown">15</span>s</div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <a href="/" class="nav-item"><span class="nav-icon">&#127968;</span><span>Inicio</span></a>
+    <a href="/pedidos" class="nav-item"><span class="nav-icon">&#128203;</span><span>Pedidos</span></a>
+    <a href="/cocina-display" class="nav-item active"><span class="nav-icon">&#128293;</span><span>Cocina</span></a>
+    <a href="/caja" class="nav-item"><span class="nav-icon">&#128181;</span><span>Caja</span></a>
+    <a href="/mas" class="nav-item"><span class="nav-icon">&#9776;</span><span>Mas</span></a>
+  </nav>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Toast ─────────────────────────────────────────────────────────────
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast' + (type ? ' ' + type : '');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+// ── Timer ─────────────────────────────────────────────────────────────
+function calcMinutes(enviado_at) {
+  if (!enviado_at) return null;
+  const diff = Date.now() - new Date(enviado_at).getTime();
+  return Math.floor(diff / 60000);
+}
+
+function timerHtml(enviado_at) {
+  const mins = calcMinutes(enviado_at);
+  if (mins === null) return '';
+  const label = mins + 'm';
+  let cls = 'timer-green';
+  if (mins > 20) cls = 'timer-red';
+  else if (mins > 10) cls = 'timer-orange';
+  return `<span class="timer ${cls}">${label}</span>`;
+}
+
+// ── Render ────────────────────────────────────────────────────────────
+function groupByPedido(items) {
+  const map = new Map();
+  for (const item of items) {
+    const pid = item.pedido_id;
+    if (!map.has(pid)) {
+      map.set(pid, {
+        pedido_id: pid,
+        mesa_numero: item.mesa_numero,
+        mesero_nombre: item.mesero_nombre,
+        delivery_tipo: item.delivery_tipo,
+        enviado_at: item.enviado_at,
+        estado: item.estado,
+        items: []
+      });
+    }
+    const group = map.get(pid);
+    // Overall estado: if any item is still preparando, group = preparando
+    if (item.estado === 'preparando') group.estado = 'preparando';
+    if (!group.enviado_at || (item.enviado_at && new Date(item.enviado_at) < new Date(group.enviado_at))) {
+      group.enviado_at = item.enviado_at;
+    }
+    group.items.push(item);
+  }
+  return [...map.values()];
+}
+
+function typeBadgeHtml(group) {
+  if (group.delivery_tipo === 'delivery') {
+    return '<span class="type-badge badge-delivery">&#128757; DELIVERY</span>';
+  }
+  if (group.delivery_tipo === 'para_llevar') {
+    return '<span class="type-badge badge-para-llevar">&#128084; PARA LLEVAR</span>';
+  }
+  return `<span class="type-badge badge-mesa">&#127869; MESA ${group.mesa_numero}</span>`;
+}
+
+function actionBtnHtml(group) {
+  const isDelivery = group.delivery_tipo === 'delivery' || group.delivery_tipo === 'para_llevar';
+  if (group.estado === 'preparando') {
+    // Find first preparando item for the action
+    const preparandoItems = group.items.filter(i => i.estado === 'preparando');
+    if (!preparandoItems.length) return '';
+    const ids = preparandoItems.map(i => i.id).join(',');
+    return `<button class="action-btn btn-marcar-listo" onclick="marcarListoGroup('${ids}')">&#10003; Marcar Listo</button>`;
+  }
+  if (group.estado === 'listo' && isDelivery) {
+    const ids = group.items.filter(i => i.estado === 'listo').map(i => i.id).join(',');
+    return `<button class="action-btn btn-despachar" onclick="despacharGroup('${ids}')">&#128640; Despachar</button>`;
+  }
+  return '';
+}
+
+function renderCards(items) {
+  const container = document.getElementById('pedidosContainer');
+  const groups = groupByPedido(items);
+
+  const preparandoCount = groups.filter(g => g.estado === 'preparando').length;
+  const listoCount = groups.filter(g => g.estado === 'listo').length;
+  document.getElementById('statPreparando').textContent = preparandoCount;
+  document.getElementById('statListo').textContent = listoCount;
+
+  if (groups.length === 0) {
+    container.innerHTML = `<div class="empty-state">
+      <div class="empty-icon">&#127859;</div>
+      <div class="empty-text">No hay pedidos en cocina</div>
+    </div>`;
+    return;
+  }
+
+  container.innerHTML = groups.map(group => {
+    const itemsHtml = group.items.map(i => {
+      const nota = i.nota ? `<span class="item-nota">(${escHtml(i.nota)})</span>` : '';
+      return `<div class="item-line">${i.cantidad}x ${escHtml(i.producto_nombre)}${nota}</div>`;
+    }).join('');
+
+    return `<div class="pedido-card ${group.estado}">
+      <div class="card-header">
+        ${typeBadgeHtml(group)}
+        <span class="pedido-num">#${String(group.pedido_id).padStart(3,'0')}</span>
+        ${timerHtml(group.enviado_at)}
+      </div>
+      <div class="card-items">${itemsHtml}</div>
+      <div class="card-action">${actionBtnHtml(group)}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── Actions ───────────────────────────────────────────────────────────
+async function marcarListoGroup(idsStr) {
+  const ids = idsStr.split(',').map(Number);
+  try {
+    await Promise.all(ids.map(id =>
+      fetch('/cocina/item/' + id + '/estado', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ estado: 'listo' })
+      })
+    ));
+    showToast('Marcado como listo', 'success');
+    await fetchCola();
+  } catch (e) {
+    showToast('Error al actualizar', 'error');
+  }
+}
+
+async function despacharGroup(idsStr) {
+  const ids = idsStr.split(',').map(Number);
+  try {
+    await Promise.all(ids.map(id =>
+      fetch('/cocina/item/' + id + '/estado', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ estado: 'entregado' })
+      })
+    ));
+    showToast('Pedido despachado', 'success');
+    await fetchCola();
+  } catch (e) {
+    showToast('Error al despachar', 'error');
+  }
+}
+
+// ── Rechazados ────────────────────────────────────────────────────────
+let rechazadosOpen = false;
+function toggleRechazados() {
+  rechazadosOpen = !rechazadosOpen;
+  document.getElementById('rechazadosBody').classList.toggle('open', rechazadosOpen);
+  document.getElementById('rechazadosArrow').textContent = rechazadosOpen ? '▲' : '▼';
+}
+
+// ── Polling ───────────────────────────────────────────────────────────
+let countdownVal = 15;
+let countdownTimer = null;
+
+async function fetchCola() {
+  try {
+    const resp = await fetch('/cocina-display/api/cola');
+    if (!resp.ok) throw new Error();
+    const items = await resp.json();
+    renderCards(items);
+  } catch (e) {
+    // silent fail, will retry
+  }
+}
+
+function startCountdown() {
+  if (countdownTimer) clearInterval(countdownTimer);
+  countdownVal = 15;
+  document.getElementById('countdown').textContent = countdownVal;
+  countdownTimer = setInterval(() => {
+    countdownVal--;
+    document.getElementById('countdown').textContent = countdownVal;
+    if (countdownVal <= 0) {
+      countdownVal = 15;
+      fetchCola();
+    }
+  }, 1000);
+}
+
+// ── Utils ─────────────────────────────────────────────────────────────
+function escHtml(str) {
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+// ── Init ──────────────────────────────────────────────────────────────
+// Render initial data from SSR
+const INITIAL_ITEMS = <%- JSON.stringify(items) %>;
+renderCards(INITIAL_ITEMS);
+startCountdown();
+</script>
+<script src="/js/dallia-fab.js"></script>
+</body>
+</html>

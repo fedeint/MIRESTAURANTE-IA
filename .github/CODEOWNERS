@@ -1,0 +1,131 @@
+# CODEOWNERS — routing automático de reviews por módulo
+#
+# Docs: https://docs.github.com/en/repositories/managing-your-repositories-settings-and-security/customizing-your-repository/about-code-owners
+#
+# Reglas:
+# - El último patrón que matchea gana
+# - Código que NO está en esta lista → default review a @Leonidasx8
+# - Handles con "# TODO:" son placeholders — actualizar cuando los workers den su username de GitHub
+#
+# IMPORTANTE: Aunque un worker sea code owner de su módulo, TODAS las PRs
+# también requieren la aprobación de @Leonidasx8 antes del merge a main
+# (configurado via Branch Protection Rules en la UI de GitHub).
+#
+# Última actualización: 2026-04-09
+
+# ============================================================================
+# DEFAULT — todo lo que no matchee después
+# ============================================================================
+*                                    @Leonidasx8
+
+# ============================================================================
+# ANTHONY PULGAR — Caja + Cocina
+# ============================================================================
+/views/caja.ejs                      @Leonidasx8 @fedeint
+/views/caja-desktop.ejs              @Leonidasx8 @fedeint
+/views/cocina.ejs                    @Leonidasx8 @fedeint
+/views/cocina-desktop.ejs            @Leonidasx8 @fedeint
+/views/cocina-display.ejs            @Leonidasx8 @fedeint
+/views/comanda.ejs                   @Leonidasx8 @fedeint
+/routes/caja.js                      @Leonidasx8 @fedeint
+/routes/cocina.js                    @Leonidasx8 @fedeint
+/public/js/caja/                     @Leonidasx8 @fedeint
+/public/js/cocina/                   @Leonidasx8 @fedeint
+
+# ============================================================================
+# JONATHAN — Mesas
+# ============================================================================
+/views/mesas.ejs                     @Leonidasx8 @shonperez
+/views/mesas-desktop.ejs             @Leonidasx8 @shonperez
+/views/mesa-ronda.ejs                @Leonidasx8 @shonperez
+/views/mesa-cuenta.ejs               @Leonidasx8 @shonperez
+/views/mesa-cobrar.ejs               @Leonidasx8 @shonperez
+/routes/mesas.js                     @Leonidasx8 @shonperez
+/public/js/mesas/                    @Leonidasx8 @shonperez
+
+# ============================================================================
+# IAN MIGUEL — Delivery + Productos
+# ============================================================================
+/views/delivery.ejs                  @Leonidasx8 @IanMiguelBG
+/views/delivery-desktop.ejs          @Leonidasx8 @IanMiguelBG
+/views/delivery-config.ejs           @Leonidasx8 @IanMiguelBG
+/views/productos.ejs                 @Leonidasx8 @IanMiguelBG
+/views/productos-desktop.ejs         @Leonidasx8 @IanMiguelBG
+/views/ranking.ejs                   @Leonidasx8 @IanMiguelBG
+/routes/delivery.js                  @Leonidasx8 @IanMiguelBG
+/routes/productos.js                 @Leonidasx8 @IanMiguelBG
+/public/js/delivery/                 @Leonidasx8 @IanMiguelBG
+/public/js/productos/                @Leonidasx8 @IanMiguelBG
+
+# ============================================================================
+# BRUCE — Clientes + Recetas
+# ============================================================================
+/views/clientes.ejs                  @Leonidasx8 @BruceVilla-91
+/views/clientes-desktop.ejs          @Leonidasx8 @BruceVilla-91
+/views/recetas-standalone.ejs        @Leonidasx8 @BruceVilla-91
+/views/recetas-desktop.ejs           @Leonidasx8 @BruceVilla-91
+/routes/clientes.js                  @Leonidasx8 @BruceVilla-91
+/routes/recetas.js                   @Leonidasx8 @BruceVilla-91
+/public/js/clientes/                 @Leonidasx8 @BruceVilla-91
+/public/js/recetas/                  @Leonidasx8 @BruceVilla-91
+
+# ============================================================================
+# DANIEL — Reportes + Almacén
+# ============================================================================
+/views/reportes.ejs                  @Leonidasx8 @danielcharcape17-cpu
+/views/reportes-desktop.ejs          @Leonidasx8 @danielcharcape17-cpu
+/views/almacen/                      @Leonidasx8 @danielcharcape17-cpu
+/routes/reportes.js                  @Leonidasx8 @danielcharcape17-cpu
+/routes/almacen.js                   @Leonidasx8 @danielcharcape17-cpu
+/public/js/almacen/                  @Leonidasx8 @danielcharcape17-cpu
+/public/js/reportes/                 @Leonidasx8 @danielcharcape17-cpu
+
+# ============================================================================
+# ARCHIVOS CRÍTICOS — SOLO @Leonidasx8 puede mergear
+# Estos archivos tienen impacto transversal o contienen secretos/config.
+# Workers NO deben tocarlos sin coordinación explícita.
+# ============================================================================
+/server.js                           @Leonidasx8
+/db.js                               @Leonidasx8
+/vercel.json                         @Leonidasx8
+/package.json                        @Leonidasx8
+/package-lock.json                   @Leonidasx8
+/.env                                @Leonidasx8
+/.env.example                        @Leonidasx8
+/.env.*                              @Leonidasx8
+
+# Infra / libs compartidas
+/lib/                                @Leonidasx8
+/middleware/                         @Leonidasx8
+/migrations/                         @Leonidasx8
+/scripts/                            @Leonidasx8
+/views/partials/                     @Leonidasx8
+/views/layout.ejs                    @Leonidasx8
+
+# Auth, security, tenants
+/routes/auth.js                      @Leonidasx8
+/routes/google-auth.js               @Leonidasx8
+/routes/superadmin*                  @Leonidasx8
+/routes/observabilidad.js            @Leonidasx8
+/routes/cron.js                      @Leonidasx8
+/routes/legal*                       @Leonidasx8
+/routes/nda-equipo.js                @Leonidasx8
+/routes/contratos.js                 @Leonidasx8
+/routes/firmar.js                    @Leonidasx8
+
+# Tests (solo @Leonidasx8 modifica para que los workers no anulen guards)
+/tests/                              @Leonidasx8
+/lib/deviceRouter.test.js            @Leonidasx8
+
+# CI/CD, hooks, config de GitHub
+/.github/                            @Leonidasx8
+/.githooks/                          @Leonidasx8
+/.gitleaks.toml                      @Leonidasx8
+/.gitignore                          @Leonidasx8
+
+# Documentación del sistema (workers pueden proponer cambios pero @Leonidasx8 aprueba)
+/CLAUDE.md                           @Leonidasx8
+/README.md                           @Leonidasx8
+/CONTRIBUTING.md                     @Leonidasx8
+/SECURITY.md                         @Leonidasx8
+/docs/superpowers/                   @Leonidasx8

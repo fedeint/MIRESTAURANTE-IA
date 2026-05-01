@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#090d1d">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>DallIA · Voz</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      font-family: 'DM Sans', sans-serif;
+      background: #090d1d;
+      overflow: hidden;
+      color: white;
+    }
+
+    .voz-shell {
+      display: flex;
+      flex-direction: column;
+      height: 100dvh;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    /* ── Top bar ─────────────────────────────────── */
+    .voz-topbar {
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      padding-top: max(env(safe-area-inset-top, 12px), 12px);
+      padding-bottom: 12px;
+      height: calc(60px + env(safe-area-inset-top, 0px));
+      flex-shrink: 0;
+    }
+
+    .voz-close-top {
+      background: none;
+      border: none;
+      color: rgba(255,255,255,0.7);
+      font-size: 24px;
+      cursor: pointer;
+      padding: 6px;
+      line-height: 1;
+    }
+
+    .voz-title {
+      flex: 1;
+      text-align: center;
+      font-size: 15px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.9);
+    }
+
+    .voz-chat-link {
+      background: none;
+      border: none;
+      color: rgba(255,255,255,0.7);
+      font-size: 22px;
+      cursor: pointer;
+      padding: 6px;
+      line-height: 1;
+    }
+
+    /* ── Center area ──────────────────────────────── */
+    .voz-center {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0;
+      padding: 24px 32px;
+    }
+
+    /* ── Orb ──────────────────────────────────────── */
+    .orb-container {
+      position: relative;
+      width: 120px;
+      height: 120px;
+      margin-bottom: 36px;
+    }
+
+    .orb {
+      width: 120px;
+      height: 120px;
+      border-radius: 24px;
+      background: linear-gradient(135deg, #ef520f 0%, #df2c05 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 52px;
+      position: relative;
+      z-index: 2;
+      transition: box-shadow 0.4s ease;
+    }
+
+    /* Idle glow */
+    .orb {
+      box-shadow:
+        0 0 0 12px rgba(239,82,15,0.10),
+        0 0 0 24px rgba(239,82,15,0.05),
+        0 0 0 40px rgba(239,82,15,0.02);
+    }
+
+    /* Pulsing glow when listening */
+    .orb.pulsing {
+      animation: orbPulse 1.4s ease-in-out infinite;
+    }
+
+    @keyframes orbPulse {
+      0%,100% {
+        box-shadow:
+          0 0 0 16px rgba(239,82,15,0.15),
+          0 0 0 32px rgba(239,82,15,0.07),
+          0 0 0 48px rgba(239,82,15,0.03);
+      }
+      50% {
+        box-shadow:
+          0 0 0 24px rgba(239,82,15,0.22),
+          0 0 0 44px rgba(239,82,15,0.12),
+          0 0 0 64px rgba(239,82,15,0.05);
+      }
+    }
+
+    /* Processing pulse */
+    .orb.processing {
+      animation: orbProcess 0.6s ease-in-out infinite alternate;
+    }
+
+    @keyframes orbProcess {
+      from { transform: scale(0.97); }
+      to   { transform: scale(1.03); }
+    }
+
+    /* ── DallIA text ──────────────────────────────── */
+    .dallia-text {
+      font-size: 16px;
+      font-weight: 500;
+      color: rgba(255,255,255,0.9);
+      text-align: center;
+      padding: 0 40px;
+      line-height: 1.55;
+      min-height: 50px;
+      transition: opacity 0.3s;
+    }
+
+    /* ── User transcript ──────────────────────────── */
+    .user-text {
+      font-size: 14px;
+      font-style: italic;
+      color: #ef520f;
+      text-align: center;
+      margin-top: 12px;
+      min-height: 22px;
+      transition: opacity 0.2s;
+      padding: 0 24px;
+    }
+
+    .user-text.listening {
+      animation: blink 1.2s step-start infinite;
+    }
+
+    @keyframes blink {
+      0%,100% { opacity: 1; }
+      50%      { opacity: 0.35; }
+    }
+
+    /* ── State badge ──────────────────────────────── */
+    .state-badge {
+      margin-top: 16px;
+      font-size: 12px;
+      font-weight: 600;
+      color: rgba(255,255,255,0.35);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    /* ── Bottom controls ──────────────────────────── */
+    .voz-controls {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 40px;
+      padding: 24px 32px;
+      padding-bottom: max(env(safe-area-inset-bottom, 24px), 24px);
+      flex-shrink: 0;
+    }
+
+    .ctrl-btn {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.1);
+      border: none;
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s, transform 0.1s;
+    }
+
+    .ctrl-btn:active { transform: scale(0.9); background: rgba(255,255,255,0.18); }
+
+    .ctrl-btn-close {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: #EF4444;
+      border: none;
+      color: white;
+      font-size: 26px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 24px rgba(239,68,68,0.4);
+      transition: transform 0.1s, box-shadow 0.15s;
+    }
+
+    .ctrl-btn-close:active {
+      transform: scale(0.9);
+      box-shadow: 0 2px 12px rgba(239,68,68,0.3);
+    }
+
+    /* ── Error toast ──────────────────────────────── */
+    .voz-toast {
+      position: absolute;
+      bottom: 120px;
+      left: 50%;
+      transform: translateX(-50%) translateY(0);
+      background: rgba(255,255,255,0.12);
+      backdrop-filter: blur(12px);
+      color: white;
+      padding: 10px 20px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 500;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    .voz-toast.visible { opacity: 1; }
+  </style>
+</head>
+<body>
+
+<div class="voz-shell">
+
+  <!-- Top bar -->
+  <div class="voz-topbar">
+    <button class="voz-close-top" onclick="closeVoz()" aria-label="Cerrar voz">&#8964;</button>
+    <span class="voz-title">DallIA &middot; Voz</span>
+    <button class="voz-chat-link" onclick="window.location='/dallia'" aria-label="Ir al chat">💬</button>
+  </div>
+
+  <!-- Center -->
+  <div class="voz-center">
+    <div class="orb-container">
+      <div class="orb" id="orb">🤖</div>
+    </div>
+
+    <div class="dallia-text" id="dalliaText">Hola, te escucho. ¿En qué te ayudo?</div>
+    <div class="user-text" id="userText">Toca el micrófono para hablar</div>
+    <div class="state-badge" id="stateBadge">LISTO</div>
+  </div>
+
+  <!-- Controls -->
+  <div class="voz-controls">
+    <button class="ctrl-btn" id="speakerBtn" onclick="toggleSpeaker()" aria-label="Altavoz">🔊</button>
+    <button class="ctrl-btn-close" onclick="closeVoz()" aria-label="Cerrar">✕</button>
+    <button class="ctrl-btn" onclick="startListening()" aria-label="Micrófono">🎤</button>
+  </div>
+
+  <div class="voz-toast" id="vozToast"></div>
+</div>
+
+<script>
+  // ── State ─────────────────────────────────────────────────────────────────
+  const recentHistory = [];
+  let recognition     = null;
+  let isListening     = false;
+  let isSpeaking      = false;
+  let speakerEnabled  = true;
+  let autoListenTimer = null;
+
+  // ── Init ──────────────────────────────────────────────────────────────────
+  window.addEventListener('DOMContentLoaded', function() {
+    // Small delay for a smoother landing feel
+    setTimeout(startListening, 600);
+  });
+
+  // ── Orb state management ──────────────────────────────────────────────────
+  function setOrbState(state) {
+    const orb   = document.getElementById('orb');
+    const badge = document.getElementById('stateBadge');
+    orb.classList.remove('pulsing', 'processing');
+
+    if (state === 'listening') {
+      orb.classList.add('pulsing');
+      badge.textContent = 'ESCUCHANDO';
+    } else if (state === 'processing') {
+      orb.classList.add('processing');
+      badge.textContent = 'PROCESANDO';
+    } else if (state === 'speaking') {
+      badge.textContent = 'HABLANDO';
+    } else {
+      badge.textContent = 'LISTO';
+    }
+  }
+
+  function showDalliaText(text) {
+    const el = document.getElementById('dalliaText');
+    el.style.opacity = '0';
+    setTimeout(function() {
+      // Strip markdown bold for display
+      el.textContent = text.replace(/\*\*/g, '');
+      el.style.opacity = '1';
+    }, 200);
+  }
+
+  function showUserText(text, blinking) {
+    const el = document.getElementById('userText');
+    el.textContent = text;
+    if (blinking) {
+      el.classList.add('listening');
+    } else {
+      el.classList.remove('listening');
+    }
+  }
+
+  // ── Speech recognition ────────────────────────────────────────────────────
+  function startListening() {
+    if (isListening || isSpeaking) return;
+    const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRec) {
+      showToast('Voz no disponible en este navegador');
+      return;
+    }
+
+    recognition = new SpeechRec();
+    recognition.lang = 'es-PE';
+    recognition.continuous = false;
+    recognition.interimResults = true;
+
+    recognition.onstart = function() {
+      isListening = true;
+      setOrbState('listening');
+      showUserText('Escuchando...', true);
+    };
+
+    recognition.onresult = function(e) {
+      const transcript = Array.from(e.results).map(function(r){ return r[0].transcript; }).join('');
+      showUserText(transcript, !e.results[e.results.length - 1].isFinal);
+      if (e.results[e.results.length - 1].isFinal) {
+        recognition.stop();
+      }
+    };
+
+    recognition.onerror = function(e) {
+      isListening = false;
+      setOrbState('ready');
+      showUserText('No entendí, intenta de nuevo', false);
+      clearTimeout(autoListenTimer);
+      autoListenTimer = setTimeout(startListening, 2500);
+    };
+
+    recognition.onend = function() {
+      isListening = false;
+      const transcript = document.getElementById('userText').textContent;
+      if (transcript && transcript !== 'Escuchando...' && transcript !== 'No entendí, intenta de nuevo') {
+        processVoiceResult(transcript);
+      } else if (transcript === 'Escuchando...') {
+        showUserText('Sin entrada de audio', false);
+        clearTimeout(autoListenTimer);
+        autoListenTimer = setTimeout(startListening, 2000);
+      }
+    };
+
+    recognition.start();
+  }
+
+  function stopListening() {
+    if (recognition) {
+      try { recognition.stop(); } catch(_) {}
+      recognition = null;
+    }
+    isListening = false;
+    setOrbState('processing');
+  }
+
+  // ── Process voice ─────────────────────────────────────────────────────────
+  async function processVoiceResult(text) {
+    showUserText(text, false);
+    stopListening();
+    setOrbState('processing');
+
+    try {
+      const r = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mensaje: text,
+          historial: recentHistory.slice(-12)
+        })
+      });
+      const data = await r.json();
+      if (data.respuesta) {
+        const cleanText = data.respuesta.replace(/\*\*/g, '').replace(/\*/g, '');
+        showDalliaText(cleanText);
+        recentHistory.push({ role: 'user', content: text });
+        recentHistory.push({ role: 'assistant', content: data.respuesta });
+
+        // Persist
+        persistMsg('user', text);
+        persistMsg('assistant', data.respuesta);
+
+        if (speakerEnabled) {
+          speakText(cleanText, function() {
+            setOrbState('ready');
+            clearTimeout(autoListenTimer);
+            autoListenTimer = setTimeout(startListening, 1800);
+          });
+        } else {
+          setOrbState('ready');
+          clearTimeout(autoListenTimer);
+          autoListenTimer = setTimeout(startListening, 1800);
+        }
+      } else {
+        showDalliaText('No pude responder. Intenta de nuevo.');
+        setOrbState('ready');
+        clearTimeout(autoListenTimer);
+        autoListenTimer = setTimeout(startListening, 2000);
+      }
+    } catch(e) {
+      showDalliaText('Error de conexión. Intenta de nuevo.');
+      setOrbState('ready');
+      clearTimeout(autoListenTimer);
+      autoListenTimer = setTimeout(startListening, 2500);
+    }
+  }
+
+  // ── Speech synthesis ──────────────────────────────────────────────────────
+  function speakText(text, onEnd) {
+    if (!('speechSynthesis' in window)) {
+      if (onEnd) onEnd();
+      return;
+    }
+    window.speechSynthesis.cancel();
+
+    // Truncate long responses for voice
+    const speakable = text.length > 300 ? text.substring(0, 297) + '...' : text;
+
+    const utt = new SpeechSynthesisUtterance(speakable);
+    utt.lang  = 'es-PE';
+    utt.rate  = 1.05;
+    utt.pitch = 1.0;
+
+    isSpeaking = true;
+    setOrbState('speaking');
+
+    utt.onend = function() {
+      isSpeaking = false;
+      if (onEnd) onEnd();
+    };
+
+    utt.onerror = function() {
+      isSpeaking = false;
+      if (onEnd) onEnd();
+    };
+
+    window.speechSynthesis.speak(utt);
+  }
+
+  // ── Speaker toggle ────────────────────────────────────────────────────────
+  function toggleSpeaker() {
+    speakerEnabled = !speakerEnabled;
+    const btn = document.getElementById('speakerBtn');
+    btn.textContent = speakerEnabled ? '🔊' : '🔇';
+    btn.style.background = speakerEnabled ? 'rgba(255,255,255,0.10)' : 'rgba(239,82,15,0.25)';
+    if (!speakerEnabled && isSpeaking) {
+      window.speechSynthesis.cancel();
+      isSpeaking = false;
+    }
+    showToast(speakerEnabled ? 'Altavoz activado' : 'Altavoz silenciado');
+  }
+
+  // ── Close ─────────────────────────────────────────────────────────────────
+  function closeVoz() {
+    clearTimeout(autoListenTimer);
+    if (recognition) { try { recognition.stop(); } catch(_) {} }
+    window.speechSynthesis.cancel();
+    window.location = '/dallia';
+  }
+
+  // ── Persist (fire-and-forget) ─────────────────────────────────────────────
+  function persistMsg(role, content) {
+    fetch('/api/chat/dallia/guardar-mensaje', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role, content })
+    }).catch(function(){});
+  }
+
+  // ── Toast ─────────────────────────────────────────────────────────────────
+  function showToast(msg) {
+    const el = document.getElementById('vozToast');
+    el.textContent = msg;
+    el.classList.add('visible');
+    setTimeout(function() { el.classList.remove('visible'); }, 2200);
+  }
+
+  // ── Prevent accidental back gesture ──────────────────────────────────────
+  window.addEventListener('popstate', function() {
+    closeVoz();
+  });
+</script>
+
+</body>
+</html>

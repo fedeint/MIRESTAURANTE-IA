@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1e1b4b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="dignita">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+  <title>Setup Inicial - mirestconia.com</title>
+  <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/theme.css">
+</head>
+<body style="min-height:100vh; display:flex; flex-direction:column;">
+  <main style="flex:1 0 auto; display:flex; align-items:center;">
+    <div class="container">
+      <div class="row justify-content-center">
+        <div class="col-12 col-md-5 col-lg-4">
+          <!-- Brand header -->
+          <div class="text-center mb-4">
+            <div style="width:60px;height:60px;background:linear-gradient(135deg,#818cf8,#06b6d4);border-radius:1rem;display:inline-flex;align-items:center;justify-content:center;font-size:1.5rem;color:#fff;box-shadow:0 8px 24px rgba(99,102,241,0.3);margin-bottom:0.75rem;">
+              <i class="bi bi-fire"></i>
+            </div>
+            <h4 style="font-weight:800;letter-spacing:-0.03em;color:#1e293b;">dignita<span style="color:#06b6d4;">.tech</span></h4>
+            <p class="text-muted small">Sistema de Gestion de Restaurantes</p>
+          </div>
+          <!-- Card -->
+          <div class="card">
+            <div class="card-body p-4">
+              <div class="d-flex align-items-center mb-3">
+                <div class="me-2" style="color:#10b981;"><i class="bi bi-person-gear fs-3"></i></div>
+                <div>
+                  <div class="fw-bold">Setup inicial</div>
+                  <div class="text-muted small">Crea el primer usuario <strong>administrador</strong>.</div>
+                </div>
+              </div>
+
+              <% if (error) { %>
+                <div class="alert alert-danger py-2 small"><%= error %></div>
+              <% } %>
+
+              <form method="POST" action="/setup" autocomplete="off">
+                <input type="hidden" name="_csrf" value="<%= locals.csrfToken || '' %>">
+                <div class="row g-2">
+                  <div class="col-12">
+                    <label class="form-label">Usuario</label>
+                    <div class="input-group">
+                      <span class="input-group-text"><i class="bi bi-person-fill"></i></span>
+                      <input name="usuario" class="form-control" required autofocus placeholder="admin">
+                    </div>
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label">Nombre (opcional)</label>
+                    <div class="input-group">
+                      <span class="input-group-text"><i class="bi bi-card-text"></i></span>
+                      <input name="nombre" class="form-control" placeholder="Administrador">
+                    </div>
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label">Contrasena</label>
+                    <div class="input-group">
+                      <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
+                      <input name="password" type="password" class="form-control" required placeholder="Tu contrasena">
+                    </div>
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label">Confirmar contrasena</label>
+                    <div class="input-group">
+                      <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
+                      <input name="password2" type="password" class="form-control" required placeholder="Repite la contrasena">
+                    </div>
+                  </div>
+                </div>
+                <button class="btn btn-success w-100 mt-3 py-2" type="submit">
+                  <i class="bi bi-check2-circle me-1"></i> Crear administrador
+                </button>
+              </form>
+
+              <div class="alert alert-warning small mt-3 mb-0">
+                <i class="bi bi-exclamation-triangle me-1"></i>
+                Si te aparece error de "migracion", ejecuta el <code>CREATE TABLE usuarios</code> del archivo <code>database.sql</code>.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <%- include('partials/footer') %>
+
+  <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

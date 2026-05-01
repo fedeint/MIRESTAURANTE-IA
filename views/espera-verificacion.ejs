@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1e1b4b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="dignita">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+  <title>En Revisión - mirestconia.com</title>
+  <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'DM Sans', system-ui, sans-serif; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+    .card-espera { max-width: 520px; width: 100%; border: none; border-radius: 1rem; box-shadow: 0 8px 32px rgba(0,0,0,0.08); }
+  </style>
+</head>
+<body>
+  <div class="card card-espera">
+    <div class="card-body p-4 p-md-5 text-center">
+
+      <% if (typeof solicitud !== 'undefined' && solicitud.estado === 'rechazado') { %>
+        <!-- Rechazado -->
+        <div class="mb-3">
+          <div class="rounded-circle bg-danger bg-opacity-10 d-inline-flex align-items-center justify-content-center" style="width:70px;height:70px;">
+            <i class="bi bi-x-circle fs-1 text-danger"></i>
+          </div>
+        </div>
+        <h4 class="fw-bold mb-2">Solicitud rechazada</h4>
+        <p class="text-muted mb-3">Tu solicitud fue rechazada por el siguiente motivo:</p>
+        <div class="alert alert-warning text-start">
+          <i class="bi bi-info-circle me-1"></i> <%= solicitud.motivo_rechazo || 'Sin motivo especificado' %>
+        </div>
+        <% if (solicitud.intento < 3) { %>
+          <p class="text-muted small">Puedes reintentar subiendo nuevas fotos y video. Intento <%= solicitud.intento %> de 3.</p>
+          <a href="/solicitud" class="btn btn-primary">
+            <i class="bi bi-arrow-repeat me-1"></i>Reintentar verificación
+          </a>
+        <% } else { %>
+          <p class="text-danger small">Has alcanzado el máximo de intentos. Contacta soporte para asistencia.</p>
+        <% } %>
+
+      <% } else { %>
+        <!-- Pendiente / En revisión -->
+        <div class="mb-3">
+          <div class="rounded-circle bg-success bg-opacity-10 d-inline-flex align-items-center justify-content-center" style="width:70px;height:70px;">
+            <i class="bi bi-check-circle fs-1 text-success"></i>
+          </div>
+        </div>
+        <h4 class="fw-bold mb-2">Solicitud enviada</h4>
+        <p class="text-muted mb-3">Estamos revisando tu información.</p>
+
+        <div class="bg-light rounded p-3 mb-3 text-start">
+          <div class="d-flex align-items-center mb-2">
+            <i class="bi bi-clock me-2 text-primary"></i>
+            <span><strong>Tiempo estimado:</strong> 2-4 horas</span>
+          </div>
+          <div class="d-flex align-items-center mb-2">
+            <i class="bi bi-calendar me-2 text-primary"></i>
+            <span><strong>Horario de revisión:</strong> L-S, 8am - 8pm</span>
+          </div>
+          <div class="d-flex align-items-center">
+            <i class="bi bi-envelope me-2 text-primary"></i>
+            <span><strong>Te notificaremos a:</strong> <%= typeof email !== 'undefined' ? email : '' %></span>
+          </div>
+        </div>
+
+        <div class="alert alert-light border text-start">
+          <div class="d-flex align-items-start">
+            <i class="bi bi-robot text-primary me-2 mt-1"></i>
+            <div>
+              <strong>Mientras tanto, DalIA te recomienda:</strong>
+              <ul class="mb-0 mt-1 small">
+                <li>Prepara tu carta de productos</li>
+                <li>Ten listo el logo de tu negocio</li>
+                <li>Define cuántas mesas tendrás</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        <div class="badge bg-primary bg-opacity-10 text-primary p-2">
+          <i class="bi bi-hourglass-split me-1"></i>EN REVISIÓN
+        </div>
+      <% } %>
+
+    </div>
+  </div>
+  <script src="/js/ios-install-banner.js"></script>
+</body>
+</html>

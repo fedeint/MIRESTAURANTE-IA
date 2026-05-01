@@ -1,0 +1,56 @@
+version: 2
+updates:
+  # npm dependencies
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/Lima"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "Leonidasx8"
+    assignees:
+      - "Leonidasx8"
+    labels:
+      - "dependencies"
+      - "needs-triage"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+    groups:
+      # Group minor + patch updates to reduce PR noise
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+        exclude-patterns:
+          # Security libs get individual PRs so we review them carefully
+          - "csrf-csrf"
+          - "cookie-parser"
+          - "express-session"
+          - "bcryptjs"
+          - "helmet"
+          - "express-rate-limit"
+    ignore:
+      # Pin nodemon — major bumps break our dev script sometimes
+      - dependency-name: "nodemon"
+        update-types: ["version-update:semver-major"]
+
+  # GitHub Actions
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/Lima"
+    open-pull-requests-limit: 3
+    reviewers:
+      - "Leonidasx8"
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "chore(ci)"

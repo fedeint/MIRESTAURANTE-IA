@@ -1,0 +1,81 @@
+{
+  "name": "dignita-restaurant",
+  "version": "2.0.0",
+  "description": "Sistema de Gestion de Restaurantes - dignita.tech",
+  "main": "server.js",
+  "bin": "server.js",
+  "pkg": {
+    "assets": [
+      "views/**/*",
+      "public/**/*",
+      "node_modules/ejs/**/*",
+      "node_modules/bootstrap/dist/**/*",
+      "node_modules/jquery/dist/**/*",
+      "node_modules/sweetalert2/dist/**/*",
+      "node_modules/select2/dist/**/*",
+      "node_modules/select2-bootstrap-5-theme/dist/**/*",
+      "node_modules/bootstrap-icons/font/**/*"
+    ],
+    "targets": [
+      "node18-win-x64"
+    ],
+    "outputPath": "dist"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "test": "node --test lib/deviceRouter.test.js tests/view-variants.test.js tests/dallia-actions.test.js tests/dallia-actions-enviar-pedido-proveedor.test.js",
+    "hooks:install": "git config core.hooksPath .githooks",
+    "build": "pkg . --public --target node18-win-x64",
+    "local": "MODO=local node -r dotenv/config server.js dotenv_config_path=.env.local",
+    "setup:local": "bash scripts/setup-local.sh",
+    "sync:to-cloud": "node scripts/sync-to-cloud.js",
+    "sync:from-cloud": "node scripts/sync-from-cloud.js",
+    "sync:from-cloud:full": "node scripts/sync-from-cloud.js --full"
+  },
+  "dependencies": {
+    "@andresaya/edge-tts": "^1.8.0",
+    "@anthropic-ai/sdk": "^0.79.0",
+    "@simplewebauthn/server": "^13.3.0",
+    "@supabase/supabase-js": "^2.99.3",
+    "bcryptjs": "^3.0.2",
+    "body-parser": "^1.20.2",
+    "bootstrap": "^5.3.3",
+    "bootstrap-icons": "^1.11.3",
+    "chart.js": "^4.5.1",
+    "compression": "^1.8.1",
+    "connect-pg-simple": "^10.0.0",
+    "cookie-parser": "^1.4.7",
+    "csrf-csrf": "^4.0.3",
+    "dotenv": "^16.6.1",
+    "ejs": "^3.1.9",
+    "exceljs": "^4.4.0",
+    "exif-parser": "^0.1.12",
+    "express": "^4.18.2",
+    "express-rate-limit": "^8.3.1",
+    "express-session": "^1.18.2",
+    "facebook-nodejs-business-sdk": "^24.0.1",
+    "helmet": "^8.1.0",
+    "jquery": "^3.7.1",
+    "knex": "^3.1.0",
+    "multer": "^1.4.5-lts.1",
+    "mysql2": "^3.20.0",
+    "nodemailer": "^8.0.3",
+    "passport": "^0.7.0",
+    "passport-google-oauth20": "^2.0.0",
+    "pdf-lib": "^1.17.1",
+    "pdfkit": "^0.18.0",
+    "pg": "^8.20.0",
+    "posthog-js": "^1.364.4",
+    "posthog-node": "^5.28.9",
+    "qrcode": "^1.5.4",
+    "select2": "^4.1.0-rc.0",
+    "select2-bootstrap-5-theme": "^1.3.0",
+    "sweetalert2": "^11.15.10",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.22",
+    "pkg": "^5.8.1"
+  }
+}

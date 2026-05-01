@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#1e1b4b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="dignita">
+  <link rel="manifest" href="/manifest.json">
+  <link rel="apple-touch-icon" href="/icon-192.png">
+  <title>mirestconia.com - Sistema de Gestion de Restaurantes</title>
+  <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Izipay Krypton SDK -->
+  <script src="https://static.micuentaweb.pe/static/js/krypton-client/V4.0/stable/kr-payment-form.min.js"
+          kr-public-key="41576398:testpublickey_6OsnKUaIQfKgaNAjwAjHnr6oNMt1lVch678UfJvShOR8s"
+          kr-post-url-success="/api/pagos/izipay-success">
+  </script>
+  <link rel="stylesheet"
+        href="https://static.micuentaweb.pe/static/js/krypton-client/V4.0/ext/classic.css">
+
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box;}
+    body{font-family:'Inter',sans-serif;color:#1e293b;overflow-x:hidden;background:#fff;}
+
+    /* HERO */
+    .hero{min-height:100vh;display:flex;align-items:center;position:relative;overflow:hidden;background:linear-gradient(135deg,#0f0a2e 0%,#1e1b4b 40%,#312e81 70%,#1e3a5f 100%);}
+    .hero::before{content:'';position:absolute;top:-20%;right:-10%;width:700px;height:700px;background:radial-gradient(circle,rgba(99,102,241,0.25),transparent 70%);border-radius:50%;animation:heroFloat 15s ease-in-out infinite;}
+    .hero::after{content:'';position:absolute;bottom:-15%;left:-5%;width:500px;height:500px;background:radial-gradient(circle,rgba(6,182,212,0.2),transparent 70%);border-radius:50%;animation:heroFloat 20s ease-in-out infinite reverse;}
+    @keyframes heroFloat{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(30px,-30px) scale(1.05)}}
+
+    .hero-content{position:relative;z-index:2;}
+    .hero-badge{display:inline-flex;align-items:center;gap:.5rem;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:2rem;padding:.4rem 1rem;font-size:.85rem;color:rgba(255,255,255,0.8);backdrop-filter:blur(8px);margin-bottom:1.5rem;}
+    .hero-badge i{color:#22d3ee;}
+    .hero h1{font-size:clamp(2.5rem,5vw,4rem);font-weight:900;color:#fff;letter-spacing:-0.04em;line-height:1.1;margin-bottom:1rem;}
+    .hero h1 span{background:linear-gradient(135deg,#818cf8,#22d3ee);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+    .hero p{font-size:1.15rem;color:rgba(255,255,255,0.65);max-width:500px;line-height:1.7;margin-bottom:2rem;}
+    .hero-btns{display:flex;gap:1rem;flex-wrap:wrap;}
+    .hero-btns .btn-hero{padding:.85rem 2rem;border-radius:.75rem;font-weight:700;font-size:1rem;transition:all .3s ease;text-decoration:none;}
+    .btn-hero-primary{background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;border:none;box-shadow:0 8px 24px rgba(99,102,241,0.4);}
+    .btn-hero-primary:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(99,102,241,0.5);color:#fff;}
+    .btn-hero-outline{background:transparent;color:#fff;border:1.5px solid rgba(255,255,255,0.2);backdrop-filter:blur(8px);}
+    .btn-hero-outline:hover{background:rgba(255,255,255,0.1);border-color:rgba(255,255,255,0.35);color:#fff;transform:translateY(-2px);}
+
+    /* HERO VISUAL */
+    .hero-visual{position:relative;z-index:2;}
+    .hero-mockup{background:rgba(255,255,255,0.06);backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.1);border-radius:1.25rem;padding:1.5rem;box-shadow:0 24px 80px rgba(0,0,0,0.3);}
+    .mockup-bar{display:flex;gap:.4rem;margin-bottom:1rem;}
+    .mockup-dot{width:10px;height:10px;border-radius:50%;}
+    .mockup-dot.r{background:#ef4444}.mockup-dot.y{background:#f59e0b}.mockup-dot.g{background:#10b981}
+    .mockup-content{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;}
+    .mockup-card{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:.75rem;padding:1rem;color:rgba(255,255,255,0.7);font-size:.8rem;}
+    .mockup-card .mc-icon{font-size:1.5rem;margin-bottom:.5rem;}
+    .mockup-card .mc-title{font-weight:700;color:#fff;font-size:.9rem;margin-bottom:.25rem;}
+    .mockup-card .mc-val{font-size:1.25rem;font-weight:800;color:#22d3ee;}
+
+    /* FEATURES */
+    .features{padding:5rem 0;background:#f8fafc;}
+    .section-label{display:inline-flex;align-items:center;gap:.5rem;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.15);border-radius:2rem;padding:.35rem 1rem;font-size:.8rem;font-weight:600;color:#6366f1;margin-bottom:1rem;}
+    .section-title{font-size:2.25rem;font-weight:800;letter-spacing:-0.03em;color:#1e293b;margin-bottom:.75rem;}
+    .section-subtitle{color:#64748b;font-size:1.05rem;max-width:550px;}
+    .feature-card{background:#fff;border:1px solid rgba(0,0,0,0.04);border-radius:1.25rem;padding:2rem;transition:all .3s ease;height:100%;}
+    .feature-card:hover{transform:translateY(-4px);box-shadow:0 12px 40px rgba(0,0,0,0.08);}
+    .feature-icon{width:52px;height:52px;border-radius:.875rem;display:flex;align-items:center;justify-content:center;font-size:1.35rem;margin-bottom:1.25rem;color:#fff;}
+    .fi-purple{background:linear-gradient(135deg,#6366f1,#4f46e5);}
+    .fi-cyan{background:linear-gradient(135deg,#06b6d4,#0891b2);}
+    .fi-green{background:linear-gradient(135deg,#10b981,#059669);}
+    .fi-orange{background:linear-gradient(135deg,#f59e0b,#d97706);}
+    .fi-rose{background:linear-gradient(135deg,#f43f5e,#e11d48);}
+    .fi-blue{background:linear-gradient(135deg,#3b82f6,#2563eb);}
+    .feature-card h5{font-weight:700;font-size:1.1rem;margin-bottom:.5rem;color:#1e293b;}
+    .feature-card p{color:#64748b;font-size:.9rem;line-height:1.6;margin:0;}
+
+    /* DISHES */
+    .dishes{padding:5rem 0;background:#fff;}
+    .dish-card{position:relative;border-radius:1.25rem;overflow:hidden;aspect-ratio:4/3;cursor:pointer;}
+    .dish-card img{width:100%;height:100%;object-fit:cover;transition:transform .5s ease;}
+    .dish-card:hover img{transform:scale(1.08);}
+    .dish-overlay{position:absolute;inset:0;background:linear-gradient(0deg,rgba(0,0,0,0.55) 0%,transparent 60%);display:flex;align-items:flex-end;padding:1rem;opacity:0;transition:opacity .3s ease;}
+    .dish-card:hover .dish-overlay{opacity:1;}
+    .dish-tag{background:rgba(255,255,255,0.15);backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,0.2);color:#fff;font-size:.8rem;font-weight:600;padding:.3rem .85rem;border-radius:2rem;}
+
+    /* STATS */
+    .stats{padding:4rem 0;background:#fff;}
+    .stat-item{text-align:center;padding:1.5rem;}
+    .stat-num{font-size:2.5rem;font-weight:900;letter-spacing:-0.04em;background:linear-gradient(135deg,#6366f1,#06b6d4);-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+    .stat-label{color:#64748b;font-size:.9rem;font-weight:500;margin-top:.25rem;}
+
+    /* ═══════════════════════════════════════════════════════════════════
+       PRICING SECTION
+       ═══════════════════════════════════════════════════════════════════ */
+    .pricing{padding:6rem 0;background:linear-gradient(180deg,#f8fafc 0%,#fff 100%);}
+
+    .pricing .section-label{background:rgba(249,115,22,0.08);border-color:rgba(249,115,22,0.2);color:#F97316;}
+
+    .pricing-card{background:#fff;border:1.5px solid rgba(0,0,0,0.06);border-radius:1.5rem;padding:2.5rem 2rem;position:relative;transition:all .35s ease;height:100%;display:flex;flex-direction:column;}
+    .pricing-card:hover{transform:translateY(-6px);box-shadow:0 20px 60px rgba(0,0,0,0.1);}
+
+    /* Highlighted / recommended card */
+    .pricing-card.destacado{background:linear-gradient(145deg,#0f0a2e,#1e1b4b);border-color:rgba(99,102,241,0.4);color:#fff;box-shadow:0 24px 80px rgba(99,102,241,0.25);}
+    .pricing-card.destacado:hover{box-shadow:0 32px 96px rgba(99,102,241,0.35);}
+    .pricing-card.destacado .plan-name{color:#fff;}
+    .pricing-card.destacado .plan-desc{color:rgba(255,255,255,0.6);}
+    .pricing-card.destacado .plan-feature{color:rgba(255,255,255,0.85);}
+    .pricing-card.destacado .plan-feature i{color:#22d3ee;}
+    .pricing-card.destacado .plan-divider{border-color:rgba(255,255,255,0.1);}
+
+    .plan-badge-popular{position:absolute;top:-14px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#F97316,#ea580c);color:#fff;font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:.3rem 1.1rem;border-radius:2rem;white-space:nowrap;box-shadow:0 4px 14px rgba(249,115,22,0.45);}
+
+    .plan-name{font-size:1.2rem;font-weight:800;color:#1e293b;margin-bottom:.25rem;}
+    .plan-desc{font-size:.875rem;color:#64748b;margin-bottom:1.5rem;}
+
+    .plan-price{margin-bottom:1.5rem;}
+    .plan-price .currency{font-size:1.35rem;font-weight:700;color:#6366f1;vertical-align:top;margin-top:.6rem;display:inline-block;}
+    .plan-price .amount{font-size:3.25rem;font-weight:900;letter-spacing:-0.04em;color:#1e293b;line-height:1;}
+    .plan-price .period{font-size:.85rem;color:#94a3b8;font-weight:500;}
+    .pricing-card.destacado .plan-price .currency{color:#818cf8;}
+    .pricing-card.destacado .plan-price .amount{color:#fff;}
+
+    .plan-price-free .amount{font-size:2.5rem;color:#10b981;}
+    .plan-price-free .currency{color:#10b981;}
+
+    .plan-divider{border:none;border-top:1px solid rgba(0,0,0,0.07);margin:1.25rem 0;}
+
+    .plan-features{list-style:none;padding:0;margin:0 0 2rem;flex:1;}
+    .plan-feature{display:flex;align-items:flex-start;gap:.6rem;font-size:.875rem;color:#475569;padding:.4rem 0;}
+    .plan-feature i{font-size:1rem;color:#6366f1;flex-shrink:0;margin-top:.1rem;}
+
+    /* CTA buttons inside pricing cards */
+    .btn-plan{display:block;width:100%;padding:.875rem;border-radius:.875rem;font-weight:700;font-size:.95rem;text-align:center;text-decoration:none;transition:all .3s ease;border:none;cursor:pointer;}
+    .btn-plan-free{background:#f1f5f9;color:#1e293b;}
+    .btn-plan-free:hover{background:#e2e8f0;color:#1e293b;}
+    .btn-plan-pro{background:linear-gradient(135deg,#F97316,#ea580c);color:#fff;box-shadow:0 8px 24px rgba(249,115,22,0.35);}
+    .btn-plan-pro:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(249,115,22,0.45);color:#fff;}
+    .btn-plan-enterprise{background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;box-shadow:0 8px 24px rgba(99,102,241,0.3);}
+    .btn-plan-enterprise:hover{transform:translateY(-2px);box-shadow:0 12px 32px rgba(99,102,241,0.4);color:#fff;}
+
+    .pricing-note{font-size:.8rem;color:#94a3b8;text-align:center;margin-top:1rem;}
+
+    /* Online payment coming-soon ribbon */
+    .payment-coming-soon{display:inline-flex;align-items:center;gap:.4rem;background:rgba(249,115,22,0.06);border:1px solid rgba(249,115,22,0.15);border-radius:2rem;padding:.35rem .9rem;font-size:.78rem;color:#F97316;font-weight:600;}
+    .payment-coming-soon i{font-size:.85rem;}
+
+    /* ═══════════════════════════════════════════════════════════════════
+       CONTACT MODAL (used while Izipay is not yet live)
+       ═══════════════════════════════════════════════════════════════════ */
+    .contact-modal .modal-content{border-radius:1.25rem;border:none;box-shadow:0 32px 80px rgba(0,0,0,0.15);}
+    .contact-modal .modal-header{border-bottom:1px solid rgba(0,0,0,0.06);padding:1.5rem 2rem 1rem;}
+    .contact-modal .modal-body{padding:1.5rem 2rem 2rem;}
+    .contact-modal .modal-title{font-weight:800;font-size:1.2rem;color:#1e293b;}
+    .contact-modal .plan-highlight{background:linear-gradient(135deg,rgba(249,115,22,0.08),rgba(249,115,22,0.04));border:1px solid rgba(249,115,22,0.18);border-radius:.875rem;padding:1rem 1.25rem;margin-bottom:1.5rem;}
+    .contact-modal .plan-highlight .ph-name{font-weight:800;font-size:1rem;color:#1e293b;}
+    .contact-modal .plan-highlight .ph-price{font-size:1.5rem;font-weight:900;color:#F97316;}
+
+    .contact-option{display:flex;align-items:center;gap:1rem;background:#f8fafc;border:1.5px solid rgba(0,0,0,0.06);border-radius:1rem;padding:1.1rem 1.25rem;text-decoration:none;color:#1e293b;transition:all .25s ease;margin-bottom:.75rem;}
+    .contact-option:hover{border-color:rgba(249,115,22,0.3);background:rgba(249,115,22,0.03);color:#1e293b;transform:translateX(4px);}
+    .contact-option .co-icon{width:44px;height:44px;border-radius:.75rem;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;}
+    .co-whatsapp{background:linear-gradient(135deg,#25D366,#1ebe5d);color:#fff;}
+    .co-email{background:linear-gradient(135deg,#6366f1,#4f46e5);color:#fff;}
+    .contact-option .co-text strong{display:block;font-weight:700;font-size:.9rem;}
+    .contact-option .co-text span{font-size:.8rem;color:#64748b;}
+
+    /* CTA */
+    .cta{padding:5rem 0;background:linear-gradient(135deg,#0f0a2e,#1e1b4b,#312e81);position:relative;overflow:hidden;}
+    .cta::before{content:'';position:absolute;top:-50%;right:-20%;width:600px;height:600px;background:radial-gradient(circle,rgba(99,102,241,0.15),transparent 70%);border-radius:50%;}
+    .cta h2{font-size:2rem;font-weight:800;color:#fff;letter-spacing:-0.03em;margin-bottom:.75rem;}
+    .cta p{color:rgba(255,255,255,0.6);font-size:1.05rem;margin-bottom:1.5rem;}
+
+    /* FOOTER */
+    .landing-footer{padding:2rem 0;background:#0f0a2e;border-top:1px solid rgba(255,255,255,0.06);}
+    .landing-footer span{color:rgba(255,255,255,0.4);font-size:.85rem;}
+    .landing-footer .brand{color:rgba(255,255,255,0.8);font-weight:700;}
+    .landing-footer .accent{color:#22d3ee;}
+
+    /* Responsive */
+    @media(max-width:768px){
+      .hero{padding:3rem 0;}
+      .hero-visual{margin-top:2.5rem;}
+      .mockup-content{grid-template-columns:1fr;}
+      .pricing-card{margin-bottom:1.5rem;}
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="container">
+      <div class="row align-items-center">
+        <div class="col-lg-6 hero-content">
+          <div class="hero-badge">
+            <i class="bi bi-lightning-charge-fill"></i> Sistema profesional para restaurantes
+          </div>
+          <h1>Gestiona tu restaurante con <span>tecnologia</span></h1>
+          <p>Mesas, cocina, facturacion y mas. Todo desde una interfaz moderna, rapida y facil de usar. Hecho para restaurantes en Peru.</p>
+          <div class="hero-btns">
+            <a href="/login" class="btn-hero btn-hero-primary"><i class="bi bi-box-arrow-in-right me-2"></i>Ingresar al sistema</a>
+            <a href="#precios" class="btn-hero btn-hero-outline"><i class="bi bi-tag me-1"></i>Ver precios</a>
+          </div>
+        </div>
+        <div class="col-lg-6 hero-visual">
+          <div class="hero-mockup">
+            <div class="mockup-bar">
+              <div class="mockup-dot r"></div>
+              <div class="mockup-dot y"></div>
+              <div class="mockup-dot g"></div>
+            </div>
+            <div class="mockup-content">
+              <div class="mockup-card">
+                <div class="mc-icon"><i class="bi bi-grid-3x3-gap-fill"></i></div>
+                <div class="mc-title">Mesas activas</div>
+                <div class="mc-val">12</div>
+              </div>
+              <div class="mockup-card">
+                <div class="mc-icon"><i class="bi bi-fire"></i></div>
+                <div class="mc-title">En cocina</div>
+                <div class="mc-val">8</div>
+              </div>
+              <div class="mockup-card">
+                <div class="mc-icon"><i class="bi bi-receipt"></i></div>
+                <div class="mc-title">Ventas hoy</div>
+                <div class="mc-val">S/ 2,450</div>
+              </div>
+              <div class="mockup-card">
+                <div class="mc-icon"><i class="bi bi-people-fill"></i></div>
+                <div class="mc-title">Clientes</div>
+                <div class="mc-val">156</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="features" id="features">
+    <div class="container">
+      <div class="text-center mb-5">
+        <div class="section-label"><i class="bi bi-stars"></i> Funcionalidades</div>
+        <h2 class="section-title">Todo lo que necesitas</h2>
+        <p class="section-subtitle mx-auto">Herramientas completas para gestionar cada aspecto de tu restaurante</p>
+      </div>
+      <div class="row g-4">
+        <div class="col-md-6 col-lg-4">
+          <div class="feature-card">
+            <div class="feature-icon fi-purple"><i class="bi bi-grid-3x3-gap-fill"></i></div>
+            <h5>Gestion de Mesas</h5>
+            <p>Crea, edita y controla el estado de cada mesa. Abre pedidos, mueve entre mesas y gestiona en tiempo real.</p>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+          <div class="feature-card">
+            <div class="feature-icon fi-orange"><i class="bi bi-fire"></i></div>
+            <h5>Panel de Cocina</h5>
+            <p>Los cocineros ven los pedidos en tiempo real. Estados: enviado, preparando, listo, entregado. Con auto-refresh.</p>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+          <div class="feature-card">
+            <div class="feature-icon fi-green"><i class="bi bi-receipt"></i></div>
+            <h5>Facturacion</h5>
+            <p>Genera facturas con impresion termica. Pago en efectivo, tarjeta, transferencia o mixto.</p>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+          <div class="feature-card">
+            <div class="feature-icon fi-cyan"><i class="bi bi-box-seam-fill"></i></div>
+            <h5>Productos y Combos</h5>
+            <p>Gestiona productos con precios por unidad, kilo o libra. Crea combos con variantes para cocina.</p>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+          <div class="feature-card">
+            <div class="feature-icon fi-rose"><i class="bi bi-people-fill"></i></div>
+            <h5>Roles y Usuarios</h5>
+            <p>Administrador, mesero y cocinero. Cada rol ve solo lo que necesita. Control total de acceso.</p>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+          <div class="feature-card">
+            <div class="feature-icon fi-blue"><i class="bi bi-graph-up-arrow"></i></div>
+            <h5>Historial de Ventas</h5>
+            <p>Filtra por fecha, exporta a Excel, revisa totales por metodo de pago. Control financiero completo.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PLATOS / GALLERY -->
+  <section class="dishes">
+    <div class="container">
+      <div class="text-center mb-5">
+        <div class="section-label"><i class="bi bi-egg-fried"></i> Galeria</div>
+        <h2 class="section-title">Tus platos, bien gestionados</h2>
+        <p class="section-subtitle mx-auto">Desde la cocina hasta la mesa, cada plato pasa por un flujo organizado y eficiente</p>
+      </div>
+      <div class="row g-4">
+        <div class="col-6 col-lg-3">
+          <div class="dish-card">
+            <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400&h=300&fit=crop" alt="Plato gourmet" loading="lazy">
+            <div class="dish-overlay"><span class="dish-tag">Entradas</span></div>
+          </div>
+        </div>
+        <div class="col-6 col-lg-3">
+          <div class="dish-card">
+            <img src="https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=400&h=300&fit=crop" alt="Pizza artesanal" loading="lazy">
+            <div class="dish-overlay"><span class="dish-tag">Platos fuertes</span></div>
+          </div>
+        </div>
+        <div class="col-6 col-lg-3">
+          <div class="dish-card">
+            <img src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&h=300&fit=crop" alt="Ensalada fresca" loading="lazy">
+            <div class="dish-overlay"><span class="dish-tag">Ensaladas</span></div>
+          </div>
+        </div>
+        <div class="col-6 col-lg-3">
+          <div class="dish-card">
+            <img src="https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=400&h=300&fit=crop" alt="Postre" loading="lazy">
+            <div class="dish-overlay"><span class="dish-tag">Postres</span></div>
+          </div>
+        </div>
+        <div class="col-6 col-lg-3">
+          <div class="dish-card">
+            <img src="https://images.unsplash.com/photo-1555939594-58d7cb561ad1?w=400&h=300&fit=crop" alt="Parrilla" loading="lazy">
+            <div class="dish-overlay"><span class="dish-tag">Parrilla</span></div>
+          </div>
+        </div>
+        <div class="col-6 col-lg-3">
+          <div class="dish-card">
+            <img src="https://images.unsplash.com/photo-1476224203421-9ac39bcb3327?w=400&h=300&fit=crop" alt="Ceviche" loading="lazy">
+            <div class="dish-overlay"><span class="dish-tag">Mariscos</span></div>
+          </div>
+        </div>
+        <div class="col-6 col-lg-3">
+          <div class="dish-card">
+            <img src="https://images.unsplash.com/photo-1551218808-94e220e084d2?w=400&h=300&fit=crop" alt="Bebidas" loading="lazy">
+            <div class="dish-overlay"><span class="dish-tag">Bebidas</span></div>
+          </div>
+        </div>
+        <div class="col-6 col-lg-3">
+          <div class="dish-card">
+            <img src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400&h=300&fit=crop" alt="Ambiente restaurante" loading="lazy">
+            <div class="dish-overlay"><span class="dish-tag">Ambiente</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STATS -->
+  <section class="stats">
+    <div class="container">
+      <div class="row">
+        <div class="col-6 col-md-3">
+          <div class="stat-item">
+            <div class="stat-num">100%</div>
+            <div class="stat-label">Offline compatible</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="stat-item">
+            <div class="stat-num">3</div>
+            <div class="stat-label">Roles de usuario</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="stat-item">
+            <div class="stat-num">LAN</div>
+            <div class="stat-label">Multi-dispositivo</div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="stat-item">
+            <div class="stat-num">Peru</div>
+            <div class="stat-label">Hecho para ti</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       PRICING SECTION
+       ═══════════════════════════════════════════════════════════════════ -->
+  <section class="pricing" id="precios">
+    <div class="container">
+
+      <div class="text-center mb-5">
+        <div class="section-label"><i class="bi bi-tag-fill"></i> Planes y precios</div>
+        <h2 class="section-title">Invierte en tu restaurante</h2>
+        <p class="section-subtitle mx-auto">Planes claros, sin costos ocultos. Elige el que mejor se adapta a tu operacion.</p>
+      </div>
+
+      <div class="row g-4 justify-content-center align-items-stretch">
+
+        <!-- PRUEBA GRATIS -->
+        <div class="col-md-5 col-lg-4">
+          <div class="pricing-card">
+            <div class="plan-name">Prueba Gratis</div>
+            <div class="plan-desc">Conoce el sistema sin compromiso</div>
+            <div class="plan-price plan-price-free">
+              <span class="currency">S/</span>
+              <span class="amount">0</span>
+              <span class="period"> · 5 dias</span>
+            </div>
+            <hr class="plan-divider">
+            <ul class="plan-features">
+              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> 5 dias completos</li>
+              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Todas las funciones</li>
+              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Sin tarjeta de credito</li>
+              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Sin compromiso</li>
+            </ul>
+            <a href="/setup?plan=gratis" class="btn-plan btn-plan-free">
+              <i class="bi bi-arrow-right-circle me-2"></i>Probar gratis
+            </a>
+          </div>
+        </div>
+
+        <!-- ENTERPRISE -->
+        <div class="col-md-5 col-lg-4">
+          <div class="pricing-card destacado">
+            <div class="plan-badge-popular"><i class="bi bi-lightning-charge-fill me-1"></i>Licencia de por vida</div>
+            <div class="plan-name">Enterprise</div>
+            <div class="plan-desc">Pago unico, para siempre</div>
+            <div class="plan-price">
+              <span class="currency">S/</span>
+              <span class="amount">3,200</span>
+              <span class="period"> unico</span>
+            </div>
+            <hr class="plan-divider">
+            <ul class="plan-features">
+              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Acceso de por vida</li>
+              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Usuarios ilimitados</li>
+              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Facturas ilimitadas</li>
+              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> DalIA asistente IA</li>
+              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Almacen + Cocina</li>
+              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> SUNAT / OSE</li>
+              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Multi-local (5 sedes)</li>
+              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Actualizaciones incluidas</li>
+              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> Soporte prioritario</li>
+              <li class="plan-feature"><i class="bi bi-check-circle-fill"></i> S/ 700/ano mantenimiento</li>
+            </ul>
+            <button class="btn-plan btn-plan-enterprise" onclick="abrirPagoIzipay('vida','Enterprise','S/ 3,200')">
+              <i class="bi bi-credit-card me-2"></i>Contratar Enterprise
+            </button>
+          </div>
+        </div>
+
+      </div><!-- /row -->
+
+      <!-- Izipay footnote -->
+      <div class="text-center mt-5">
+        <p style="font-size:.82rem;color:#94a3b8;">
+          <i class="bi bi-shield-lock me-1"></i>
+          Pagos seguros procesados por
+          <strong style="color:#6366f1;">Izipay</strong> (izipay.pe) — Visa, Mastercard, American Express.
+        </p>
+      </div>
+
+    </div><!-- /container -->
+  </section>
+
+  <!-- GARANTÍA -->
+  <section style="padding:5rem 0;background:linear-gradient(135deg,#0f0a2e,#1e1b4b);">
+    <div class="container">
+      <div class="row align-items-center g-5">
+        <div class="col-lg-6">
+          <div style="background:rgba(34,211,238,0.08);border:1px solid rgba(34,211,238,0.2);border-radius:20px;padding:3rem;text-align:center;">
+            <div style="font-size:4rem;margin-bottom:1rem;">🛡️</div>
+            <h3 style="color:#fff;font-weight:800;font-size:1.8rem;margin-bottom:0.5rem;">Garantia de satisfaccion</h3>
+            <p style="color:rgba(255,255,255,0.6);font-size:1rem;margin-bottom:1.5rem;">Si el sistema no funciona y no recibes respuesta de soporte, <strong style="color:#22d3ee;">te devolvemos tu dinero.</strong></p>
+            <div style="background:rgba(255,255,255,0.05);border-radius:12px;padding:1rem;text-align:left;font-size:0.85rem;">
+              <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem;"><i class="bi bi-check-circle-fill" style="color:#22c55e;font-size:1rem;flex-shrink:0;"></i><span style="color:rgba(255,255,255,0.8);">Antes de 15 dias de uso: devolucion 100%</span></div>
+              <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.75rem;"><i class="bi bi-check-circle-fill" style="color:#22c55e;font-size:1rem;flex-shrink:0;"></i><span style="color:rgba(255,255,255,0.8);">Despues de 15 dias: -$15 USD comision</span></div>
+              <div style="display:flex;align-items:center;gap:0.75rem;"><i class="bi bi-check-circle-fill" style="color:#22c55e;font-size:1rem;flex-shrink:0;"></i><span style="color:rgba(255,255,255,0.8);">Reporte el problema y deja 15 dias para respuesta</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <h3 style="color:#fff;font-weight:800;font-size:1.6rem;margin-bottom:1.5rem;">Nuestro compromiso contigo</h3>
+          <div style="display:flex;flex-direction:column;gap:1.25rem;">
+            <div style="display:flex;gap:1rem;align-items:flex-start;">
+              <div style="width:44px;height:44px;border-radius:12px;background:rgba(99,102,241,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="bi bi-headset" style="color:#818cf8;font-size:1.2rem;"></i></div>
+              <div><h6 style="color:#fff;font-weight:700;margin-bottom:2px;">Soporte prioritario 30 dias</h6><p style="color:rgba(255,255,255,0.5);font-size:0.85rem;margin:0;">Despues de la instalacion, tienes 30 dias de soporte prioritario por WhatsApp y acceso remoto.</p></div>
+            </div>
+            <div style="display:flex;gap:1rem;align-items:flex-start;">
+              <div style="width:44px;height:44px;border-radius:12px;background:rgba(34,211,238,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="bi bi-clock-history" style="color:#22d3ee;font-size:1.2rem;"></i></div>
+              <div><h6 style="color:#fff;font-weight:700;margin-bottom:2px;">Respuesta en menos de 24 horas</h6><p style="color:rgba(255,255,255,0.5);font-size:0.85rem;margin:0;">Problemas criticos (sistema caido) se atienden en menos de 2 horas. Problemas normales en 24 horas habiles.</p></div>
+            </div>
+            <div style="display:flex;gap:1rem;align-items:flex-start;">
+              <div style="width:44px;height:44px;border-radius:12px;background:rgba(34,197,94,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="bi bi-arrow-repeat" style="color:#22c55e;font-size:1.2rem;"></i></div>
+              <div><h6 style="color:#fff;font-weight:700;margin-bottom:2px;">Actualizaciones incluidas</h6><p style="color:rgba(255,255,255,0.5);font-size:0.85rem;margin:0;">Nuevas funciones, mejoras de seguridad y optimizaciones. Todo incluido en tu licencia Enterprise.</p></div>
+            </div>
+            <div style="display:flex;gap:1rem;align-items:flex-start;">
+              <div style="width:44px;height:44px;border-radius:12px;background:rgba(249,115,22,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;"><i class="bi bi-cloud-arrow-up" style="color:#f97316;font-size:1.2rem;"></i></div>
+              <div><h6 style="color:#fff;font-weight:700;margin-bottom:2px;">99.5% de disponibilidad</h6><p style="color:rgba(255,255,255,0.5);font-size:0.85rem;margin:0;">Servidor en la nube con backups automaticos. Modo local cuando se va la luz.</p></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ -->
+  <section style="padding:5rem 0;background:#fff;">
+    <div class="container" style="max-width:800px;">
+      <div class="text-center mb-5">
+        <div class="section-label"><i class="bi bi-question-circle-fill"></i> Preguntas frecuentes</div>
+        <h2 style="font-weight:800;font-size:2rem;color:#1e293b;">Resolvemos tus dudas</h2>
+      </div>
+      <div class="accordion" id="faqAccordion">
+        <div class="accordion-item" style="border:1px solid #e2e8f0;border-radius:12px;margin-bottom:0.75rem;overflow:hidden;">
+          <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq1" style="font-weight:600;">Que pasa si se va la luz en mi restaurante?</button></h2>
+          <div id="faq1" class="accordion-collapse collapse" data-bs-parent="#faqAccordion"><div class="accordion-body" style="color:#64748b;">El sistema tiene modo local. Tu laptop o Mac con bateria funciona como servidor. Los mozos se conectan por WiFi del celular y siguen trabajando normal. Cuando vuelve la luz, todo se sincroniza automaticamente con la nube.</div></div>
+        </div>
+        <div class="accordion-item" style="border:1px solid #e2e8f0;border-radius:12px;margin-bottom:0.75rem;overflow:hidden;">
+          <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2" style="font-weight:600;">Necesito comprar equipos especiales?</button></h2>
+          <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion"><div class="accordion-body" style="color:#64748b;">No. Solo necesitas un celular o tablet con navegador web para cada mozo, y una laptop/Mac para administracion. No requiere instalacion especial. Funciona desde el navegador.</div></div>
+        </div>
+        <div class="accordion-item" style="border:1px solid #e2e8f0;border-radius:12px;margin-bottom:0.75rem;overflow:hidden;">
+          <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3" style="font-weight:600;">Las facturas electronicas son validas ante SUNAT?</button></h2>
+          <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion"><div class="accordion-body" style="color:#64748b;">Si. Emitimos boletas y facturas electronicas a traves de un OSE autorizado por SUNAT (NubeFact). Los comprobantes tienen validez legal completa y se pueden enviar al cliente por WhatsApp.</div></div>
+        </div>
+        <div class="accordion-item" style="border:1px solid #e2e8f0;border-radius:12px;margin-bottom:0.75rem;overflow:hidden;">
+          <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq4" style="font-weight:600;">Puedo probar antes de pagar?</button></h2>
+          <div id="faq4" class="accordion-collapse collapse" data-bs-parent="#faqAccordion"><div class="accordion-body" style="color:#64748b;">Si. Tienes 5 dias de prueba gratis sin tarjeta de credito, con acceso a todas las funciones del sistema. Sin compromiso. Si te convence, adquieres la licencia Enterprise y te ayudamos con la implementacion.</div></div>
+        </div>
+        <div class="accordion-item" style="border:1px solid #e2e8f0;border-radius:12px;margin-bottom:0.75rem;overflow:hidden;">
+          <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq5" style="font-weight:600;">Que incluye la implementacion de 5 dias?</button></h2>
+          <div id="faq5" class="accordion-collapse collapse" data-bs-parent="#faqAccordion"><div class="accordion-body" style="color:#64748b;">Dia 1: Instalacion y configuracion del sistema. Dia 2: Carga de menu, mesas e inventario. Dia 3: Creacion de cuentas de staff y configuracion de WhatsApp/SUNAT. Dia 4: Capacitacion a todo el equipo (admin, mozos, cocina, caja). Dia 5: Dia de operacion real con supervision y soporte. Incluye 30 dias de soporte prioritario post-instalacion.</div></div>
+        </div>
+        <div class="accordion-item" style="border:1px solid #e2e8f0;border-radius:12px;margin-bottom:0.75rem;overflow:hidden;">
+          <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq6" style="font-weight:600;">Tengo otro restaurante, cuanto cuesta?</button></h2>
+          <div id="faq6" class="accordion-collapse collapse" data-bs-parent="#faqAccordion"><div class="accordion-body" style="color:#64748b;">Cada local adicional del mismo dueno tiene un descuento. La licencia Enterprise para el segundo local es S/ 2,300 + S/ 700/ano de servidor. Cada local opera de forma independiente con su propia data, mesas, inventario y facturacion.</div></div>
+        </div>
+        <div class="accordion-item" style="border:1px solid #e2e8f0;border-radius:12px;margin-bottom:0.75rem;overflow:hidden;">
+          <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq7" style="font-weight:600;">Mis datos estan seguros?</button></h2>
+          <div id="faq7" class="accordion-collapse collapse" data-bs-parent="#faqAccordion"><div class="accordion-body" style="color:#64748b;">Si. Usamos encriptacion SSL, backups automaticos diarios, y cumplimos con la Ley 29733 de Proteccion de Datos Personales. Tus datos son tuyos: puedes exportarlos en cualquier momento. Si decides dejar el servicio, tienes 90 dias para descargar toda tu informacion.</div></div>
+        </div>
+        <div class="accordion-item" style="border:1px solid #e2e8f0;border-radius:12px;margin-bottom:0.75rem;overflow:hidden;">
+          <h2 class="accordion-header"><button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq8" style="font-weight:600;">Que es DalIA?</button></h2>
+          <div id="faq8" class="accordion-collapse collapse" data-bs-parent="#faqAccordion"><div class="accordion-body" style="color:#64748b;">DalIA es tu asistente de inteligencia artificial integrado en el sistema. Te saluda cada dia, te da tareas, analiza tus ventas, te alerta sobre inventario bajo y te ayuda a tomar mejores decisiones. Incluye 2 millones de tokens de IA al ano (~2,000 consultas).</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- LIBRO DE RECLAMACIONES (Ley 32495 Peru - INDECOPI obligatorio) -->
+  <section style="padding:2rem 0;background:#f8fafc;border-top:1px solid #e2e8f0;">
+    <div class="container text-center">
+      <a href="/libro-reclamaciones" style="color:#64748b;font-size:0.85rem;text-decoration:none;display:inline-flex;align-items:center;gap:0.5rem;">
+        <i class="bi bi-journal-text" style="font-size:1.1rem;"></i>
+        Libro de Reclamaciones
+      </a>
+      <span style="color:#cbd5e1;margin:0 1rem;">|</span>
+      <a href="/privacidad" style="color:#64748b;font-size:0.85rem;text-decoration:none;">Politica de Privacidad</a>
+      <span style="color:#cbd5e1;margin:0 1rem;">|</span>
+      <a href="/terminos" style="color:#64748b;font-size:0.85rem;text-decoration:none;">Terminos de Servicio</a>
+    </div>
+  </section>
+
+  <!-- DALLIA CAROUSEL -->
+  <section style="padding:5rem 0;background:linear-gradient(180deg,#0a0f24 0%,#10152f 100%);">
+    <div class="container">
+      <div class="text-center mb-4">
+        <div style="display:inline-flex;align-items:center;gap:.5rem;background:rgba(239,82,15,0.1);border:1px solid rgba(239,82,15,0.25);border-radius:2rem;padding:.35rem 1rem;font-size:.8rem;font-weight:600;color:#ef520f;margin-bottom:1rem;">
+          <i class="bi bi-robot"></i> DallIA
+        </div>
+        <h2 style="font-size:2rem;font-weight:800;color:#fff;letter-spacing:-0.03em;margin-bottom:.5rem;">Tu asistente con IA para restaurantes</h2>
+        <p style="color:rgba(255,255,255,0.5);font-size:1rem;max-width:500px;margin:0 auto;">DallIA te ayuda a gestionar alertas, pedidos y reportes con texto o voz.</p>
+      </div>
+
+      <div style="position:relative;max-width:320px;margin:0 auto;">
+        <!-- Carousel container -->
+        <div id="dalliaCarousel" style="overflow:hidden;border-radius:24px;">
+          <div id="dalliaTrack" style="display:flex;transition:transform 0.5s ease;">
+
+            <!-- Slide 1: Chat Mejorado -->
+            <div style="min-width:100%;padding:0 10px;box-sizing:border-box;">
+              <div style="background:#141a36;border:1.5px solid rgba(239,82,15,0.2);border-radius:24px;padding:20px 16px;max-width:280px;margin:0 auto;font-family:'DM Sans',sans-serif;min-height:380px;">
+                <div style="text-align:center;margin-bottom:16px;">
+                  <span style="background:rgba(239,82,15,0.15);color:#ef520f;font-size:0.65rem;font-weight:700;padding:3px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:0.5px;">Chat Mejorado</span>
+                </div>
+                <!-- DallIA message -->
+                <div style="display:flex;gap:8px;margin-bottom:12px;">
+                  <div style="width:28px;height:28px;min-width:28px;border-radius:50%;background:linear-gradient(135deg,#ef520f,#df2c05);display:flex;align-items:center;justify-content:center;font-size:0.7rem;color:#fff;">IA</div>
+                  <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:12px 12px 12px 4px;padding:10px 12px;flex:1;">
+                    <div style="color:rgba(255,255,255,0.9);font-size:0.8rem;line-height:1.5;">Hola! Te detecte 2 alertas importantes:</div>
+                  </div>
+                </div>
+                <!-- Alert 1 -->
+                <div style="background:rgba(249,115,22,0.08);border:1px solid rgba(249,115,22,0.2);border-radius:10px;padding:10px 12px;margin-bottom:8px;margin-left:36px;">
+                  <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">
+                    <span style="font-size:0.75rem;">&#9888;&#65039;</span>
+                    <span style="color:#f97316;font-size:0.75rem;font-weight:700;">Limon agotado</span>
+                  </div>
+                  <div style="color:rgba(255,255,255,0.5);font-size:0.7rem;">4 platos afectados</div>
+                </div>
+                <!-- Alert 2 -->
+                <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:10px;padding:10px 12px;margin-bottom:14px;margin-left:36px;">
+                  <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">
+                    <span style="font-size:0.75rem;">&#128666;</span>
+                    <span style="color:#ef4444;font-size:0.75rem;font-weight:700;">Delivery #039</span>
+                  </div>
+                  <div style="color:rgba(255,255,255,0.5);font-size:0.7rem;">Lleva 32 min en cocina</div>
+                </div>
+                <!-- Action buttons -->
+                <div style="display:flex;gap:8px;margin-left:36px;">
+                  <div style="background:linear-gradient(135deg,#ef520f,#df2c05);color:#fff;font-size:0.72rem;font-weight:700;padding:7px 14px;border-radius:20px;cursor:default;">Resolver limon</div>
+                  <div style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);color:rgba(255,255,255,0.8);font-size:0.72rem;font-weight:600;padding:7px 14px;border-radius:20px;cursor:default;">Ver delivery</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slide 2: Modo Voz -->
+            <div style="min-width:100%;padding:0 10px;box-sizing:border-box;">
+              <div style="background:#141a36;border:1.5px solid rgba(239,82,15,0.2);border-radius:24px;padding:20px 16px;max-width:280px;margin:0 auto;font-family:'DM Sans',sans-serif;min-height:380px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;">
+                <span style="background:rgba(239,82,15,0.15);color:#ef520f;font-size:0.65rem;font-weight:700;padding:3px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:24px;">Modo Voz</span>
+                <!-- Voice orb -->
+                <div style="width:100px;height:100px;border-radius:50%;background:linear-gradient(135deg,#ef520f,#df2c05);display:flex;align-items:center;justify-content:center;margin-bottom:20px;box-shadow:0 0 40px rgba(239,82,15,0.35),0 0 80px rgba(239,82,15,0.15);animation:orbPulse 2s ease-in-out infinite;">
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="22"/></svg>
+                </div>
+                <!-- Quote -->
+                <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:12px 14px;margin-bottom:16px;max-width:240px;">
+                  <div style="color:rgba(255,255,255,0.85);font-size:0.8rem;line-height:1.5;font-style:italic;">"Tienes 2 delivery pendientes en zona norte, los priorizo?"</div>
+                </div>
+                <!-- Listening indicator -->
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <div style="width:6px;height:6px;border-radius:50%;background:#22c55e;animation:listenBlink 1.2s ease-in-out infinite;"></div>
+                  <span style="color:#22c55e;font-size:0.75rem;font-weight:600;">Escuchando...</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slide 3: Reportes por Voz -->
+            <div style="min-width:100%;padding:0 10px;box-sizing:border-box;">
+              <div style="background:#141a36;border:1.5px solid rgba(239,82,15,0.2);border-radius:24px;padding:20px 16px;max-width:280px;margin:0 auto;font-family:'DM Sans',sans-serif;min-height:380px;">
+                <div style="text-align:center;margin-bottom:16px;">
+                  <span style="background:rgba(239,82,15,0.15);color:#ef520f;font-size:0.65rem;font-weight:700;padding:3px 10px;border-radius:20px;text-transform:uppercase;letter-spacing:0.5px;">Reportes por Voz</span>
+                </div>
+                <!-- DallIA report -->
+                <div style="display:flex;gap:8px;margin-bottom:12px;">
+                  <div style="width:28px;height:28px;min-width:28px;border-radius:50%;background:linear-gradient(135deg,#ef520f,#df2c05);display:flex;align-items:center;justify-content:center;font-size:0.7rem;color:#fff;">IA</div>
+                  <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:12px 12px 12px 4px;padding:10px 12px;flex:1;">
+                    <div style="color:rgba(255,255,255,0.9);font-size:0.78rem;line-height:1.5;">Las ventas van bien hoy, llevas <strong style="color:#22d3ee;">S/ 552</strong> con 8 pedidos. El ticket promedio es <strong style="color:#22d3ee;">S/ 69</strong>.</div>
+                  </div>
+                </div>
+                <!-- User voice bubble -->
+                <div style="display:flex;justify-content:flex-end;margin-bottom:12px;">
+                  <div style="background:linear-gradient(135deg,#ef520f,#df2c05);border-radius:12px 12px 4px 12px;padding:10px 14px;max-width:85%;">
+                    <div style="color:#fff;font-size:0.78rem;display:flex;align-items:center;gap:6px;">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"/></svg>
+                      Y que plato se vendio mas?
+                    </div>
+                  </div>
+                </div>
+                <!-- DallIA ranking -->
+                <div style="display:flex;gap:8px;">
+                  <div style="width:28px;height:28px;min-width:28px;border-radius:50%;background:linear-gradient(135deg,#ef520f,#df2c05);display:flex;align-items:center;justify-content:center;font-size:0.7rem;color:#fff;">IA</div>
+                  <div style="background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:12px 12px 12px 4px;padding:10px 12px;flex:1;">
+                    <div style="color:rgba(255,255,255,0.6);font-size:0.7rem;margin-bottom:8px;">Top ventas hoy:</div>
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                      <span style="background:rgba(239,82,15,0.2);color:#ef520f;font-size:0.65rem;font-weight:800;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;">1</span>
+                      <span style="color:rgba(255,255,255,0.85);font-size:0.78rem;flex:1;">Ceviche Clasico</span>
+                      <span style="color:#22d3ee;font-size:0.75rem;font-weight:700;">12 uds</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                      <span style="background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.5);font-size:0.65rem;font-weight:800;width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;">2</span>
+                      <span style="color:rgba(255,255,255,0.85);font-size:0.78rem;flex:1;">Lomo Saltado</span>
+                      <span style="color:#22d3ee;font-size:0.75rem;font-weight:700;">9 uds</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div><!-- /track -->
+        </div><!-- /carousel -->
+
+        <!-- Dots -->
+        <div style="display:flex;justify-content:center;gap:8px;margin-top:20px;">
+          <div class="dallia-dot active" onclick="goToDalliaSlide(0)" style="width:10px;height:10px;border-radius:50%;background:#ef520f;cursor:pointer;transition:all 0.3s;"></div>
+          <div class="dallia-dot" onclick="goToDalliaSlide(1)" style="width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,0.2);cursor:pointer;transition:all 0.3s;"></div>
+          <div class="dallia-dot" onclick="goToDalliaSlide(2)" style="width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,0.2);cursor:pointer;transition:all 0.3s;"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <style>
+    @keyframes orbPulse{0%,100%{box-shadow:0 0 40px rgba(239,82,15,0.35),0 0 80px rgba(239,82,15,0.15)}50%{box-shadow:0 0 60px rgba(239,82,15,0.5),0 0 120px rgba(239,82,15,0.25)}}
+    @keyframes listenBlink{0%,100%{opacity:1}50%{opacity:0.3}}
+  </style>
+  <script>
+  (function(){
+    var current=0,total=3,timer;
+    function go(i){
+      current=i;
+      document.getElementById('dalliaTrack').style.transform='translateX(-'+(current*100)+'%)';
+      document.querySelectorAll('.dallia-dot').forEach(function(d,idx){
+        d.style.background=idx===current?'#ef520f':'rgba(255,255,255,0.2)';
+      });
+    }
+    window.goToDalliaSlide=go;
+    function auto(){timer=setInterval(function(){go((current+1)%total)},4000);}
+    auto();
+    // Touch swipe support
+    var track=document.getElementById('dalliaCarousel'),sx=0;
+    track.addEventListener('touchstart',function(e){sx=e.touches[0].clientX;clearInterval(timer);},{passive:true});
+    track.addEventListener('touchend',function(e){
+      var dx=e.changedTouches[0].clientX-sx;
+      if(Math.abs(dx)>40){dx<0?go(Math.min(current+1,total-1)):go(Math.max(current-1,0));}
+      auto();
+    },{passive:true});
+  })();
+  </script>
+
+  <!-- CTA -->
+  <section class="cta">
+    <div class="container text-center position-relative" style="z-index:2;">
+      <h2>Listo para modernizar tu restaurante?</h2>
+      <p>Prueba 5 dias gratis, sin tarjeta de credito. Si te convence, adquiere tu licencia Enterprise de por vida.</p>
+      <a href="/login" class="btn-hero btn-hero-primary"><i class="bi bi-rocket-takeoff me-2"></i>Comenzar ahora</a>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="landing-footer">
+    <div class="container text-center">
+      <span>&copy; <%= new Date().getFullYear() %> <span class="brand"><i class="bi bi-fire me-1 accent"></i>MiRestcon<span class="accent">IA</span></span> &middot; Sistema de Gestion de Restaurantes</span>
+    </div>
+  </footer>
+
+  <!-- ═══════════════════════════════════════════════════════════════════
+       CONTACT MODAL (shown when user clicks "Contratar")
+       ═══════════════════════════════════════════════════════════════════ -->
+  <div class="modal fade contact-modal" id="modalContacto" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-headset me-2 text-orange"></i>Contratar plan</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <!-- Plan summary -->
+          <div class="plan-highlight mb-4">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <div class="ph-name" id="modalPlanNombre">Plan Pro</div>
+                <div style="font-size:.8rem;color:#64748b;">Licencia anual — acceso inmediato</div>
+              </div>
+              <div class="ph-price" id="modalPlanPrecio">S/ 1,500</div>
+            </div>
+          </div>
+
+          <p style="font-size:.9rem;color:#475569;margin-bottom:1.25rem;">
+            Contactanos por cualquiera de estos canales y un asesor te ayudara a activar tu plan hoy mismo:
+          </p>
+
+          <!-- WhatsApp -->
+          <a id="modalWhatsApp" href="#" target="_blank" rel="noopener noreferrer" class="contact-option">
+            <div class="co-icon co-whatsapp"><i class="bi bi-whatsapp"></i></div>
+            <div class="co-text">
+              <strong>WhatsApp</strong>
+              <span>Respuesta inmediata — habla con un asesor</span>
+            </div>
+            <i class="bi bi-arrow-right ms-auto text-muted"></i>
+          </a>
+
+          <!-- Email -->
+          <a id="modalEmail" href="mailto:ventas@mirestconia.com?subject=Quiero+contratar+plan" class="contact-option">
+            <div class="co-icon co-email"><i class="bi bi-envelope-fill"></i></div>
+            <div class="co-text">
+              <strong>Email</strong>
+              <span>ventas@mirestconia.com</span>
+            </div>
+            <i class="bi bi-arrow-right ms-auto text-muted"></i>
+          </a>
+
+          <hr style="margin:1.5rem 0;border-color:rgba(0,0,0,.06);">
+
+          <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:.875rem;padding:.875rem 1rem;display:flex;gap:.75rem;align-items:flex-start;">
+            <i class="bi bi-credit-card-2-front-fill" style="color:#d97706;font-size:1.2rem;margin-top:.1rem;flex-shrink:0;"></i>
+            <div>
+              <div style="font-size:.82rem;font-weight:700;color:#92400e;margin-bottom:.2rem;">Pago online con tarjeta — Proximamente</div>
+              <div style="font-size:.78rem;color:#b45309;">Estamos integrando Izipay para que puedas pagar con Visa, Mastercard o Amex directamente desde aqui. Por ahora, coordina por WhatsApp o email.</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Izipay Payment Modal -->
+  <div class="modal fade" id="modalIzipay" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content" style="border-radius:1.25rem;border:none;box-shadow:0 32px 80px rgba(0,0,0,0.15);">
+        <div class="modal-header border-0 pb-0" style="padding:1.5rem 2rem 0;">
+          <h5 class="modal-title" style="font-weight:800;"><i class="bi bi-shield-lock me-2" style="color:#6366f1;"></i>Pago seguro</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body" style="padding:1rem 2rem 2rem;">
+          <div id="izipay-plan-info" class="mb-3"></div>
+          <div id="izipay-form-container">
+            <div class="text-center py-4">
+              <div class="spinner-border" style="color:#F97316;" role="status"></div>
+              <div class="mt-2 text-muted small">Cargando formulario de pago...</div>
+            </div>
+          </div>
+          <div class="text-center mt-3">
+            <small class="text-muted"><i class="bi bi-lock me-1"></i>Procesado por Izipay — Visa, Mastercard, Amex</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  async function abrirPagoIzipay(planId, planNombre, planPrecio) {
+    var container = document.getElementById('izipay-form-container');
+    container.innerHTML = '<div class="text-center py-4"><div class="spinner-border" style="color:#F97316;" role="status"></div><div class="mt-2 text-muted small">Cargando formulario de pago...</div></div>';
+    document.getElementById('izipay-plan-info').innerHTML =
+      '<div style="background:linear-gradient(135deg,rgba(249,115,22,0.08),rgba(249,115,22,0.04));border:1px solid rgba(249,115,22,0.18);border-radius:.875rem;padding:1rem 1.25rem;">' +
+      '<div class="d-flex justify-content-between align-items-center"><div><strong>' + planNombre + '</strong><br><small class="text-muted">MiRest con IA</small></div>' +
+      '<div style="font-size:1.4rem;font-weight:900;color:#F97316;">' + planPrecio + '</div></div></div>';
+
+    var modal = new bootstrap.Modal(document.getElementById('modalIzipay'));
+    modal.show();
+
+    try {
+      var email = prompt('Ingresa tu email para continuar:');
+      if (!email) { modal.hide(); return; }
+
+      var resp = await fetch('/api/pagos/crear-sesion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ planId: planId, email: email })
+      });
+      var data = await resp.json();
+
+      if (data.free) { window.location.href = data.redirect; return; }
+      if (data.error) {
+        container.innerHTML = '<div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i>' + data.error + (data.details ? '<br><small>' + data.details + '</small>' : '') + '</div>';
+        return;
+      }
+      if (!data.formToken) {
+        container.innerHTML = '<div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i>No se recibio token de pago.<br><small>' + JSON.stringify(data) + '</small></div>';
+        return;
+      }
+
+      // Redirect to dedicated checkout page with formToken rendered server-side
+      window.location.href = '/api/pagos/checkout?planId=' + planId + '&email=' + encodeURIComponent(email);
+    } catch(err) {
+      container.innerHTML = '<div class="alert alert-danger"><i class="bi bi-exclamation-triangle me-2"></i>Error: ' + err.message + '</div>';
+    }
+  }
+  </script>
+
+  <!-- Bootstrap JS -->
+  <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    // ── Contact modal ────────────────────────────────────────────────────────
+    const WHATSAPP_NUMBER = '51999999999'; // Replace with real WhatsApp number
+
+    function abrirContacto(planNombre, planPrecio) {
+      document.getElementById('modalPlanNombre').textContent = 'Plan ' + planNombre;
+      document.getElementById('modalPlanPrecio').textContent = planPrecio;
+
+      const msg = encodeURIComponent(
+        'Hola! Quiero contratar el plan ' + planNombre +
+        ' de mirestconia.com (' + planPrecio + '). ¿Me pueden ayudar?'
+      );
+      document.getElementById('modalWhatsApp').href =
+        'https://wa.me/' + WHATSAPP_NUMBER + '?text=' + msg;
+
+      document.getElementById('modalEmail').href =
+        'mailto:ventas@mirestconia.com?subject=' +
+        encodeURIComponent('Contratar plan ' + planNombre + ' - mirestconia.com') +
+        '&body=' + encodeURIComponent(
+          'Hola,\n\nMe interesa contratar el plan ' + planNombre +
+          ' (' + planPrecio + ').\n\nNombre de mi restaurante:\nTelefono de contacto:\n\nGracias.'
+        );
+
+      const modal = new bootstrap.Modal(document.getElementById('modalContacto'));
+      modal.show();
+    }
+
+    // ── Smooth scroll for anchor links ────────────────────────────────────────
+    document.querySelectorAll('a[href^="#"]').forEach(a => {
+      a.addEventListener('click', function(e) {
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          e.preventDefault();
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
+  </script>
+
+  <script src="/js/ios-install-banner.js"></script>
+</body>
+</html>

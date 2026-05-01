@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="/favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gastos - mirestconia.com</title>
+    <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/theme.css">
+    <style>
+        .kpi-card {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 1.1rem;
+            transition: transform 0.2s;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .kpi-value {
+            font-size: 1.4rem;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+        }
+
+        .kpi-label {
+            font-size: 0.75rem;
+            color: #9ca3af;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .admin-nav {
+            border-bottom: 2px solid rgba(255, 255, 255, 0.08);
+            margin-bottom: 1.5rem;
+        }
+
+        .admin-nav .nav-link {
+            color: #9ca3af;
+            border: none;
+            padding: 0.6rem 1.2rem;
+        }
+
+        .admin-nav .nav-link:hover {
+            color: #FF6B35;
+            background: rgba(255,107,53,0.05);
+            border-radius: 8px 8px 0 0;
+        }
+
+        .admin-nav .nav-link.active {
+            color: #FF6B35;
+            font-weight: 600;
+            border-bottom: 2px solid #FF6B35;
+            margin-bottom: -2px;
+        }
+
+        .dia-row {
+            cursor: pointer;
+        }
+
+        .dia-row:hover {
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .dia-detalle {
+            display: none;
+            background: rgba(0, 0, 0, 0.2);
+        }
+
+        .dia-detalle.show {
+            display: table-row-group;
+        }
+    </style>
+</head>
+
+<body>
+    <%- include('../partials/sidebar') %>
+        <div class="dg-main">
+            <main class="flex-grow-1">
+                <div class="container">
+
+                    <!-- Header -->
+                    <div class="d-flex align-items-center justify-content-between mb-3 mt-3 flex-wrap gap-2">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-wallet2 fs-2 me-2"></i>
+                            <div>
+                                <h2 class="mb-0">Gastos</h2>
+                                <small class="text-muted">Control de egresos</small>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalNuevoGasto">
+                            <i class="bi bi-plus-lg me-1"></i> Nuevo gasto
+                        </button>
+                    </div>
+
+                    <!-- Nav de submódulos -->
+                    <ul class="nav admin-nav">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/administracion"><i class="bi bi-bar-chart-line me-1"></i> P&L</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" href="/administracion/gastos"><i class="bi bi-wallet2 me-1"></i>
+                                Gastos</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/administracion/planilla"><i class="bi bi-people me-1"></i>
+                                Planilla</a>
+                        </li>
+                    </ul>
+
+                    <!-- Filtros -->
+                    <form method="GET" class="card shadow-sm mb-4">
+                        <div class="card-body py-3">
+                            <div class="row g-2 align-items-end">
+                                <div class="col-sm-3">
+                                    <label class="form-label form-label-sm mb-1">Desde</label>
+                                    <input type="date" class="form-control form-control-sm" name="desde"
+                                        value="<%= desde %>">
+                                </div>
+                                <div class="col-sm-3">
+                                    <label class="form-label form-label-sm mb-1">Hasta</label>
+                                    <input type="date" class="form-control form-control-sm" name="hasta"
+                                        value="<%= hasta %>">
+                                </div>
+                                <div class="col-sm-4">
+                                    <label class="form-label form-label-sm mb-1">Categoría</label>
+                                    <select class="form-select form-select-sm" name="categoria_id">
+                                        <option value="">Todas las categorías</option>
+                                        <% if (categorias && categorias.length> 0) { %>
+                                            <% categorias.forEach(function(c) { %>
+                                                <option value="<%= c.id %>" <%=categoria_filtro==c.id ? 'selected' : ''
+                                                    %>><%= c.nombre %> (<%= c.grupo %>)</option>
+                                                <% }); %>
+                                                    <% } %>
+                                    </select>
+                                </div>
+                                <div class="col-sm-2">
+                                    <button type="submit" class="btn btn-sm btn-primary w-100">
+                                        <i class="bi bi-funnel"></i> Filtrar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+
+                    <!-- KPIs del período -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-6 col-md-3">
+                            <div class="kpi-card">
+                                <div class="kpi-label mb-1"><i class="bi bi-calendar-range me-1"></i> Total período
+                                </div>
+                                <div class="kpi-value text-danger">S/ <%= Number(kpis && kpis.total_periodo ||
+                                        0).toLocaleString('es-PE', {minimumFractionDigits:2, maximumFractionDigits:2})
+                                        %>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="kpi-card">
+                                <div class="kpi-label mb-1"><i class="bi bi-list-ul me-1"></i> Registros</div>
+                                <div class="kpi-value text-info">
+                                    <%= kpis && kpis.cantidad_registros || 0 %>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="kpi-card">
+                                <div class="kpi-label mb-1"><i class="bi bi-arrow-up-circle me-1"></i> Mayor gasto</div>
+                                <div class="kpi-value text-warning">S/ <%= Number(kpis && kpis.gasto_mayor ||
+                                        0).toLocaleString('es-PE', {minimumFractionDigits:2, maximumFractionDigits:2})
+                                        %>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="kpi-card">
+                                <div class="kpi-label mb-1"><i class="bi bi-tag me-1"></i> Cat. más costosa</div>
+                                <div class="kpi-value" style="font-size:0.95rem; color:#f9a8d4;">
+                                    <%= catTop && catTop.nombre ? catTop.nombre.substring(0,20) : 'Sin datos' %>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row g-4">
+                        <!-- ===== HISTORIAL POR DÍA ===== -->
+                        <div class="col-lg-5">
+                            <div class="card shadow-sm">
+                                <div class="card-header d-flex align-items-center justify-content-between">
+                                    <h6 class="card-title mb-0">
+                                        <i class="bi bi-clock-history me-2 text-info"></i>Historial por Día
+                                    </h6>
+                                    <small class="text-muted">
+                                        <%= historialDiario && historialDiario.length %> días con gastos
+                                    </small>
+                                </div>
+                                <div class="card-body p-0" style="max-height: 520px; overflow-y: auto;">
+                                    <table class="table table-hover mb-0 table-sm">
+                                        <thead class="sticky-top" style="background: var(--bs-dark, #1f2937);">
+                                            <tr>
+                                                <th>Día</th>
+                                                <th class="text-center">Registros</th>
+                                                <th class="text-end">Total</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <% if (historialDiario && historialDiario.length> 0) { %>
+                                                <% const maxDia=Math.max(...historialDiario.map(d=> d.total || 0), 1);
+                                                    %>
+                                                    <% historialDiario.forEach(function(d, idx) { %>
+                                                        <tr class="dia-row" onclick="toggleDia('<%= idx %>')">
+                                                            <td>
+                                                                <div class="fw-semibold" style="font-size:0.85rem;">
+                                                                    <%= new Date(d.dia + 'T12:00:00'
+                                                                        ).toLocaleDateString('es-PE', {weekday:'short',
+                                                                        day:'2-digit', month:'short'}) %>
+                                                                </div>
+                                                                <div
+                                                                    style="height:4px; width:<%= Math.round(d.total / maxDia * 100) %>%; background: #f59e0b; border-radius:2px; margin-top:3px;">
+                                                                </div>
+                                                            </td>
+                                                            <td class="text-center">
+                                                                <span class="badge bg-secondary">
+                                                                    <%= d.cantidad %>
+                                                                </span>
+                                                            </td>
+                                                            <td class="text-end fw-semibold text-danger">
+                                                                S/ <%= Number(d.total || 0).toLocaleString('es-PE',
+                                                                    {minimumFractionDigits:2, maximumFractionDigits:2})
+                                                                    %>
+                                                                    <i class="bi bi-chevron-down ms-1"
+                                                                        style="font-size:0.7rem;"
+                                                                        id="icon-<%= idx %>"></i>
+                                                            </td>
+                                                        </tr>
+                                                        <tr id="detalle-<%= idx %>" style="display:none;">
+                                                            <td colspan="3" class="p-0">
+                                                                <div class="px-3 py-2"
+                                                                    style="background:rgba(0,0,0,0.2); font-size:0.8rem;">
+                                                                    <div class="d-flex justify-content-between">
+                                                                        <span class="text-muted">Gastos fijos:</span>
+                                                                        <span>S/ <%= Number(d.fijos ||
+                                                                                0).toLocaleString('es-PE',
+                                                                                {minimumFractionDigits:2}) %></span>
+                                                                    </div>
+                                                                    <div class="d-flex justify-content-between">
+                                                                        <span class="text-muted">Gastos
+                                                                            variables:</span>
+                                                                        <span>S/ <%= Number(d.variables ||
+                                                                                0).toLocaleString('es-PE',
+                                                                                {minimumFractionDigits:2}) %></span>
+                                                                    </div>
+                                                                </div>
+                                                            </td>
+                                                        </tr>
+                                                        <% }); %>
+                                                            <% } else { %>
+                                                                <tr>
+                                                                    <td colspan="3" class="text-center text-muted py-4">
+                                                                        <i class="bi bi-inbox fs-3 d-block mb-1"></i>
+                                                                        Sin gastos en el período
+                                                                    </td>
+                                                                </tr>
+                                                                <% } %>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Detalle de gastos -->
+                        <div class="col-lg-7">
+                            <div class="card shadow-sm">
+                                <div class="card-header d-flex align-items-center justify-content-between">
+                                    <h6 class="card-title mb-0"><i class="bi bi-list-check me-2"></i>Detalle de Gastos
+                                    </h6>
+                                    <small class="text-muted">
+                                        <%= gastos && gastos.length %> registros
+                                    </small>
+                                </div>
+                                <div class="card-body p-0" style="max-height: 520px; overflow-y: auto;">
+                                    <table class="table table-hover mb-0 table-sm">
+                                        <thead class="sticky-top" style="background: var(--bs-dark, #1f2937);">
+                                            <tr>
+                                                <th>Fecha</th>
+                                                <th>Categoría</th>
+                                                <th>Concepto</th>
+                                                <th class="text-end">Monto</th>
+                                                <th></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <% if (gastos && gastos.length> 0) { %>
+                                                <% gastos.forEach(function(g) { %>
+                                                    <tr>
+                                                        <td style="font-size:0.8rem; white-space:nowrap;">
+                                                            <%= new Date(g.fecha + 'T12:00:00'
+                                                                ).toLocaleDateString('es-PE', {day:'2-digit',
+                                                                month:'short'}) %>
+                                                        </td>
+                                                        <td>
+                                                            <span class="badge bg-secondary" style="font-size:0.7rem;">
+                                                                <%= g.categoria_nombre || '-' %>
+                                                            </span>
+                                                        </td>
+                                                        <td style="font-size:0.85rem;">
+                                                            <%= g.concepto %>
+                                                        </td>
+                                                        <td class="text-end fw-semibold text-danger">
+                                                            S/ <%= Number(g.monto || 0).toLocaleString('es-PE',
+                                                                {minimumFractionDigits:2, maximumFractionDigits:2}) %>
+                                                        </td>
+                                                        <td>
+                                                            <button class="btn btn-sm btn-outline-danger py-0 px-1"
+                                                                onclick="eliminarGasto(<%= g.id %>, '<%= g.concepto %>')"
+                                                                title="Eliminar">
+                                                                <i class="bi bi-trash" style="font-size:0.75rem;"></i>
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                    <% }); %>
+                                                        <% } else { %>
+                                                            <tr>
+                                                                <td colspan="5" class="text-center text-muted py-4">
+                                                                    <i class="bi bi-inbox fs-3 d-block mb-1"></i>
+                                                                    No hay gastos en el período seleccionado
+                                                                </td>
+                                                            </tr>
+                                                            <% } %>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </main>
+            <%- include('../partials/footer') %>
+        </div>
+
+        <!-- Modal Nuevo Gasto -->
+        <div class="modal fade" id="modalNuevoGasto" tabindex="-1" aria-labelledby="modalNuevoGastoLabel"
+            aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalNuevoGastoLabel">
+                            <i class="bi bi-plus-circle me-2"></i>Nuevo Gasto
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <form id="formNuevoGasto">
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label for="categoria_id" class="form-label">Categoría</label>
+                                <select class="form-select" id="categoria_id" name="categoria_id" required>
+                                    <option value="">Seleccionar categoría...</option>
+                                    <% if (categorias && categorias.length> 0) { %>
+                                        <% categorias.forEach(function(c) { %>
+                                            <option value="<%= c._id || c.id %>">
+                                                <%= c.nombre %> (<%= c.grupo %>)
+                                            </option>
+                                            <% }); %>
+                                                <% } %>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="concepto" class="form-label">Concepto</label>
+                                <input type="text" class="form-control" id="concepto" name="concepto" required>
+                            </div>
+                            <div class="row g-2 mb-3">
+                                <div class="col-6">
+                                    <label for="gasto_monto" class="form-label">Monto (S/)</label>
+                                    <input type="number" class="form-control" id="gasto_monto" name="monto" step="0.01"
+                                        min="0" required>
+                                </div>
+                                <div class="col-6">
+                                    <label for="fecha_gasto" class="form-label">Fecha</label>
+                                    <input type="date" class="form-control" id="fecha_gasto" name="fecha" required>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="comprobante" class="form-label">Comprobante</label>
+                                <input type="text" class="form-control" id="comprobante" name="comprobante"
+                                    placeholder="Ej: Factura F001-123, Boleta...">
+                            </div>
+                            <div class="mb-3">
+                                <label for="notas_gasto" class="form-label">Notas</label>
+                                <textarea class="form-control" id="notas_gasto" name="notas" rows="2"></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save me-1"></i> Guardar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+        <script src="/vendor/sweetalert2/sweetalert2.all.min.js"></script>
+        <script>
+            // Default date
+            document.getElementById('fecha_gasto').valueAsDate = new Date();
+
+            // Toggle historial día detalle
+            function toggleDia(idx) {
+                const row = document.getElementById('detalle-' + idx);
+                const icon = document.getElementById('icon-' + idx);
+                if (row.style.display === 'none') {
+                    row.style.display = 'table-row';
+                    icon.className = 'bi bi-chevron-up ms-1';
+                } else {
+                    row.style.display = 'none';
+                    icon.className = 'bi bi-chevron-down ms-1';
+                }
+            }
+
+            // Submit nuevo gasto
+            document.getElementById('formNuevoGasto').addEventListener('submit', async function (e) {
+                e.preventDefault();
+                const formData = Object.fromEntries(new FormData(this));
+                try {
+                    const res = await fetch('/api/administracion/gastos', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(formData)
+                    });
+                    const data = await res.json();
+                    if (res.ok && data.ok) {
+                        await Swal.fire('Guardado', 'Gasto registrado correctamente', 'success');
+                        location.reload();
+                    } else {
+                        Swal.fire('Error', data.error || 'No se pudo registrar el gasto', 'error');
+                    }
+                } catch (err) {
+                    Swal.fire('Error', 'Error de conexión', 'error');
+                }
+            });
+
+            // Eliminar gasto
+            async function eliminarGasto(id, concepto) {
+                const confirm = await Swal.fire({
+                    title: '¿Eliminar gasto?',
+                    text: concepto,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    confirmButtonText: 'Sí, eliminar',
+                    cancelButtonText: 'Cancelar'
+                });
+                if (!confirm.isConfirmed) return;
+                try {
+                    const res = await fetch(`/api/administracion/gastos/${id}`, { method: 'DELETE' });
+                    const data = await res.json();
+                    if (res.ok && data.ok) {
+                        await Swal.fire('Eliminado', 'Gasto eliminado', 'success');
+                        location.reload();
+                    } else {
+                        Swal.fire('Error', data.error || 'No se pudo eliminar', 'error');
+                    }
+                } catch (err) {
+                    Swal.fire('Error', 'Error de conexión', 'error');
+                }
+            }
+        </script>
+</body>
+
+</html>

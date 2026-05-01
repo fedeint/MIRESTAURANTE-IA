@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="/favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1e1b4b">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="dignita">
+    <link rel="manifest" href="/manifest.json">
+    <link rel="apple-touch-icon" href="/icon-192.png">
+    <title><%= title %></title>
+    <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+    <%- stylesheets %>
+</head>
+<body>
+    <%- body %>
+
+    <script src="/vendor/jquery/jquery.min.js"></script>
+    <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="/vendor/sweetalert2/sweetalert2.all.min.js"></script>
+    <script>
+        // Configuración global de SweetAlert2
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true,
+            didOpen: (toast) => {
+                toast.addEventListener('mouseenter', Swal.stopTimer)
+                toast.addEventListener('mouseleave', Swal.resumeTimer)
+            }
+        });
+
+        // Función global para mostrar alertas
+        function mostrarAlerta(mensaje, tipo = 'success') {
+            Toast.fire({
+                icon: tipo,
+                title: mensaje,
+                customClass: {
+                    popup: 'animate__animated animate__fadeInDown'
+                }
+            });
+        }
+
+        // Función global para confirmaciones
+        function confirmarAccion(titulo, mensaje) {
+            return Swal.fire({
+                title: titulo,
+                text: mensaje,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Confirmar',
+                cancelButtonText: 'Cancelar',
+                customClass: {
+                    popup: 'animate__animated animate__fadeInDown'
+                }
+            });
+        }
+
+        // Reemplazar el alert nativo
+        window.alert = function(mensaje) {
+            mostrarAlerta(mensaje, 'warning');
+        };
+    </script>
+    <%- scripts %>
+    <script src="/js/ios-install-banner.js"></script>
+</body>
+</html> 

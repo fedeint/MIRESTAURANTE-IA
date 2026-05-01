@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+  <link rel="icon" type="image/png" href="/favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Planilla - mirestconia.com</title>
+    <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/theme.css">
+    <style>
+        .kpi-card {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 1.1rem;
+            transition: transform 0.2s;
+        }
+
+        .kpi-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .kpi-value {
+            font-size: 1.4rem;
+            font-weight: 700;
+            font-family: 'Courier New', monospace;
+        }
+
+        .kpi-label {
+            font-size: 0.75rem;
+            color: #9ca3af;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .admin-nav {
+            border-bottom: 2px solid rgba(255, 255, 255, 0.08);
+            margin-bottom: 1.5rem;
+        }
+
+        .admin-nav .nav-link {
+            color: #9ca3af;
+            border: none;
+            padding: 0.6rem 1.2rem;
+        }
+
+        .admin-nav .nav-link:hover {
+            color: #FF6B35;
+            background: rgba(255,107,53,0.05);
+            border-radius: 8px 8px 0 0;
+        }
+
+        .admin-nav .nav-link.active {
+            color: #FF6B35;
+            font-weight: 600;
+            border-bottom: 2px solid #FF6B35;
+            margin-bottom: -2px;
+        }
+
+        .cargo-badge {
+            font-size: 0.72rem;
+            padding: 3px 8px;
+            border-radius: 20px;
+            background: rgba(99, 102, 241, 0.2);
+            color: #a5b4fc;
+        }
+    </style>
+</head>
+
+<body>
+    <%- include('../partials/sidebar') %>
+        <div class="dg-main">
+            <main class="flex-grow-1">
+                <div class="container">
+
+                    <!-- Header -->
+                    <div class="d-flex align-items-center justify-content-between mb-3 mt-3 flex-wrap gap-2">
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-people fs-2 me-2"></i>
+                            <div>
+                                <h2 class="mb-0">Planilla de Personal</h2>
+                                <small class="text-muted">Gestión de empleados y pagos</small>
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalAgregarPersonal">
+                            <i class="bi bi-plus-lg me-1"></i> Agregar personal
+                        </button>
+                    </div>
+
+                    <!-- Nav de submódulos -->
+                    <ul class="nav admin-nav">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/administracion"><i class="bi bi-bar-chart-line me-1"></i> P&L</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/administracion/gastos"><i class="bi bi-wallet2 me-1"></i>
+                                Gastos</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link active" href="/administracion/planilla"><i class="bi bi-people me-1"></i>
+                                Planilla</a>
+                        </li>
+                    </ul>
+
+                    <!-- KPIs del mes -->
+                    <div class="row g-3 mb-4">
+                        <div class="col-6 col-md-3">
+                            <div class="kpi-card">
+                                <div class="kpi-label mb-1"><i class="bi bi-cash-stack me-1"></i> Total bruto mes</div>
+                                <div class="kpi-value text-danger">S/ <%= Number(totalesMes && totalesMes.total_bruto ||
+                                        0).toLocaleString('es-PE', {minimumFractionDigits:2, maximumFractionDigits:2})
+                                        %>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="kpi-card">
+                                <div class="kpi-label mb-1"><i class="bi bi-check-circle me-1"></i> Total neto mes</div>
+                                <div class="kpi-value text-success">S/ <%= Number(totalesMes && totalesMes.total_neto ||
+                                        0).toLocaleString('es-PE', {minimumFractionDigits:2, maximumFractionDigits:2})
+                                        %>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="kpi-card">
+                                <div class="kpi-label mb-1"><i class="bi bi-shield me-1"></i> EsSalud mes</div>
+                                <div class="kpi-value text-info">S/ <%= Number(totalesMes && totalesMes.total_essalud ||
+                                        0).toLocaleString('es-PE', {minimumFractionDigits:2, maximumFractionDigits:2})
+                                        %>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="kpi-card">
+                                <div class="kpi-label mb-1"><i class="bi bi-receipt me-1"></i> Pagos realizados</div>
+                                <div class="kpi-value text-warning">
+                                    <%= totalesMes && totalesMes.cantidad_pagos || 0 %>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Lista de Personal Activo -->
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header d-flex align-items-center justify-content-between">
+                            <h6 class="card-title mb-0"><i class="bi bi-person-lines-fill me-2"></i>Personal Activo</h6>
+                            <span class="badge bg-secondary">
+                                <%= personal && personal.length %> empleados
+                            </span>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Nombre</th>
+                                            <th>DNI</th>
+                                            <th>Cargo</th>
+                                            <th>Tipo Pago</th>
+                                            <th class="text-end">Monto (S/)</th>
+                                            <th>Reg. Pensión</th>
+                                            <th class="text-center">Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <% if (personal && personal.length> 0) { %>
+                                            <% personal.forEach(function(p) { %>
+                                                <tr>
+                                                    <td class="fw-semibold">
+                                                        <%= p.nombre %>
+                                                    </td>
+                                                    <td><small class="text-muted">
+                                                            <%= p.dni || '-' %>
+                                                        </small></td>
+                                                    <td><span class="cargo-badge">
+                                                            <%= p.cargo %>
+                                                        </span></td>
+                                                    <td>
+                                                        <span
+                                                            class="badge <%= p.tipo_pago === 'diario' ? 'bg-info' : p.tipo_pago === 'mensual' ? 'bg-success' : 'bg-secondary' %> bg-opacity-25">
+                                                            <%= p.tipo_pago %>
+                                                        </span>
+                                                    </td>
+                                                    <td class="text-end fw-semibold">S/ <%= Number(p.monto_pago ||
+                                                            p.monto || 0).toLocaleString('es-PE',
+                                                            {minimumFractionDigits:2, maximumFractionDigits:2}) %>
+                                                    </td>
+                                                    <td><small class="text-muted">
+                                                            <%= p.regimen_pension %>
+                                                        </small></td>
+                                                    <td class="text-center">
+                                                        <button class="btn btn-sm btn-success me-1"
+                                                            onclick="pagarDia('<%= p._id || p.id %>', '<%= p.nombre %>')"
+                                                            title="Pagar día">
+                                                            <i class="bi bi-cash-coin"></i> Pagar
+                                                        </button>
+                                                        <button class="btn btn-sm btn-outline-danger"
+                                                            onclick="eliminarPersonal('<%= p._id || p.id %>', '<%= p.nombre %>')"
+                                                            title="Eliminar">
+                                                            <i class="bi bi-trash"></i>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                                <% }); %>
+                                                    <% } else { %>
+                                                        <tr>
+                                                            <td colspan="7" class="text-center text-muted py-4">
+                                                                <i class="bi bi-person-x fs-1 d-block mb-2"></i>
+                                                                No hay personal registrado
+                                                            </td>
+                                                        </tr>
+                                                        <% } %>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ===== HISTORIAL DE PAGOS ===== -->
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
+                            <h6 class="card-title mb-0">
+                                <i class="bi bi-clock-history me-2 text-info"></i>Historial de Pagos
+                            </h6>
+                            <!-- Filtros de historial -->
+                            <form method="GET" class="d-flex align-items-center gap-2 flex-wrap">
+                                <% const
+                                    mesesNombres=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+                                    %>
+                                    <select name="mes" class="form-select form-select-sm" style="width:auto;">
+                                        <% for (let i=1; i <=12; i++) { %>
+                                            <option value="<%= i %>" <%=mes==i ? 'selected' : '' %>><%=
+                                                    mesesNombres[i-1] %>
+                                            </option>
+                                            <% } %>
+                                    </select>
+                                    <select name="anio" class="form-select form-select-sm" style="width:auto;">
+                                        <% const anioActual=new Date().getFullYear(); %>
+                                            <% for (let a=anioActual - 2; a <=anioActual + 1; a++) { %>
+                                                <option value="<%= a %>" <%=anio==a ? 'selected' : '' %>><%= a %>
+                                                </option>
+                                                <% } %>
+                                    </select>
+                                    <select name="personal_id" class="form-select form-select-sm" style="width:auto;">
+                                        <option value="">Todos los empleados</option>
+                                        <% if (personal && personal.length> 0) { %>
+                                            <% personal.forEach(function(p) { %>
+                                                <option value="<%= p.id %>" <%=personal_filtro==p.id ? 'selected' : ''
+                                                    %>><%= p.nombre %>
+                                                </option>
+                                                <% }); %>
+                                                    <% } %>
+                                    </select>
+                                    <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                        <i class="bi bi-funnel"></i> Ver
+                                    </button>
+                            </form>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0 table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Fecha</th>
+                                            <th>Empleado</th>
+                                            <th>Cargo</th>
+                                            <th class="text-end">Bruto</th>
+                                            <th class="text-end">Descuento</th>
+                                            <th class="text-end">Neto</th>
+                                            <th class="text-end">EsSalud</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <% if (historialPagos && historialPagos.length> 0) { %>
+                                            <% historialPagos.forEach(function(h) { %>
+                                                <tr>
+                                                    <td style="font-size:0.82rem; white-space:nowrap;">
+                                                        <%= new Date(h.fecha + 'T12:00:00' ).toLocaleDateString('es-PE',
+                                                            {weekday:'short', day:'2-digit', month:'short'}) %>
+                                                    </td>
+                                                    <td class="fw-semibold" style="font-size:0.85rem;">
+                                                        <%= h.empleado_nombre %>
+                                                    </td>
+                                                    <td><span class="cargo-badge">
+                                                            <%= h.cargo %>
+                                                        </span></td>
+                                                    <td class="text-end">S/ <%= Number(h.monto_bruto ||
+                                                            0).toLocaleString('es-PE', {minimumFractionDigits:2,
+                                                            maximumFractionDigits:2}) %>
+                                                    </td>
+                                                    <td class="text-end text-danger">
+                                                        <small>- S/ <%= Number(h.deduccion_onp_afp ||
+                                                                0).toLocaleString('es-PE', {minimumFractionDigits:2,
+                                                                maximumFractionDigits:2}) %></small>
+                                                    </td>
+                                                    <td class="text-end fw-semibold text-success">S/ <%=
+                                                            Number(h.monto_neto || 0).toLocaleString('es-PE',
+                                                            {minimumFractionDigits:2, maximumFractionDigits:2}) %>
+                                                    </td>
+                                                    <td class="text-end text-muted"><small>S/ <%=
+                                                                Number(h.aporte_essalud || 0).toLocaleString('es-PE',
+                                                                {minimumFractionDigits:2, maximumFractionDigits:2}) %>
+                                                                </small></td>
+                                                </tr>
+                                                <% }); %>
+                                                    <!-- Fila de totales -->
+                                                    <tr
+                                                        style="background: rgba(255,255,255,0.05); border-top: 2px solid rgba(255,255,255,0.1);">
+                                                        <td colspan="3" class="fw-bold text-end pe-3">TOTALES (<%=
+                                                                historialPagos.length %> pagos):</td>
+                                                        <td class="text-end fw-bold">S/ <%= Number(totalesMes &&
+                                                                totalesMes.total_bruto || 0).toLocaleString('es-PE',
+                                                                {minimumFractionDigits:2, maximumFractionDigits:2}) %>
+                                                        </td>
+                                                        <td class="text-end fw-bold text-danger">- S/ <%=
+                                                                Number(totalesMes && totalesMes.total_descuentos ||
+                                                                0).toLocaleString('es-PE', {minimumFractionDigits:2,
+                                                                maximumFractionDigits:2}) %>
+                                                        </td>
+                                                        <td class="text-end fw-bold text-success">S/ <%=
+                                                                Number(totalesMes && totalesMes.total_neto ||
+                                                                0).toLocaleString('es-PE', {minimumFractionDigits:2,
+                                                                maximumFractionDigits:2}) %>
+                                                        </td>
+                                                        <td class="text-end fw-bold text-info">S/ <%= Number(totalesMes
+                                                                && totalesMes.total_essalud ||
+                                                                0).toLocaleString('es-PE', {minimumFractionDigits:2,
+                                                                maximumFractionDigits:2}) %>
+                                                        </td>
+                                                    </tr>
+                                                    <% } else { %>
+                                                        <tr>
+                                                            <td colspan="7" class="text-center text-muted py-4">
+                                                                <i class="bi bi-calendar-x fs-3 d-block mb-1"></i>
+                                                                No hay pagos registrados en <%= mesesNombres[mes-1] %>
+                                                                    <%= anio %>
+                                                            </td>
+                                                        </tr>
+                                                        <% } %>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </main>
+            <%- include('../partials/footer') %>
+        </div>
+
+        <!-- Modal Agregar Personal -->
+        <div class="modal fade" id="modalAgregarPersonal" tabindex="-1" aria-labelledby="modalAgregarPersonalLabel"
+            aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="modalAgregarPersonalLabel">
+                            <i class="bi bi-person-plus me-2"></i>Agregar Personal
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                    </div>
+                    <form id="formAgregarPersonal">
+                        <div class="modal-body">
+                            <div class="row g-2 mb-3">
+                                <div class="col-8">
+                                    <label for="nombre" class="form-label">Nombre completo</label>
+                                    <input type="text" class="form-control" id="nombre" name="nombre" required>
+                                </div>
+                                <div class="col-4">
+                                    <label for="dni" class="form-label">DNI</label>
+                                    <input type="text" class="form-control" id="dni" name="dni" maxlength="8">
+                                </div>
+                            </div>
+                            <div class="row g-2 mb-3">
+                                <div class="col-6">
+                                    <label for="cargo" class="form-label">Cargo</label>
+                                    <select class="form-select" id="cargo" name="cargo" required>
+                                        <option value="">Seleccionar...</option>
+                                        <option value="Chef">Chef</option>
+                                        <option value="Cocinero">Cocinero</option>
+                                        <option value="Mozo">Mozo</option>
+                                        <option value="Cajero">Cajero</option>
+                                        <option value="Bartender">Bartender</option>
+                                        <option value="Administrador">Administrador</option>
+                                        <option value="Limpieza">Limpieza</option>
+                                        <option value="Otro">Otro</option>
+                                    </select>
+                                </div>
+                                <div class="col-6">
+                                    <label for="tipo_pago" class="form-label">Tipo de pago</label>
+                                    <select class="form-select" id="tipo_pago" name="tipo_pago" required>
+                                        <option value="">Seleccionar...</option>
+                                        <option value="mensual">Mensual</option>
+                                        <option value="quincenal">Quincenal</option>
+                                        <option value="semanal">Semanal</option>
+                                        <option value="diario">Diario</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="row g-2 mb-3">
+                                <div class="col-6">
+                                    <label for="monto_pago" class="form-label">Monto (S/)</label>
+                                    <input type="number" class="form-control" id="monto_pago" name="monto_pago"
+                                        step="0.01" min="0" required>
+                                </div>
+                                <div class="col-6">
+                                    <label for="regimen_pension" class="form-label">Reg. Pensión</label>
+                                    <select class="form-select" id="regimen_pension" name="regimen_pension" required>
+                                        <option value="">Seleccionar...</option>
+                                        <option value="onp">ONP (13%)</option>
+                                        <option value="afp_integra">AFP Integra</option>
+                                        <option value="afp_prima">AFP Prima</option>
+                                        <option value="afp_profuturo">AFP Profuturo</option>
+                                        <option value="afp_habitat">AFP Habitat</option>
+                                        <option value="ninguno">Sin régimen</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label for="fecha_ingreso" class="form-label">Fecha de ingreso</label>
+                                <input type="date" class="form-control" id="fecha_ingreso" name="fecha_ingreso">
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save me-1"></i> Guardar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+        <script src="/vendor/sweetalert2/sweetalert2.all.min.js"></script>
+        <script>
+            // Pagar día
+            async function pagarDia(id, nombre) {
+                const confirm = await Swal.fire({
+                    title: 'Registrar pago',
+                    text: `¿Registrar pago del día para ${nombre}?`,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonText: 'Sí, pagar',
+                    cancelButtonText: 'Cancelar'
+                });
+                if (!confirm.isConfirmed) return;
+
+                try {
+                    const res = await fetch('/api/administracion/planilla/pagar', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ personal_id: id })
+                    });
+                    const data = await res.json();
+                    if (res.ok && data.ok) {
+                        await Swal.fire({
+                            title: 'Pago registrado',
+                            icon: 'success',
+                            html: `
+                            <div class="text-start">
+                                <table class="table table-sm mb-0">
+                                    <tr><td><strong>Bruto:</strong></td><td class="text-end">S/ ${Number(data.bruto).toFixed(2)}</td></tr>
+                                    <tr><td><strong>ONP/AFP:</strong></td><td class="text-end text-danger">- S/ ${Number(data.onp_afp || 0).toFixed(2)}</td></tr>
+                                    <tr><td><strong>Neto:</strong></td><td class="text-end text-success">S/ ${Number(data.neto).toFixed(2)}</td></tr>
+                                    <tr><td><strong>EsSalud:</strong></td><td class="text-end">S/ ${Number(data.essalud || 0).toFixed(2)}</td></tr>
+                                </table>
+                            </div>
+                        `
+                        });
+                        location.reload();
+                    } else {
+                        Swal.fire('Error', data.error || 'No se pudo registrar el pago', 'error');
+                    }
+                } catch (err) {
+                    Swal.fire('Error', 'Error de conexión', 'error');
+                }
+            }
+
+            // Agregar personal
+            document.getElementById('formAgregarPersonal').addEventListener('submit', async function (e) {
+                e.preventDefault();
+                const formData = Object.fromEntries(new FormData(this));
+                try {
+                    const res = await fetch('/api/administracion/planilla', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(formData)
+                    });
+                    const data = await res.json();
+                    if (res.ok && data.ok) {
+                        await Swal.fire('Guardado', 'Personal agregado correctamente', 'success');
+                        location.reload();
+                    } else {
+                        Swal.fire('Error', data.error || 'No se pudo guardar', 'error');
+                    }
+                } catch (err) {
+                    Swal.fire('Error', 'Error de conexión', 'error');
+                }
+            });
+
+            // Eliminar personal
+            async function eliminarPersonal(id, nombre) {
+                const confirm = await Swal.fire({
+                    title: '¿Eliminar personal?',
+                    text: nombre,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    confirmButtonText: 'Sí, eliminar',
+                    cancelButtonText: 'Cancelar'
+                });
+                if (!confirm.isConfirmed) return;
+                try {
+                    const res = await fetch(`/api/administracion/planilla/${id}`, { method: 'DELETE' });
+                    const data = await res.json();
+                    if (res.ok && data.ok) {
+                        await Swal.fire('Eliminado', 'Personal eliminado correctamente', 'success');
+                        location.reload();
+                    } else {
+                        Swal.fire('Error', data.error || 'No se pudo eliminar', 'error');
+                    }
+                } catch (err) {
+                    Swal.fire('Error', 'Error de conexión', 'error');
+                }
+            }
+        </script>
+</body>
+
+</html>

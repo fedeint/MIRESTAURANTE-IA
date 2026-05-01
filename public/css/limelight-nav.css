@@ -1,0 +1,97 @@
+/* ===== LIMELIGHT NAV - Quick Access Bar ===== */
+.limelight-nav {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 60px;
+  border-radius: 16px;
+  background: #1b1e2d;
+  border: 1px solid rgba(255,255,255,0.06);
+  padding: 0 8px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.15);
+  overflow: visible;
+}
+
+.limelight-nav-item {
+  position: relative;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 0 20px;
+  cursor: pointer;
+  text-decoration: none;
+  color: rgba(255,255,255,0.35);
+  transition: color 0.2s ease;
+  gap: 2px;
+}
+
+.limelight-nav-item:hover {
+  color: rgba(255,255,255,0.7);
+}
+
+.limelight-nav-item.active {
+  color: #fff;
+}
+
+.limelight-nav-item i {
+  font-size: 1.25rem;
+  transition: opacity 0.15s ease;
+}
+
+.limelight-nav-item .limelight-label {
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateY(2px);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.limelight-nav-item.active .limelight-label {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* The glowing indicator */
+.limelight-indicator {
+  position: absolute;
+  top: 0;
+  z-index: 10;
+  width: 44px;
+  height: 5px;
+  border-radius: 0 0 100px 100px;
+  background: #FF6B35;
+  box-shadow: 0 0 12px #FF6B35, 0 0 40px rgba(255,107,53,0.4);
+  transition: left 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  pointer-events: none;
+}
+
+/* The cone/beam of light */
+.limelight-beam {
+  position: absolute;
+  left: -30%;
+  top: 5px;
+  width: 160%;
+  height: 56px;
+  clip-path: polygon(5% 100%, 25% 0, 75% 0, 95% 100%);
+  background: linear-gradient(to bottom, rgba(255,107,53,0.25) 0%, transparent 100%);
+  pointer-events: none;
+}
+
+/* Responsive */
+@media (max-width: 576px) {
+  .limelight-nav {
+    height: 54px;
+    padding: 0 4px;
+  }
+  .limelight-nav-item {
+    padding: 0 14px;
+  }
+  .limelight-nav-item i {
+    font-size: 1.1rem;
+  }
+}
