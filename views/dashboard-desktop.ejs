@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=1280, initial-scale=1">
     <link rel="icon" type="image/png" href="/favicon.png">
-    <title>Inicio — mirestconia.com</title>
+    <title>Inicio · MiRestconIA</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fredoka+One&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
     <style>
@@ -128,7 +128,7 @@
         <!-- ========== HEADER ========== -->
         <section class="dash-header">
             <div class="dash-greeting">
-                <h1>Buenos dias, <%= user && user.usuario ? user.usuario : 'Administrador' %></h1>
+                <h1>Buenos días, <%= user && user.usuario ? user.usuario : 'Administrador' %></h1>
                 <p><%= new Date().toLocaleDateString('es-PE', { weekday:'long', day:'numeric', month:'long', year:'numeric' }) %> · <%= (typeof tenant !== 'undefined' && tenant && tenant.subdominio) ? tenant.subdominio + '.mirestconia.com' : 'restaurante.mirestconia.com' %></p>
             </div>
             <div class="dash-actions">
@@ -151,12 +151,12 @@
                 <section>
                     <div class="dash-pendientes-header">
                         <h2 class="dash-h2">Pendientes</h2>
-                        <button class="dash-btn-primary" onclick="window.location.href='/administracion'">+ Agregar</button>
+                        <button class="dash-btn-primary" onclick="window.location.href='/administracion'">+ Nueva tarea</button>
                     </div>
                     <div class="dash-card" style="margin-top: 18px;">
                         <% const pend = (dashboard && dashboard.pendientes && dashboard.pendientes.length) ? dashboard.pendientes : []; %>
                         <% if (pend.length === 0) { %>
-                            <div class="dash-task__empty">No hay pendientes por hoy</div>
+                            <div class="dash-task__empty">No hay pendientes para hoy</div>
                         <% } else { pend.slice(0, 5).forEach(function(p){ %>
                         <div class="dash-task">
                             <div class="dash-task__check <%= p.urgente ? 'dash-task__check--urgent' : '' %>"></div>
@@ -201,33 +201,33 @@
             <div class="dash-right">
 
                 <section>
-                    <h2 class="dash-h2">Hoy en numeros</h2>
+                    <h2 class="dash-h2">Hoy en números</h2>
                     <div class="dash-kpis" style="margin-top: 18px;">
                         <div class="dash-kpi">
                             <div class="dash-kpi__value">S/ <%= (dashboard && dashboard.ventasHoy) ? Number(dashboard.ventasHoy).toFixed(2) : '0.00' %></div>
-                            <div class="dash-kpi__label">Ventas</div>
+                            <div class="dash-kpi__label">Ventas de hoy</div>
                         </div>
                         <div class="dash-kpi">
                             <div class="dash-kpi__value dash-kpi__value--orange"><%= (dashboard && dashboard.mesasOcupadas) || 0 %>/<%= (dashboard && dashboard.mesasTotal) || 0 %></div>
-                            <div class="dash-kpi__label">Mesas</div>
+                            <div class="dash-kpi__label">Mesas ocupadas</div>
                         </div>
                         <div class="dash-kpi">
                             <div class="dash-kpi__value"><%= (dashboard && dashboard.platosHoy) || 0 %></div>
-                            <div class="dash-kpi__label">Platos</div>
+                            <div class="dash-kpi__label">Platos vendidos</div>
                         </div>
                     </div>
                 </section>
 
                 <section>
-                    <h2 class="dash-h2">DallIA dice:</h2>
+                    <h2 class="dash-h2">DallIA te recomienda</h2>
                     <div style="margin-top: 18px;">
-                        <% const insights = (dashboard && dashboard.iaInsights && dashboard.iaInsights.length) ? dashboard.iaInsights : [{ color:'#e0a038', texto:'Dashboard sin datos aun' }]; %>
+                        <% const insights = (dashboard && dashboard.iaInsights && dashboard.iaInsights.length) ? dashboard.iaInsights : [{ color:'#e0a038', texto:'Dashboard sin datos aún' }]; %>
                         <% insights.forEach(function(ins){ %>
                         <div class="dash-insight">
                             <div class="dash-insight__dot" style="background: <%= ins.color || '#e0a038' %>;"></div>
                             <div class="dash-insight__body">
                                 <div class="dash-insight__text"><%= ins.texto %></div>
-                                <div class="dash-insight__sub">Consejo de DallIA</div>
+                                <div class="dash-insight__sub">Sugerencia operativa de DallIA</div>
                             </div>
                         </div>
                         <% }) %>
@@ -235,12 +235,12 @@
                 </section>
 
                 <section>
-                    <h2 class="dash-h2">Acceso rapido</h2>
+                    <h2 class="dash-h2">Accesos rápidos</h2>
                     <div class="dash-quick" style="margin-top: 18px;">
                         <a href="/mesas" class="dash-quick-btn"><i class="bi bi-grid-3x3-gap-fill"></i> Mesas</a>
                         <a href="/cocina" class="dash-quick-btn"><i class="bi bi-fire"></i> Cocina</a>
                         <a href="/productos" class="dash-quick-btn"><i class="bi bi-egg-fried"></i> Productos</a>
-                        <a href="/chat" class="dash-quick-btn"><i class="bi bi-stars"></i> Asistente IA</a>
+                        <a href="/chat" class="dash-quick-btn"><i class="bi bi-stars"></i> DallIA</a>
                     </div>
                 </section>
 
