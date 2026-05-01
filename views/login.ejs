@@ -10,7 +10,7 @@
   <meta name="apple-mobile-web-app-title" content="MiRestconIA">
   <link rel="manifest" href="/manifest.json">
   <link rel="apple-touch-icon" href="/icon-192.png">
-  <title>Iniciar Sesion - mirestconia.com</title>
+  <title>Iniciar Sesion - MiRestconIA</title>
   <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -303,7 +303,7 @@
   </script>
 
 <% } else { %>
-  <!-- ========== NORMAL LOGIN (www.mirestconia.com — with Google OAuth) ========== -->
+  <!-- ========== NORMAL LOGIN (dominio principal con Google OAuth) ========== -->
   <div class="login-card">
     <!-- Left: image panel -->
     <div class="login-hero">
@@ -318,7 +318,7 @@
     <div class="login-form-panel">
       <div class="form-inner">
         <div class="logo-wrap">
-          <img src="/imagotipo-negro.svg" alt="MiRest con IA">
+          <img src="/imagotipo-negro.svg" alt="MiRestconIA">
         </div>
 
         <% if (error) { %>
@@ -332,8 +332,8 @@
             <input name="usuario" id="usuario" class="field-input" required autofocus placeholder="Tu usuario">
           </div>
           <div>
-            <label for="password" class="field-label">Contrasena</label>
-            <input name="password" id="password" type="password" class="field-input" required placeholder="Tu contrasena">
+            <label for="password" class="field-label">Contraseña</label>
+            <input name="password" id="password" type="password" class="field-input" required placeholder="Tu contraseña">
           </div>
           <hr class="divider">
           <button type="submit" class="btn-signin">
@@ -347,11 +347,11 @@
 
         <div class="login-hint">
           <i class="bi bi-info-circle me-1"></i>
-          Primer acceso: <strong>admin</strong> / <strong>admin123</strong>
+          Accede con las credenciales asignadas a tu restaurante.
         </div>
 
         <div class="tagline">
-          <strong>Cientos de restaurantes</strong> ya usan <span class="brand">MiRest con IA</span>.
+          <strong>Cientos de restaurantes</strong> ya usan <span class="brand">MiRestconIA</span>.
           <div class="avatars">
             <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="cliente">
             <img src="https://randomuser.me/api/portraits/women/44.jpg" alt="cliente">
