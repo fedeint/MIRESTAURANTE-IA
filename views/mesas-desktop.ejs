@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-title" content="MiRestconIA">
   <link rel="manifest" href="/manifest.json">
   <link rel="apple-touch-icon" href="/icon-192.png">
-    <title>Mesas - mirestconia.com</title>
+    <title>Mesas · MiRestconIA</title>
     <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
     <link rel="stylesheet" href="/css/theme.css">
@@ -73,7 +73,7 @@
       /* Grid gap */
       #gridMesas { --bs-gutter-x: 1rem; --bs-gutter-y: 1rem; }
 
-      /* Base card reset — override the global .card styles for mesa cards only */
+      /* Base card reset - override the global .card styles for mesa cards only */
       .mesa-card {
         background: #ffffff !important;
         border: 1.5px solid rgba(0,0,0,0.07) !important;
@@ -89,7 +89,7 @@
         animation: none !important;
       }
 
-      /* State variants — border + background tint */
+      /* State variants - border + background tint */
       .mesa-card[data-mesa-estado="libre"] {
         border-color: var(--mc-libre-border) !important;
         background: linear-gradient(160deg, #ffffff 60%, var(--mc-libre-bg)) !important;
@@ -103,7 +103,7 @@
         background: linear-gradient(160deg, #ffffff 60%, var(--mc-reservada-bg)) !important;
       }
 
-      /* Hover — lift + glow per state */
+      /* Hover - lift + glow per state */
       .mesa-card:hover {
         transform: translateY(-5px) !important;
       }
@@ -120,7 +120,7 @@
         border-color: var(--mc-reservada-color) !important;
       }
 
-      /* State accent bar — 3px left strip */
+      /* State accent bar - 3px left strip */
       .mesa-card::before {
         content: '';
         position: absolute;
@@ -491,7 +491,7 @@
         overflow: hidden;
       }
 
-      /* LEFT SIDEBAR — categories (desktop only) */
+      /* LEFT SIDEBAR - categories (desktop only) */
       #categoriasSidebar {
         display: none; /* hidden on mobile */
         flex-direction: column;
@@ -899,7 +899,7 @@
                                     </button>
                                     <button class="btn mc-btn mc-btn-pedido btnAbrirPedido">
                                         <i class="bi bi-door-open"></i>
-                                        <span class="mc-btn-text">Abrir&nbsp;/ Continuar</span>
+                                        <span class="mc-btn-text">Abrir o continuar</span>
                                     </button>
                                 </div>
 
@@ -975,7 +975,7 @@
             <!-- ========== PANEL: AGREGAR PRODUCTOS ========== -->
             <div class="canvas-panel active" id="panelAgregar">
 
-                <!-- Search — always at the top -->
+                <!-- Search - always at the top -->
                 <div id="catalogoSearchWrap">
                     <input id="catalogoSearch" type="search" placeholder="Buscar productos..." autocomplete="off">
                 </div>
@@ -984,7 +984,7 @@
                 <div id="panelAgregarContent">
 
                     <!-- LEFT SIDEBAR: category nav (desktop only, hidden on mobile via CSS) -->
-                    <nav id="categoriasSidebar" aria-label="Categorias">
+                    <nav id=categoriasSidebar aria-label=Categorías>
                         <!-- "Frecuentes & Populares" pinned at top -->
                         <button class="sidebar-cat-item sidebar-featured active" data-cat="todos">
                             <i class="bi bi-star-fill"></i>
@@ -992,7 +992,7 @@
                         </button>
 
                         <!-- Dynamic section header + items inserted by JS -->
-                        <div class="sidebar-section-header">CATEGORIAS</div>
+                        <div class=sidebar-section-header>CATEGORÍAS</div>
 
                         <!-- "Todos" item -->
                         <button class="sidebar-cat-item" data-cat="todos-all">
@@ -1006,7 +1006,7 @@
                     <!-- RIGHT: mobile pills + product grid -->
                     <div id="productosGridWrap">
 
-                        <!-- Category pills (mobile only — hidden on desktop via CSS) -->
+                        <!-- Category pills (mobile only - hidden on desktop via CSS) -->
                         <div id="categoriasWrap">
                             <button class="cat-pill active" data-cat="todos">
                                 <i class="bi bi-star-fill" style="color:inherit;"></i> Todos
@@ -1019,7 +1019,7 @@
                             <!-- Empty/loading state -->
                             <div id="catalogoEmptyState">
                                 <i class="bi bi-box-seam"></i>
-                                Sin resultados para esta busqueda.
+                                Sin resultados para esta búsqueda.
                             </div>
                         </div>
 
@@ -1099,9 +1099,9 @@
       // Rol del usuario (para restringir opciones en UI)
       // - Mesero: al facturar NO debe poder crear nuevos clientes (requisito solicitado)
       // Relacionado con: public/js/mesas.js (selección de cliente) y middleware/auth.js (res.locals.user)
-      window.__USER_ROLE__ = <%- JSON.stringify((typeof user !== 'undefined' && user && user.rol) ? user.rol : '') %>;
+      window.__USER_ROLE__ = "<%- (typeof user !== 'undefined' && user && user.rol) ? user.rol : '' %>";
       // ID del usuario actual para que el frontend detecte "mis mesas" (mesero)
-      window.__USER_ID__ = <%- JSON.stringify((typeof currentUserId !== 'undefined' && currentUserId) ? Number(currentUserId) : null) %>;
+      window.__USER_ID__ = parseInt("<%- (typeof currentUserId !== 'undefined' && currentUserId) ? currentUserId : '' %>", 10) || null;
     </script>
     <script src="/js/mesas.js"></script>
     <script>
@@ -1124,11 +1124,11 @@
 
         var {value} = await Swal.fire({
           title: 'Dividir cuenta',
-          html: '<p class="small text-muted">Selecciona los items para esta factura:</p>' +
+          html: '<p class=small text-muted>Selecciona los ítems para esta factura:</p>' +
                 '<div style="max-height:300px;overflow-y:auto;">'+itemsHtml+'</div>' +
                 '<hr><div class="d-flex justify-content-between fw-bold"><span>Subtotal seleccionado:</span><span id="divSubtotal">S/ 0.00</span></div>',
           showCancelButton: true,
-          confirmButtonText: 'Facturar seleccion',
+          confirmButtonText: 'Facturar selección',
           cancelButtonText: 'Cancelar',
           didOpen: function(){
             $(document).on('change.dividir', '.dividir-check', function(){
@@ -1139,7 +1139,7 @@
           },
           preConfirm: function(){
             var checked = $('.dividir-check:checked');
-            if (!checked.length) { Swal.showValidationMessage('Selecciona al menos 1 item'); return false; }
+            if (!checked.length) { Swal.showValidationMessage('Selecciona al menos 1 ítem'); return false; }
             var indices = []; checked.each(function(){ indices.push(parseInt($(this).val())); });
             return indices;
           }
@@ -1147,11 +1147,9 @@
         $(document).off('change.dividir');
 
         if (!value) return;
-        Swal.fire({icon:'info', title:'Funcion en desarrollo', text:'La division de cuenta selecciona items indices: ['+value.join(',')+'].\nEsta funcionalidad requiere un endpoint backend para facturar items parciales del pedido. Se implementara en la siguiente iteracion.', confirmButtonText:'Entendido'});
+        Swal.fire({icon:'info', title:'Función en desarrollo', text:'La división de cuenta selecciona ítems índices: ['+value.join(',')+'].\nEsta funcionalidad requiere un endpoint backend para facturar ítems parciales del pedido. Se implementará en la siguiente iteración.', confirmButtonText:'Entendido'});
       });
     });
     </script>
 </body>
 </html>
-
-
