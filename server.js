@@ -1181,8 +1181,9 @@ app.use('/api/delivery', requireAuth, requireRole('administrador'), deliveryRout
 // Features (reservas, delivery, promos, fidelidad - admin)
 app.use('/features', requireRole('administrador'), featuresRoutes);
 app.use('/api/features', requireRole('administrador'), featuresRoutes);
-// Menu digital publico (sin auth)
-app.get('/menu', (req, res) => res.redirect('/features/menu'));
+// Menu digital (Visual Menu Module)
+const menuRoutes = require('./routes/menu');
+app.use('/menu', menuRoutes);
 
 // Canales internos (todos los roles)
 app.use('/canales', requireAuth, canalesRoutes);

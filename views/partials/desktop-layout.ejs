@@ -51,7 +51,7 @@
         }
     </style>
 </head>
-<body>
+<body data-page="<%= typeof pageId !== 'undefined' ? pageId : '' %>">
     <%- include('./sidebar', { user: typeof user !== 'undefined' ? user : null,
                               reqPath: typeof reqPath !== 'undefined' ? reqPath : '/',
                               csrfToken: typeof csrfToken !== 'undefined' ? csrfToken : '' }) %>

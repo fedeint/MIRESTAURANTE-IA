@@ -47,9 +47,43 @@
     });
   }
 
+  function initMenuPreselection() {
+    if (window.location.search.indexOf('from=menu') === -1) return;
+    
+    try {
+      var raw = sessionStorage.getItem('menuSelection');
+      if (!raw) return;
+      var items = JSON.parse(raw);
+      if (!Array.isArray(items) || items.length === 0) {
+        sessionStorage.removeItem('menuSelection');
+        return;
+      }
+      
+      var block = document.createElement('div');
+      block.className = 'menu-preselection-block';
+      block.style.cssText = 'background: rgba(239, 82, 15, 0.1); color: #EF520F; padding: 12px 16px; border-radius: 12px; margin: 16px; border: 1px dashed #EF520F; font-weight: 500; font-size: 14px;';
+      
+      var names = items.slice(0, 3).map(function(i) { return i.nombre; }).join(', ');
+      var suffix = items.length > 3 ? '...' : '';
+      block.innerHTML = '<i class="bi bi-info-circle"></i> Preselección: ' + items.length + ' ítems (' + names + suffix + ')';
+      
+      var container = document.querySelector('.m-tabs') || document.querySelector('.m-header') || document.body;
+      if (container) {
+        container.insertAdjacentElement('afterend', block);
+      }
+      
+      console.log('Preselección activa:', items);
+      // NOTE: We don't remove it here so it persists on refresh. 
+      // It will be cleared when the session ends or user navigates back to /menu.
+    } catch(e) {
+      sessionStorage.removeItem('menuSelection');
+    }
+  }
+
   function initMesas() {
     initPwaFilters();
     initPwaAutoRefresh();
+    initMenuPreselection();
   }
 
   window.App = window.App || {};
