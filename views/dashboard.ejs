@@ -269,7 +269,7 @@
         .credits strong { color: #ef520f; }
     </style>
 </head>
-<body>
+<body data-page="dashboard">
 <%
     var now = new Date();
     var fechaStr = now.toLocaleDateString('es-PE', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
@@ -432,7 +432,11 @@
 
 </div><!-- /shell -->
 
-<script src="/js/dallia-fab.js"></script>
-<script src="/js/salva-alerts.js"></script>
+<script src="/js/dallia-fab.js" defer></script>
+<script src="/js/salva-alerts.js" defer></script>
+<script src="/js/pages/dashboard.js" defer></script>
 </body>
 </html>
+
+
+

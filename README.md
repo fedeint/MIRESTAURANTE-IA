@@ -238,6 +238,18 @@ npm run local          # Modo local sin Supabase
 
 ---
 
+## Sistema visual Design.md
+
+El proyecto aplica el sistema visual descrito en [Design.md](./Design.md) desde una capa global en [public/css/theme.css](./public/css/theme.css). Las vistas EJS que cargan `/css/theme.css` heredan automaticamente el fondo oscuro calido, texto `#faf9f6`, superficies translucidas, bordes `rgba(226,226,226,.35)` y botones sobrios tipo pill. La landing publica tiene una adaptacion local porque usa CSS inline standalone.
+
+**Ejecutar:** `npm run dev` y abrir la ruta principal o una vista autenticada.
+
+**Probar:** `npm test` para validar regresiones de logica; para UI revisar visualmente landing, dashboard, mesas/caja/cocina y una vista con tablas/formularios.
+
+**Deploy:** no requiere migraciones ni variables nuevas. Desplegar como cambio estatico de EJS/CSS.
+
+---
+
 ## Reportar bugs o vulnerabilidades
 
 - **Bugs normales** → abre un issue con el template de bug

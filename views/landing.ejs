@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <link rel="icon" type="image/png" href="/favicon.png">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#1e1b4b">
+  <meta name="theme-color" content="#171615">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="dignita">
@@ -182,6 +182,75 @@
       .hero-visual{margin-top:2.5rem;}
       .mockup-content{grid-template-columns:1fr;}
       .pricing-card{margin-bottom:1.5rem;}
+    }
+
+    /* Design.md adaptation: warm dark Warp-inspired public surface */
+    :root{
+      --warp-bg:#171615;
+      --warp-bg-soft:#1f1e1c;
+      --warp-text:#faf9f6;
+      --warp-secondary:#afaeac;
+      --warp-muted:#868584;
+      --warp-surface:rgba(255,255,255,.04);
+      --warp-border:rgba(226,226,226,.35);
+      --warp-border-soft:rgba(226,226,226,.16);
+      --warp-button:#353534;
+      --warp-button-hover:#454542;
+    }
+    body{font-family:'Matter','Inter',sans-serif;color:var(--warp-text);background:var(--warp-bg);}
+    .hero,.features,.dishes,.stats,.pricing,.cta,.landing-footer{
+      background:var(--warp-bg)!important;
+      color:var(--warp-text);
+    }
+    .hero::before,.hero::after,.cta::before{display:none;}
+    .hero h1,.section-title,.cta h2,.feature-card h5,.plan-name,.contact-modal .modal-title,.contact-modal .plan-highlight .ph-name{
+      color:var(--warp-text)!important;
+      font-weight:400!important;
+      letter-spacing:-.02em;
+    }
+    .hero h1 span,.stat-num,.landing-footer .accent,.plan-price .currency,.plan-price .amount,.payment-coming-soon,.contact-modal .plan-highlight .ph-price{
+      background:none!important;
+      -webkit-text-fill-color:initial!important;
+      color:var(--warp-secondary)!important;
+    }
+    .hero p,.section-subtitle,.feature-card p,.stat-label,.plan-desc,.plan-feature,.pricing-note,.cta p,.landing-footer span,.contact-option .co-text span{
+      color:var(--warp-secondary)!important;
+    }
+    .hero-badge,.section-label,.payment-coming-soon,.plan-badge-popular,.dish-tag{
+      background:rgba(255,255,255,.06)!important;
+      border:1px solid var(--warp-border-soft)!important;
+      color:var(--warp-secondary)!important;
+      border-radius:50px!important;
+      font-weight:400!important;
+      letter-spacing:.12em;
+      text-transform:uppercase;
+      box-shadow:none!important;
+    }
+    .hero-mockup,.mockup-card,.feature-card,.pricing-card,.pricing-card.destacado,.contact-modal .modal-content,.contact-option,.contact-modal .plan-highlight{
+      background:var(--warp-surface)!important;
+      border:1px solid var(--warp-border)!important;
+      border-radius:12px!important;
+      box-shadow:none!important;
+      backdrop-filter:none!important;
+    }
+    .feature-card:hover,.pricing-card:hover,.pricing-card.destacado:hover,.contact-option:hover{
+      transform:none!important;
+      box-shadow:none!important;
+      background:rgba(255,255,255,.07)!important;
+    }
+    .feature-icon,.btn-hero-primary,.btn-hero-outline,.btn-plan,.co-icon{
+      background:var(--warp-button)!important;
+      border:1px solid var(--warp-border-soft)!important;
+      color:var(--warp-secondary)!important;
+      box-shadow:none!important;
+      border-radius:50px!important;
+      font-weight:500!important;
+    }
+    .btn-hero-primary:hover,.btn-hero-outline:hover,.btn-plan:hover{
+      background:var(--warp-button-hover)!important;
+      color:var(--warp-text)!important;
+      transform:none!important;
+      box-shadow:none!important;
     }
   </style>
 </head>

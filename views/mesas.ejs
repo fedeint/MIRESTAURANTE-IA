@@ -160,7 +160,7 @@
     }
   </style>
 </head>
-<body>
+<body data-page="mesas">
 <% var mesas = locals.mesas || []; var currentUserRol = locals.currentUserRol || ''; %>
 <% var ocupadas = mesas.filter(function(m){ return m.estado === 'ocupada'; }).length; %>
 <div class="shell">
@@ -212,61 +212,16 @@
 
 </div>
 
+
+</div>
+
 <%- include('partials/limelight-nav', { reqPath: '/mesas' }) %>
 
 <script>
-(function() {
-  // Filter
-  var currentFilter = 'todas';
-  var currentUserId = <%= JSON.stringify(locals.currentUserId) %>;
-  var allCards = Array.from(document.querySelectorAll('.m-card[data-mesa-id]'));
-
-  document.querySelectorAll('.m-filter-btn').forEach(function(btn) {
-    btn.addEventListener('click', function() {
-      currentFilter = btn.dataset.filter;
-      document.querySelectorAll('.m-filter-btn').forEach(function(b){ b.classList.remove('active'); });
-      btn.classList.add('active');
-      applyFilter();
-    });
-  });
-
-  function applyFilter() {
-    allCards.forEach(function(card) {
-      var estado = card.dataset.estado;
-      var show = true;
-      if (currentFilter === 'libre')    show = estado === 'libre';
-      else if (currentFilter === 'ocupada')   show = estado === 'ocupada';
-      else if (currentFilter === 'reservada') show = estado === 'reservada';
-      // 'mis' and 'todas': show all for now (mis mesa filtering would need server-side data)
-      card.style.display = show ? '' : 'none';
-    });
-  }
-})();
-
-// Navigate to mesa detail / order page
-function abrirMesa(mesaId, numero, estado) {
-  if (estado === 'bloqueada') return;
-  // Navigate to new order flow for this mesa
-  var _basePath = '<%- locals.basePath || "" %>';
-  window.location.href = _basePath + '/pedido-nuevo?mesa=' + mesaId;
-}
-
-// Auto-refresh every 30s to reflect table state changes
-// Track occupied count to flash title on new table
-var _prevOcupadas = document.querySelectorAll('.m-card[data-estado="ocupada"]').length;
-setInterval(function() { window.location.reload(); }, 30 * 1000);
-// On page restore from bfcache, re-check title
-window.addEventListener('pageshow', function() {
-  var now = document.querySelectorAll('.m-card[data-estado="ocupada"]').length;
-  if (now > _prevOcupadas) {
-    document.title = '🍽️ (' + now + ') Mesas';
-    if (navigator.vibrate) navigator.vibrate([80, 40, 80]);
-    setTimeout(function() { document.title = 'Mesas'; }, 4000);
-  }
-  _prevOcupadas = now;
-});
+window.MesasConfig = { basePath: <%- JSON.stringify(locals.basePath || "") %> };
 </script>
-<script src="/js/dallia-fab.js"></script>
-<script src="/js/salva-alerts.js"></script>
+<script src="/js/pages/mesas.js" defer></script>
+<script src="/js/dallia-fab.js" defer></script>
+<script src="/js/salva-alerts.js" defer></script>
 </body>
 </html>

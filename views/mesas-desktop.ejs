@@ -814,7 +814,7 @@
       }
     </style>
  </head>
-<body>
+<body data-page="mesas-desktop">
     <%- include('partials/sidebar') %>
     <div class="dg-main">
     <main class="flex-grow-1">
@@ -1098,58 +1098,117 @@
     <script>
       // Rol del usuario (para restringir opciones en UI)
       // - Mesero: al facturar NO debe poder crear nuevos clientes (requisito solicitado)
+
+                        <!-- "Todos" item -->
+                        <button class="sidebar-cat-item" data-cat="todos-all">
+                            <i class="bi bi-grid-3x3-gap"></i>
+                            <span>Todos</span>
+                        </button>
+
+                        <!-- JS appends additional .sidebar-cat-item[data-cat="..."] here -->
+                    </nav>
+
+                    <!-- RIGHT: mobile pills + product grid -->
+                    <div id="productosGridWrap">
+
+                        <!-- Category pills (mobile only - hidden on desktop via CSS) -->
+                        <div id="categoriasWrap">
+                            <button class="cat-pill active" data-cat="todos">
+                                <i class="bi bi-star-fill" style="color:inherit;"></i> Todos
+                            </button>
+                            <!-- JS inserts additional pills dynamically -->
+                        </div>
+
+                        <!-- Product grid -->
+                        <div id="productosGrid">
+                            <!-- Empty/loading state -->
+                            <div id="catalogoEmptyState">
+                                <i class="bi bi-box-seam"></i>
+                                Sin resultados para esta búsqueda.
+                            </div>
+                        </div>
+
+                    </div><!-- /productosGridWrap -->
+
+                </div><!-- /panelAgregarContent -->
+
+                <!-- Sticky bottom bar (shown when items are queued) -->
+                <div id="catalogoBottomBar">
+                    <div id="catalogoBottomBarInfo">
+                        <strong id="catalogoBottomCount">0</strong> productos&nbsp;&middot;&nbsp;Total: <strong id="catalogoBottomTotal">S/ 0.00</strong>
+                    </div>
+                    <button id="btnContinuarOrden">
+                        Continuar con la orden <i class="bi bi-arrow-right ms-1"></i>
+                    </button>
+                </div>
+
+            </div><!-- /panelAgregar -->
+
+            <!-- ========== PANEL: PEDIDO ACTUAL ========== -->
+            <div class="canvas-panel" id="panelPedido">
+
+                <!-- Utility actions row -->
+                <div class="d-flex justify-content-end gap-2 px-3 pt-2 pb-1 flex-shrink-0">
+                    <button id="btnLimpiarRechazadosHeader" class="btn btn-outline-danger btn-sm" style="font-size:0.75rem;">
+                        <i class="bi bi-eraser"></i> Limpiar rechazados
+                    </button>
+                    <button id="btnLiberarMesaHeader" class="btn btn-outline-secondary btn-sm" style="font-size:0.75rem;">
+                        <i class="bi bi-unlock"></i> Liberar
+                    </button>
+                </div>
+
+                <!-- Items table -->
+                <div id="panelPedidoInner">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Producto</th>
+                                    <th class="text-end">Cant</th>
+                                    <th class="text-end">Precio</th>
+                                    <th class="text-end">Subt</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbodyItems"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Action buttons -->
+                <div id="panelPedidoActions">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <strong style="font-size:0.85rem;">Total:</strong>
+                        <span id="totalPedido" class="fw-bold" style="font-size:0.95rem;color:var(--dg-primary);">$0</span>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button id="btnMoverMesa" class="btn btn-outline-secondary btn-sm"><i class="bi bi-arrow-left-right me-1"></i>Mover a mesa</button>
+                        <button id="btnEnviarCocina" class="btn btn-warning btn-sm"><i class="bi bi-send me-1"></i>Enviar a cocina</button>
+                        <button id="btnFacturarPedido" class="btn btn-success btn-sm"><i class="bi bi-cash-coin me-1"></i>Facturar todo</button>
+                        <button id="btnDividirCuenta" class="btn btn-outline-info btn-sm"><i class="bi bi-scissors me-1"></i>Dividir cuenta</button>
+                    </div>
+                </div>
+            </div><!-- /panelPedido -->
+
+        </div><!-- /offcanvas-body -->
+    </div><!-- /canvasPedido -->
+
+    </main>
+    <%- include('partials/footer') %>
+    </div><!-- dg-main -->
+
+    <script src="/vendor/jquery/jquery.min.js"></script>
+    <script src="/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="/vendor/sweetalert2/sweetalert2.all.min.js"></script>
+    <script>
+      // Rol del usuario (para restringir opciones en UI)
+      // - Mesero: al facturar NO debe poder crear nuevos clientes (requisito solicitado)
       // Relacionado con: public/js/mesas.js (selección de cliente) y middleware/auth.js (res.locals.user)
       window.__USER_ROLE__ = "<%- (typeof user !== 'undefined' && user && user.rol) ? user.rol : '' %>";
       // ID del usuario actual para que el frontend detecte "mis mesas" (mesero)
       window.__USER_ID__ = parseInt("<%- (typeof currentUserId !== 'undefined' && currentUserId) ? currentUserId : '' %>", 10) || null;
     </script>
-    <script src="/js/mesas.js"></script>
-    <script>
-    // Dividir cuenta: permite seleccionar items para facturar parcialmente
-    $(function(){
-      $('#btnDividirCuenta').on('click', async function(){
-        // Obtener items del pedido actual desde el DOM
-        var rows = $('#tbodyItems tr');
-        if (!rows.length) { Swal.fire('','No hay items en el pedido','info'); return; }
-
-        var itemsHtml = '';
-        rows.each(function(i){
-          var nombre = $(this).find('td').eq(0).text().trim();
-          var cant = $(this).find('td').eq(1).text().trim();
-          var precio = $(this).find('td').eq(2).text().trim();
-          var subt = $(this).find('td').eq(3).text().trim();
-          var itemId = $(this).data('item-id') || i;
-          itemsHtml += '<div class="form-check py-1 border-bottom"><input class="form-check-input dividir-check" type="checkbox" value="'+i+'" id="div'+i+'" data-subt="'+subt.replace(/[^0-9.]/g,'')+'"><label class="form-check-label d-flex justify-content-between w-100 ms-2" for="div'+i+'"><span>'+nombre+' x'+cant+'</span><strong>'+subt+'</strong></label></div>';
-        });
-
-        var {value} = await Swal.fire({
-          title: 'Dividir cuenta',
-          html: '<p class=small text-muted>Selecciona los ítems para esta factura:</p>' +
-                '<div style="max-height:300px;overflow-y:auto;">'+itemsHtml+'</div>' +
-                '<hr><div class="d-flex justify-content-between fw-bold"><span>Subtotal seleccionado:</span><span id="divSubtotal">S/ 0.00</span></div>',
-          showCancelButton: true,
-          confirmButtonText: 'Facturar selección',
-          cancelButtonText: 'Cancelar',
-          didOpen: function(){
-            $(document).on('change.dividir', '.dividir-check', function(){
-              var total = 0;
-              $('.dividir-check:checked').each(function(){ total += parseFloat($(this).data('subt')) || 0; });
-              $('#divSubtotal').text('S/ ' + total.toFixed(2));
-            });
-          },
-          preConfirm: function(){
-            var checked = $('.dividir-check:checked');
-            if (!checked.length) { Swal.showValidationMessage('Selecciona al menos 1 ítem'); return false; }
-            var indices = []; checked.each(function(){ indices.push(parseInt($(this).val())); });
-            return indices;
-          }
-        });
-        $(document).off('change.dividir');
-
-        if (!value) return;
-        Swal.fire({icon:'info', title:'Función en desarrollo', text:'La división de cuenta selecciona ítems índices: ['+value.join(',')+'].\nEsta funcionalidad requiere un endpoint backend para facturar ítems parciales del pedido. Se implementará en la siguiente iteración.', confirmButtonText:'Entendido'});
-      });
-    });
-    </script>
+    <script src="/js/mesas.js" defer></script>
+    <script src="/js/pages/mesas-desktop.js" defer></script>
 </body>
 </html>

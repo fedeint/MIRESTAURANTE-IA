@@ -1,6 +1,7 @@
 // JS de Mesas: UI para abrir/gestionar pedidos por mesa y enviar a cocina
 // Relacionado con: views/mesas.ejs, routes/mesas.js, routes/productos.js, routes/facturas.js
 
+if (window.jQuery) {
 $(function() {
   const canvas = new bootstrap.Offcanvas('#canvasPedido');
   let pedidoActual = null; // { id, mesa_id }
@@ -2074,6 +2075,5 @@ $(function() {
     aplicarFiltroMesas();
   });
 });
-
-
+}
 

@@ -197,7 +197,7 @@
         .empty-state__subtitle { font-size: 14px; }
     </style>
 </head>
-<body>
+<body data-page="pedidos-desktop">
     <%- include('./partials/sidebar', { user: typeof user !== 'undefined' ? user : null, reqPath: '/pedidos', csrfToken: typeof csrfToken !== 'undefined' ? csrfToken : '' }) %>
 
     <main class="dg-main-desktop">

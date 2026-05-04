@@ -120,7 +120,7 @@
         .dash-quick-btn i { font-size: 20px; color: #ef520f; }
     </style>
 </head>
-<body>
+<body data-page="dashboard-desktop">
     <%- include('./partials/sidebar', { user: typeof user !== 'undefined' ? user : null, reqPath: '/', csrfToken: typeof csrfToken !== 'undefined' ? csrfToken : '' }) %>
 
     <main class="dg-main-desktop">
@@ -248,5 +248,9 @@
 
         </div>
     </main>
+<script src="/js/pages/dashboard-desktop.js" defer></script>
 </body>
 </html>
+
+
+

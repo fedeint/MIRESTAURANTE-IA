@@ -6,27 +6,27 @@
     <meta name="viewport" content="width=1280, initial-scale=1">
     <link rel="icon" type="image/png" href="/favicon.png">
     <title><%= typeof title !== 'undefined' ? title : 'MiRest con IA' %> — mirestconia.com</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Fredoka+One&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
     <style>
         :root {
-            --dg-bg-start: #fff8f0;
-            --dg-bg-end: #fafaf7;
-            --dg-main-bg: #ffffffc7;
-            --dg-text-primary: #1f2430;
-            --dg-text-secondary: #7a8090;
-            --dg-text-muted: #9ba3b2;
-            --dg-card-shadow: 0 14px 26.25px #0f172a14;
-            --dg-sidebar-start: #10152f;
-            --dg-sidebar-mid: #0a0f24;
-            --dg-sidebar-end: #090d1d;
-            --dg-orange-active: linear-gradient(180deg, #fefbf5 0%, #fdb75e 4%, #fd9931 9%, #ef520f 38%, #df2c05 79%, #e13809 89%, #fba251 97%, #ee6d2d 100%);
-            --dg-orange-btn: linear-gradient(180deg, #f08a4f 0%, #d9501f 100%);
-            --dg-orange-glow: 0 12px 21px #df4f1e3d;
+            --dg-bg-start: #171615;
+            --dg-bg-end: #1f1e1c;
+            --dg-main-bg: rgba(255, 255, 255, 0.04);
+            --dg-text-primary: #faf9f6;
+            --dg-text-secondary: #afaeac;
+            --dg-text-muted: #868584;
+            --dg-card-shadow: none;
+            --dg-sidebar-start: #191817;
+            --dg-sidebar-mid: #171615;
+            --dg-sidebar-end: #141312;
+            --dg-orange-active: #353534;
+            --dg-orange-btn: #353534;
+            --dg-orange-glow: none;
         }
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
         html, body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: 'Matter', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             color: var(--dg-text-primary);
             background: linear-gradient(135deg, var(--dg-bg-start) 0%, var(--dg-bg-end) 100%);
             background-attachment: fixed;
@@ -41,10 +41,9 @@
             margin-bottom: 40px;
             padding: 32px 40px;
             background: var(--dg-main-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
             border-radius: 12px;
-            box-shadow: 0 18px 39.375px #0f172a14;
+            border: 1px solid rgba(226, 226, 226, 0.35);
+            box-shadow: none;
             min-height: calc(100vh - 80px);
         }
         @media (max-width: 1280px) {

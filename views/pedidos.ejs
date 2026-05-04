@@ -207,7 +207,7 @@
 
     </style>
 </head>
-<body>
+<body data-page="pedidos">
     <div class="shell">
         <header class="ped-header">
             <h1>Pedidos</h1>
@@ -325,25 +325,8 @@
         <%- include('partials/limelight-nav', { reqPath: '/pedidos' }) %>
     </div>
 
-    <script src="/js/dallia-fab.js"></script>
-    <script src="/js/salva-alerts.js"></script>
-    <script>
-        document.querySelectorAll('.ped-tab').forEach(function(btn){
-            btn.addEventListener('click', function(){
-                var target = this.dataset.tab;
-                document.querySelectorAll('.ped-tab').forEach(function(b){ b.classList.remove('active'); });
-                document.querySelectorAll('.ped-tab-content').forEach(function(c){ c.classList.remove('active'); });
-                this.classList.add('active');
-                var content = document.getElementById('tab-' + target);
-                if (content) content.classList.add('active');
-                var url = new URL(window.location);
-                url.searchParams.set('tab', target);
-                history.replaceState(null, '', url);
-            });
-        });
-
-        // Auto-refresh every 30s so new orders appear without manual reload
-        setInterval(function() { window.location.reload(); }, 30 * 1000);
-    </script>
+    <script src="/js/dallia-fab.js" defer></script>
+    <script src="/js/salva-alerts.js" defer></script>
+    <script src="/js/pages/pedidos.js" defer></script>
 </body>
 </html>
