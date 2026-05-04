@@ -214,6 +214,12 @@
             <p>Mesa, delivery y para llevar</p>
         </header>
 
+        <% if (!locals.cajaAbierta) { %>
+          <div class="alert" style="background:#EF444420; color:#EF4444; padding:12px; margin: 16px; border-radius:12px; text-align:center; font-weight:600;">
+            Debes abrir caja para operar
+          </div>
+        <% } %>
+
         <% const activeTab = (typeof tab !== 'undefined' && tab) ? tab : 'mesa'; %>
         <% const tabCounts = (typeof counts !== 'undefined' && counts) ? counts : { mesa: 0, delivery: 0, para_llevar: 0 }; %>
 

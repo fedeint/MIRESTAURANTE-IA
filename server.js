@@ -14,7 +14,8 @@ const { slugRewrite } = require('./middleware/slugRouter');
 const { createTenantUrlHelper } = require('./lib/tenantUrl');
 const { sessionTimeout } = require('./middleware/sessionTimeout');
 const { requirePasswordChange } = require('./middleware/requirePasswordChange');
-const { requireCajaAbierta } = require('./middleware/requireCaja');
+const requireCajaAbierta = require('./middleware/requireCajaAbierta');
+const requireModule = require('./middleware/requireModule');
 const { attachGeoContext } = require('./middleware/geoContext');
 
 const logger = require('./lib/logger');
@@ -1036,8 +1037,8 @@ app.get('/facturacion', requireRole(['mesero', 'administrador', 'cajero']), (req
 
 // Usar las rutas
 // Panel de usuarios (solo admin)
-app.use('/usuarios', requireRole('administrador'), usuariosRoutes);
-app.use('/api/usuarios', requireRole('administrador'), usuariosRoutes);
+app.use('/usuarios', requireRole('administrador'), requireModule('usuarios'), usuariosRoutes);
+app.use('/api/usuarios', requireRole('administrador'), requireModule('usuarios'), usuariosRoutes);
 
 // Productos
 app.use('/productos', requireRole(['administrador', 'almacenero']), productosRoutes); // panel admin + almacenero
@@ -1048,8 +1049,8 @@ app.use('/clientes', requireRole('administrador'), clientesRoutes);
 app.use('/api/clientes', requireRole(['mesero', 'administrador']), clientesRoutes);
 
 // Facturas (impresión/creación). Mesero y cajero necesitan imprimir/gestionar.
-app.use('/facturas', requireRole(['administrador', 'cajero', 'mesero']), facturasRoutes);
-app.use('/api/facturas', requireRole(['mesero', 'administrador', 'cajero']), facturasRoutes);
+app.use('/facturas', requireRole(['administrador', 'cajero', 'mesero']), requireModule('facturacion'), requireCajaAbierta, facturasRoutes);
+app.use('/api/facturas', requireRole(['mesero', 'administrador', 'cajero']), requireModule('facturacion'), requireCajaAbierta, facturasRoutes);
 
 // Mesas (mesero/admin)
 app.use('/mesas', requireRole(['mesero', 'administrador']), requireCajaAbierta, mesasRoutes);
@@ -1059,8 +1060,8 @@ app.use('/api/mesas', requireRole(['mesero', 'administrador']), mesasRoutes);
 // - Cocinero/Admin: puede preparar/marcar listo
 // - Mesero: solo visualiza y marca "Entregado" en la pestaña de listos (la acción se hace vía /api/mesas/items/:id/estado con validación)
 // Relacionado con: routes/cocina.js (middlewares por ruta) y routes/mesas.js (restricción servido)
-app.use('/cocina', requireRole(['cocinero', 'mesero', 'administrador']), requireCajaAbierta, cocinaRoutes);
-app.use('/api/cocina', requireRole(['cocinero', 'mesero', 'administrador']), requireCajaAbierta, cocinaRoutes);
+app.use('/cocina', requireRole(['cocinero', 'mesero', 'administrador']), requireModule('cocina'), requireCajaAbierta, cocinaRoutes);
+app.use('/api/cocina', requireRole(['cocinero', 'mesero', 'administrador']), requireModule('cocina'), requireCajaAbierta, cocinaRoutes);
 
 // Mobile PWA routes — PASO 4
 const pedidoNuevoRoutes = require('./routes/pedido-nuevo');
@@ -1070,7 +1071,7 @@ const cocinaDisplayRoutes = require('./routes/cocina-display');
 app.use('/cocina-display', requireAuth, cocinaDisplayRoutes);
 
 const pedidosListaRoutes = require('./routes/pedidos-lista');
-app.use('/pedidos', requireAuth, pedidosListaRoutes);
+app.use('/pedidos', requireAuth, requireModule('pedidos'), requireCajaAbierta, pedidosListaRoutes);
 
 // PASO 5 — Mesa Abierta + Para Llevar + Cortesías
 const mesaCuentaRoutes = require('./routes/mesa-cuenta');

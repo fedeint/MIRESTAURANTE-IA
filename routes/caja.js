@@ -121,6 +121,7 @@ router.post('/abrir', async (req, res) => {
         }
 
         registrarAudit({ tenantId: tid, usuarioId: uid, accion: 'INSERT', modulo: 'caja', tabla: 'cajas', registroId: result.insertId, ip: req.ip });
+        if (req.session) req.session.cajaAbierta = true;
         res.status(201).json({ caja_id: result.insertId, message: 'Caja abierta' });
     } catch (e) {
         await connection.rollback();
@@ -172,6 +173,7 @@ router.post('/cerrar', async (req, res) => {
         await db.query(`UPDATE mesas SET mesero_asignado_id = NULL, mesero_asignado_nombre = NULL WHERE tenant_id = ?`, [tid]);
 
         registrarAudit({ tenantId: tid, usuarioId: uid, accion: 'UPDATE', modulo: 'caja', tabla: 'cajas', registroId: caja.id, datosNuevos: { monto_sistema: montoSistema, monto_real: montoReal, diferencia }, ip: req.ip });
+        if (req.session) req.session.cajaAbierta = false;
         res.json({ message: 'Caja cerrada', monto_sistema: montoSistema, monto_real: montoReal, diferencia });
     } catch (e) {
         res.status(500).json({ error: e.message });

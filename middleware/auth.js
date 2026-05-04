@@ -1,4 +1,5 @@
 // Middleware de autenticación y roles.
+const { canAccess } = require('../lib/permissions');
 // Relacionado con:
 // - routes/auth.js (login/logout)
 // - routes/usuarios.js (solo administrador)
@@ -18,7 +19,16 @@ function wantsJson(req) {
 
 function attachUserToLocals(req, res, next) {
   // Expone el usuario en EJS como "user"
-  res.locals.user = (req.session && req.session.user) ? req.session.user : null;
+  const user = (req.session && req.session.user) ? req.session.user : null;
+  res.locals.user = user;
+  
+  res.locals.can = (module) => {
+    return user && canAccess(user.rol, module);
+  };
+  
+  res.locals.cajaAbierta = req.session ? !!req.session.cajaAbierta : false;
+  res.locals.userRole = user ? user.rol : null;
+
   next();
 }
 

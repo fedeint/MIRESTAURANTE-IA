@@ -57,6 +57,11 @@
                               csrfToken: typeof csrfToken !== 'undefined' ? csrfToken : '' }) %>
 
     <main class="dg-main-desktop">
+        <% if (typeof locals !== 'undefined' && locals.cajaAbierta === false) { %>
+            <div class="global-alert" style="background:#EF444420; border: 1px solid #EF444440; color:#EF4444; padding:12px; margin-bottom: 20px; border-radius:12px; text-align:center; font-weight:600; font-family: 'Inter', sans-serif;">
+                <i class="bi bi-exclamation-triangle-fill"></i> Atención: Debes abrir la caja para poder operar.
+            </div>
+        <% } %>
         <%- typeof bodyContent !== 'undefined' ? bodyContent : '' %>
     </main>
 </body>
