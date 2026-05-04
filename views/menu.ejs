@@ -8,173 +8,247 @@
       });
   }
 %>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=1280, initial-scale=1">
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <title>Menú Digital — mirestconia.com</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+    <style>
+        :root {
+            --dg-bg-start: #171615;
+            --dg-bg-end: #1f1e1c;
+            --dg-main-bg: rgba(255, 255, 255, 0.04);
+            --dg-text-primary: #faf9f6;
+            --dg-text-secondary: #afaeac;
+            --dg-text-muted: #868584;
+            --dg-sidebar-start: #191817;
+            --dg-orange-btn: #EF520F;
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            color: var(--dg-text-primary);
+            background: linear-gradient(135deg, var(--dg-bg-start) 0%, var(--dg-bg-end) 100%);
+            background-attachment: fixed;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+        }
+        
+        .dg-main-desktop {
+            margin-left: 320px;
+            margin-right: 40px;
+            margin-top: 40px;
+            margin-bottom: 40px;
+            padding: 32px 40px;
+            background: var(--dg-main-bg);
+            border-radius: 12px;
+            border: 1px solid rgba(226, 226, 226, 0.35);
+            min-height: calc(100vh - 80px);
+        }
 
-<% ob.bodyContent = capture(() => { %>
-  <style>
-      .menu-header {
-          margin-bottom: 32px;
-          text-align: center;
-      }
-      .menu-header h1 {
-          font-size: 32px;
-          font-weight: 600;
-          color: var(--dg-text-primary);
-          margin-bottom: 8px;
-      }
-      .menu-header p {
-          color: var(--dg-text-muted);
-          font-size: 16px;
-      }
+        .menu-header {
+            margin-bottom: 32px;
+            text-align: center;
+        }
+        .menu-header h1 {
+            font-size: 32px;
+            font-weight: 600;
+            color: var(--dg-text-primary);
+            margin-bottom: 8px;
+        }
+        .menu-header p {
+            color: var(--dg-text-muted);
+            font-size: 16px;
+        }
 
-      .menu-category {
-          margin-bottom: 48px;
-      }
-      .menu-category-title {
-          font-size: 24px;
-          font-weight: 600;
-          margin-bottom: 24px;
-          padding-bottom: 8px;
-          border-bottom: 1px solid rgba(226, 226, 226, 0.1);
-          color: var(--dg-text-primary);
-      }
+        .menu-category {
+            margin-bottom: 48px;
+        }
+        .menu-category-title {
+            font-size: 24px;
+            font-weight: 600;
+            margin-bottom: 24px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid rgba(226, 226, 226, 0.1);
+            color: var(--dg-text-primary);
+        }
 
-      .menu-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-          gap: 24px;
-      }
-      
-      /* Tablet specific adjustment */
-      @media (min-width: 768px) and (max-width: 1024px) {
-          .menu-grid {
-              grid-template-columns: repeat(2, 1fr);
-          }
-      }
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 24px;
+        }
+        
+        @media (min-width: 768px) and (max-width: 1024px) {
+            .menu-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
 
-      .menu-card {
-          background: rgba(255, 255, 255, 0.03);
-          border: 1px solid rgba(226, 226, 226, 0.08);
-          border-radius: 16px;
-          overflow: hidden;
-          transition: transform 0.25s ease, box-shadow 0.25s ease;
-          display: flex;
-          flex-direction: column;
-      }
-      .menu-card:hover {
-          transform: translateY(-4px);
-          box-shadow: 0 12px 24px rgba(0,0,0,0.2);
-          border-color: rgba(226, 226, 226, 0.15);
-      }
+        .menu-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(226, 226, 226, 0.08);
+            border-radius: 16px;
+            overflow: hidden;
+            transition: transform 0.25s ease, box-shadow 0.25s ease;
+            display: flex;
+            flex-direction: column;
+        }
+        .menu-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0,0,0,0.2);
+            border-color: rgba(226, 226, 226, 0.15);
+        }
 
-      .menu-card-img {
-          width: 100%;
-          height: 200px;
-          background: #2a2928;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          position: relative;
-          overflow: hidden;
-      }
-      .menu-card-img img {
-          width: 100%;
-          height: 100%;
-          object-fit: cover;
-      }
-      .menu-card-placeholder {
-          font-size: 48px;
-          color: rgba(255, 255, 255, 0.1);
-      }
+        .menu-card-img {
+            width: 100%;
+            height: 200px;
+            background: #2a2928;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .menu-card-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .menu-card-placeholder {
+            font-size: 48px;
+            color: rgba(255, 255, 255, 0.1);
+        }
 
-      .menu-card-content {
-          padding: 20px;
-          flex-grow: 1;
-          display: flex;
-          flex-direction: column;
-      }
-      
-      .menu-card-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
-          gap: 12px;
-          margin-bottom: 12px;
-      }
-      
-      .menu-card-title {
-          font-size: 18px;
-          font-weight: 600;
-          color: var(--dg-text-primary);
-          line-height: 1.3;
-          margin: 0;
-      }
-      
-      .menu-card-price {
-          font-size: 18px;
-          font-weight: 600;
-          color: #EF520F; /* Theme Orange */
-          white-space: nowrap;
-      }
+        .menu-card-content {
+            padding: 20px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .menu-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        
+        .menu-card-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--dg-text-primary);
+            line-height: 1.3;
+            margin: 0;
+        }
+        
+        .menu-card-price {
+            font-size: 18px;
+            font-weight: 600;
+            color: #EF520F;
+            white-space: nowrap;
+        }
 
-      .menu-card-desc {
-          font-size: 14px;
-          color: var(--dg-text-muted);
-          line-height: 1.5;
-          margin: 0;
-          flex-grow: 1;
-      }
-  </style>
+        .menu-card-desc {
+            font-size: 14px;
+            color: var(--dg-text-muted);
+            line-height: 1.5;
+            margin: 0;
+            flex-grow: 1;
+        }
 
-  <div class="menu-header">
-      <h1>Nuestro Menú</h1>
-      <p>Explora nuestra deliciosa selección de platillos</p>
-      
-      <div style="margin-top: 24px;">
-          <a href="/mesas?from=menu" style="display: inline-block; background: #EF520F; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: 500; font-size: 16px; transition: background 0.2s;">
-              <i class="bi bi-cart-plus" style="margin-right: 8px;"></i> Continuar a Pedidos (<span id="menu-selection-count">0</span>)
-          </a>
-      </div>
-  </div>
+        .continue-btn {
+            display: inline-block;
+            background: #EF520F;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 16px;
+            transition: background 0.2s;
+        }
+        .continue-btn:hover {
+            background: #d44a0d;
+        }
 
-  <% if (Object.keys(groupedProductos).length === 0) { %>
-      <div style="text-align:center; padding: 40px; color: var(--dg-text-muted);">
-          <i class="bi bi-inbox" style="font-size: 48px; opacity: 0.5;"></i>
-          <p style="margin-top: 16px;">No hay productos disponibles por el momento.</p>
-      </div>
-  <% } else { %>
-      <% Object.keys(groupedProductos).forEach(cat => { %>
-          <div class="menu-category">
-              <h2 class="menu-category-title"><%= cat %></h2>
-              <div class="menu-grid">
-                  <% groupedProductos[cat].forEach(p => { %>
-                      <div class="menu-card">
-                          <div class="menu-card-img">
-                              <% if (p.imagen_url && p.imagen_url.trim() !== '') { %>
-                                  <img src="<%= p.imagen_url %>" alt="<%= p.nombre %>" loading="lazy">
-                              <% } else { %>
-                                  <i class="bi bi-image menu-card-placeholder"></i>
-                              <% } %>
-                          </div>
-                          <div class="menu-card-content">
-                              <div class="menu-card-header">
-                                  <h3 class="menu-card-title"><%= p.nombre %></h3>
-                                  <span class="menu-card-price">S/ <%= Number(p.precio).toFixed(2) %></span>
-                              </div>
-                              <p class="menu-card-desc"><%= p.descripcion || 'Sin descripción disponible.' %></p>
-                              <div style="margin-top: 16px;">
-                                  <button type="button" class="menu-select-btn" data-id="<%= p.id %>" data-nombre="<%= p.nombre %>" data-precio="<%= p.precio %>" style="width: 100%; padding: 8px; border: 1px solid #EF520F; background: transparent; color: #EF520F; border-radius: 8px; cursor: pointer; font-weight: 500; transition: all 0.2s;">
-                                      Seleccionar
-                                  </button>
-                              </div>
-                          </div>
-                      </div>
-                  <% }) %>
-              </div>
-          </div>
-      <% }) %>
-  <% } %>
-<% }); %>
+        .global-alert {
+            background:#EF444420;
+            border: 1px solid #EF444440;
+            color:#EF4444;
+            padding:12px;
+            margin-bottom: 20px;
+            border-radius:12px;
+            text-align:center;
+            font-weight:600;
+        }
+    </style>
+</head>
+<body data-page="menu">
+    <%- include('partials/sidebar', { user: typeof user !== 'undefined' ? user : null, reqPath: '/menu' }) %>
 
-<script src="/js/pages/menu.js" defer></script>
+    <main class="dg-main-desktop">
+        <% if (typeof locals !== 'undefined' && locals.cajaAbierta === false) { %>
+            <div class="global-alert">
+                <i class="bi bi-exclamation-triangle-fill"></i> Atención: Debes abrir la caja para poder operar.
+            </div>
+        <% } %>
 
-<%- include('partials/desktop-layout', { bodyContent: ob.bodyContent, title: 'Menú Digital', pageId: 'menu' }) %>
+        <div class="menu-header">
+            <h1>Nuestro Menú</h1>
+            <p>Explora nuestra deliciosa selección de platillos</p>
+            
+            <div style="margin-top: 24px;">
+                <a href="/mesas?from=menu" class="continue-btn">
+                    <i class="bi bi-cart-plus" style="margin-right: 8px;"></i> Continuar a Pedidos (<span id="menu-selection-count">0</span>)
+                </a>
+            </div>
+        </div>
+
+        <% if (Object.keys(groupedProductos).length === 0) { %>
+            <div style="text-align:center; padding: 40px; color: var(--dg-text-muted);">
+                <i class="bi bi-inbox" style="font-size: 48px; opacity: 0.5;"></i>
+                <p style="margin-top: 16px;">No hay productos disponibles por el momento.</p>
+            </div>
+        <% } else { %>
+            <% Object.keys(groupedProductos).forEach(cat => { %>
+                <div class="menu-category">
+                    <h2 class="menu-category-title"><%= cat %></h2>
+                    <div class="menu-grid">
+                        <% groupedProductos[cat].forEach(p => { %>
+                            <div class="menu-card">
+                                <div class="menu-card-img">
+                                    <% if (p.imagen_url && p.imagen_url.trim() !== '') { %>
+                                        <img src="<%= p.imagen_url %>" alt="<%= p.nombre %>" loading="lazy">
+                                    <% } else { %>
+                                        <i class="bi bi-image menu-card-placeholder"></i>
+                                    <% } %>
+                                </div>
+                                <div class="menu-card-content">
+                                    <div class="menu-card-header">
+                                        <h3 class="menu-card-title"><%= p.nombre %></h3>
+                                        <span class="menu-card-price">S/ <%= Number(p.precio).toFixed(2) %></span>
+                                    </div>
+                                    <p class="menu-card-desc"><%= p.descripcion || 'Sin descripción disponible.' %></p>
+                                    <div style="margin-top: 16px;">
+                                        <button type="button" class="menu-select-btn" data-id="<%= p.id %>" data-nombre="<%= p.nombre %>" data-precio="<%= p.precio %>" style="width: 100%; padding: 8px; border: 1px solid #EF520F; background: transparent; color: #EF520F; border-radius: 8px; cursor: pointer; font-weight: 500; transition: all 0.2s;">
+                                            Seleccionar
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        <% }) %>
+                    </div>
+                </div>
+            <% }) %>
+        <% } %>
+    </main>
+
+    <script src="/js/pages/menu.js" defer></script>
+</body>
+</html>
