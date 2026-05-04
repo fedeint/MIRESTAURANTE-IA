@@ -2,6 +2,13 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../db');
+const { requireAuth } = require('../middleware/auth');
+const requireModule = require('../middleware/requireModule');
+const requireCajaAbierta = require('../middleware/requireCajaAbierta');
+
+router.use(requireAuth);
+router.use(requireModule('pedidos'));
+router.use(requireCajaAbierta);
 
 router.get('/', async (req, res) => {
   const tenantId = req.session?.user?.tenant_id;

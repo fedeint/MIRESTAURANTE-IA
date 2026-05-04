@@ -6,6 +6,14 @@ const path = require('path');
 const os = require('os');
 const { execFile } = require('child_process');
 const { renderForDevice } = require('../lib/deviceRouter');
+const { requireAuth } = require('../middleware/auth');
+const requireModule = require('../middleware/requireModule');
+const requireCajaAbierta = require('../middleware/requireCajaAbierta');
+
+router.use(requireAuth);
+router.use(requireModule('pedidos'));
+// We apply caja check to the whole router to enforce "pedidos blocked if closed"
+router.use(requireCajaAbierta);
 
 // Rutas para gestión de mesas y pedidos de restaurante
 // - Renderiza la vista de mesas (GET /mesas)

@@ -1031,41 +1031,38 @@ app.delete('/api/tareas/:id', requireAuth, async (req, res) => {
 });
 
 // Facturacion rapida (la vista original index.ejs)
-app.get('/facturacion', requireRole(['mesero', 'administrador', 'cajero']), (req, res) => {
+app.get('/facturacion', requireAuth, requireModule('facturacion'), requireCajaAbierta, (req, res) => {
     res.render('index');
 });
 
 // Usar las rutas
 // Panel de usuarios (solo admin)
-app.use('/usuarios', requireRole('administrador'), requireModule('usuarios'), usuariosRoutes);
-app.use('/api/usuarios', requireRole('administrador'), requireModule('usuarios'), usuariosRoutes);
+app.use('/usuarios', requireAuth, requireModule('usuarios'), usuariosRoutes);
+app.use('/api/usuarios', requireAuth, requireModule('usuarios'), usuariosRoutes);
 
 // Productos
-app.use('/productos', requireRole(['administrador', 'almacenero']), productosRoutes); // panel admin + almacenero
-app.use('/api/productos', requireRole(['mesero', 'administrador', 'almacenero']), productosRoutes); // búsqueda/armado pedido
+app.use('/productos', requireAuth, requireModule('almacen'), productosRoutes);
+app.use('/api/productos', requireAuth, requireModule('almacen'), productosRoutes);
 
 // Clientes
-app.use('/clientes', requireRole('administrador'), clientesRoutes);
-app.use('/api/clientes', requireRole(['mesero', 'administrador']), clientesRoutes);
+app.use('/clientes', requireAuth, requireModule('crm'), clientesRoutes);
+app.use('/api/clientes', requireAuth, requireModule('crm'), clientesRoutes);
 
-// Facturas (impresión/creación). Mesero y cajero necesitan imprimir/gestionar.
-app.use('/facturas', requireRole(['administrador', 'cajero', 'mesero']), requireModule('facturacion'), requireCajaAbierta, facturasRoutes);
-app.use('/api/facturas', requireRole(['mesero', 'administrador', 'cajero']), requireModule('facturacion'), requireCajaAbierta, facturasRoutes);
+// Facturas (impresión/creación)
+app.use('/facturas', requireAuth, requireModule('facturacion'), requireCajaAbierta, facturasRoutes);
+app.use('/api/facturas', requireAuth, requireModule('facturacion'), requireCajaAbierta, facturasRoutes);
 
 // Mesas (mesero/admin)
-app.use('/mesas', requireRole(['mesero', 'administrador']), requireCajaAbierta, mesasRoutes);
-app.use('/api/mesas', requireRole(['mesero', 'administrador']), mesasRoutes);
+app.use('/mesas', requireAuth, requireModule('pedidos'), requireCajaAbierta, mesasRoutes);
+app.use('/api/mesas', requireAuth, requireModule('pedidos'), requireCajaAbierta, mesasRoutes);
 
 // Cocina
-// - Cocinero/Admin: puede preparar/marcar listo
-// - Mesero: solo visualiza y marca "Entregado" en la pestaña de listos (la acción se hace vía /api/mesas/items/:id/estado con validación)
-// Relacionado con: routes/cocina.js (middlewares por ruta) y routes/mesas.js (restricción servido)
-app.use('/cocina', requireRole(['cocinero', 'mesero', 'administrador']), requireModule('cocina'), requireCajaAbierta, cocinaRoutes);
-app.use('/api/cocina', requireRole(['cocinero', 'mesero', 'administrador']), requireModule('cocina'), requireCajaAbierta, cocinaRoutes);
+app.use('/cocina', requireAuth, requireModule('cocina'), requireCajaAbierta, cocinaRoutes);
+app.use('/api/cocina', requireAuth, requireModule('cocina'), requireCajaAbierta, cocinaRoutes);
 
 // Mobile PWA routes — PASO 4
 const pedidoNuevoRoutes = require('./routes/pedido-nuevo');
-app.use('/pedido-nuevo', requireAuth, pedidoNuevoRoutes);
+app.use('/pedido-nuevo', requireAuth, requireModule('pedidos'), requireCajaAbierta, pedidoNuevoRoutes);
 
 const cocinaDisplayRoutes = require('./routes/cocina-display');
 app.use('/cocina-display', requireAuth, cocinaDisplayRoutes);
@@ -1075,30 +1072,30 @@ app.use('/pedidos', requireAuth, requireModule('pedidos'), requireCajaAbierta, p
 
 // PASO 5 — Mesa Abierta + Para Llevar + Cortesías
 const mesaCuentaRoutes = require('./routes/mesa-cuenta');
-app.use('/mesa', requireAuth, mesaCuentaRoutes);
+app.use('/mesa', requireAuth, requireModule('pedidos'), requireCajaAbierta, mesaCuentaRoutes);
 
 const paraLlevarRoutes = require('./routes/para-llevar');
-app.use('/para-llevar', requireAuth, paraLlevarRoutes);
+app.use('/para-llevar', requireAuth, requireModule('pedidos'), requireCajaAbierta, paraLlevarRoutes);
 
 const cortesiasRoutes = require('./routes/cortesias');
-app.use('/cortesias', requireAuth, cortesiasRoutes);
+app.use('/cortesias', requireAuth, requireModule('pedidos'), requireCajaAbierta, cortesiasRoutes);
 
 // Almacen (admin + almacenero)
-app.use('/almacen', requireRole(['administrador', 'almacenero']), almacenRoutes);
+app.use('/almacen', requireAuth, requireModule('almacen'), almacenRoutes);
 
 // Recetas API (admin + almacenero)
-app.use('/api/recetas', requireRole(['administrador', 'almacenero']), recetasRoutes);
+app.use('/api/recetas', requireAuth, requireModule('almacen'), recetasRoutes);
 
 // Recetas standalone page + items API (admin + almacenero)
-app.use('/recetas', requireAuth, requireRole(['administrador', 'almacenero']), recetasStandaloneRoutes);
-app.use('/api/recetas-standalone', requireAuth, requireRole(['administrador', 'almacenero']), recetasStandaloneRoutes);
+app.use('/recetas', requireAuth, requireModule('almacen'), recetasStandaloneRoutes);
+app.use('/api/recetas-standalone', requireAuth, requireModule('almacen'), recetasStandaloneRoutes);
 
 // SUNAT (admin)
-app.use('/sunat', requireRole('administrador'), sunatRoutes);
-app.use('/api/sunat', requireRole('administrador'), sunatRoutes);
+app.use('/sunat', requireAuth, requireModule('facturacion'), sunatRoutes);
+app.use('/api/sunat', requireAuth, requireModule('facturacion'), sunatRoutes);
 
 // SUNAT PWA — mobile views (admin + cajero)
-app.use('/sunat-pwa', requireAuth, requireRole(['administrador', 'cajero']), sunatPwaRoutes);
+app.use('/sunat-pwa', requireAuth, requireModule('facturacion'), sunatPwaRoutes);
 
 // Sprint 4 — Mantenimiento, Eventos, Gastos, Fidelidad, Promociones, Propinas
 app.use('/sprint4', requireAuth, requireRole(['administrador', 'cajero', 'mesero']), sprint4Routes);
@@ -1114,12 +1111,12 @@ app.get('/dallia/voz', requireAuth, (req, res) => res.redirect('/api/chat/dallia
 app.get('/dallia/alertas', requireAuth, (req, res) => res.redirect('/api/chat/dallia/alertas'));
 
 // Caja (admin + cajero)
-app.use('/caja', requireRole(['administrador', 'cajero']), cajaRoutes);
-app.use('/api/caja', requireRole(['administrador', 'cajero']), cajaRoutes);
+app.use('/caja', requireAuth, requireModule('caja'), cajaRoutes);
+app.use('/api/caja', requireAuth, requireModule('caja'), cajaRoutes);
 
 // Chat IA (admin)
-app.use('/chat', requireRole('administrador'), chatLimiter, chatRoutes);
-app.use('/api/chat', requireRole('administrador'), chatLimiter, chatRoutes);
+app.use('/chat', requireAuth, requireModule('dallia'), chatLimiter, chatRoutes);
+app.use('/api/chat', requireAuth, requireModule('dallia'), chatLimiter, chatRoutes);
 
 // SOSTAC — strategic framework (admin)
 app.use('/sostac', requireAuth, requireRole(['administrador']), sostacRoutes);
@@ -1179,8 +1176,8 @@ app.use('/delivery', requireAuth, requireRole('administrador'), deliveryRoutes);
 app.use('/api/delivery', requireAuth, requireRole('administrador'), deliveryRoutes);
 
 // Features (reservas, delivery, promos, fidelidad - admin)
-app.use('/features', requireRole('administrador'), featuresRoutes);
-app.use('/api/features', requireRole('administrador'), featuresRoutes);
+app.use('/features', requireAuth, requireModule('delivery'), featuresRoutes);
+app.use('/api/features', requireAuth, requireModule('delivery'), featuresRoutes);
 // Menu digital (Visual Menu Module)
 const menuRoutes = require('./routes/menu');
 app.use('/menu', menuRoutes);
@@ -1194,17 +1191,17 @@ app.use('/api/tts', requireAuth, ttsRoutes);
 app.use('/api/stt', requireAuth, sttRoutes);
 
 // Reportes PDF (admin)
-app.use('/reportes', requireAuth, requireRole('administrador'), reportesRoutes);
-app.use('/api/reportes', requireAuth, requireRole('administrador'), reportesRoutes);
+app.use('/reportes', requireAuth, requireModule('administracion'), reportesRoutes);
+app.use('/api/reportes', requireAuth, requireModule('administracion'), reportesRoutes);
 
 // Administracion P&L (admin)
-app.use('/administracion', requireRole('administrador'), administracionRoutes);
-app.use('/api/administracion', requireRole('administrador'), administracionRoutes);
+app.use('/administracion', requireAuth, requireModule('administracion'), administracionRoutes);
+app.use('/api/administracion', requireAuth, requireModule('administracion'), administracionRoutes);
 
 // Backups (admin + superadmin only)
-app.use('/api/backups', requireAuth, requireRole(['administrador', 'superadmin']), backupsRoutes);
+app.use('/api/backups', requireAuth, requireModule('usuarios'), backupsRoutes);
 // Backups HTML view
-app.get('/backups', requireAuth, requireRole(['administrador', 'superadmin']), (req, res) => {
+app.get('/backups', requireAuth, requireModule('usuarios'), (req, res) => {
     const svc = require('./services/backup');
     const tenantId = req.session?.user?.rol === 'superadmin' ? null : (req.tenantId || 1);
     const isSuperadmin = req.session?.user?.rol === 'superadmin';
@@ -1218,9 +1215,9 @@ app.use('/soporte', requireAuth, soporteRoutes);
 app.use('/api/soporte', requireAuth, soporteRoutes);
 
 // Configuración y ventas (admin)
-app.use('/configuracion', requireRole('administrador'), configuracionRoutes);
+app.use('/configuracion', requireAuth, requireModule('configuracion'), configuracionRoutes);
 app.use('/config', requireAuth, configPwaRoutes);
-app.use('/ventas', requireRole('administrador'), ventasRoutes);
+app.use('/ventas', requireAuth, requireModule('facturacion'), ventasRoutes);
 
 // ── Slug rewrite: /:slug/* → /* (tenant path routing) ───────────────────
 // Si el request es para un path de tenant (e.g., /chuleta/mesas),

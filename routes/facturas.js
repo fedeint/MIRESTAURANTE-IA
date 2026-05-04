@@ -5,6 +5,14 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 const { exec } = require('child_process');
+const { requireAuth } = require('../middleware/auth');
+const requireModule = require('../middleware/requireModule');
+const requireCajaAbierta = require('../middleware/requireCajaAbierta');
+
+// Router-level protection
+router.use(requireAuth);
+router.use(requireModule('facturacion'));
+router.use(requireCajaAbierta);
 
 // Validar rutas de retorno (evitar open-redirect / URLs externas)
 // Se usa para que el botón "Volver" de la impresión regrese a Mesas cuando aplique.

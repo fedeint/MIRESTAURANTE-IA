@@ -495,7 +495,7 @@
     </div>
   <% } else if (u) { %>
     <%# === Asistente IA (top, only for admin) === %>
-    <% if (isAdmin) { %>
+    <% if (typeof locals !== 'undefined' && locals.can && can('dallia')) { %>
       <a href="/chat" class="mr-nav-item mr-assistant <%= active('/chat', true) %>">
         <div class="mr-icon-wrap">
           <svg viewBox="0 0 24 24" aria-hidden="true">
@@ -582,7 +582,7 @@
         <span class="mr-nav-label">Almacén</span>
       </a>
       <% } %>
-      <% if (isAdmin || isMesero || isAlmacenero) { %>
+      <% if (typeof locals !== 'undefined' && locals.can && can('almacen')) { %>
       <a href="/productos" class="mr-nav-item <%= active('/productos', true) || active('/ranking', true) %>">
         <div class="mr-icon-wrap">
           <svg viewBox="0 0 24 24"><rect x="4" y="4" width="6.1" height="6.1" rx="1.6" class="mr-product-cell c1"/><rect x="13.9" y="4" width="6.1" height="6.1" rx="1.6" class="mr-product-cell c2"/><rect x="4" y="13.9" width="6.1" height="6.1" rx="1.6" class="mr-product-cell c3"/><path d="M13.9 17h6.1"/></svg>
@@ -661,6 +661,8 @@
         </div>
         <span class="mr-nav-label">Usuarios</span>
       </a>
+      <% } %>
+      <% if (typeof locals !== 'undefined' && locals.can && can('configuracion')) { %>
       <a href="/configuracion" class="mr-nav-item <%= active('/configuracion', true) %>">
         <div class="mr-icon-wrap">
           <svg viewBox="0 0 24 24"><path d="M5 7h14"/><circle cx="9" cy="7" r="1.6" class="mr-gear"/><path d="M5 12h14"/><circle cx="14" cy="12" r="1.6" class="mr-gear"/><path d="M5 17h14"/><circle cx="11" cy="17" r="1.6" class="mr-gear"/></svg>
