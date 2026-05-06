@@ -4,6 +4,26 @@ const express = require('express');
 const router = express.Router();
 const db = require('../db');
 
+const DEMO_RESTAURANTES = [
+  { nombre: 'La Causa Peruana', subdominio: 'la-causa', distrito: 'Miraflores', departamento: 'Lima', latitud: -12.122, longitud: -77.03, plan: 'pro' },
+  { nombre: 'Sabor Norteño', subdominio: 'sabor-norteno', distrito: 'Piura', departamento: 'Piura', latitud: -5.194, longitud: -80.632, plan: 'starter' },
+  { nombre: 'Brasas del Sur', subdominio: 'brasas-sur', distrito: 'Arequipa', departamento: 'Arequipa', latitud: -16.409, longitud: -71.537, plan: 'pro' },
+];
+
+function isDbUnavailable(err) {
+  const msg = String(err?.message || '').toLowerCase();
+  const code = String(err?.code || '').toLowerCase();
+  return (
+    code === 'enotfound' ||
+    code === 'econnrefused' ||
+    code === '57p01' ||
+    msg.includes('getaddrinfo') ||
+    msg.includes('connection terminated') ||
+    msg.includes('connect') ||
+    msg.includes('timeout')
+  );
+}
+
 // ---------------------------------------------------------------------------
 // API: GET /api/restaurantes — Public restaurant search
 // ---------------------------------------------------------------------------
@@ -37,6 +57,9 @@ router.get('/api/restaurantes', async (req, res) => {
     res.json(restaurantes || []);
   } catch (err) {
     console.error('Public restaurantes error:', err.message);
+    if (isDbUnavailable(err)) {
+      return res.json(DEMO_RESTAURANTES);
+    }
     res.status(500).json({ error: 'Error al buscar restaurantes' });
   }
 });
@@ -67,6 +90,13 @@ router.post('/api/demos', async (req, res) => {
     res.json({ ok: true, message: 'Demo agendada exitosamente. Te contactaremos por WhatsApp.' });
   } catch (err) {
     console.error('Demo solicitud error:', err.message);
+    if (isDbUnavailable(err)) {
+      // Fallback demo mode: keep UX flowing even if DB is temporarily unavailable.
+      return res.json({
+        ok: true,
+        message: 'Demo recibida en modo maqueta. Te contactaremos por WhatsApp cuando el sistema esté conectado.'
+      });
+    }
     res.status(500).json({ error: 'Error al agendar demo' });
   }
 });

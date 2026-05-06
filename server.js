@@ -22,6 +22,12 @@ const { renderForDevice } = require('./lib/deviceRouter');
 
 // Crear directorios necesarios
 const createRequiredDirectories = () => {
+    // Vercel serverless filesystem is read-only under /var/task.
+    // Runtime uploads must use external storage (Supabase/VPS), not local folders.
+    if (process.env.VERCEL) {
+        return;
+    }
+
     const directories = [
         path.join(__dirname, 'public'),
         path.join(__dirname, 'public', 'uploads'),
