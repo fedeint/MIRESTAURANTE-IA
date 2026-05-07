@@ -8,8 +8,9 @@
     <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
     <link rel="stylesheet" href="/css/theme.css">
+    <link rel="stylesheet" href="/css/almacen-modulos.css">
 </head>
-<body>
+<body class="almacen-ui">
     <%- include('../partials/sidebar') %>
     <div class="dg-main">
     <main class="flex-grow-1">
@@ -75,7 +76,7 @@
                         '<td>' + a.stock_actual + ' ' + (a.unidad_medida || '') + '</td>' +
                         '<td>' + a.stock_minimo + ' ' + (a.unidad_medida || '') + '</td>' +
                         '<td class="' + difClass + '">' + diferencia + '</td>' +
-                        '<td><span class="badge" style="background-color:' + (a.categoria_color || '#6c757d') + '">' + (a.categoria || '-') + '</span></td>' +
+                        '<td><span class="badge almacen-badge-categoria" style="--cat-color:' + (a.categoria_color || '#6c757d') + '">' + (a.categoria || '-') + '</span></td>' +
                         '</tr>';
                 }).join('');
             } catch (err) {

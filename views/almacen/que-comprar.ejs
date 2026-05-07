@@ -8,8 +8,9 @@
     <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
     <link rel="stylesheet" href="/css/theme.css">
+    <link rel="stylesheet" href="/css/almacen-modulos.css">
 </head>
-<body>
+<body class="almacen-ui">
     <%- include('../partials/sidebar') %>
     <div class="dg-main">
     <main class="flex-grow-1">
@@ -24,7 +25,7 @@
 
         <!-- Alertas: bajo minimo -->
         <% if (bajoMinimo && bajoMinimo.length > 0) { %>
-        <div class="card mb-4" style="border-left:4px solid #ef4444!important;">
+        <div class="card mb-4 almacen-card-urgente">
             <div class="card-header fw-bold d-flex align-items-center gap-2 text-danger">
                 <i class="bi bi-exclamation-triangle-fill"></i>
                 Insumos BAJO MINIMO - compra urgente
@@ -36,7 +37,7 @@
                         <thead><tr><th>Insumo</th><th class="text-end">Stock actual</th><th class="text-end">Minimo</th><th>Proveedor</th></tr></thead>
                         <tbody>
                             <% bajoMinimo.forEach(function(i) { %>
-                            <tr style="background:rgba(239,68,68,0.04);">
+                            <tr class="almacen-row-critica">
                                 <td class="fw-bold"><%= i.nombre %></td>
                                 <td class="text-end text-danger fw-bold"><%= Number(i.stock_actual).toFixed(1) %> <%= i.unidad_medida %></td>
                                 <td class="text-end"><%= Number(i.stock_minimo).toFixed(1) %></td>
@@ -74,7 +75,7 @@
                             <% if (!listaCompras || listaCompras.length === 0) { %>
                                 <tr><td colspan="7" class="text-center text-muted py-4">No hay datos de consumo del <%= diaSemana %> pasado (<%= fechaRef %>). Los datos se generan cuando se envian platos a cocina.</td></tr>
                             <% } else { listaCompras.forEach(function(i) { %>
-                                <tr<% if (i.urgente) { %> style="background:rgba(239,68,68,0.06);"<% } %>>
+                                <tr class="<%= i.urgente ? 'almacen-row-urgente' : '' %>">
                                     <td class="fw-semibold">
                                         <%= i.nombre %>
                                         <% if (i.urgente) { %><span class="badge bg-danger ms-1">URGENTE</span><% } %>

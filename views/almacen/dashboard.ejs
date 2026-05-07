@@ -8,8 +8,9 @@
     <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
     <link rel="stylesheet" href="/css/theme.css">
+    <link rel="stylesheet" href="/css/almacen-modulos.css">
 </head>
-<body>
+<body class="almacen-ui">
     <%- include('../partials/sidebar') %>
     <div class="dg-main">
     <main class="flex-grow-1">
@@ -57,8 +58,8 @@
             <div class="col-md-4">
                 <div class="card shadow-sm h-100">
                     <div class="card-body d-flex align-items-center">
-                        <div class="rounded-circle bg-purple bg-opacity-10 p-3 me-3" style="background-color: rgba(111,66,193,0.1);">
-                            <i class="bi bi-cash-stack fs-3" style="color: #6f42c1;"></i>
+                        <div class="rounded-circle p-3 me-3 almacen-kpi-violet-bg">
+                            <i class="bi bi-cash-stack fs-3 almacen-kpi-violet-icon"></i>
                         </div>
                         <div>
                             <h6 class="text-muted mb-1">Valor Inventario</h6>
@@ -111,7 +112,7 @@
         <!-- Categorias como acceso rapido -->
         <div class="card shadow-sm mb-4">
             <div class="card-header d-flex align-items-center gap-2">
-                <i class="bi bi-grid-fill" style="color:var(--dg-primary);"></i>
+                <i class="bi bi-grid-fill text-primary"></i>
                 <span class="fw-bold">Categorias del Almacen</span>
                 <span class="badge bg-secondary ms-auto"><%= stats.categorias.length %></span>
             </div>
@@ -119,11 +120,11 @@
                 <div class="row g-2">
                     <% stats.categorias.forEach(function(cat) { %>
                         <div class="col-6 col-md-4 col-lg-3">
-                            <a href="/almacen/inventario?categoria=<%= cat.id %>" class="d-flex align-items-center gap-2 p-2 rounded text-decoration-none" style="background:<%= cat.color %>10;border:1px solid <%= cat.color %>30;border-radius:.75rem!important;">
-                                <div style="width:32px;height:32px;background:<%= cat.color %>;border-radius:.5rem;display:flex;align-items:center;justify-content:center;color:#fff;font-size:.85rem;flex-shrink:0;">
+                            <a href="/almacen/inventario?categoria=<%= cat.id %>" class="d-flex align-items-center gap-2 p-2 rounded text-decoration-none almacen-cat-link" style="--cat-color:<%= cat.color %>;background:<%= cat.color %>10;border:1px solid <%= cat.color %>30;">
+                                <div class="almacen-cat-link-icon">
                                     <i class="bi <%= cat.icono || 'bi-box' %>"></i>
                                 </div>
-                                <div class="small fw-semibold" style="color:<%= cat.color %>;"><%= cat.nombre %></div>
+                                <div class="small fw-semibold almacen-cat-link-name"><%= cat.nombre %></div>
                             </a>
                         </div>
                     <% }); %>

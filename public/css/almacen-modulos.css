@@ -1,0 +1,200 @@
+/* Estilos visuales especificos para los submodulos de almacen */
+body.almacen-ui .container {
+  max-width: 1220px;
+  padding-top: 1.5rem;
+  padding-bottom: 1.5rem;
+}
+
+body.almacen-ui .container > .d-flex:first-child {
+  margin-bottom: 1.35rem !important;
+}
+
+body.almacen-ui .card,
+body.almacen-ui .card.shadow-sm {
+  border-radius: 16px !important;
+  border: 1px solid rgba(16, 21, 47, 0.08) !important;
+  box-shadow: 0 10px 30px rgba(16, 21, 47, 0.08) !important;
+  margin-bottom: 1.25rem !important;
+}
+
+body.almacen-ui .card-header {
+  background: linear-gradient(180deg, rgba(239, 82, 15, 0.1) 0%, rgba(239, 82, 15, 0.03) 100%) !important;
+  border-bottom: 1px solid rgba(16, 21, 47, 0.08) !important;
+  color: #0a0f24 !important;
+  padding: 0.95rem 1.2rem;
+}
+
+body.almacen-ui .card-body {
+  padding: 1.15rem 1.2rem;
+}
+
+body.almacen-ui .table-responsive {
+  border-radius: 14px;
+}
+
+body.almacen-ui .table thead th {
+  background: rgba(16, 21, 47, 0.04) !important;
+  color: #64698a;
+  border-bottom: 1px solid rgba(16, 21, 47, 0.08) !important;
+}
+
+body.almacen-ui .table-hover > tbody > tr:hover {
+  background: rgba(239, 82, 15, 0.06) !important;
+}
+
+body.almacen-ui .btn {
+  border-radius: 12px !important;
+}
+
+body.almacen-ui .btn-outline-primary {
+  border-color: rgba(223, 44, 5, 0.35) !important;
+  color: #df2c05 !important;
+}
+
+body.almacen-ui .btn-outline-primary:hover {
+  border-color: transparent !important;
+  background: linear-gradient(135deg, #ef520f 0%, #df2c05 100%) !important;
+  color: #fff !important;
+}
+
+body.almacen-ui .badge.bg-primary {
+  background: linear-gradient(135deg, #ef520f 0%, #df2c05 100%) !important;
+}
+
+body.almacen-ui .alert {
+  border-radius: 14px !important;
+}
+
+@media (max-width: 768px) {
+  body.almacen-ui .container {
+    padding-top: 1rem;
+    padding-bottom: 1rem;
+  }
+
+  body.almacen-ui .card,
+  body.almacen-ui .card.shadow-sm {
+    border-radius: 14px !important;
+  }
+}
+
+body.almacen-ui .almacen-caja-card {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(99, 102, 241, 0.06)) !important;
+  border: 1px solid rgba(34, 197, 94, 0.18) !important;
+}
+
+body.almacen-ui .almacen-caja-avatar {
+  width: 44px;
+  height: 44px;
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 1.2rem;
+}
+
+body.almacen-ui .almacen-caja-strong {
+  color: #15803d;
+}
+
+body.almacen-ui .almacen-rank-medal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.75rem;
+}
+
+body.almacen-ui .almacen-rank-1 { background: #f59e0b; }
+body.almacen-ui .almacen-rank-2 { background: #9ca3af; }
+body.almacen-ui .almacen-rank-3 { background: #cd7f32; }
+
+body.almacen-ui .almacen-ranking-badge {
+  background: rgba(99, 102, 241, 0.12);
+  color: #4f46e5;
+}
+
+body.almacen-ui .almacen-empty-icon {
+  font-size: 2rem;
+}
+
+body.almacen-ui .almacen-plato-item {
+  border: 1px solid rgba(16, 21, 47, 0.08) !important;
+  border-radius: 0.75rem;
+  margin-bottom: 0.65rem;
+}
+
+body.almacen-ui .almacen-pointer {
+  cursor: pointer;
+}
+
+body.almacen-ui .almacen-plato-avatar {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  border-radius: 0.625rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 1rem;
+}
+
+body.almacen-ui .almacen-card-urgente {
+  border-left: 4px solid #ef4444 !important;
+}
+
+body.almacen-ui .almacen-row-critica {
+  background: rgba(239, 68, 68, 0.05);
+}
+
+body.almacen-ui .almacen-row-urgente {
+  background: rgba(239, 68, 68, 0.07);
+}
+
+body.almacen-ui .almacen-kpi-violet-bg {
+  background: rgba(99, 102, 241, 0.12) !important;
+}
+
+body.almacen-ui .almacen-kpi-violet-icon {
+  color: #6366f1;
+}
+
+body.almacen-ui .almacen-row-danger-soft {
+  background: rgba(239, 68, 68, 0.06);
+}
+
+body.almacen-ui .almacen-row-warning-soft {
+  background: rgba(245, 158, 11, 0.08);
+}
+
+body.almacen-ui .almacen-badge-categoria {
+  background: var(--cat-color, #6c757d) !important;
+  color: #fff;
+}
+
+body.almacen-ui .almacen-cat-link {
+  border-radius: 0.75rem !important;
+}
+
+body.almacen-ui .almacen-cat-link-icon {
+  width: 32px;
+  height: 32px;
+  background: var(--cat-color, #6c757d);
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+body.almacen-ui .almacen-cat-link-name {
+  color: var(--cat-color, #6c757d);
+}

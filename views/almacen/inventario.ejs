@@ -8,8 +8,9 @@
     <link href="/vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/vendor/bootstrap-icons/bootstrap-icons.css">
     <link rel="stylesheet" href="/css/theme.css">
+    <link rel="stylesheet" href="/css/almacen-modulos.css">
 </head>
-<body>
+<body class="almacen-ui">
     <%- include('../partials/sidebar') %>
     <div class="dg-main">
     <main class="flex-grow-1">
@@ -66,7 +67,7 @@
                             <td><code><%= i.codigo %></code></td>
                             <td><strong><%= i.nombre %></strong><% if (i.proveedor_nombre) { %><br><small class="text-muted"><%= i.proveedor_nombre %></small><% } %></td>
                             <td>
-                                <span class="badge" style="background-color: <%= i.categoria_color || '#6c757d' %>;">
+                                <span class="badge almacen-badge-categoria" style="--cat-color: <%= i.categoria_color || '#6c757d' %>;">
                                     <%= i.categoria_nombre || 'Sin categoria' %>
                                 </span>
                             </td>
@@ -119,7 +120,7 @@
                             <% if (!rankingPlatos || rankingPlatos.length === 0) { %>
                                 <tr><td colspan="5" class="text-center text-muted py-3">No hay platos con receta configurada</td></tr>
                             <% } else { rankingPlatos.forEach(function(p, idx) { %>
-                                <tr<% if (p.disponible === 0) { %> style="background:rgba(239,68,68,0.06);"<% } else if (p.disponible <= 5) { %> style="background:rgba(245,158,11,0.06);"<% } %>>
+                                <tr class="<%= p.disponible === 0 ? 'almacen-row-danger-soft' : (p.disponible <= 5 ? 'almacen-row-warning-soft' : '') %>">
                                     <td><%= idx + 1 %></td>
                                     <td class="fw-semibold"><%= p.nombre %></td>
                                     <td class="text-center">
